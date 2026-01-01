@@ -14,7 +14,7 @@ class PublicController extends Controller
     public function show($slug)
     {
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['user', 'avis.user', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
+            ->with(['user', 'avis.user', 'avis.photos', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
             ->firstOrFail();
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
@@ -31,8 +31,8 @@ class PublicController extends Controller
             ->orderBy('jour_semaine')
             ->get();
 
-        // Charger les avis avec pagination
-        $avis = $entreprise->avis()->with('user')->paginate(5);
+        // Charger les avis avec pagination et photos
+        $avis = $entreprise->avis()->with(['user', 'photos'])->paginate(5);
 
         // Vérifier si l'utilisateur connecté peut laisser un avis
         $peutLaisserAvis = false;

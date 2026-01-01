@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Avis;
 use App\Models\Entreprise;
+use App\Models\RealisationPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AvisController extends Controller
 {
@@ -58,6 +60,11 @@ class AvisController extends Controller
             ->orderBy('date_reservation', 'desc')
             ->get();
 
+        // Charger les photos existantes si l'avis existe
+        if ($avisExistant) {
+            $avisExistant->load('photos');
+        }
+
         return view('avis.create', [
             'entreprise' => $entreprise,
             'avisExistant' => $avisExistant,
@@ -92,6 +99,8 @@ class AvisController extends Controller
             'note' => ['required', 'integer', 'min:1', 'max:5'],
             'commentaire' => ['nullable', 'string', 'max:1000'],
             'reservation_id' => ['nullable', 'exists:reservations,id'],
+            'photos' => ['nullable', 'array', 'max:5'],
+            'photos.*' => ['image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
         ]);
 
         // Vérifier que la réservation appartient bien à l'utilisateur et à l'entreprise
@@ -106,7 +115,7 @@ class AvisController extends Controller
             }
         }
 
-        Avis::create([
+        $avis = Avis::create([
             'user_id' => $user->id,
             'entreprise_id' => $entreprise->id,
             'reservation_id' => $validated['reservation_id'] ?? null,
@@ -114,6 +123,11 @@ class AvisController extends Controller
             'commentaire' => $validated['commentaire'] ?? null,
             'est_approuve' => true, // Par défaut approuvé
         ]);
+
+        // Gérer l'upload des photos
+        if ($request->hasFile('photos')) {
+            $this->handlePhotoUpload($request->file('photos'), $avis, $entreprise);
+        }
 
         return redirect()->route('public.entreprise', $slug)
             ->with('success', 'Votre avis a été enregistré avec succès !');
@@ -135,11 +149,72 @@ class AvisController extends Controller
         $validated = $request->validate([
             'note' => ['required', 'integer', 'min:1', 'max:5'],
             'commentaire' => ['nullable', 'string', 'max:1000'],
+            'photos' => ['nullable', 'array', 'max:5'],
+            'photos.*' => ['image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+            'photos_a_supprimer' => ['nullable', 'array'],
+            'photos_a_supprimer.*' => ['integer', 'exists:realisation_photos,id'],
         ]);
 
-        $avis->update($validated);
+        $avis->update([
+            'note' => $validated['note'],
+            'commentaire' => $validated['commentaire'] ?? null,
+        ]);
+
+        // Supprimer les photos marquées pour suppression
+        if (!empty($validated['photos_a_supprimer'])) {
+            $photosASupprimer = RealisationPhoto::whereIn('id', $validated['photos_a_supprimer'])
+                ->where('avis_id', $avis->id)
+                ->get();
+
+            foreach ($photosASupprimer as $photo) {
+                // Supprimer le fichier physique
+                $filePath = public_path('media/' . $photo->photo_path);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+                $photo->delete();
+            }
+        }
+
+        // Gérer l'upload des nouvelles photos
+        if ($request->hasFile('photos')) {
+            $this->handlePhotoUpload($request->file('photos'), $avis, $entreprise);
+        }
 
         return redirect()->route('public.entreprise', $slug)
             ->with('success', 'Votre avis a été mis à jour avec succès !');
+    }
+
+    /**
+     * Gérer l'upload des photos pour un avis
+     */
+    private function handlePhotoUpload(array $photos, Avis $avis, Entreprise $entreprise): void
+    {
+        $ordre = $avis->photos()->max('ordre') ?? 0;
+
+        foreach ($photos as $photo) {
+            $ordre++;
+            $filename = 'avis_' . $avis->id . '_' . time() . '_' . $ordre . '.' . $photo->getClientOriginalExtension();
+            $path = 'realisations/' . $entreprise->id;
+            
+            // Créer le dossier s'il n'existe pas
+            $fullPath = public_path('media/' . $path);
+            if (!file_exists($fullPath)) {
+                mkdir($fullPath, 0755, true);
+            }
+
+            // Déplacer le fichier
+            $photo->move($fullPath, $filename);
+
+            // Créer l'entrée en base de données
+            RealisationPhoto::create([
+                'entreprise_id' => $entreprise->id,
+                'avis_id' => $avis->id,
+                'photo_path' => $path . '/' . $filename,
+                'titre' => 'Photo ajoutée par ' . $avis->user->name,
+                'description' => $avis->commentaire ? substr($avis->commentaire, 0, 100) : null,
+                'ordre' => $ordre,
+            ]);
+        }
     }
 }

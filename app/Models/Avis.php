@@ -55,6 +55,14 @@ class Avis extends Model
     }
 
     /**
+     * Relation : Un avis peut avoir plusieurs photos (réalisations)
+     */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(RealisationPhoto::class);
+    }
+
+    /**
      * Génère les étoiles pour l'affichage
      */
     public function getEtoilesAttribute(): string

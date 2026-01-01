@@ -96,12 +96,12 @@
                     <div class="space-y-4">
                         @foreach($reservations['en_attente'] as $reservation)
                             <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
+                                <div class="flex items-start gap-3">
+                                    <x-avatar :user="$reservation->user" size="md" class="flex-shrink-0" />
+                                    <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-2">
                                             <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h3>
-                                            <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
-                                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</span>
+                                            <span class="text-sm text-slate-600 dark:text-slate-400 truncate">{{ $reservation->user->email }}</span>
                                         </div>
                                         <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                             <strong>{{ $reservation->type_service ?? 'Service' }}</strong> - 
@@ -154,4 +154,38 @@
                                                     </div>
                                                     <p class="text-sm text-slate-600 dark:text-slate-400">
                                                         {{ $reservation->type_service ?? 'Service' }} - {{ number_format($reservation->prix, 2, ',', ' ') }} €
+                                                        @if($reservation->est_paye)
+                                                            <span class="ml-2 text-green-600 dark:text-green-400">✓ Payé</span>
+                                                        @else
+                                                            <span class="ml-2 text-red-600 dark:text-red-400">✗ Non payé</span>
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                                <a 
+                                                    href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
+                                                    class="px-3 py-1 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition"
+                                                >
+                                                    Voir →
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+
+                    @if($reservations->isEmpty() || $reservations->flatten()->isEmpty())
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Aucune réservation</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                Vous n'avez pas encore de réservations correspondant à ces critères.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            </div>
 </div>

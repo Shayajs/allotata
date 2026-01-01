@@ -114,11 +114,12 @@
             <div class="space-y-3 max-h-80 overflow-y-auto">
                 @foreach($reservationsEnAttente->take(5) as $reservation)
                     <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
+                        <div class="flex items-start gap-3">
+                            <x-avatar :user="$reservation->user" size="md" class="flex-shrink-0" />
+                            <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-2">
                                     <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h4>
-                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ $reservation->user->email }}</span>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ $reservation->user->email }}</span>
                                 </div>
                                 <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                     <span class="font-medium">{{ $reservation->typeService?->nom ?? $reservation->type_service ?? 'Service' }}</span>
@@ -138,7 +139,7 @@
                             </div>
                             <a 
                                 href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-sm font-semibold rounded-lg transition-all"
+                                class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-sm font-semibold rounded-lg transition-all flex-shrink-0"
                             >
                                 Gérer
                             </a>

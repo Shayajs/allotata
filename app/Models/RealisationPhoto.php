@@ -27,4 +27,12 @@ class RealisationPhoto extends Model
     {
         return $this->belongsTo(Entreprise::class);
     }
+
+    /**
+     * Relation avec l'avis
+     */
+    public function avis(): BelongsTo
+    {
+        return $this->belongsTo(Avis::class);
+    }
 }
