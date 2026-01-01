@@ -21,9 +21,9 @@ class EntrepriseDashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Récupérer l'entreprise
+        // Récupérer l'entreprise avec les relations nécessaires
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
+            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture'])
             ->firstOrFail();
         
         // Vérifier les permissions (propriétaire ou administrateur)
@@ -185,14 +185,19 @@ class EntrepriseDashboardController extends Controller
             ? round((($revenuCeMois - $revenuMoisDernier) / $revenuMoisDernier) * 100, 1)
             : ($revenuCeMois > 0 ? 100 : 0);
 
+        // Réservations acceptées uniquement (confirmées ou terminées)
+        $reservationsAcceptees = $allReservations->filter(function($r) {
+            return in_array($r->statut, ['confirmee', 'terminee']);
+        });
+        
         return [
             'total_reservations' => $allReservations->count(),
             'reservations_confirmees' => $allReservations->where('statut', 'confirmee')->count(),
             'reservations_en_attente' => $allReservations->where('statut', 'en_attente')->count(),
             'reservations_terminees' => $allReservations->where('statut', 'terminee')->count(),
             'reservations_annulees' => $allReservations->where('statut', 'annulee')->count(),
-            'revenu_total' => $allReservations->sum('prix'),
-            'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'),
+            'revenu_total' => $reservationsAcceptees->sum('prix'), // Uniquement les réservations acceptées
+            'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'), // CA : paiements confirmés
             'revenu_en_attente' => $allReservations->where('est_paye', false)->sum('prix'),
             'reservations_ce_mois' => $reservationsCeMois->count(),
             'revenu_ce_mois' => $revenuCeMois,

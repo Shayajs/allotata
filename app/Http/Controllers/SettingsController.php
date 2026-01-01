@@ -129,7 +129,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'nom' => ['required', 'string', 'max:255'],
             'type_activite' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:entreprises,email,' . $entreprise->id],
+            'email' => ['required', 'email', 'max:255'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'description' => ['nullable', 'string'],
             'mots_cles' => ['nullable', 'string', 'max:500'],

@@ -239,6 +239,77 @@ class Entreprise extends Model
     }
 
     /**
+     * Calcule le pourcentage de complétion de l'entreprise (pour les nouvelles entreprises)
+     * Retourne un tableau avec les détails de chaque condition
+     */
+    public function getCompletionStatus(): array
+    {
+        $conditions = [
+            'image' => [
+                'label' => 'Ajouter une image d\'entreprise',
+                'completed' => !empty($this->logo) || !empty($this->image_fond),
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
+            ],
+            'agenda' => [
+                'label' => 'Gérer l\'agenda',
+                'completed' => $this->aAgendaConfigure(),
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'agenda'],
+            ],
+            'description' => [
+                'label' => 'Mettre une description',
+                'completed' => !empty($this->description) && strlen(trim($this->description)) > 0,
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
+            ],
+            'service' => [
+                'label' => 'Ajouter un premier service',
+                'completed' => $this->typesServices()->where('est_actif', true)->count() > 0,
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'agenda'],
+            ],
+        ];
+
+        // Générer les routes
+        foreach ($conditions as $key => &$condition) {
+            try {
+                $condition['route'] = route($condition['route_key'], $condition['route_params']);
+            } catch (\Exception $e) {
+                $condition['route'] = '#';
+            }
+            unset($condition['route_key'], $condition['route_params']);
+        }
+
+        $completed = collect($conditions)->where('completed', true)->count();
+        $total = count($conditions);
+        $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+        return [
+            'conditions' => $conditions,
+            'completed' => $completed,
+            'total' => $total,
+            'percentage' => $percentage,
+            'isComplete' => $completed === $total,
+        ];
+    }
+
+    /**
+     * Vérifie si l'agenda est configuré (au moins un jour n'est pas fermé)
+     */
+    public function aAgendaConfigure(): bool
+    {
+        $horaires = $this->horairesOuverture()
+            ->where('est_exceptionnel', false)
+            ->get();
+        
+        // Vérifier qu'au moins un jour a des horaires (n'est pas fermé)
+        return $horaires->contains(function($horaire) {
+            return !empty($horaire->heure_ouverture) && !empty($horaire->heure_fermeture);
+        });
+    }
+
+    /**
      * Vérifie si tous les éléments sont validés
      */
     public function tousElementsValides(): bool

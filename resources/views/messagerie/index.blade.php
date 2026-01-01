@@ -8,7 +8,6 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
-        @include('partials.pwa-head')
         <style>
             .conversation-item {
                 transition: all 0.2s ease;
@@ -305,8 +304,6 @@
             }
         </style>
 
-        <!-- Bottom Navigation pour PWA -->
-        @include('components.mobile-nav', ['navType' => 'dashboard'])
     </body>
 </html>
 

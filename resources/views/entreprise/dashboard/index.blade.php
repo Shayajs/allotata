@@ -11,7 +11,6 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js'></script>
         @include('partials.theme-script')
-        @include('partials.pwa-head')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
@@ -390,7 +389,5 @@
             }
         </script>
 
-        <!-- Bottom Navigation pour PWA -->
-        @include('components.mobile-nav', ['navType' => 'entreprise', 'entreprise' => $entreprise, 'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false, 'activeTab' => $activeTab ?? 'accueil'])
     </body>
 </html>

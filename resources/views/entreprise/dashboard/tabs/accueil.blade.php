@@ -1,6 +1,9 @@
 <div>
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Vue d'ensemble</h2>
 
+    <!-- Suivi de complétion pour les nouvelles entreprises -->
+    @include('components.entreprise-completion', ['entreprise' => $entreprise])
+
     <!-- Statistiques principales -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">

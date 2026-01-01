@@ -323,7 +323,8 @@ class MessagerieController extends Controller
 
         // Calculer l'heure de fin
         $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
-        $heureFin = $heureDebut->copy()->addMinutes($validated['duree_minutes']);
+        $dureeMinutes = (int) $validated['duree_minutes'];
+        $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
         // Créer la proposition
         $proposition = PropositionRendezVous::create([
@@ -333,7 +334,7 @@ class MessagerieController extends Controller
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut,
             'heure_fin' => $heureFin,
-            'duree_minutes' => $validated['duree_minutes'],
+            'duree_minutes' => $dureeMinutes,
             'prix_propose' => $validated['prix'],
             'prix_final' => $validated['prix'],
             'statut' => 'proposee',
@@ -400,7 +401,8 @@ class MessagerieController extends Controller
 
         // Calculer l'heure de fin
         $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
-        $heureFin = $heureDebut->copy()->addMinutes($validated['duree_minutes']);
+        $dureeMinutes = (int) $validated['duree_minutes'];
+        $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
         // Créer la proposition
         $proposition = PropositionRendezVous::create([
@@ -410,7 +412,7 @@ class MessagerieController extends Controller
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut, // Format datetime complet
             'heure_fin' => $heureFin, // Format datetime complet
-            'duree_minutes' => $validated['duree_minutes'],
+            'duree_minutes' => $dureeMinutes,
             'prix_propose' => $validated['prix'],
             'prix_final' => $validated['prix'],
             'statut' => 'proposee',

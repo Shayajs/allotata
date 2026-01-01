@@ -3,17 +3,18 @@
     $navType = $navType ?? 'dashboard'; // dashboard, entreprise, admin, public
     $currentRoute = request()->route()->getName();
     $user = auth()->user();
+    $uniqueId = 'mobile_nav_' . uniqid();
 @endphp
 
-<!-- Menu Burger pour Web Mobile (visible uniquement si pas PWA installée) -->
-<div class="mobile-nav-burger mobile-web-navigation lg:hidden">
+<!-- Menu Burger pour Web Mobile -->
+<div class="mobile-nav-burger" style="display: block !important; visibility: visible !important; opacity: 1 !important; z-index: 100 !important;">
     <!-- Bouton burger -->
     <button 
-        id="burger-menu-button"
+        id="{{ $uniqueId }}_button"
         class="burger-button"
         aria-label="Ouvrir le menu"
         aria-expanded="false"
-        onclick="toggleBurgerMenu()"
+        onclick="toggleBurgerMenu('{{ $uniqueId }}')"
     >
         <svg class="burger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -21,10 +22,10 @@
     </button>
 
     <!-- Overlay -->
-    <div id="burger-overlay" class="burger-overlay" onclick="closeBurgerMenu()"></div>
+    <div id="{{ $uniqueId }}_overlay" class="burger-overlay" onclick="closeBurgerMenu('{{ $uniqueId }}')"></div>
 
     <!-- Drawer -->
-    <div id="burger-drawer" class="burger-drawer">
+    <div id="{{ $uniqueId }}_drawer" class="burger-drawer">
         <div class="burger-drawer-content">
             <!-- Header du drawer -->
             <div class="pb-4 mb-4 border-b border-slate-200 dark:border-slate-700">
@@ -32,7 +33,7 @@
                     <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                         Allo Tata
                     </span>
-                    <button onclick="closeBurgerMenu()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <button onclick="closeBurgerMenu('{{ $uniqueId }}')" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -48,14 +49,14 @@
 
             <!-- Liens de navigation selon le contexte -->
             @if($navType === 'dashboard' && $user)
-                <a href="{{ route('dashboard') }}" class="{{ $currentRoute === 'dashboard' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('dashboard') }}" class="{{ $currentRoute === 'dashboard' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     Dashboard
                 </a>
                 @if($user->est_gerant)
-                    <a href="{{ route('entreprise.create') }}" class="{{ $currentRoute === 'entreprise.create' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.create') }}" class="{{ $currentRoute === 'entreprise.create' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
@@ -63,14 +64,14 @@
                     </a>
                 @endif
                 @if($user->is_admin)
-                    <a href="{{ route('admin.index') }}" class="{{ str_starts_with($currentRoute, 'admin.') ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('admin.index') }}" class="{{ str_starts_with($currentRoute, 'admin.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                         </svg>
                         Administration
                     </a>
                 @endif
-                <a href="{{ route('notifications.index') }}" class="{{ $currentRoute === 'notifications.index' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('notifications.index') }}" class="{{ $currentRoute === 'notifications.index' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                     </svg>
@@ -79,19 +80,19 @@
                         <span class="ml-auto px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ $user->nombre_notifications_non_lues }}</span>
                     @endif
                 </a>
-                <a href="{{ route('messagerie.index') }}" class="{{ str_starts_with($currentRoute, 'messagerie.') ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('messagerie.index') }}" class="{{ str_starts_with($currentRoute, 'messagerie.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                     Messagerie
                 </a>
-                <a href="{{ route('tickets.index') }}" class="{{ str_starts_with($currentRoute, 'tickets.') ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('tickets.index') }}" class="{{ str_starts_with($currentRoute, 'tickets.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     Support
                 </a>
-                <a href="{{ route('settings.index') }}" class="{{ str_starts_with($currentRoute, 'settings.') ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('settings.index') }}" class="{{ str_starts_with($currentRoute, 'settings.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -110,13 +111,13 @@
                     </form>
                 </div>
             @elseif($navType === 'entreprise' && isset($entreprise) && $user)
-                <a href="{{ route('dashboard') }}" onclick="closeBurgerMenu()">
+                <a href="{{ route('dashboard') }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     Mon compte
                 </a>
-                <a href="{{ route('public.entreprise', $entreprise->slug) }}" target="_blank" onclick="closeBurgerMenu()">
+                <a href="{{ route('public.entreprise', $entreprise->slug) }}" target="_blank" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                     </svg>
@@ -126,45 +127,45 @@
                     <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Navigation entreprise</p>
                 </div>
                 @if(isset($activeTab))
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'accueil']) }}" class="{{ $activeTab === 'accueil' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'accueil']) }}" class="{{ $activeTab === 'accueil' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
                         Accueil
                     </a>
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'agenda']) }}" class="{{ $activeTab === 'agenda' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'agenda']) }}" class="{{ $activeTab === 'agenda' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                         Agenda
                     </a>
                     @if(isset($aGestionMultiPersonnes) && $aGestionMultiPersonnes)
-                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'equipe']) }}" class="{{ $activeTab === 'equipe' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'equipe']) }}" class="{{ $activeTab === 'equipe' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                             <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                             Équipe
                         </a>
                     @endif
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'reservations']) }}" class="{{ $activeTab === 'reservations' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'reservations']) }}" class="{{ $activeTab === 'reservations' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
                         Réservations
                     </a>
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'factures']) }}" class="{{ $activeTab === 'factures' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'factures']) }}" class="{{ $activeTab === 'factures' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Factures
                     </a>
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie']) }}" class="{{ $activeTab === 'messagerie' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie']) }}" class="{{ $activeTab === 'messagerie' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                         Messagerie
                     </a>
-                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres']) }}" class="{{ $activeTab === 'parametres' ? 'active' : '' }}" onclick="closeBurgerMenu()">
+                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres']) }}" class="{{ $activeTab === 'parametres' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                         <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -188,116 +189,52 @@
     </div>
 </div>
 
-<!-- Bottom Navigation pour PWA Mobile (visible uniquement si PWA installée) -->
-@if($user && $navType !== 'public')
-<nav class="bottom-nav">
-    <div class="bottom-nav-items">
-        @if($navType === 'dashboard')
-            <a href="{{ route('dashboard') }}" class="bottom-nav-item {{ $currentRoute === 'dashboard' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Accueil</span>
-            </a>
-            @if($user->est_gerant)
-                <a href="{{ route('entreprise.create') }}" class="bottom-nav-item {{ $currentRoute === 'entreprise.create' ? 'active' : '' }}">
-                    <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                    </svg>
-                    <span class="bottom-nav-item-label">Entreprises</span>
-                </a>
-            @endif
-            <a href="{{ route('notifications.index') }}" class="bottom-nav-item {{ $currentRoute === 'notifications.index' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Notifications</span>
-                @if(isset($user->nombre_notifications_non_lues) && $user->nombre_notifications_non_lues > 0)
-                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                @endif
-            </a>
-            <a href="{{ route('messagerie.index') }}" class="bottom-nav-item {{ str_starts_with($currentRoute, 'messagerie.') ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Messages</span>
-            </a>
-            <a href="{{ route('settings.index') }}" class="bottom-nav-item {{ str_starts_with($currentRoute, 'settings.') ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Paramètres</span>
-            </a>
-        @elseif($navType === 'entreprise' && isset($entreprise) && isset($activeTab))
-            <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'accueil']) }}" class="bottom-nav-item {{ $activeTab === 'accueil' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Accueil</span>
-            </a>
-            <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'agenda']) }}" class="bottom-nav-item {{ $activeTab === 'agenda' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Agenda</span>
-            </a>
-            <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'reservations']) }}" class="bottom-nav-item {{ $activeTab === 'reservations' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Réservations</span>
-            </a>
-            <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie']) }}" class="bottom-nav-item {{ $activeTab === 'messagerie' ? 'active' : '' }}">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Messages</span>
-            </a>
-            <a href="{{ route('dashboard') }}" class="bottom-nav-item">
-                <svg class="bottom-nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                <span class="bottom-nav-item-label">Compte</span>
-            </a>
-        @endif
-    </div>
-</nav>
-@endif
 
 <script>
-function toggleBurgerMenu() {
-    const drawer = document.getElementById('burger-drawer');
-    const overlay = document.getElementById('burger-overlay');
-    const button = document.getElementById('burger-menu-button');
-    
-    const isOpen = drawer.classList.contains('open');
-    
-    if (isOpen) {
-        closeBurgerMenu();
-    } else {
-        drawer.classList.add('open');
-        overlay.classList.add('open');
-        button.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden';
+if (typeof toggleBurgerMenu === 'undefined') {
+    window.toggleBurgerMenu = function(id) {
+        const drawer = document.getElementById(id + '_drawer');
+        const overlay = document.getElementById(id + '_overlay');
+        const button = document.getElementById(id + '_button');
+        
+        if (!drawer || !overlay || !button) return;
+
+        const isOpen = drawer.classList.contains('open');
+        
+        if (isOpen) {
+            closeBurgerMenu(id);
+        } else {
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+            button.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+        }
     }
 }
 
-function closeBurgerMenu() {
-    const drawer = document.getElementById('burger-drawer');
-    const overlay = document.getElementById('burger-overlay');
-    const button = document.getElementById('burger-menu-button');
-    
-    drawer.classList.remove('open');
-    overlay.classList.remove('open');
-    button.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
+if (typeof closeBurgerMenu === 'undefined') {
+    window.closeBurgerMenu = function(id) {
+        const drawer = document.getElementById(id + '_drawer');
+        const overlay = document.getElementById(id + '_overlay');
+        const button = document.getElementById(id + '_button');
+        
+        if (!drawer || !overlay || !button) return;
+
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        button.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
 }
 
 // Fermer le menu au clic sur Escape
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        closeBurgerMenu();
+        const openedDrawers = document.querySelectorAll('.burger-drawer.open');
+        openedDrawers.forEach(drawer => {
+            const id = drawer.id.replace('_drawer', '');
+            closeBurgerMenu(id);
+        });
     }
 });
 </script>

@@ -317,8 +317,27 @@
         checkbox.addEventListener('change', function() {
             const inputs = document.querySelector(`.horaire-inputs[data-index="${this.dataset.index}"]`);
             const timeInputs = inputs.querySelectorAll('input[type="time"]');
-            inputs.style.opacity = this.checked ? '0.5' : '1';
-            timeInputs.forEach(input => { input.disabled = this.checked; if (this.checked) input.value = ''; });
+            
+            if (this.checked) {
+                // Si on coche "Fermé", désactiver et vider les champs
+                inputs.style.opacity = '0.5';
+                timeInputs.forEach(input => { 
+                    input.disabled = true; 
+                    input.value = ''; 
+                });
+            } else {
+                // Si on décoche "Fermé", activer et remplir avec les horaires par défaut (8h00 - 19h00)
+                inputs.style.opacity = '1';
+                timeInputs.forEach((input, index) => {
+                    input.disabled = false;
+                    // Premier input = heure d'ouverture (8h00), deuxième = heure de fermeture (19h00)
+                    if (index === 0) {
+                        input.value = '08:00';
+                    } else if (index === 1) {
+                        input.value = '19:00';
+                    }
+                });
+            }
         });
     });
     

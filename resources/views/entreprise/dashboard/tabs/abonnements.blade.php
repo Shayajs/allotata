@@ -36,9 +36,15 @@
                             </div>
                         @endif
                         <div class="flex items-center gap-3">
-                            <a href="{{ route('settings.index', ['tab' => 'entreprise']) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
-                                Configurer le site
-                            </a>
+                            @if(!empty($entreprise->slug_web))
+                                <a href="{{ route('site-web.show', ['slug' => $entreprise->slug_web]) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                    Gérer le site
+                                </a>
+                            @else
+                                <a href="{{ route('settings.index', ['tab' => 'entreprise']) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                    Configurer le site
+                                </a>
+                            @endif
                             @if($abonnementSiteWeb && !$abonnementSiteWeb->est_manuel)
                                 <form action="{{ route('entreprise.subscriptions.cancel', [$entreprise->slug, 'site_web']) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ?');">
                                     @csrf

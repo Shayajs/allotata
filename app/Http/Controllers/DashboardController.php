@@ -58,18 +58,23 @@ class DashboardController extends Controller
             $allReservations = Reservation::whereIn('entreprise_id', $entreprises->pluck('id'))
                 ->get();
             
+            // Réservations acceptées uniquement (confirmées ou terminées)
+            $reservationsAcceptees = $allReservations->filter(function($r) {
+                return in_array($r->statut, ['confirmee', 'terminee']);
+            });
+            
             $stats = [
                 'total_reservations' => $allReservations->count(),
                 'reservations_confirmees' => $allReservations->where('statut', 'confirmee')->count(),
                 'reservations_en_attente' => $allReservations->where('statut', 'en_attente')->count(),
                 'reservations_terminees' => $allReservations->where('statut', 'terminee')->count(),
-                'revenu_total' => $allReservations->sum('prix'),
-                'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'),
+                'revenu_total' => $reservationsAcceptees->sum('prix'), // Uniquement les réservations acceptées
+                'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'), // CA : paiements confirmés
                 'revenu_en_attente' => $allReservations->where('est_paye', false)->sum('prix'),
                 'reservations_ce_mois' => $allReservations->filter(function($r) {
                     return $r->date_reservation->isCurrentMonth();
                 })->count(),
-                'revenu_ce_mois' => $allReservations->filter(function($r) {
+                'revenu_ce_mois' => $reservationsAcceptees->filter(function($r) {
                     return $r->date_reservation->isCurrentMonth();
                 })->sum('prix'),
             ];
@@ -84,10 +89,15 @@ class DashboardController extends Controller
             // Statistiques par entreprise
             foreach ($entreprises as $entreprise) {
                 $entrepriseReservations = Reservation::where('entreprise_id', $entreprise->id)->get();
+                // Réservations acceptées uniquement (confirmées ou terminées)
+                $entrepriseReservationsAcceptees = $entrepriseReservations->filter(function($r) {
+                    return in_array($r->statut, ['confirmee', 'terminee']);
+                });
+                
                 $entreprise->stats = [
                     'total_reservations' => $entrepriseReservations->count(),
-                    'revenu_total' => $entrepriseReservations->sum('prix'),
-                    'revenu_paye' => $entrepriseReservations->where('est_paye', true)->sum('prix'),
+                    'revenu_total' => $entrepriseReservationsAcceptees->sum('prix'), // Uniquement les réservations acceptées
+                    'revenu_paye' => $entrepriseReservations->where('est_paye', true)->sum('prix'), // CA : paiements confirmés
                     'reservations_ce_mois' => $entrepriseReservations->filter(function($r) {
                         return $r->date_reservation->isCurrentMonth();
                     })->count(),
@@ -182,10 +192,15 @@ class DashboardController extends Controller
             // Calculer les stats uniquement si l'utilisateur est admin
             if ($data['estAdmin']) {
                 $entrepriseReservations = Reservation::where('entreprise_id', $entreprise->id)->get();
+                // Réservations acceptées uniquement (confirmées ou terminées)
+                $entrepriseReservationsAcceptees = $entrepriseReservations->filter(function($r) {
+                    return in_array($r->statut, ['confirmee', 'terminee']);
+                });
+                
                 $data['stats'] = [
                     'total_reservations' => $entrepriseReservations->count(),
-                    'revenu_total' => $entrepriseReservations->sum('prix'),
-                    'revenu_paye' => $entrepriseReservations->where('est_paye', true)->sum('prix'),
+                    'revenu_total' => $entrepriseReservationsAcceptees->sum('prix'), // Uniquement les réservations acceptées
+                    'revenu_paye' => $entrepriseReservations->where('est_paye', true)->sum('prix'), // CA : paiements confirmés
                     'reservations_ce_mois' => $entrepriseReservations->filter(function($r) {
                         return $r->date_reservation->isCurrentMonth();
                     })->count(),

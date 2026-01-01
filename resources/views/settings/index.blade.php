@@ -8,19 +8,22 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
-        @include('partials.pwa-head')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
         <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center gap-4">
+                        <!-- Menu Burger pour mobile web -->
+                        @include('components.mobile-nav', ['navType' => 'dashboard'])
+                        
                         <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
                         </a>
                     </div>
-                    <div class="flex items-center gap-4">
+                    <!-- Liens desktop (masqués sur mobile) -->
+                    <div class="hidden lg:flex items-center gap-4">
                         <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
                             Retour au dashboard
                         </a>

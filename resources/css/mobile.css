@@ -1,5 +1,5 @@
 /* ========================================
-   Styles Mobile et PWA
+   Styles Mobile
    ======================================== */
 
 /* Safe Area Insets pour iPhone (notch, etc.) */
@@ -39,21 +39,20 @@
    Navigation Mobile - Menu Burger
    ======================================== */
 
-/* Masquer le menu burger sur desktop et PWA installée */
-.mobile-web-navigation .mobile-nav-burger {
-  display: block;
+/* Par défaut, afficher le burger sur petits écrans */
+.mobile-nav-burger {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-.pwa-installed .mobile-nav-burger {
-  display: none;
-}
-
-/* Masquer sur desktop */
-@media (min-width: 769px) {
+/* Masquer le burger sur desktop (>= 1024px) */
+@media (min-width: 1024px) {
   .mobile-nav-burger {
     display: none !important;
   }
 }
+
 
 /* Bouton burger */
 .burger-button {
@@ -73,7 +72,7 @@
 
 /* Drawer du menu burger */
 .burger-drawer {
-  @apply fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto;
+  @apply fixed inset-y-0 left-0 z-[100] w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto;
   top: 64px;
   /* Hauteur de la navbar */
 }
@@ -83,7 +82,7 @@
 }
 
 .burger-overlay {
-  @apply fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300;
+  @apply fixed inset-0 bg-black/50 z-[90] opacity-0 pointer-events-none transition-opacity duration-300;
 }
 
 .burger-overlay.open {
@@ -104,68 +103,13 @@
   @apply bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium;
 }
 
-/* ========================================
-   Navigation Mobile - Bottom Navigation (PWA)
-   ======================================== */
-
-/* Masquer la bottom nav sauf sur PWA mobile */
-.pwa-installed.mobile-device .bottom-nav {
-  @apply fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700;
-  display: flex;
-  padding-bottom: max(env(safe-area-inset-bottom), 0px);
-}
-
-.bottom-nav {
-  display: none;
-}
-
-/* Items de navigation */
-.bottom-nav-items {
-  @apply flex justify-around items-center w-full h-16;
-}
-
-.bottom-nav-item {
-  @apply flex flex-col items-center justify-center flex-1 h-full text-slate-600 dark:text-slate-400 transition-colors;
-  min-height: 44px;
-  min-width: 44px;
-}
-
-.bottom-nav-item.active {
-  @apply text-green-600 dark:text-green-400;
-}
-
-.bottom-nav-item-icon {
-  @apply w-5 h-5 mb-1;
-}
-
-.bottom-nav-item-label {
-  @apply text-xs font-medium;
-}
-
-/* Masquer la bottom nav sur desktop */
-@media (min-width: 769px) {
-  .bottom-nav {
-    display: none !important;
-  }
-}
-
-/* Masquer la bottom nav si pas PWA */
-.web-mode .bottom-nav {
-  display: none !important;
-}
 
 /* ========================================
    Optimisations Mobile Générales
    ======================================== */
 
-/* Espacement pour le contenu avec bottom nav */
-.pwa-installed.mobile-device .main-content {
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
-}
-
 /* Espacement pour le contenu avec navbar en haut */
-body:not(.pwa-installed) .main-content,
-.pwa-installed .main-content {
+.main-content {
   padding-top: 4rem;
 }
 

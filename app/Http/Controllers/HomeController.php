@@ -43,16 +43,20 @@ class HomeController extends Controller
                 
                 if ($entreprises->count() > 0) {
                     $allReservations = Reservation::whereIn('entreprise_id', $entreprises->pluck('id'))->get();
+                    // Réservations acceptées uniquement (confirmées ou terminées)
+                    $reservationsAcceptees = $allReservations->filter(function($r) {
+                        return in_array($r->statut, ['confirmee', 'terminee']);
+                    });
                     
                     $gerantStats = [
                         'total_entreprises' => $entreprises->count(),
                         'total_reservations' => $allReservations->count(),
-                        'revenu_total' => $allReservations->sum('prix'),
-                        'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'),
+                        'revenu_total' => $reservationsAcceptees->sum('prix'), // Uniquement les réservations acceptées
+                        'revenu_paye' => $allReservations->where('est_paye', true)->sum('prix'), // CA : paiements confirmés
                         'reservations_ce_mois' => $allReservations->filter(function($r) {
                             return $r->date_reservation->isCurrentMonth();
                         })->count(),
-                        'revenu_ce_mois' => $allReservations->filter(function($r) {
+                        'revenu_ce_mois' => $reservationsAcceptees->filter(function($r) {
                             return $r->date_reservation->isCurrentMonth();
                         })->sum('prix'),
                     ];
