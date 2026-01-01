@@ -225,27 +225,39 @@ class SettingsController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Logo mis à jour avec succès.',
-                'logo_url' => asset('media/' . $logoPath),
-            ]);
+            // Gérer les requêtes AJAX et les formulaires classiques
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Logo mis à jour avec succès.',
+                    'logo_url' => asset('media/' . $logoPath),
+                ]);
+            }
+
+            return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+                ->with('success', 'Logo mis à jour avec succès.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $e->errors(),
-            ], 422);
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             \Log::error('Erreur lors de l\'upload du logo : ' . $e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'upload du logo : ' . $e->getMessage(),
-            ], 500);
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'upload du logo : ' . $e->getMessage(),
+                ], 500);
+            }
+            return back()->with('error', 'Erreur lors de l\'upload du logo : ' . $e->getMessage());
         }
     }
 
@@ -265,7 +277,7 @@ class SettingsController extends Controller
             $entreprise->update(['logo' => null]);
         }
 
-        return redirect()->route('settings.index', ['tab' => 'entreprise'])
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'Le logo a été supprimé.');
     }
 
@@ -317,27 +329,39 @@ class SettingsController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Image de fond mise à jour avec succès.',
-                'image_fond_url' => asset('media/' . $imageFondPath),
-            ]);
+            // Gérer les requêtes AJAX et les formulaires classiques
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Image de fond mise à jour avec succès.',
+                    'image_fond_url' => asset('media/' . $imageFondPath),
+                ]);
+            }
+
+            return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+                ->with('success', 'Image de fond mise à jour avec succès.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation.',
-                'errors' => $e->errors(),
-            ], 422);
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur de validation.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             \Log::error('Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage(),
-            ], 500);
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage(),
+                ], 500);
+            }
+            return back()->with('error', 'Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage());
         }
     }
 
@@ -357,7 +381,7 @@ class SettingsController extends Controller
             $entreprise->update(['image_fond' => null]);
         }
 
-        return redirect()->route('settings.index', ['tab' => 'entreprise'])
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'L\'image de fond a été supprimée.');
     }
 

@@ -290,7 +290,7 @@
                                 <div class="group relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer aspect-square" onclick="openModal({{ $loop->index }})">
                                     <img 
                                         src="{{ asset('media/' . $photo->photo_path) }}" 
-                                        alt="{{ $photo->titre ?? 'Réalisation' }}"
+                                        alt="{{ $photo->titre ? $photo->titre : 'Réalisation' }}"
                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                     >
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -337,8 +337,8 @@
                             @foreach($entreprise->realisationPhotos as $photo)
                             {
                                 path: '{{ asset('media/' . $photo->photo_path) }}',
-                                titre: @json($photo->titre ?? ''),
-                                description: @json($photo->description ?? ''),
+                                titre: @json($photo->titre ? $photo->titre : ''),
+                                description: @json($photo->description ? $photo->description : ''),
                             },
                             @endforeach
                         ];
@@ -410,7 +410,7 @@
                                 @endphp
                                 @for($i = 0; $i < 7; $i++)
                                     @php
-                                        $horaire = $horairesParJour[$i] ?? null;
+                                        $horaire = isset($horairesParJour[$i]) ? $horairesParJour[$i] : null;
                                         $estFerme = !$horaire || !$horaire->heure_ouverture || !$horaire->heure_fermeture;
                                     @endphp
                                     <div class="flex items-center justify-between text-xs sm:text-sm">
@@ -489,7 +489,7 @@
                             @php
                                 $imageCouverture = $service->imageCouverture;
                                 $premiereImage = $service->images->first();
-                                $imageAffichee = $imageCouverture ?? $premiereImage;
+                                $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
                             @endphp
                             
                             @if($imageAffichee)
@@ -570,7 +570,15 @@
                                 
                                 <!-- Galerie d'images -->
                                 <div id="service-detail-gallery" class="relative h-56 sm:h-72 md:h-80 bg-slate-200 dark:bg-slate-700">
+                                    <!-- Image principale -->
                                     <img id="service-detail-image" src="" alt="" class="w-full h-full object-cover">
+                                    
+                                    <!-- Placeholder quand pas d'image -->
+                                    <div id="service-detail-no-image" class="hidden absolute inset-0 bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
+                                        <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
                                     
                                     <!-- Navigation galerie -->
                                     <button onclick="prevServiceDetailImage(event)" class="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition hidden" id="service-detail-prev">
@@ -685,12 +693,12 @@
                         @foreach($services as $service)
                         {
                             nom: @json($service->nom),
-                            description: @json($service->description ?? ''),
+                            description: @json($service->description ? $service->description : ''),
                             prix: @json(number_format($service->prix, 2, ',', ' ')),
                             duree: {{ $service->duree_minutes }},
                             images: [
                                 @foreach($service->images as $image)
-                                '{{ asset('media/' . $image->image_path) }}',
+                                @json(asset('media/' . $image->image_path)),
                                 @endforeach
                             ],
                         },
@@ -762,13 +770,17 @@
                     function updateServiceDetailGallery() {
                         const service = servicesDetailData[currentServiceDetailIndex];
                         const imageEl = document.getElementById('service-detail-image');
+                        const noImageEl = document.getElementById('service-detail-no-image');
                         const prevBtn = document.getElementById('service-detail-prev');
                         const nextBtn = document.getElementById('service-detail-next');
                         const indicator = document.getElementById('service-detail-indicator');
                         const thumbnails = document.getElementById('service-detail-thumbnails');
                         
-                        if (service.images.length > 0) {
+                        if (service.images && service.images.length > 0) {
+                            // Afficher l'image, masquer le placeholder
                             imageEl.src = service.images[currentServiceDetailImageIndex];
+                            imageEl.classList.remove('hidden');
+                            noImageEl.classList.add('hidden');
                             
                             if (service.images.length > 1) {
                                 prevBtn.classList.remove('hidden');
@@ -793,14 +805,12 @@
                                 thumbnails.classList.add('hidden');
                             }
                         } else {
-                            imageEl.src = '';
-                            document.getElementById('service-detail-gallery').innerHTML = `
-                                <div class="w-full h-full bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
-                                    <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                            `;
+                            // Masquer l'image, afficher le placeholder
+                            imageEl.classList.add('hidden');
+                            noImageEl.classList.remove('hidden');
+                            prevBtn.classList.add('hidden');
+                            nextBtn.classList.add('hidden');
+                            indicator.classList.add('hidden');
                             thumbnails.classList.add('hidden');
                         }
                     }
