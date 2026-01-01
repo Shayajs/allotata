@@ -140,6 +140,7 @@ Route::middleware('auth')->group(function () {
 // Routes protégées
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
     Route::post('/dashboard/reservation/{reservation}/marquer-payee', [DashboardController::class, 'marquerPayee'])->name('dashboard.reservation.marquer-payee');
     
     // Création d'entreprise

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
+use App\Models\EntrepriseMembre;
 use App\Models\Reservation;
 use App\Models\Facture;
 use App\Models\Conversation;
@@ -70,10 +71,40 @@ class EntrepriseDashboardController extends Controller
 
         // ===== Données pour l'onglet Équipe (multi-personnes) =====
         $membresAvecStats = collect([]);
+        $invitationsEnCours = collect([]);
         if ($entreprise->aGestionMultiPersonnes()) {
             $membres = $entreprise->membres()
                 ->with('user')
                 ->get();
+
+            // S'assurer que le gérant (propriétaire) est toujours présent dans la liste
+            $gerantEstMembre = $membres->contains(function($membre) use ($entreprise) {
+                return $membre->user_id === $entreprise->user_id;
+            });
+
+            if (!$gerantEstMembre && $entreprise->user) {
+                // Créer un objet membre virtuel pour le gérant
+                $membreGerant = new EntrepriseMembre([
+                    'id' => 0, // ID virtuel pour identifier le gérant
+                    'entreprise_id' => $entreprise->id,
+                    'user_id' => $entreprise->user_id,
+                    'role' => 'administrateur',
+                    'est_actif' => true,
+                ]);
+                $membreGerant->setRelation('user', $entreprise->user);
+                $membres = $membres->prepend($membreGerant);
+            } else if ($gerantEstMembre) {
+                // Si le gérant est déjà dans les membres, s'assurer qu'il est en premier
+                $gerant = $membres->first(function($membre) use ($entreprise) {
+                    return $membre->user_id === $entreprise->user_id;
+                });
+                if ($gerant) {
+                    $membres = $membres->reject(function($membre) use ($entreprise) {
+                        return $membre->user_id === $entreprise->user_id;
+                    });
+                    $membres = $membres->prepend($gerant);
+                }
+            }
 
             // Calculer les stats pour chaque membre
             $membresAvecStats = $membres->map(function($membre) {
@@ -92,6 +123,17 @@ class EntrepriseDashboardController extends Controller
                     ],
                 ];
             });
+
+            // Récupérer les invitations en cours (en attente)
+            $invitationsEnCours = \App\Models\EntrepriseInvitation::where('entreprise_id', $entreprise->id)
+                ->whereIn('statut', ['en_attente_compte', 'en_attente_acceptation'])
+                ->where(function($query) {
+                    $query->whereNull('expire_at')
+                          ->orWhere('expire_at', '>', now());
+                })
+                ->with('invitePar')
+                ->orderBy('created_at', 'desc')
+                ->get();
         }
 
         // Onglet actif (par défaut: accueil)
@@ -117,6 +159,7 @@ class EntrepriseDashboardController extends Controller
             // Multi-personnes
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
             'membresAvecStats' => $membresAvecStats,
+            'invitationsEnCours' => $invitationsEnCours,
         ]);
     }
 

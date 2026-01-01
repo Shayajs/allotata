@@ -1,4 +1,5 @@
 import './bootstrap';
+import './pwa-detection';
 
 // ========================================
 // Gestion du thème clair/foncé avec cookies

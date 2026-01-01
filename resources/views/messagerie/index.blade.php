@@ -2,12 +2,13 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>Messagerie - Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
+        @include('partials.pwa-head')
         <style>
             .conversation-item {
                 transition: all 0.2s ease;
@@ -32,22 +33,23 @@
         <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-50 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent hover:from-green-600 hover:to-orange-600 transition">
+                    <a href="{{ route('dashboard') }}" class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent hover:from-green-600 hover:to-orange-600 transition">
                         Allo Tata
                     </a>
-                    <div class="flex items-center gap-4">
-                        <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition flex items-center gap-2">
+                    @include('components.mobile-nav', ['navType' => 'dashboard'])
+                    <div class="flex items-center gap-2 sm:gap-4 desktop-nav-links">
+                        <a href="{{ route('dashboard') }}" class="hidden md:inline-flex items-center px-3 sm:px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition touch-target">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
-                            Retour au dashboard
+                            <span class="hidden lg:inline ml-2">Retour au dashboard</span>
                         </a>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 main-content">
             <!-- En-tête amélioré -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-4">
@@ -302,6 +304,9 @@
                 background: rgb(71, 85, 105);
             }
         </style>
+
+        <!-- Bottom Navigation pour PWA -->
+        @include('components.mobile-nav', ['navType' => 'dashboard'])
     </body>
 </html>
 

@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+@import './mobile.css';
+
+/* Configuration du mode sombre avec le sélecteur de classe (au lieu de media query) */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -8,4 +12,60 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Scrollbar personnalisée - Mode clair */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    /* slate-100 */
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    /* slate-300 */
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    /* slate-400 */
+}
+
+/* Scrollbar personnalisée - Mode sombre */
+/* Cibler html.dark pour la scrollbar principale + tous les éléments enfants */
+html.dark,
+html.dark *,
+.dark,
+.dark * {
+    &::-webkit-scrollbar-track {
+        background: #1e293b;
+        /* slate-800 */
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #475569;
+        /* slate-600 */
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+        /* slate-500 */
+    }
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+html.dark,
+html.dark * {
+    scrollbar-color: #475569 #1e293b;
 }

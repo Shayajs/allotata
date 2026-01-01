@@ -10,9 +10,52 @@ use Illuminate\Support\Facades\Schema;
 class ErrorLogController extends Controller
 {
     /**
-     * Récupérer les erreurs récentes non vues
+     * Afficher la page des logs d'erreurs
      */
     public function index(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que l'utilisateur est admin
+        if (!$user->is_admin) {
+            abort(403, 'Accès refusé');
+        }
+
+        // Requête de base
+        $query = ErrorLog::query();
+        
+        // Filtre par statut
+        $status = $request->input('status', 'unread');
+        if ($status === 'unread') {
+            $query->where('est_vue', false);
+        } elseif ($status === 'read') {
+            $query->where('est_vue', true);
+        }
+        
+        // Filtre par niveau
+        $level = $request->input('level');
+        if ($level) {
+            $query->where('level', $level);
+        }
+        
+        // Récupérer les erreurs paginées
+        $errors = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Statistiques
+        $stats = [
+            'total' => ErrorLog::count(),
+            'unread' => ErrorLog::where('est_vue', false)->count(),
+            'read' => ErrorLog::where('est_vue', true)->count(),
+            'today' => ErrorLog::whereDate('created_at', today())->count(),
+        ];
+
+        return view('admin.errors.index', compact('errors', 'stats'));
+    }
+    
+    /**
+     * API : Récupérer les erreurs récentes non vues (pour notifications temps réel)
+     */
+    public function api(Request $request)
     {
         $user = Auth::user();
         

@@ -1,37 +1,60 @@
-<div>
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <a href="{{ route('entreprise.equipe.index', $entreprise->slug) }}" class="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition mb-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Retour à l'équipe
-            </a>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $membre->user->name ?? 'Membre' }}</h2>
-            <p class="text-slate-600 dark:text-slate-400 capitalize">{{ $membre->role }}</p>
+<div class="space-y-6">
+    <!-- En-tête avec informations du membre -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-4">
+                <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'equipe']) }}" class="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Retour à l'équipe
+                </a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            @if($membre->user && $membre->user->photo_profil)
+                <img src="{{ asset('storage/' . $membre->user->photo_profil) }}" alt="{{ $membre->user->name }}" class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600">
+            @else
+                <div class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-2xl">
+                    {{ strtoupper(substr($membre->user->name ?? '?', 0, 1)) }}
+                </div>
+            @endif
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $membre->user->name ?? 'Membre' }}</h2>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="px-3 py-1 text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full capitalize">
+                        {{ $membre->role }}
+                    </span>
+                    @if($membre->user_id == $entreprise->user_id)
+                        <span class="px-3 py-1 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                            👑 Propriétaire
+                        </span>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Sous-onglets -->
-    <div class="border-b border-slate-200 dark:border-slate-700 mb-6">
-        <nav class="flex gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-1 mb-6">
+        <nav class="flex gap-2">
             <button 
                 onclick="showEquipeSubTab('agenda')"
-                class="equipe-subtab px-4 py-2 text-sm font-medium border-b-2 {{ ($activeSubTab ?? 'agenda') === 'agenda' ? 'border-green-500 text-green-600 dark:text-green-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}"
+                class="equipe-subtab flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all {{ ($activeSubTab ?? 'agenda') === 'agenda' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}"
                 data-subtab="agenda"
             >
                 📅 Agenda
             </button>
             <button 
                 onclick="showEquipeSubTab('disponibilites')"
-                class="equipe-subtab px-4 py-2 text-sm font-medium border-b-2 {{ ($activeSubTab ?? 'agenda') === 'disponibilites' ? 'border-green-500 text-green-600 dark:text-green-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}"
+                class="equipe-subtab flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all {{ ($activeSubTab ?? 'agenda') === 'disponibilites' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}"
                 data-subtab="disponibilites"
             >
                 ⏰ Disponibilités
             </button>
             <button 
                 onclick="showEquipeSubTab('statistiques')"
-                class="equipe-subtab px-4 py-2 text-sm font-medium border-b-2 {{ ($activeSubTab ?? 'agenda') === 'statistiques' ? 'border-green-500 text-green-600 dark:text-green-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}"
+                class="equipe-subtab flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all {{ ($activeSubTab ?? 'agenda') === 'statistiques' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}"
                 data-subtab="statistiques"
             >
                 📊 Statistiques
@@ -41,15 +64,15 @@
 
     <!-- Contenu des sous-onglets -->
     <div id="equipe-subtab-agenda" class="equipe-subtab-content {{ ($activeSubTab ?? 'agenda') !== 'agenda' ? 'hidden' : '' }}">
-        @include('entreprise.dashboard.tabs.equipe-agenda', ['membre' => $membre])
+        @include('entreprise.dashboard.tabs.equipe-agenda', ['membre' => $membre, 'entreprise' => $entreprise])
     </div>
 
     <div id="equipe-subtab-disponibilites" class="equipe-subtab-content {{ ($activeSubTab ?? 'agenda') !== 'disponibilites' ? 'hidden' : '' }}">
-        @include('entreprise.dashboard.tabs.equipe-disponibilites', ['membre' => $membre])
+        @include('entreprise.dashboard.tabs.equipe-disponibilites', ['membre' => $membre, 'entreprise' => $entreprise])
     </div>
 
     <div id="equipe-subtab-statistiques" class="equipe-subtab-content {{ ($activeSubTab ?? 'agenda') !== 'statistiques' ? 'hidden' : '' }}">
-        @include('entreprise.dashboard.tabs.equipe-statistiques', ['membre' => $membre, 'statsMois' => $statsMois ?? [], 'statsSemaine' => $statsSemaine ?? [], 'statsParJour' => $statsParJour ?? []])
+        @include('entreprise.dashboard.tabs.equipe-statistiques', ['membre' => $membre, 'entreprise' => $entreprise, 'statsMois' => $statsMois ?? [], 'statsSemaine' => $statsSemaine ?? [], 'statsParJour' => $statsParJour ?? []])
     </div>
 
     <script>

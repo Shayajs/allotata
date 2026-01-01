@@ -1,0 +1,405 @@
+/* ========================================
+   Styles Mobile et PWA
+   ======================================== */
+
+/* Safe Area Insets pour iPhone (notch, etc.) */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+
+  .safe-left {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+  }
+
+  .safe-right {
+    padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+
+  /* Pour les éléments fixes en bas */
+  .fixed-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+}
+
+/* Zone tactile minimale (44x44px recommandé par Apple/Google) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   Navigation Mobile - Menu Burger
+   ======================================== */
+
+/* Masquer le menu burger sur desktop et PWA installée */
+.mobile-web-navigation .mobile-nav-burger {
+  display: block;
+}
+
+.pwa-installed .mobile-nav-burger {
+  display: none;
+}
+
+/* Masquer sur desktop */
+@media (min-width: 769px) {
+  .mobile-nav-burger {
+    display: none !important;
+  }
+}
+
+/* Bouton burger */
+.burger-button {
+  @apply p-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.burger-icon {
+  @apply w-6 h-6;
+  transition: transform 0.3s ease;
+}
+
+.burger-button[aria-expanded="true"] .burger-icon {
+  transform: rotate(90deg);
+}
+
+/* Drawer du menu burger */
+.burger-drawer {
+  @apply fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto;
+  top: 64px;
+  /* Hauteur de la navbar */
+}
+
+.burger-drawer.open {
+  @apply translate-x-0;
+}
+
+.burger-overlay {
+  @apply fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300;
+}
+
+.burger-overlay.open {
+  @apply opacity-100 pointer-events-auto;
+}
+
+/* Contenu du drawer */
+.burger-drawer-content {
+  @apply p-4 space-y-2;
+}
+
+.burger-drawer a {
+  @apply block px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+  min-height: 44px;
+}
+
+.burger-drawer a.active {
+  @apply bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium;
+}
+
+/* ========================================
+   Navigation Mobile - Bottom Navigation (PWA)
+   ======================================== */
+
+/* Masquer la bottom nav sauf sur PWA mobile */
+.pwa-installed.mobile-device .bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700;
+  display: flex;
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+.bottom-nav {
+  display: none;
+}
+
+/* Items de navigation */
+.bottom-nav-items {
+  @apply flex justify-around items-center w-full h-16;
+}
+
+.bottom-nav-item {
+  @apply flex flex-col items-center justify-center flex-1 h-full text-slate-600 dark:text-slate-400 transition-colors;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.bottom-nav-item.active {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.bottom-nav-item-icon {
+  @apply w-5 h-5 mb-1;
+}
+
+.bottom-nav-item-label {
+  @apply text-xs font-medium;
+}
+
+/* Masquer la bottom nav sur desktop */
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none !important;
+  }
+}
+
+/* Masquer la bottom nav si pas PWA */
+.web-mode .bottom-nav {
+  display: none !important;
+}
+
+/* ========================================
+   Optimisations Mobile Générales
+   ======================================== */
+
+/* Espacement pour le contenu avec bottom nav */
+.pwa-installed.mobile-device .main-content {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+
+/* Espacement pour le contenu avec navbar en haut */
+body:not(.pwa-installed) .main-content,
+.pwa-installed .main-content {
+  padding-top: 4rem;
+}
+
+/* Navigation principale - masquer les liens sur mobile web */
+@media (max-width: 768px) {
+  .mobile-web-navigation .desktop-nav-links {
+    display: none;
+  }
+
+  .mobile-web-navigation nav .flex.items-center.gap-4:not(.mobile-nav-burger) {
+    display: none;
+  }
+}
+
+/* Tableaux transformés en cards sur mobile */
+@media (max-width: 768px) {
+  .mobile-card-view {
+    display: block;
+  }
+
+  .mobile-card-view table,
+  .mobile-card-view thead,
+  .mobile-card-view tbody,
+  .mobile-card-view th,
+  .mobile-card-view td,
+  .mobile-card-view tr {
+    display: block;
+  }
+
+  .mobile-card-view thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .mobile-card-view tr {
+    @apply mb-4 p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700;
+  }
+
+  .mobile-card-view td {
+    @apply border-0 p-2 text-sm;
+    position: relative;
+    padding-left: 50% !important;
+  }
+
+  .mobile-card-view td:before {
+    content: attr(data-label);
+    @apply absolute left-0 font-semibold text-slate-700 dark:text-slate-300;
+  }
+}
+
+/* Formulaires optimisés mobile */
+@media (max-width: 768px) {
+
+  .mobile-form input[type="text"],
+  .mobile-form input[type="email"],
+  .mobile-form input[type="password"],
+  .mobile-form input[type="number"],
+  .mobile-form input[type="tel"],
+  .mobile-form input[type="url"],
+  .mobile-form textarea,
+  .mobile-form select {
+    @apply w-full text-base;
+    /* Éviter le zoom sur iOS */
+  }
+
+  .mobile-form label {
+    @apply block mb-2 text-sm font-medium;
+  }
+
+  .mobile-form button[type="submit"],
+  .mobile-form .btn-submit {
+    @apply w-full;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Modals full screen sur mobile */
+@media (max-width: 768px) {
+  .mobile-modal {
+    @apply fixed inset-0 z-50 bg-white dark:bg-slate-900;
+    margin: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .mobile-modal-content {
+    @apply h-full flex flex-col;
+  }
+
+  .mobile-modal-header {
+    @apply flex-shrink-0 p-4 border-b border-slate-200 dark:border-slate-700;
+  }
+
+  .mobile-modal-body {
+    @apply flex-1 overflow-y-auto p-4;
+  }
+
+  .mobile-modal-footer {
+    @apply flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-700;
+  }
+}
+
+/* Dropdowns optimisés mobile */
+@media (max-width: 768px) {
+  .mobile-dropdown {
+    @apply fixed inset-x-4 top-auto bottom-0 mb-4 max-h-[70vh] overflow-y-auto rounded-lg shadow-xl z-50;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-dropdown.open {
+    transform: translateY(0);
+  }
+}
+
+/* Cards optimisées mobile */
+@media (max-width: 768px) {
+  .mobile-card {
+    @apply p-4 mb-4 rounded-lg border border-slate-200 dark:border-slate-700;
+  }
+
+  .mobile-card-title {
+    @apply text-lg font-semibold mb-2;
+  }
+
+  .mobile-card-content {
+    @apply space-y-2;
+  }
+}
+
+/* Grilles responsive */
+@media (max-width: 768px) {
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+/* Onglets horizontaux scrollables */
+.mobile-tabs {
+  @apply flex overflow-x-auto -mx-4 px-4 pb-2;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tab {
+  @apply flex-shrink-0 px-4 py-2 text-sm font-medium whitespace-nowrap;
+}
+
+/* Animations */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.slide-in-left {
+  animation: slideInFromLeft 0.3s ease;
+}
+
+.slide-in-bottom {
+  animation: slideInFromBottom 0.3s ease;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Masquer certains éléments sur mobile */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Afficher uniquement sur mobile */
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .show-mobile {
+    display: block;
+  }
+}
+
+/* Utilitaires pour safe area */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}

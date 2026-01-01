@@ -59,7 +59,52 @@
         </form>
     </div>
 
+    <!-- Invitations en cours -->
+    @if($invitationsEnCours && $invitationsEnCours->count() > 0)
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📧 Invitations en cours</h3>
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                @foreach($invitationsEnCours as $invitation)
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-slate-900 dark:text-white truncate">{{ $invitation->email }}</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 capitalize mt-1">
+                                    Rôle : {{ $invitation->role }}
+                                </p>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full whitespace-nowrap ml-2">
+                                @if($invitation->estEnAttenteCompte())
+                                    ⏳ En attente de compte
+                                @elseif($invitation->estEnAttenteAcceptation())
+                                    📬 En attente d'acceptation
+                                @endif
+                            </span>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                            <p>Envoyée le {{ $invitation->created_at->format('d/m/Y à H:i') }}</p>
+                            @if($invitation->expire_at)
+                                <p>Expire le {{ $invitation->expire_at->format('d/m/Y') }}</p>
+                            @endif
+                            @if($invitation->invitePar)
+                                <p>Par {{ $invitation->invitePar->name }}</p>
+                            @endif
+                        </div>
+                        @if($invitation->estExpiree())
+                            <div class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
+                                ⚠️ Cette invitation a expiré
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @if($membresAvecStats->count() > 0)
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">👥 Membres actifs</h3>
+        </div>
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             @foreach($membresAvecStats as $item)
                 @php
@@ -68,12 +113,28 @@
                 @endphp
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
-                            {{ strtoupper(substr($membre->user->name ?? '?', 0, 1)) }}
-                        </div>
+                        @if($membre->user && $membre->user->photo_profil)
+                            <img src="{{ asset('storage/' . $membre->user->photo_profil) }}" alt="{{ $membre->user->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600">
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+                                {{ strtoupper(substr($membre->user->name ?? '?', 0, 1)) }}
+                            </div>
+                        @endif
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-slate-900 dark:text-white truncate">{{ $membre->user->name ?? 'Utilisateur' }}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 capitalize">{{ $membre->role }}</p>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-semibold text-slate-900 dark:text-white truncate">{{ $membre->user->name ?? 'Utilisateur' }}</h3>
+                                @if($membre->id == 0 || ($membre->user_id == $entreprise->user_id && $membre->id != 0))
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                        👑 Propriétaire
+                                    </span>
+                                @endif
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                                {{ $membre->role }}
+                                @if(config('app.debug'))
+                                    <span class="text-slate-400">(ID: {{ $membre->id }}, User ID: {{ $membre->user_id }})</span>
+                                @endif
+                            </p>
                         </div>
                     </div>
 
@@ -95,13 +156,18 @@
 
                     <!-- Actions -->
                     <div class="flex gap-2">
-                        <a href="{{ route('entreprise.equipe.show', [$entreprise->slug, $membre]) }}" class="flex-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition text-center">
+                        @php
+                            // Utiliser 'gerant' uniquement si c'est un membre virtuel (id == 0)
+                            // Sinon, utiliser l'ID réel du membre même s'il est propriétaire
+                            $membreId = ($membre->id == 0) ? 'gerant' : $membre->id;
+                        @endphp
+                        <a href="{{ route('entreprise.equipe.show', [$entreprise->slug, $membreId]) }}" class="flex-1 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition text-center">
                             Voir détails
                         </a>
-                        <a href="{{ route('entreprise.equipe.show', [$entreprise->slug, $membre]) }}?tab=agenda" class="px-3 py-2 text-sm bg-green-100 dark:bg-green-900/20 hover:bg-green-200 dark:hover:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg transition">
+                        <a href="{{ route('entreprise.equipe.show', [$entreprise->slug, $membreId]) }}?tab=agenda" class="px-3 py-2 text-sm bg-green-100 dark:bg-green-900/20 hover:bg-green-200 dark:hover:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg transition">
                             📅
                         </a>
-                        <a href="{{ route('entreprise.equipe.statistiques', [$entreprise->slug, $membre]) }}" class="px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg transition">
+                        <a href="{{ route('entreprise.equipe.statistiques', [$entreprise->slug, $membreId]) }}" class="px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg transition">
                             📊
                         </a>
                     </div>
@@ -113,9 +179,19 @@
             <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Aucun membre</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                @if($invitationsEnCours && $invitationsEnCours->count() > 0)
+                    Aucun membre actif
+                @else
+                    Aucun membre
+                @endif
+            </h3>
             <p class="text-slate-600 dark:text-slate-400 mb-6">
-                Ajoutez des membres à votre équipe pour commencer à gérer leurs disponibilités et leurs performances.
+                @if($invitationsEnCours && $invitationsEnCours->count() > 0)
+                    Vous avez des invitations en attente ci-dessus. Les membres apparaîtront ici une fois qu'ils auront accepté leur invitation.
+                @else
+                    Ajoutez des membres à votre équipe pour commencer à gérer leurs disponibilités et leurs performances.
+                @endif
             </p>
             <button onclick="toggleAddMemberForm()" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

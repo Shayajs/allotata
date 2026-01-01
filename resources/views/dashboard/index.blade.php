@@ -8,6 +8,7 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
+        @include('partials.pwa-head')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
@@ -522,9 +523,16 @@
                             Créer mon entreprise
                         @endif
                     </h2>
-                    <a href="{{ route('entreprise.create') }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                        + {{ $user->est_gerant ? 'Ajouter une entreprise' : 'Créer mon entreprise' }}
-                    </a>
+                    <div class="flex gap-3">
+                        @if($entreprisesAutres && $entreprisesAutres->count() > 0)
+                            <a href="{{ route('dashboard.entreprises-autres') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all">
+                                Entreprises autres
+                            </a>
+                        @endif
+                        <a href="{{ route('entreprise.create') }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                            + {{ $user->est_gerant ? 'Ajouter une entreprise' : 'Créer mon entreprise' }}
+                        </a>
+                    </div>
                 </div>
 
                 @if($entreprises->count() > 0)

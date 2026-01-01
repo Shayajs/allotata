@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
+use App\Models\EntrepriseInvitation;
 use App\Models\EntrepriseMembre;
 use App\Models\MembreDisponibilite;
 use App\Models\MembreIndisponibilite;
@@ -20,6 +21,36 @@ class MembreGestionController extends Controller
     public function __construct(MembreSelectionService $selectionService)
     {
         $this->selectionService = $selectionService;
+    }
+
+    /**
+     * Helper : Récupère un membre (y compris le gérant virtuel)
+     */
+    private function getMembre($slug, $membreId, Entreprise $entreprise): EntrepriseMembre
+    {
+        // Gérer le cas du gérant (propriétaire) - uniquement si c'est explicitement 'gerant'
+        if ($membreId === 'gerant' || $membreId === '0') {
+            // Créer un membre virtuel pour le gérant
+            $membre = new EntrepriseMembre([
+                'id' => 0, // ID virtuel
+                'entreprise_id' => $entreprise->id,
+                'user_id' => $entreprise->user_id,
+                'role' => 'administrateur',
+                'est_actif' => true,
+            ]);
+            $membre->setRelation('user', $entreprise->user);
+            return $membre;
+        } else {
+            // Récupérer le membre normal par son ID numérique
+            // Convertir en entier pour éviter les problèmes de type
+            $membreIdInt = (int) $membreId;
+            
+            $membre = EntrepriseMembre::where('id', $membreIdInt)
+                ->where('entreprise_id', $entreprise->id)
+                ->firstOrFail();
+            
+            return $membre;
+        }
     }
 
     /**
@@ -42,9 +73,51 @@ class MembreGestionController extends Controller
                 ->with('error', 'Cette fonctionnalité nécessite l\'abonnement Gestion Multi-Personnes.');
         }
 
+        // Récupérer les membres actifs
         $membres = $entreprise->membres()
             ->with('user')
             ->get();
+
+        // Récupérer aussi tous les membres (y compris inactifs) pour vérifier si le gérant y est
+        $tousMembres = $entreprise->tousMembres()
+            ->with('user')
+            ->get();
+
+        // S'assurer que le gérant (propriétaire) est toujours présent dans la liste
+        $gerantEstMembre = $membres->contains(function($membre) use ($entreprise) {
+            return $membre->user_id === $entreprise->user_id;
+        });
+
+        // Vérifier aussi dans tous les membres (actifs ou non)
+        $gerantDansTousMembres = $tousMembres->contains(function($membre) use ($entreprise) {
+            return $membre->user_id === $entreprise->user_id;
+        });
+
+        if (!$gerantEstMembre && $entreprise->user) {
+            // Créer un objet membre virtuel pour le gérant s'il n'est pas dans la table ou s'il est inactif
+            $membreGerant = new EntrepriseMembre([
+                'id' => 0, // ID virtuel pour identifier le gérant
+                'entreprise_id' => $entreprise->id,
+                'user_id' => $entreprise->user_id,
+                'role' => 'administrateur',
+                'est_actif' => true,
+            ]);
+            $membreGerant->setRelation('user', $entreprise->user);
+            $membres = $membres->prepend($membreGerant);
+        } else {
+            // Si le gérant est déjà dans les membres actifs, s'assurer qu'il est en premier
+            $gerant = $membres->first(function($membre) use ($entreprise) {
+                return $membre->user_id === $entreprise->user_id;
+            });
+            if ($gerant) {
+                // Retirer le gérant de sa position actuelle
+                $membres = $membres->reject(function($membre) use ($entreprise) {
+                    return $membre->user_id === $entreprise->user_id;
+                });
+                // Le remettre en premier
+                $membres = $membres->prepend($gerant);
+            }
+        }
 
         // Calculer les stats pour chaque membre
         $membresAvecStats = $membres->map(function($membre) {
@@ -64,16 +137,31 @@ class MembreGestionController extends Controller
             ];
         });
 
+        // Récupérer les invitations en cours (en attente)
+        $invitationsEnCours = collect([]);
+        if ($entreprise->aGestionMultiPersonnes()) {
+            $invitationsEnCours = \App\Models\EntrepriseInvitation::where('entreprise_id', $entreprise->id)
+                ->whereIn('statut', ['en_attente_compte', 'en_attente_acceptation'])
+                ->where(function($query) {
+                    $query->whereNull('expire_at')
+                          ->orWhere('expire_at', '>', now());
+                })
+                ->with('invitePar')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
         return view('entreprise.dashboard.tabs.equipe', [
             'entreprise' => $entreprise,
             'membresAvecStats' => $membresAvecStats,
+            'invitationsEnCours' => $invitationsEnCours,
         ]);
     }
 
     /**
      * Détails d'un membre (agenda, stats, disponibilités)
      */
-    public function show(Request $request, $slug, EntrepriseMembre $membre)
+    public function show(Request $request, $slug, $membreId)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -84,19 +172,23 @@ class MembreGestionController extends Controller
                 ->with('error', 'Vous n\'avez pas accès à cette entreprise.');
         }
 
-        // Vérifier que le membre appartient à l'entreprise
-        if ($membre->entreprise_id !== $entreprise->id) {
-            return redirect()->route('entreprise.equipe.index', $slug)
-                ->with('error', 'Membre introuvable.');
-        }
-
         // Vérifier l'abonnement
         if (!$entreprise->aGestionMultiPersonnes()) {
             return redirect()->route('entreprise.dashboard', $slug)
                 ->with('error', 'Cette fonctionnalité nécessite l\'abonnement Gestion Multi-Personnes.');
         }
 
-        $membre->load(['user', 'disponibilites', 'indisponibilites']);
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
+
+        // Charger les relations (pour le gérant virtuel, créer des collections vides)
+        if ($membre->id == 0) {
+            // Pour le gérant virtuel, créer des collections vides
+            $membre->setRelation('disponibilites', collect());
+            $membre->setRelation('indisponibilites', collect());
+        } else {
+            $membre->load(['user', 'disponibilites', 'indisponibilites']);
+        }
 
         // Stats du mois
         $moisActuel = now();
@@ -111,19 +203,38 @@ class MembreGestionController extends Controller
         // Déterminer l'onglet actif depuis la requête
         $activeSubTab = $request->get('tab', 'agenda');
 
-        return view('entreprise.dashboard.tabs.equipe-show', [
+        // Charger les horaires d'ouverture de l'entreprise
+        $horaires = $entreprise->horairesOuverture()
+            ->orderBy('jour_semaine')
+            ->get();
+
+        // Si pas d'horaires, créer les horaires par défaut (fermés)
+        if ($horaires->isEmpty()) {
+            $horaires = collect();
+            for ($i = 0; $i < 7; $i++) {
+                $horaires->push(new \App\Models\HorairesOuverture([
+                    'entreprise_id' => $entreprise->id,
+                    'jour_semaine' => $i,
+                    'heure_ouverture' => null,
+                    'heure_fermeture' => null,
+                ]));
+            }
+        }
+
+        return view('entreprise.membre-show', [
             'entreprise' => $entreprise,
             'membre' => $membre,
             'statsMois' => $statsMois,
             'statsSemaine' => $statsSemaine,
             'activeSubTab' => $activeSubTab,
+            'horaires' => $horaires,
         ]);
     }
 
     /**
      * Mettre à jour les disponibilités (horaires réguliers) d'un membre
      */
-    public function updateDisponibilites(Request $request, $slug, EntrepriseMembre $membre)
+    public function updateDisponibilites(Request $request, $slug, $membreId)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -133,8 +244,12 @@ class MembreGestionController extends Controller
             return back()->withErrors(['error' => 'Vous n\'avez pas accès à cette entreprise.']);
         }
 
-        if ($membre->entreprise_id !== $entreprise->id) {
-            return back()->withErrors(['error' => 'Membre introuvable.']);
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
+
+        // Pour le gérant virtuel, on ne peut pas créer de disponibilités
+        if ($membre->id == 0) {
+            return back()->withErrors(['error' => 'Les disponibilités du gérant doivent être gérées via les horaires de l\'entreprise dans l\'onglet Agenda.']);
         }
 
         if (!$entreprise->aGestionMultiPersonnes()) {
@@ -175,7 +290,7 @@ class MembreGestionController extends Controller
     /**
      * Ajouter une indisponibilité ponctuelle
      */
-    public function storeIndisponibilite(Request $request, $slug, EntrepriseMembre $membre)
+    public function storeIndisponibilite(Request $request, $slug, $membreId)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -185,8 +300,12 @@ class MembreGestionController extends Controller
             return back()->withErrors(['error' => 'Vous n\'avez pas accès à cette entreprise.']);
         }
 
-        if ($membre->entreprise_id !== $entreprise->id) {
-            return back()->withErrors(['error' => 'Membre introuvable.']);
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
+        
+        // Pour le gérant virtuel, on ne peut pas créer d'indisponibilités
+        if ($membre->id == 0) {
+            return back()->withErrors(['error' => 'Les indisponibilités du gérant doivent être gérées via les horaires de l\'entreprise.']);
         }
 
         if (!$entreprise->aGestionMultiPersonnes()) {
@@ -216,7 +335,7 @@ class MembreGestionController extends Controller
     /**
      * Supprimer une indisponibilité ponctuelle
      */
-    public function deleteIndisponibilite(Request $request, $slug, EntrepriseMembre $membre, MembreIndisponibilite $indisponibilite)
+    public function deleteIndisponibilite(Request $request, $slug, $membreId, MembreIndisponibilite $indisponibilite)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -226,7 +345,15 @@ class MembreGestionController extends Controller
             return back()->withErrors(['error' => 'Vous n\'avez pas accès à cette entreprise.']);
         }
 
-        if ($membre->entreprise_id !== $entreprise->id || $indisponibilite->membre_id !== $membre->id) {
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
+        
+        // Pour le gérant virtuel, on ne peut pas supprimer d'indisponibilités
+        if ($membre->id == 0) {
+            return back()->withErrors(['error' => 'Les indisponibilités du gérant doivent être gérées via les horaires de l\'entreprise.']);
+        }
+
+        if ($indisponibilite->membre_id !== $membre->id) {
             return back()->withErrors(['error' => 'Indisponibilité introuvable.']);
         }
 
@@ -238,7 +365,7 @@ class MembreGestionController extends Controller
     /**
      * API : Récupérer l'agenda d'un membre (JSON pour FullCalendar)
      */
-    public function getAgenda(Request $request, $slug, EntrepriseMembre $membre)
+    public function getAgenda(Request $request, $slug, $membreId)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -248,16 +375,25 @@ class MembreGestionController extends Controller
             return response()->json(['error' => 'Accès refusé'], 403);
         }
 
-        if ($membre->entreprise_id !== $entreprise->id) {
-            return response()->json(['error' => 'Membre introuvable'], 404);
-        }
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
 
         // Récupérer les réservations du membre
-        $reservations = Reservation::where('membre_id', $membre->id)
-            ->whereIn('statut', ['en_attente', 'confirmee', 'terminee'])
-            ->with(['user', 'typeService'])
-            ->get()
-            ->map(function($reservation) {
+        // Pour le gérant virtuel, récupérer toutes les réservations de l'entreprise sans membre_id
+        if ($membre->id == 0) {
+            $reservations = Reservation::where('entreprise_id', $entreprise->id)
+                ->whereNull('membre_id')
+                ->whereIn('statut', ['en_attente', 'confirmee', 'terminee'])
+                ->with(['user', 'typeService'])
+                ->get();
+        } else {
+            $reservations = Reservation::where('membre_id', $membre->id)
+                ->whereIn('statut', ['en_attente', 'confirmee', 'terminee'])
+                ->with(['user', 'typeService'])
+                ->get();
+        }
+
+        $reservations = $reservations->map(function($reservation) {
                 $debut = Carbon::parse($reservation->date_reservation);
                 $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
                 
@@ -277,6 +413,14 @@ class MembreGestionController extends Controller
                     'extendedProps' => [
                         'statut' => $reservation->statut,
                         'prix' => $reservation->prix,
+                        'duree' => $reservation->duree_minutes ?? 30,
+                        'type_service' => $reservation->typeService->nom ?? $reservation->type_service,
+                        'client' => $reservation->user->name ?? 'Client',
+                        'client_email' => $reservation->user->email ?? '',
+                        'telephone' => $reservation->telephone_client ?? null,
+                        'lieu' => $reservation->lieu ?? null,
+                        'notes' => $reservation->notes ?? null,
+                        'est_paye' => $reservation->est_paye ?? false,
                     ],
                 ];
             });
@@ -287,7 +431,7 @@ class MembreGestionController extends Controller
     /**
      * Statistiques détaillées d'un membre
      */
-    public function getStatistiques(Request $request, $slug, EntrepriseMembre $membre)
+    public function getStatistiques(Request $request, $slug, $membreId)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
@@ -298,10 +442,8 @@ class MembreGestionController extends Controller
                 ->with('error', 'Vous n\'avez pas accès à cette entreprise.');
         }
 
-        if ($membre->entreprise_id !== $entreprise->id) {
-            return redirect()->route('entreprise.equipe.index', $slug)
-                ->with('error', 'Membre introuvable.');
-        }
+        // Récupérer le membre (y compris le gérant virtuel)
+        $membre = $this->getMembre($slug, $membreId, $entreprise);
 
         // Calculer les stats sur différentes périodes
         $aujourdhui = now();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -95,9 +96,20 @@ class DashboardController extends Controller
             }
         }
 
+        // Récupérer les entreprises où l'utilisateur est membre (mais pas propriétaire)
+        $entreprisesAutres = \App\Models\EntrepriseMembre::where('user_id', $user->id)
+            ->where('est_actif', true)
+            ->with(['entreprise'])
+            ->get()
+            ->map(function($membre) {
+                return $membre->entreprise;
+            })
+            ->filter(); // Filtrer les nulls si l'entreprise n'existe plus
+
         return view('dashboard.index', [
             'user' => $user,
             'entreprises' => $entreprises,
+            'entreprisesAutres' => $entreprisesAutres,
             'reservations' => $reservations,
             'stats' => $stats,
             'reservationsEnAttente' => $reservationsEnAttente,
@@ -140,5 +152,53 @@ class DashboardController extends Controller
         }
 
         return back()->with('success', 'La réservation a été marquée comme payée avec succès.');
+    }
+
+    /**
+     * Afficher les entreprises où l'utilisateur est membre (mais pas propriétaire)
+     */
+    public function entreprisesAutres()
+    {
+        $user = Auth::user();
+        
+        // Récupérer les entreprises où l'utilisateur est membre actif
+        $membres = \App\Models\EntrepriseMembre::where('user_id', $user->id)
+            ->where('est_actif', true)
+            ->with(['entreprise'])
+            ->get();
+
+        $entreprisesAvecStats = $membres->map(function($membre) use ($user) {
+            $entreprise = $membre->entreprise;
+            if (!$entreprise) {
+                return null;
+            }
+
+            $data = [
+                'entreprise' => $entreprise,
+                'membre' => $membre,
+                'estAdmin' => $entreprise->aAdministrateur($user),
+            ];
+
+            // Calculer les stats uniquement si l'utilisateur est admin
+            if ($data['estAdmin']) {
+                $entrepriseReservations = Reservation::where('entreprise_id', $entreprise->id)->get();
+                $data['stats'] = [
+                    'total_reservations' => $entrepriseReservations->count(),
+                    'revenu_total' => $entrepriseReservations->sum('prix'),
+                    'revenu_paye' => $entrepriseReservations->where('est_paye', true)->sum('prix'),
+                    'reservations_ce_mois' => $entrepriseReservations->filter(function($r) {
+                        return $r->date_reservation->isCurrentMonth();
+                    })->count(),
+                    'reservations_en_attente' => $entrepriseReservations->where('statut', 'en_attente')->count(),
+                ];
+            }
+
+            return $data;
+        })->filter();
+
+        return view('dashboard.entreprises-autres', [
+            'user' => $user,
+            'entreprisesAvecStats' => $entreprisesAvecStats,
+        ]);
     }
 }

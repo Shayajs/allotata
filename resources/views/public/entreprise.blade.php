@@ -6,6 +6,7 @@
     <title>{{ $entreprise->nom }} - Allo Tata</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-script')
+    @include('partials.pwa-head')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
     <!-- Image de fond en en-tête -->

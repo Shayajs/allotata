@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use App\Models\EntrepriseMembre;
 use App\Models\User;
+use App\Services\InvitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -14,9 +15,10 @@ class EntrepriseMembreController extends Controller
     /**
      * Afficher la liste des membres d'une entreprise
      */
-    public function index(Entreprise $entreprise)
+    public function index($slug)
     {
         $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {
@@ -41,9 +43,10 @@ class EntrepriseMembreController extends Controller
     /**
      * Inviter un utilisateur à rejoindre l'entreprise
      */
-    public function store(Request $request, Entreprise $entreprise)
+    public function store(Request $request, $slug)
     {
         $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {
@@ -125,9 +128,10 @@ class EntrepriseMembreController extends Controller
     /**
      * Mettre à jour le rôle d'un membre
      */
-    public function update(Request $request, Entreprise $entreprise, EntrepriseMembre $membre)
+    public function update(Request $request, $slug, EntrepriseMembre $membre)
     {
         $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {
@@ -159,9 +163,10 @@ class EntrepriseMembreController extends Controller
     /**
      * Supprimer un membre
      */
-    public function destroy(Entreprise $entreprise, EntrepriseMembre $membre)
+    public function destroy($slug, EntrepriseMembre $membre)
     {
         $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {

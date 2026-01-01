@@ -46,15 +46,35 @@ class MembreStatistique extends Model
         $debutJour = $date->copy()->startOfDay();
         $finJour = $date->copy()->endOfDay();
 
-        // Compter les réservations confirmées ou terminées pour ce membre ce jour
-        $reservations = \App\Models\Reservation::where('membre_id', $membre->id)
-            ->whereBetween('date_reservation', [$debutJour, $finJour])
-            ->whereIn('statut', ['confirmee', 'terminee'])
-            ->get();
+        // Pour le gérant virtuel (id == 0), calculer depuis les réservations sans membre_id
+        if ($membre->id == 0) {
+            $reservations = \App\Models\Reservation::where('entreprise_id', $membre->entreprise_id)
+                ->whereNull('membre_id')
+                ->whereBetween('date_reservation', [$debutJour, $finJour])
+                ->whereIn('statut', ['confirmee', 'terminee'])
+                ->get();
+        } else {
+            // Compter les réservations confirmées ou terminées pour ce membre ce jour
+            $reservations = \App\Models\Reservation::where('membre_id', $membre->id)
+                ->whereBetween('date_reservation', [$debutJour, $finJour])
+                ->whereIn('statut', ['confirmee', 'terminee'])
+                ->get();
+        }
 
         $nombreReservations = $reservations->count();
         $revenuTotal = $reservations->sum('prix');
         $dureeTotale = $reservations->sum('duree_minutes');
+
+        // Pour le gérant virtuel, ne pas créer de statistiques dans la table
+        if ($membre->id == 0) {
+            return new self([
+                'membre_id' => 0,
+                'date' => $date->format('Y-m-d'),
+                'nombre_reservations' => $nombreReservations,
+                'revenu_total' => $revenuTotal,
+                'duree_totale_minutes' => $dureeTotale,
+            ]);
+        }
 
         return self::updateOrCreate(
             [
@@ -74,6 +94,25 @@ class MembreStatistique extends Model
      */
     public static function calculerChargeTravail(EntrepriseMembre $membre, \Carbon\Carbon $dateDebut, \Carbon\Carbon $dateFin): array
     {
+        // Pour le gérant virtuel (id == 0), calculer directement depuis les réservations
+        if ($membre->id == 0) {
+            $reservations = \App\Models\Reservation::where('entreprise_id', $membre->entreprise_id)
+                ->whereNull('membre_id') // Réservations sans membre assigné (gérées par le gérant)
+                ->whereBetween('date_reservation', [$dateDebut, $dateFin])
+                ->whereIn('statut', ['confirmee', 'terminee'])
+                ->get();
+
+            return [
+                'nombre_reservations' => $reservations->count(),
+                'revenu_total' => $reservations->sum('prix'),
+                'duree_totale_minutes' => $reservations->sum('duree_minutes'),
+                'nombre_jours' => $reservations->groupBy(function($r) {
+                    return $r->date_reservation->format('Y-m-d');
+                })->count(),
+            ];
+        }
+
+        // Pour les membres normaux, utiliser les statistiques
         $stats = self::where('membre_id', $membre->id)
             ->whereBetween('date', [$dateDebut->format('Y-m-d'), $dateFin->format('Y-m-d')])
             ->get();

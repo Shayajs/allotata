@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ $entreprise->nom }} - Dashboard - Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -11,19 +11,23 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js'></script>
         @include('partials.theme-script')
+        @include('partials.pwa-head')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
         <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center gap-4">
-                        <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                    <div class="flex items-center gap-2 sm:gap-4">
+                        <a href="{{ route('dashboard') }}" class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
                         </a>
                         
+                        <!-- Menu Burger pour mobile web -->
+                        @include('components.mobile-nav', ['navType' => 'entreprise', 'entreprise' => $entreprise, 'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false, 'activeTab' => $activeTab ?? 'accueil'])
+                        
                         <!-- Sélecteur d'entreprise -->
-                        <div class="relative">
+                        <div class="relative hidden md:block">
                             <button 
                                 onclick="toggleEntrepriseSelector()"
                                 class="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition"
@@ -84,23 +88,23 @@
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-3">
-                        <a href="{{ route('public.entreprise', $entreprise->slug) }}" target="_blank" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition flex items-center gap-1">
+                    <div class="flex items-center gap-2 sm:gap-3 desktop-nav-links">
+                        <a href="{{ route('public.entreprise', $entreprise->slug) }}" target="_blank" class="hidden lg:flex items-center px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition touch-target">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                             </svg>
-                            Page publique
+                            <span class="hidden xl:inline ml-1">Page publique</span>
                         </a>
-                        <a href="{{ route('tickets.create') }}" class="px-3 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-400 rounded-lg transition">
-                            🎫 Support
+                        <a href="{{ route('tickets.create') }}" class="hidden lg:inline-flex items-center px-3 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-400 rounded-lg transition touch-target">
+                            🎫 <span class="hidden xl:inline ml-1">Support</span>
                         </a>
-                        <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition">
+                        <a href="{{ route('dashboard') }}" class="hidden xl:inline-flex items-center px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition touch-target">
                             Mon compte
                         </a>
-                        <span class="text-sm text-slate-500 dark:text-slate-400">{{ $user->name }}</span>
-                        <form method="POST" action="{{ route('logout') }}">
+                        <span class="hidden xl:inline text-sm text-slate-500 dark:text-slate-400">{{ $user->name }}</span>
+                        <form method="POST" action="{{ route('logout') }}" class="hidden xl:inline">
                             @csrf
-                            <button type="submit" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition">
+                            <button type="submit" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition touch-target">
                                 Déconnexion
                             </button>
                         </form>
@@ -109,7 +113,7 @@
             </div>
         </nav>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 main-content">
             <!-- Messages de succès -->
             @if(session('success'))
                 <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -127,8 +131,8 @@
             @endif
 
             <!-- En-tête de l'entreprise -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
-                <div class="flex items-center gap-4">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-4 sm:mb-6">
+                <div class="flex items-center gap-3 sm:gap-4">
                     @if($entreprise->logo)
                         <img src="{{ asset('media/' . $entreprise->logo) }}" alt="{{ $entreprise->nom }}" class="w-16 h-16 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-700">
                     @else
@@ -136,9 +140,9 @@
                             {{ strtoupper(substr($entreprise->nom, 0, 1)) }}
                         </div>
                     @endif
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3">
-                            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $entreprise->nom }}</h1>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white truncate">{{ $entreprise->nom }}</h1>
                             @if($entreprise->est_verifiee)
                                 <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Vérifiée</span>
                             @else
@@ -166,10 +170,10 @@
             <!-- Onglets -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                 <div class="border-b border-slate-200 dark:border-slate-700">
-                    <nav class="flex overflow-x-auto" aria-label="Tabs">
+                    <nav class="mobile-tabs" aria-label="Tabs">
                         <button 
                             onclick="showTab('accueil')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'accueil' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'accueil' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="accueil"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +186,7 @@
                         </button>
                         <button 
                             onclick="showTab('agenda')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'agenda' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'agenda' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="agenda"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +197,7 @@
                         @if($aGestionMultiPersonnes)
                             <button 
                                 onclick="showTab('equipe')"
-                                class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'equipe' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                                class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'equipe' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                                 data-tab="equipe"
                             >
                                 <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +208,7 @@
                         @endif
                         <button 
                             onclick="showTab('reservations')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'reservations' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'reservations' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="reservations"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +218,7 @@
                         </button>
                         <button 
                             onclick="showTab('factures')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'factures' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'factures' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="factures"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,7 +228,7 @@
                         </button>
                         <button 
                             onclick="showTab('outils')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'outils' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'outils' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="outils"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +238,7 @@
                         </button>
                         <button 
                             onclick="showTab('messagerie')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'messagerie' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'messagerie' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="messagerie"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +256,7 @@
                         </button>
                         <button 
                             onclick="showTab('abonnements')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'abonnements' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'abonnements' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="abonnements"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +266,7 @@
                         </button>
                         <button 
                             onclick="showTab('parametres')"
-                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'parametres' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'parametres' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
                             data-tab="parametres"
                         >
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +278,7 @@
                     </nav>
                 </div>
 
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <!-- Onglet Accueil -->
                     <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
                         @include('entreprise.dashboard.tabs.accueil')
@@ -385,5 +389,8 @@
                 showTab(tab);
             }
         </script>
+
+        <!-- Bottom Navigation pour PWA -->
+        @include('components.mobile-nav', ['navType' => 'entreprise', 'entreprise' => $entreprise, 'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false, 'activeTab' => $activeTab ?? 'accueil'])
     </body>
 </html>

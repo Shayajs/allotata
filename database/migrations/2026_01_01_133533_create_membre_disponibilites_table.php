@@ -23,8 +23,8 @@ return new class extends Migration
             $table->text('raison_indisponibilite')->nullable();
             $table->timestamps();
             
-            $table->index(['membre_id', 'jour_semaine']);
-            $table->index(['membre_id', 'est_exceptionnel', 'date_exception']);
+            $table->index(['membre_id', 'jour_semaine'], 'memb_disp_jour_idx');
+            $table->index(['membre_id', 'est_exceptionnel', 'date_exception'], 'memb_disp_exc_date_idx');
         });
     }
 
