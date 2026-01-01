@@ -46,6 +46,11 @@
                                     <span class="px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-green-500/80 text-white rounded-full whitespace-nowrap">
                                         ✓ Vérifiée
                                     </span>
+                                    @if($entreprise->aGestionMultiPersonnes())
+                                        <span class="px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-gradient-to-r from-purple-500/90 to-pink-500/90 text-white rounded-full whitespace-nowrap shadow-lg">
+                                            ✨ Entreprise Platine
+                                        </span>
+                                    @endif
                                 @endif
                             </div>
                             <p class="text-sm sm:text-base md:text-lg text-white/90 truncate">
@@ -100,6 +105,11 @@
                                     <span class="px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800 whitespace-nowrap">
                                         ✓ Vérifiée
                                     </span>
+                                    @if($entreprise->aGestionMultiPersonnes())
+                                        <span class="px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-800 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-800 whitespace-nowrap shadow-sm">
+                                            ✨ Entreprise Platine
+                                        </span>
+                                    @endif
                                 @endif
                             </div>
                             <p class="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400">

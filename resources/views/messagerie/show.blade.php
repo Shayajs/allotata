@@ -312,12 +312,27 @@
                                 @endif
                             @endif
                         @elseif($propositionActive->statut === 'acceptee')
-                            <span class="px-6 py-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-xl font-semibold flex items-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                Rendez-vous accepté et créé
-                            </span>
+                            <div class="flex flex-col gap-3">
+                                <span class="px-6 py-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-xl font-semibold flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Rendez-vous accepté et créé
+                                </span>
+                                @if(!isset($isGerant) || !$isGerant)
+                                    @if($propositionActive->reservation_id && $propositionActive->reservation)
+                                        <a 
+                                            href="{{ route('reservations.show', [$entreprise->slug, $propositionActive->reservation->id]) }}"
+                                            class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                            </svg>
+                                            Gérer mon rendez-vous
+                                        </a>
+                                    @endif
+                                @endif
+                            </div>
                         @elseif($propositionActive->statut === 'refusee')
                             <span class="px-6 py-3 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-xl font-semibold flex items-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

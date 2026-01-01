@@ -495,17 +495,23 @@
                                                         </button>
                                                     @endif
                                                     
-                                                    <!-- Annuler la réservation -->
-                                                    <form action="{{ route('dashboard.reservation.cancel', $reservation->id) }}" method="POST" class="inline-block">
-                                                        @csrf
-                                                        <button 
-                                                            type="submit" 
-                                                            onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ? L\'entreprise sera notifiée.')"
-                                                            class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
-                                                        >
-                                                            ✗ Annuler
-                                                        </button>
-                                                    </form>
+                                                    <!-- Annuler la réservation (seulement si non payée) -->
+                                                    @if(!$reservation->est_paye)
+                                                        <form action="{{ route('dashboard.reservation.cancel', $reservation->id) }}" method="POST" class="inline-block">
+                                                            @csrf
+                                                            <button 
+                                                                type="submit" 
+                                                                onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ? L\'entreprise sera notifiée.')"
+                                                                class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                                                            >
+                                                                ✗ Annuler
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <span class="px-4 py-2 text-sm bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold rounded-lg cursor-not-allowed">
+                                                            ✗ Annulation impossible (payé)
+                                                        </span>
+                                                    @endif
                                                 </div>
                                             @endif
                                         </div>

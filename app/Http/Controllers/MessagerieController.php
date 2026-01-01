@@ -83,10 +83,9 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
-        // Vérifier si une conversation existe déjà
+        // Vérifier si une conversation existe déjà (archivée ou non)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
-            ->where('est_archivee', false)
             ->first();
         
         // Créer la conversation si elle n'existe pas
@@ -95,6 +94,9 @@ class MessagerieController extends Controller
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
+        } else if ($conversation->est_archivee) {
+            // Si la conversation existe mais est archivée, la réactiver
+            $conversation->update(['est_archivee' => false]);
         }
         
         // Charger la réservation si la colonne existe
@@ -305,18 +307,21 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
-        // Récupérer ou créer la conversation
+        // Récupérer la conversation existante (archivée ou non)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
-            ->where('est_archivee', false)
             ->first();
         
         if (!$conversation) {
+            // Créer une nouvelle conversation si elle n'existe pas
             $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
                 'est_archivee' => false,
             ]);
+        } else if ($conversation->est_archivee) {
+            // Si la conversation existe mais est archivée, la réactiver
+            $conversation->update(['est_archivee' => false]);
         }
 
         $validated = $request->validate([
@@ -586,16 +591,20 @@ class MessagerieController extends Controller
             ->firstOrFail();
 
         // Récupérer ou créer la conversation
+        // Chercher d'abord une conversation existante (archivée ou non)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
-            ->where('est_archivee', false)
             ->first();
 
         if (!$conversation) {
+            // Créer une nouvelle conversation si elle n'existe pas
             $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
+        } else if ($conversation->est_archivee) {
+            // Si la conversation existe mais est archivée, la réactiver
+            $conversation->update(['est_archivee' => false]);
         }
 
         // Lier la conversation à la réservation si la colonne existe
@@ -830,12 +839,32 @@ class MessagerieController extends Controller
             ]);
         }
 
-        // Mettre à jour la proposition
+        // Mettre à jour la proposition acceptée
         $proposition->update([
             'statut' => 'acceptee',
             'reservation_id' => $reservation->id,
             'prix_final' => $prixFinal,
         ]);
+
+        // Fermer toutes les autres propositions actives pour cette réservation/conversation
+        // (pour empêcher toute nouvelle négociation une fois qu'une proposition est acceptée)
+        PropositionRendezVous::where('conversation_id', $proposition->conversation_id)
+            ->where('id', '!=', $proposition->id)
+            ->whereIn('statut', ['proposee', 'negociee'])
+            ->update(['statut' => 'refusee']);
+
+        // Archiver la conversation pour qu'elle reprenne son cours normal
+        // (plus de négociation active, la conversation n'apparaît plus dans les listes actives
+        // mais reste accessible si on y accède directement - comme une conversation normale)
+        $proposition->conversation->update(['est_archivee' => true]);
+        
+        // Note: La réservation est déjà confirmée (statut 'confirmee') dans le code ci-dessus,
+        // ce qui empêche la création de nouvelles propositions via les conditions dans les vues
+        // qui vérifient $reservation->statut === 'en_attente'
+
+        // Déterminer si c'est le client ou le gérant qui accepte
+        $isClient = $proposition->conversation->user_id === $user->id;
+        $isGerant = $entreprise->user_id === $user->id;
 
         // Créer un message de confirmation
         $isModification = $proposition->reservation_id !== null;
@@ -861,7 +890,6 @@ class MessagerieController extends Controller
 
         // Notifier l'autre partie
         $autreUserId = $isClient ? $entreprise->user_id : ($proposition->auteur_user_id ?? $proposition->conversation->user_id);
-        $isModification = $proposition->reservation_id !== null;
         $notificationTitre = $isModification ? 'Modification de réservation acceptée' : 'Rendez-vous accepté';
         $notificationMessage = $isModification
             ? ($isClient 
