@@ -33,7 +33,10 @@
             </div>
         </nav>
 
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Colonne principale : Messages -->
+                <div class="lg:col-span-2 space-y-6">
             <!-- En-tête de conversation amélioré -->
             <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-6 mb-6">
                 <div class="flex items-center gap-4">
@@ -127,6 +130,17 @@
                 </div>
             @endif
 
+            @if(session('info'))
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800 rounded-xl shadow-sm">
+                    <p class="text-blue-800 dark:text-blue-400 font-medium flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {{ session('info') }}
+                    </p>
+                </div>
+            @endif
+
             @if($errors->any())
                 <div class="mb-6 p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-800 rounded-xl shadow-sm">
                     @foreach($errors->all() as $error)
@@ -142,12 +156,44 @@
 
             <!-- Récapitulatif de proposition de RDV active amélioré -->
             @if(isset($propositionActive) && $propositionActive)
+                @php
+                    // S'assurer que les relations sont chargées
+                    $propositionActive->loadMissing(['auteur', 'entreprise', 'conversation.user']);
+                    
+                    // Déterminer qui est l'auteur et qui est le destinataire
+                    $currentUser = Auth::user();
+                    $auteurUserId = $propositionActive->auteur_user_id ?? $propositionActive->user_id ?? null;
+                    $currentUserId = $currentUser->id;
+                    
+                    // L'auteur est celui dont l'ID correspond à auteur_user_id dans la proposition
+                    $isCurrentUserAuthor = ($auteurUserId === $currentUserId);
+                @endphp
                 <div class="bg-gradient-to-br from-green-50 via-orange-50 to-green-50 dark:from-green-900/20 dark:via-orange-900/20 dark:to-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-6 mb-6 shadow-lg">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white text-2xl shadow-md">
-                            📅
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white text-2xl shadow-md">
+                                📅
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Proposition de rendez-vous</h3>
+                                @if($isCurrentUserAuthor)
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-1">
+                                        <span>✉️</span>
+                                        <span>Vous avez proposé cette modification à {{ $propositionActive->nom_destinataire }}</span>
+                                    </p>
+                                @else
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-1">
+                                        <span>📨</span>
+                                        <span>{{ $propositionActive->nom_auteur }} vous propose une modification</span>
+                                    </p>
+                                @endif
+                            </div>
                         </div>
-                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Proposition de rendez-vous</h3>
+                        @if($propositionActive->statut === 'proposee' || $propositionActive->statut === 'negociee')
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                En attente de réponse
+                            </span>
+                        @endif
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div class="bg-white/50 dark:bg-slate-800/50 rounded-xl p-4">
@@ -184,9 +230,76 @@
                     @endif
                     <div class="flex flex-wrap gap-3">
                         @if($propositionActive->statut === 'proposee' || $propositionActive->statut === 'negociee')
-                            @if(!isset($isGerant) || !$isGerant)
-                                <!-- Actions client -->
-                                @if($propositionActive->peutEtreNegociee())
+                            @if($isCurrentUserAuthor)
+                                <!-- Actions pour l'auteur : message d'attente, mais peut quand même contre-proposer -->
+                                <div class="w-full p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl mb-3">
+                                    <p class="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                                        ⏳ Vous attendez la réponse de {{ $propositionActive->nom_destinataire }}
+                                    </p>
+                                    <p class="text-xs text-blue-700 dark:text-blue-400">
+                                        Votre proposition est en attente. Vous pouvez créer une contre-proposition si vous souhaitez modifier votre demande.
+                                    </p>
+                                </div>
+                                @if($propositionActive->reservation_id && $propositionActive->reservation && $propositionActive->reservation->statut === 'en_attente')
+                                    @php
+                                        $canModify = ($isGerant || ($entreprise->prix_negociables && !$isGerant));
+                                    @endphp
+                                    @if($canModify)
+                                        @php
+                                            $heureDebut = \Carbon\Carbon::parse($propositionActive->heure_debut);
+                                        @endphp
+                                        <button 
+                                            onclick="openModifyPropositionModal({{ $propositionActive->reservation->id }}, '{{ $propositionActive->date_rdv->format('Y-m-d') }}', '{{ $heureDebut->format('H:i') }}', {{ $propositionActive->duree_minutes }}, {{ number_format($propositionActive->prix_propose, 2, '.', '') }}, {!! json_encode($propositionActive->lieu ?? $propositionActive->reservation->lieu ?? '') !!}, {!! json_encode($propositionActive->notes ?? $propositionActive->reservation->notes ?? '') !!}, {{ $isGerant ? 'true' : 'false' }}, {{ $propositionActive->type_service_id ?? $propositionActive->reservation->type_service_id ?? 'null' }})"
+                                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Modifier ma proposition
+                                        </button>
+                                    @endif
+                                @endif
+                            @else
+                                <!-- Actions pour le destinataire : accepter, refuser, contre-proposer -->
+                                <form action="{{ route($isGerant ? 'messagerie.accepter-proposition-gerant' : 'messagerie.accepter-proposition', $isGerant ? [$entreprise->slug, $conversation->id, $propositionActive->id] : [$entreprise->slug, $propositionActive->id]) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Accepter
+                                    </button>
+                                </form>
+                                <button 
+                                    onclick="document.getElementById('modal-refuser-{{ $propositionActive->id }}').classList.remove('hidden')"
+                                    class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Refuser
+                                </button>
+                                @if($propositionActive->reservation_id && $propositionActive->reservation && $propositionActive->reservation->statut === 'en_attente')
+                                    @php
+                                        $canModify = ($isGerant || ($entreprise->prix_negociables && !$isGerant));
+                                    @endphp
+                                    @if($canModify)
+                                        @php
+                                            // Utiliser les données de la proposition active pour pré-remplir
+                                            $heureDebut = \Carbon\Carbon::parse($propositionActive->heure_debut);
+                                        @endphp
+                                        <button 
+                                            onclick="openModifyPropositionModal({{ $propositionActive->reservation->id }}, '{{ $propositionActive->date_rdv->format('Y-m-d') }}', '{{ $heureDebut->format('H:i') }}', {{ $propositionActive->duree_minutes }}, {{ number_format($propositionActive->prix_propose, 2, '.', '') }}, {!! json_encode($propositionActive->lieu ?? $propositionActive->reservation->lieu ?? '') !!}, {!! json_encode($propositionActive->notes ?? $propositionActive->reservation->notes ?? '') !!}, {{ $isGerant ? 'true' : 'false' }}, {{ $propositionActive->type_service_id ?? $propositionActive->reservation->type_service_id ?? 'null' }})"
+                                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Proposer une modification
+                                        </button>
+                                    @endif
+                                @endif
+                                @if($propositionActive->peutEtreNegociee() && !$isGerant)
                                     <button 
                                         onclick="document.getElementById('modal-negocier-{{ $propositionActive->id }}').classList.remove('hidden')"
                                         class="px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
@@ -197,44 +310,6 @@
                                         Négocier le prix
                                     </button>
                                 @endif
-                                <form action="{{ route('messagerie.accepter-proposition', [$entreprise->slug, $propositionActive->id]) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Accepter
-                                    </button>
-                                </form>
-                                <button 
-                                    onclick="document.getElementById('modal-refuser-{{ $propositionActive->id }}').classList.remove('hidden')"
-                                    class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    Refuser
-                                </button>
-                            @else
-                                <!-- Actions gérant -->
-                                <form action="{{ route('messagerie.accepter-proposition-gerant', [$entreprise->slug, $conversation->id, $propositionActive->id]) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Accepter
-                                    </button>
-                                </form>
-                                <button 
-                                    onclick="document.getElementById('modal-refuser-{{ $propositionActive->id }}').classList.remove('hidden')"
-                                    class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center gap-2"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    Refuser
-                                </button>
                             @endif
                         @elseif($propositionActive->statut === 'acceptee')
                             <span class="px-6 py-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-xl font-semibold flex items-center gap-2">
@@ -300,57 +375,116 @@
                             </div>
                         @endif
 
-                        <div class="flex items-start gap-3 {{ $message->user_id === Auth::id() ? 'flex-row-reverse' : '' }} group">
-                            <!-- Avatar -->
-                            <div class="flex-shrink-0">
-                                <x-avatar :user="$message->user" size="md" class="shadow-md" />
-                            </div>
-                            
-                            <!-- Message -->
-                            <div class="flex-1 flex flex-col {{ $message->user_id === Auth::id() ? 'items-end' : 'items-start' }} max-w-[75%]">
-                                <div class="flex items-center gap-2 mb-1 {{ $message->user_id === Auth::id() ? 'flex-row-reverse' : '' }}">
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        {{ $message->user_id === Auth::id() ? 'Vous' : $message->user->name }}
-                                    </span>
-                                    <span class="text-xs text-slate-500 dark:text-slate-500">
-                                        {{ $message->created_at->format('H:i') }}
-                                    </span>
-                                    @if($message->user_id === Auth::id() && $message->est_lu)
-                                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    @endif
-                                </div>
-                                <div class="px-4 py-3 rounded-2xl {{ $message->user_id === Auth::id() ? 'bg-gradient-to-r from-green-500 to-green-600 text-white rounded-tr-sm' : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-tl-sm border border-slate-200 dark:border-slate-600' }} shadow-md hover:shadow-lg transition-shadow">
-                                    @if($message->estPropositionRendezVous() && $message->propositionRdv)
-                                        <!-- Affichage d'une proposition de RDV -->
-                                        @php $prop = $message->propositionRdv; @endphp
-                                        <div class="border-2 {{ $message->user_id === Auth::id() ? 'border-white/30' : 'border-green-300 dark:border-green-700' }} rounded-xl p-4 bg-white/50 dark:bg-slate-800/50">
-                                            <div class="flex items-center gap-2 mb-3">
-                                                <span class="text-2xl">📅</span>
-                                                <span class="font-bold text-slate-900 dark:text-white">Proposition de rendez-vous</span>
+                        @if($message->estPropositionRendezVous() && $message->propositionRdv)
+                            <!-- Message système : Proposition de RDV (aligné selon l'auteur) -->
+                            @php 
+                                $prop = $message->propositionRdv;
+                                $prop->loadMissing(['auteur', 'entreprise']);
+                                $auteurUserId = $prop->auteur_user_id ?? $prop->user_id ?? null;
+                                $estAuteurActuel = $auteurUserId === Auth::id();
+                            @endphp
+                            <div class="flex {{ $estAuteurActuel ? 'justify-end' : 'justify-start' }} mb-4">
+                                <div class="max-w-sm w-full">
+                                    <div class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-4 shadow-md relative overflow-hidden">
+                                        <!-- Badge "Message système" -->
+                                        <div class="absolute top-2 right-2">
+                                            <span class="px-2 py-0.5 text-xs font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-700">
+                                                ⚙️ Système
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- En-tête avec icône et titre -->
+                                        <div class="flex items-center gap-2 mb-3 pr-14">
+                                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
+                                                📅
                                             </div>
-                                            <div class="space-y-2 text-sm">
-                                                <p><strong>Date :</strong> {{ $prop->date_rdv->format('d/m/Y') }}</p>
-                                                <p><strong>Heure :</strong> {{ \Carbon\Carbon::parse($prop->heure_debut)->format("H:i") }} - {{ \Carbon\Carbon::parse($prop->heure_fin)->format("H:i") }} ({{ $prop->duree_minutes }} min)</p>
-                                                <p><strong>Prix :</strong> <span class="text-green-600 dark:text-green-400 font-bold">{{ number_format($prop->prix_propose, 2, ',', ' ') }} €</span></p>
-                                                @if($prop->lieu)
-                                                    <p><strong>Lieu :</strong> {{ $prop->lieu }}</p>
-                                                @endif
-                                                @if($prop->notes)
-                                                    <p><strong>Notes :</strong> {{ $prop->notes }}</p>
-                                                @endif
-                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                                    Statut : 
-                                                    @if($prop->statut === 'proposee') <span class="text-yellow-600 dark:text-yellow-400">En attente</span>
-                                                    @elseif($prop->statut === 'negociee') <span class="text-orange-600 dark:text-orange-400">Négociée</span>
-                                                    @elseif($prop->statut === 'acceptee') <span class="text-green-600 dark:text-green-400">Acceptée</span>
-                                                    @elseif($prop->statut === 'refusee') <span class="text-red-600 dark:text-red-400">Refusée</span>
-                                                    @endif
+                                            <div>
+                                                <h4 class="font-bold text-slate-900 dark:text-white text-base">Proposition de rendez-vous</h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                    {{ $message->created_at->format('d/m/Y à H:i') }}
                                                 </p>
                                             </div>
                                         </div>
-                                    @else
+                                        
+                                        <!-- Informations de la proposition -->
+                                        <div class="space-y-2">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div class="bg-white/60 dark:bg-slate-800/60 rounded-lg p-2">
+                                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Date</p>
+                                                    <p class="font-bold text-slate-900 dark:text-white text-sm">{{ $prop->date_rdv->format('d/m/Y') }}</p>
+                                                </div>
+                                                <div class="bg-white/60 dark:bg-slate-800/60 rounded-lg p-2">
+                                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Heure</p>
+                                                    <p class="font-bold text-slate-900 dark:text-white text-sm">
+                                                        {{ \Carbon\Carbon::parse($prop->heure_debut)->format("H:i") }} - {{ \Carbon\Carbon::parse($prop->heure_fin)->format("H:i") }}
+                                                    </p>
+                                                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{{ $prop->duree_minutes }} min</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="bg-white/60 dark:bg-slate-800/60 rounded-lg p-2">
+                                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Prix proposé</p>
+                                                <p class="text-xl font-bold text-green-600 dark:text-green-400">{{ number_format($prop->prix_propose, 2, ',', ' ') }} €</p>
+                                            </div>
+                                            
+                                            @if($prop->lieu)
+                                                <div class="bg-white/60 dark:bg-slate-800/60 rounded-lg p-2">
+                                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Lieu</p>
+                                                    <p class="font-semibold text-slate-900 dark:text-white text-sm">{{ $prop->lieu }}</p>
+                                                </div>
+                                            @endif
+                                            
+                                            @if($prop->notes)
+                                                <div class="bg-white/60 dark:bg-slate-800/60 rounded-lg p-2">
+                                                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Notes</p>
+                                                    <p class="text-xs text-slate-700 dark:text-slate-300">{{ $prop->notes }}</p>
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Statut -->
+                                            <div class="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-700">
+                                                <span class="text-xs font-medium text-slate-600 dark:text-slate-400">Statut :</span>
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold
+                                                    @if($prop->statut === 'proposee') bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400
+                                                    @elseif($prop->statut === 'negociee') bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400
+                                                    @elseif($prop->statut === 'acceptee') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
+                                                    @elseif($prop->statut === 'refusee') bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400
+                                                    @endif">
+                                                    @if($prop->statut === 'proposee') En attente
+                                                    @elseif($prop->statut === 'negociee') Négociée
+                                                    @elseif($prop->statut === 'acceptee') ✓ Acceptée
+                                                    @elseif($prop->statut === 'refusee') ✗ Refusée
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <!-- Message utilisateur normal -->
+                            <div class="flex items-start gap-3 {{ $message->user_id === Auth::id() ? 'flex-row-reverse' : '' }} group">
+                                <!-- Avatar -->
+                                <div class="flex-shrink-0">
+                                    <x-avatar :user="$message->user" size="md" class="shadow-md" />
+                                </div>
+                                
+                                <!-- Message -->
+                                <div class="flex-1 flex flex-col {{ $message->user_id === Auth::id() ? 'items-end' : 'items-start' }} max-w-[75%]">
+                                    <div class="flex items-center gap-2 mb-1 {{ $message->user_id === Auth::id() ? 'flex-row-reverse' : '' }}">
+                                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                            {{ $message->user_id === Auth::id() ? 'Vous' : $message->user->name }}
+                                        </span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-500">
+                                            {{ $message->created_at->format('H:i') }}
+                                        </span>
+                                        @if($message->user_id === Auth::id() && $message->est_lu)
+                                            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div class="px-4 py-3 rounded-2xl {{ $message->user_id === Auth::id() ? 'bg-gradient-to-r from-green-500 to-green-600 text-white rounded-tr-sm' : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-tl-sm border border-slate-200 dark:border-slate-600' }} shadow-md hover:shadow-lg transition-shadow">
                                         @if($message->contenu)
                                             <p class="whitespace-pre-wrap break-words">{{ $message->contenu }}</p>
                                         @endif
@@ -364,10 +498,10 @@
                                                 >
                                             </div>
                                         @endif
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
                     @endforeach
                     <div id="messages-end"></div>
                 </div>
@@ -501,6 +635,22 @@
                             </svg>
                             Proposer un rendez-vous
                         </button>
+                    </div>
+                @endif
+            </div>
+                </div>
+
+                <!-- Colonne latérale : Détails de la réservation et modifications -->
+                @if(isset($conversation->reservation) && $conversation->reservation)
+                    <div class="lg:col-span-1">
+                        @include('messagerie.partials.reservation-details', [
+                            'reservation' => $conversation->reservation,
+                            'entreprise' => $entreprise,
+                            'conversation' => $conversation,
+                            'propositionActive' => $propositionActive ?? null,
+                            'isGerant' => $isGerant ?? false,
+                            'prestations' => $prestations ?? collect()
+                        ])
                     </div>
                 @endif
             </div>
@@ -668,6 +818,41 @@
         <!-- Modal pour proposer un RDV (client) -->
         @if((!isset($isGerant) || !$isGerant) && (!isset($propositionActive) || !$propositionActive))
             @include('messagerie.modals.proposer-rdv-client', ['entreprise' => $entreprise, 'prestations' => $prestations ?? collect()])
+        @endif
+
+        <!-- Modal pour modifier une proposition -->
+        @if(isset($conversation->reservation) && $conversation->reservation && $conversation->reservation->statut === 'en_attente')
+            @include('messagerie.modals.modify-proposition', [
+                'reservation' => $conversation->reservation,
+                'entreprise' => $entreprise,
+                'conversation' => $conversation,
+                'isGerant' => $isGerant ?? false,
+                'prestations' => $prestations ?? collect()
+            ])
+        @endif
+
+        <!-- Script pour ouvrir automatiquement la modale de contre-proposition après un refus -->
+        @if(session('open_contre_proposition') && session('contre_proposition_data'))
+            @php
+                $data = session('contre_proposition_data');
+            @endphp
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(() => {
+                        openModifyPropositionModal(
+                            {{ $data['reservation_id'] }},
+                            '{{ $data['date'] }}',
+                            '{{ $data['heure'] }}',
+                            {{ $data['duree'] }},
+                            {{ number_format($data['prix'], 2, '.', '') }},
+                            {!! json_encode($data['lieu'] ?? '') !!},
+                            {!! json_encode($data['notes'] ?? '') !!},
+                            {{ $isGerant ?? false ? 'true' : 'false' }},
+                            {{ $data['type_service_id'] ?? 'null' }}
+                        );
+                    }, 500);
+                });
+            </script>
         @endif
     </body>
 </html>

@@ -127,9 +127,9 @@ class DashboardController extends Controller
     }
 
     /**
-     * Marquer une réservation comme payée depuis le dashboard
+     * Annuler une réservation (côté client)
      */
-    public function marquerPayee(Request $request, Reservation $reservation)
+    public function cancel(Reservation $reservation)
     {
         $user = Auth::user();
 
@@ -138,30 +138,96 @@ class DashboardController extends Controller
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit de modifier cette réservation.']);
         }
 
-        // Vérifier que la réservation n'est pas déjà payée
-        if ($reservation->est_paye) {
-            return back()->withErrors(['error' => 'Cette réservation est déjà marquée comme payée.']);
+        // Vérifier que la réservation peut être annulée
+        if (!in_array($reservation->statut, ['en_attente', 'confirmee'])) {
+            return back()->withErrors(['error' => 'Cette réservation ne peut pas être annulée.']);
         }
 
-        // Marquer comme payée
+        // Annuler la réservation
         $reservation->update([
-            'est_paye' => true,
-            'date_paiement' => now(),
+            'statut' => 'annulee',
         ]);
 
         // Créer une notification pour l'entreprise
         if ($reservation->entreprise && $reservation->entreprise->user) {
             Notification::creer(
                 $reservation->entreprise->user_id,
-                'paiement',
-                'Paiement confirmé',
-                "Le client {$user->name} a marqué la réservation du {$reservation->date_reservation->format('d/m/Y')} comme payée.",
+                'reservation',
+                'Réservation annulée',
+                "Le client {$user->name} a annulé la réservation du {$reservation->date_reservation->format('d/m/Y à H:i')}.",
                 route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
                 ['reservation_id' => $reservation->id]
             );
         }
 
-        return back()->with('success', 'La réservation a été marquée comme payée avec succès.');
+        return back()->with('success', 'La réservation a été annulée avec succès. L\'entreprise a été notifiée.');
+    }
+
+    /**
+     * Modifier une réservation (côté client)
+     */
+    public function modify(Request $request, Reservation $reservation)
+    {
+        $user = Auth::user();
+
+        // Vérifier que la réservation appartient à l'utilisateur (client)
+        if ($reservation->user_id !== $user->id) {
+            return back()->withErrors(['error' => 'Vous n\'avez pas le droit de modifier cette réservation.']);
+        }
+
+        // Vérifier que la réservation peut être modifiée (seulement en attente)
+        if ($reservation->statut !== 'en_attente') {
+            return back()->withErrors(['error' => 'Seules les réservations en attente peuvent être modifiées.']);
+        }
+
+        $validated = $request->validate([
+            'date_reservation' => ['required', 'date', 'after:now'],
+            'heure_reservation' => ['required', 'date_format:H:i'],
+            'lieu' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        // Combiner date et heure
+        $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+        $dateReservation = \Carbon\Carbon::parse($dateTime);
+
+        // Sauvegarder les anciennes valeurs pour la notification
+        $ancienneDate = $reservation->date_reservation->format('d/m/Y à H:i');
+        $ancienLieu = $reservation->lieu;
+        $anciennesNotes = $reservation->notes;
+
+        // Mettre à jour la réservation
+        $reservation->update([
+            'date_reservation' => $dateReservation,
+            'lieu' => $validated['lieu'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        // Construire le message de notification
+        $changements = [];
+        if ($ancienneDate !== $dateReservation->format('d/m/Y à H:i')) {
+            $changements[] = "Date/heure : {$ancienneDate} → {$dateReservation->format('d/m/Y à H:i')}";
+        }
+        if ($ancienLieu !== ($validated['lieu'] ?? null)) {
+            $changements[] = "Lieu modifié";
+        }
+        if ($anciennesNotes !== ($validated['notes'] ?? null)) {
+            $changements[] = "Notes modifiées";
+        }
+
+        // Créer une notification pour l'entreprise
+        if ($reservation->entreprise && $reservation->entreprise->user && !empty($changements)) {
+            Notification::creer(
+                $reservation->entreprise->user_id,
+                'reservation',
+                'Réservation modifiée',
+                "Le client {$user->name} a modifié la réservation : " . implode(', ', $changements),
+                route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
+                ['reservation_id' => $reservation->id]
+            );
+        }
+
+        return back()->with('success', 'La réservation a été modifiée avec succès. L\'entreprise a été notifiée.');
     }
 
     /**

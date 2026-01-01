@@ -288,18 +288,29 @@
 
                                 <!-- Téléphone -->
                                 <div>
-                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Téléphone</label>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                        Téléphone
+                                        @if(auth()->user() && auth()->user()->telephone)
+                                            <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
+                                        @endif
+                                    </label>
                                     <input 
                                         type="tel" 
                                         name="telephone_client" 
                                         id="telephone_client"
                                         required
+                                        value="{{ old('telephone_client', auth()->user()?->telephone ?? '') }}"
                                         placeholder="06 12 34 56 78"
                                         class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
                                     @error('telephone_client')
                                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
+                                    @if(auth()->user() && !auth()->user()->telephone)
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                            💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
+                                        </p>
+                                    @endif
                                 </div>
 
                                 <!-- Option téléphone caché -->

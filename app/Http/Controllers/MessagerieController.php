@@ -99,17 +99,20 @@ class MessagerieController extends Controller
         
         // Charger la réservation si la colonne existe
         if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
-            $conversation->load('reservation');
+            $conversation->load(['reservation.typeService', 'reservation.user']);
         }
         
         // Charger les messages avec leurs propositions
         $messages = $conversation->messages()
-            ->with(['user', 'propositionRdv'])
+            ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
             ->orderBy('created_at', 'asc')
             ->get();
         
-        // Charger les propositions de rendez-vous actives
+        // Charger les propositions de rendez-vous actives avec les relations nécessaires
         $propositionActive = $conversation->propositionRendezVousActive();
+        if ($propositionActive) {
+            $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
+        }
         
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
@@ -127,6 +130,7 @@ class MessagerieController extends Controller
             'conversation' => $conversation,
             'entreprise' => $entreprise,
             'messages' => $messages,
+            'isGerant' => false, // C'est la vue client
             'propositionActive' => $propositionActive,
             'prestations' => $prestations ?? collect(),
         ]);
@@ -207,17 +211,20 @@ class MessagerieController extends Controller
         
         // Charger la réservation si la colonne existe
         if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
-            $conversation->load('reservation');
+            $conversation->load(['reservation.typeService', 'reservation.user']);
         }
         
         // Charger les messages avec leurs propositions
         $messages = $conversation->messages()
-            ->with(['user', 'propositionRdv'])
+            ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
             ->orderBy('created_at', 'asc')
             ->get();
         
-        // Charger les propositions de rendez-vous actives
+        // Charger les propositions de rendez-vous actives avec les relations nécessaires
         $propositionActive = $conversation->propositionRendezVousActive();
+        if ($propositionActive) {
+            $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
+        }
         
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
@@ -348,8 +355,10 @@ class MessagerieController extends Controller
         
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
-            'user_id' => $user->id,
+            'auteur_user_id' => $user->id,
+            'auteur_type' => 'client', // Le client fait la proposition
             'entreprise_id' => $entreprise->id,
+            'type_service_id' => isset($typeService) ? $typeService->id : null,
             'reservation_id' => $reservationId, // Lier à la réservation si présente
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut,
@@ -411,8 +420,13 @@ class MessagerieController extends Controller
         
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
-            ->with(['user', 'reservation'])
+            ->with(['user', 'entreprise'])
             ->firstOrFail();
+        
+        // Charger la réservation si la colonne existe
+        if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
+            $conversation->load(['reservation.typeService', 'reservation.user']);
+        }
 
         $validated = $request->validate([
             'date_rdv' => 'required|date|after_or_equal:today',
@@ -428,12 +442,24 @@ class MessagerieController extends Controller
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
+        // Récupérer le type de service si la réservation en a un
+        $typeService = null;
+        if ($conversation->reservation && $conversation->reservation->type_service_id) {
+            $typeService = TypeService::where('id', $conversation->reservation->type_service_id)
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+        }
+
         // Créer la proposition (liée à la réservation si la conversation est liée à une réservation)
+        // auteur_user_id = auteur de la proposition (ici le gérant)
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
-            'user_id' => $conversation->user_id,
+            'auteur_user_id' => $user->id, // L'auteur est le gérant qui propose
+            'auteur_type' => 'gerant', // Le gérant fait la proposition
             'entreprise_id' => $entreprise->id,
-            'reservation_id' => $conversation->reservation_id, // Lier à la réservation si présente
+            'type_service_id' => $typeService ? $typeService->id : null,
+            'reservation_id' => $conversation->reservation_id ?? null, // Lier à la réservation si présente
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut, // Format datetime complet
             'heure_fin' => $heureFin, // Format datetime complet
@@ -482,9 +508,16 @@ class MessagerieController extends Controller
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         $proposition = PropositionRendezVous::where('id', $propositionId)
-            ->where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
+        
+        // Vérifier que l'utilisateur fait partie de la conversation (client ou gérant)
+        $estClient = $proposition->conversation->user_id === $user->id;
+        $estGerant = $entreprise->user_id === $user->id;
+        
+        if (!$estClient && !$estGerant) {
+            return back()->withErrors(['error' => 'Vous n\'avez pas le droit de négocier cette proposition.']);
+        }
 
         if (!$proposition->peutEtreNegociee()) {
             return back()->withErrors(['error' => 'Cette proposition ne peut pas être négociée.']);
@@ -523,6 +556,205 @@ class MessagerieController extends Controller
     }
 
     /**
+     * Modifier une proposition de réservation (côté client)
+     */
+    public function modifyPropositionClient(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        // Vérifier que l'entreprise autorise les négociations
+        if (!$entreprise->prix_negociables) {
+            return back()->withErrors(['error' => 'Cette entreprise n\'autorise pas les modifications de propositions par les clients.']);
+        }
+
+        $validated = $request->validate([
+            'reservation_id' => 'required|exists:reservations,id',
+            'date_rdv' => 'required|date|after:now',
+            'heure_debut' => 'required|date_format:H:i',
+            'duree_minutes' => 'required|integer|min:15',
+            'prix' => 'required|numeric|min:0',
+            'lieu' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Vérifier que la réservation appartient au client
+        $reservation = Reservation::where('id', $validated['reservation_id'])
+            ->where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('statut', 'en_attente')
+            ->firstOrFail();
+
+        // Récupérer ou créer la conversation
+        $conversation = Conversation::where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_archivee', false)
+            ->first();
+
+        if (!$conversation) {
+            $conversation = Conversation::create([
+                'user_id' => $user->id,
+                'entreprise_id' => $entreprise->id,
+            ]);
+        }
+
+        // Lier la conversation à la réservation si la colonne existe
+        if (Schema::hasColumn('conversations', 'reservation_id') && !$conversation->reservation_id) {
+            $conversation->update(['reservation_id' => $reservation->id]);
+        }
+
+        // Calculer l'heure de fin
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $dureeMinutes = (int) $validated['duree_minutes'];
+        $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
+
+        // Créer une nouvelle proposition
+        $proposition = PropositionRendezVous::create([
+            'conversation_id' => $conversation->id,
+            'auteur_user_id' => $user->id,
+            'auteur_type' => 'client', // Le client fait la proposition
+            'entreprise_id' => $entreprise->id,
+            'type_service_id' => $reservation->type_service_id,
+            'reservation_id' => $reservation->id,
+            'date_rdv' => $validated['date_rdv'],
+            'heure_debut' => $heureDebut,
+            'heure_fin' => $heureFin,
+            'duree_minutes' => $dureeMinutes,
+            'prix_propose' => $validated['prix'],
+            'prix_final' => $validated['prix'],
+            'statut' => 'proposee',
+            'notes' => $validated['notes'] ?? null,
+            'lieu' => $validated['lieu'] ?? null,
+        ]);
+
+        // Créer le message associé (message système pour la proposition)
+        $messageContenu = "📝 Proposition de modification pour la réservation #{$reservation->id} : {$validated['date_rdv']} à {$validated['heure_debut']} - Durée : {$dureeMinutes} min - Prix : {$validated['prix']} €";
+        
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'user_id' => $user->id,
+            'type_message' => 'proposition_rdv',
+            'proposition_rdv_id' => $proposition->id,
+            'contenu' => $messageContenu,
+            'est_lu' => false,
+        ]);
+
+        $proposition->update(['message_id' => $message->id]);
+        $conversation->update(['dernier_message_at' => now()]);
+
+        // Notifier l'entreprise
+        Notification::creer(
+            $entreprise->user_id,
+            'reservation',
+            'Nouvelle proposition de modification',
+            "{$user->name} propose une modification pour la réservation #{$reservation->id} : {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €",
+            route('messagerie.show-gerant', [$entreprise->slug, $conversation->id]),
+            ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
+        );
+
+        return back()->with('success', 'Votre proposition de modification a été envoyée !');
+    }
+
+    /**
+     * Modifier une proposition de réservation (côté gérant)
+     */
+    public function modifyPropositionGerant(Request $request, $slug, $conversationId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $conversation = Conversation::where('id', $conversationId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'reservation_id' => 'required|exists:reservations,id',
+            'type_service_id' => 'nullable|exists:types_services,id',
+            'date_rdv' => 'required|date|after:now',
+            'heure_debut' => 'required|date_format:H:i',
+            'duree_minutes' => 'required|integer|min:15',
+            'prix' => 'required|numeric|min:0',
+            'lieu' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Vérifier que la réservation appartient à cette entreprise
+        $reservation = Reservation::where('id', $validated['reservation_id'])
+            ->where('entreprise_id', $entreprise->id)
+            ->where('statut', 'en_attente')
+            ->firstOrFail();
+
+        // Lier la conversation à la réservation si la colonne existe
+        if (Schema::hasColumn('conversations', 'reservation_id') && !$conversation->reservation_id) {
+            $conversation->update(['reservation_id' => $reservation->id]);
+        }
+
+        // Récupérer le service si spécifié
+        $typeService = null;
+        if ($validated['type_service_id']) {
+            $typeService = TypeService::where('id', $validated['type_service_id'])
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+        }
+
+        // Calculer l'heure de fin
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $dureeMinutes = (int) $validated['duree_minutes'];
+        $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
+
+        // Créer une nouvelle proposition
+        // auteur_user_id doit être celui qui fait la proposition (le gérant dans ce cas)
+        $proposition = PropositionRendezVous::create([
+            'conversation_id' => $conversation->id,
+            'auteur_user_id' => $user->id, // Le gérant qui fait la proposition
+            'auteur_type' => 'gerant', // Le gérant fait la proposition
+            'entreprise_id' => $entreprise->id,
+            'type_service_id' => $typeService ? $typeService->id : $reservation->type_service_id,
+            'reservation_id' => $reservation->id,
+            'date_rdv' => $validated['date_rdv'],
+            'heure_debut' => $heureDebut,
+            'heure_fin' => $heureFin,
+            'duree_minutes' => $dureeMinutes,
+            'prix_propose' => $validated['prix'],
+            'prix_final' => $validated['prix'],
+            'statut' => 'proposee',
+            'notes' => $validated['notes'] ?? null,
+            'lieu' => $validated['lieu'] ?? null,
+        ]);
+
+        // Créer le message associé (message système pour la proposition)
+        $serviceNom = $typeService ? $typeService->nom : ($reservation->type_service ?? 'Service');
+        $messageContenu = "📝 Proposition de modification pour la réservation #{$reservation->id} : {$serviceNom} le {$validated['date_rdv']} à {$validated['heure_debut']} - Durée : {$dureeMinutes} min - Prix : {$validated['prix']} €";
+        
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'user_id' => $user->id,
+            'type_message' => 'proposition_rdv',
+            'proposition_rdv_id' => $proposition->id,
+            'contenu' => $messageContenu,
+            'est_lu' => false,
+        ]);
+
+        $proposition->update(['message_id' => $message->id]);
+        $conversation->update(['dernier_message_at' => now()]);
+
+        // Notifier le client
+        Notification::creer(
+            $conversation->user_id,
+            'reservation',
+            'Nouvelle proposition de modification',
+            "{$entreprise->nom} propose une modification pour votre réservation #{$reservation->id} : {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €",
+            route('messagerie.show', $entreprise->slug),
+            ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
+        );
+
+        return back()->with('success', 'Votre proposition de modification a été envoyée !');
+    }
+
+    /**
      * Accepter une proposition de rendez-vous
      */
     public function accepterProposition(Request $request, $slug, $propositionId)
@@ -535,10 +767,12 @@ class MessagerieController extends Controller
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
 
-        $isClient = $proposition->user_id === $user->id;
-        $isGerant = $entreprise->user_id === $user->id;
+        // Vérifier que l'utilisateur est le destinataire (pas l'auteur)
+        if ($proposition->estAuteurPar($user)) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas accepter votre propre proposition.']);
+        }
 
-        if (!$isClient && !$isGerant) {
+        if (!$proposition->estDestinatairePar($user)) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit d\'accepter cette proposition.']);
         }
 
@@ -559,18 +793,30 @@ class MessagerieController extends Controller
                 ->firstOrFail();
             
             // Mettre à jour la réservation existante
-            $reservation->update([
+            $updateData = [
                 'date_reservation' => $dateTime,
                 'lieu' => $proposition->lieu ?? $reservation->lieu,
                 'prix' => $prixFinal,
                 'duree_minutes' => $proposition->duree_minutes,
                 'statut' => 'confirmee', // Confirmer la réservation modifiée
                 'notes' => $proposition->notes ? ($reservation->notes ? $reservation->notes . "\n\n[Modifiée] " . $proposition->notes : $proposition->notes) : $reservation->notes,
-            ]);
+            ];
+            
+            // Mettre à jour le type de service si spécifié dans la proposition
+            if ($proposition->type_service_id) {
+                $updateData['type_service_id'] = $proposition->type_service_id;
+                // Charger le typeService pour obtenir le nom
+                $proposition->load('typeService');
+                if ($proposition->typeService) {
+                    $updateData['type_service'] = $proposition->typeService->nom;
+                }
+            }
+            
+            $reservation->update($updateData);
         } else {
             // Créer une nouvelle réservation
             $reservation = Reservation::create([
-                'user_id' => $proposition->user_id,
+                'user_id' => $proposition->conversation->user_id, // Le client de la conversation
                 'entreprise_id' => $entreprise->id,
                 'date_reservation' => $dateTime,
                 'type_service' => 'Rendez-vous via messagerie',
@@ -579,7 +825,7 @@ class MessagerieController extends Controller
                 'duree_minutes' => $proposition->duree_minutes,
                 'statut' => 'confirmee', // Directement confirmée car acceptée dans la messagerie
                 'notes' => $proposition->notes ?? null,
-                'telephone_client' => $proposition->user->telephone ?? 'Non renseigné',
+                'telephone_client' => ($proposition->auteur && $proposition->auteur_type === 'client') ? ($proposition->auteur->telephone ?? 'Non renseigné') : ($proposition->conversation->user->telephone ?? 'Non renseigné'),
                 'telephone_cache' => false,
             ]);
         }
@@ -614,7 +860,7 @@ class MessagerieController extends Controller
         $proposition->conversation->update(['dernier_message_at' => now()]);
 
         // Notifier l'autre partie
-        $autreUserId = $isClient ? $entreprise->user_id : $proposition->user_id;
+        $autreUserId = $isClient ? $entreprise->user_id : ($proposition->auteur_user_id ?? $proposition->conversation->user_id);
         $isModification = $proposition->reservation_id !== null;
         $notificationTitre = $isModification ? 'Modification de réservation acceptée' : 'Rendez-vous accepté';
         $notificationMessage = $isModification
@@ -642,7 +888,7 @@ class MessagerieController extends Controller
     }
 
     /**
-     * Refuser une proposition de rendez-vous
+     * Refuser une proposition de rendez-vous (pour les clients)
      */
     public function refuserProposition(Request $request, $slug, $propositionId)
     {
@@ -653,12 +899,15 @@ class MessagerieController extends Controller
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
 
-        $isClient = $proposition->user_id === $user->id;
-        $isGerant = $entreprise->peutEtreGereePar($user) || $user->is_admin;
-
-        if (!$isClient && !$isGerant) {
+        // Vérifier que l'utilisateur fait partie de la conversation (client ou gérant)
+        $estClient = $proposition->conversation->user_id === $user->id;
+        $estGerant = $entreprise->user_id === $user->id;
+        
+        if (!$estClient && !$estGerant) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit de refuser cette proposition.']);
         }
+        
+        // On peut refuser même si on est l'auteur (cas où on change d'avis)
 
         if ($proposition->statut === 'refusee' || $proposition->statut === 'acceptee') {
             return back()->withErrors(['error' => 'Cette proposition a déjà été traitée.']);
@@ -666,6 +915,7 @@ class MessagerieController extends Controller
 
         $validated = $request->validate([
             'raison' => 'nullable|string|max:500',
+            'creer_contre_proposition' => 'nullable|boolean',
         ]);
 
         $proposition->update([
@@ -683,8 +933,12 @@ class MessagerieController extends Controller
 
         $proposition->conversation->update(['dernier_message_at' => now()]);
 
+        // Déterminer qui est le client et qui est le gérant
+        $isClient = $proposition->conversation->user_id === $user->id;
+        $isGerant = $entreprise->user_id === $user->id;
+
         // Notifier l'autre partie
-        $autreUserId = $isClient ? $entreprise->user_id : $proposition->user_id;
+        $autreUserId = $isClient ? $entreprise->user_id : ($proposition->auteur_user_id ?? $proposition->conversation->user_id);
         Notification::creer(
             $autreUserId,
             'reservation',
@@ -696,7 +950,47 @@ class MessagerieController extends Controller
             ['proposition_id' => $proposition->id]
         );
 
+        // Si l'utilisateur veut créer une contre-proposition, rediriger avec les données de la proposition
+        if ($request->has('creer_contre_proposition') && $proposition->reservation_id) {
+            $reservation = Reservation::find($proposition->reservation_id);
+            if ($reservation && $reservation->statut === 'en_attente') {
+                // Préparer les données de la proposition pour pré-remplir le formulaire
+                // Utiliser les données de la proposition refusée (effet d'ancrage)
+                $heureDebut = \Carbon\Carbon::parse($proposition->heure_debut);
+                
+                // Nettoyer les notes : enlever la raison du refus si elle a été ajoutée
+                $notes = $proposition->notes ?? $reservation->notes ?? '';
+                if (strpos($notes, '[Raison du refus]') !== false) {
+                    $notes = trim(explode('[Raison du refus]', $notes)[0]);
+                }
+                
+                return back()->with([
+                    'success' => 'Proposition refusée.',
+                    'open_contre_proposition' => true,
+                    'contre_proposition_data' => [
+                        'reservation_id' => $reservation->id,
+                        'date' => $proposition->date_rdv->format('Y-m-d'),
+                        'heure' => $heureDebut->format('H:i'),
+                        'duree' => $proposition->duree_minutes,
+                        'prix' => $proposition->prix_propose,
+                        'lieu' => $proposition->lieu ?? $reservation->lieu ?? '',
+                        'notes' => $notes,
+                        'type_service_id' => $proposition->type_service_id ?? $reservation->type_service_id,
+                    ]
+                ]);
+            }
+        }
+
         return back()->with('success', 'Proposition refusée.');
+    }
+
+    /**
+     * Refuser une proposition de rendez-vous (pour les gérants)
+     */
+    public function refuserPropositionGerant(Request $request, $slug, $conversationId, $propositionId)
+    {
+        // Rediriger vers la méthode principale avec les bons paramètres
+        return $this->refuserProposition($request, $slug, $propositionId);
     }
 
     /**
@@ -743,6 +1037,137 @@ class MessagerieController extends Controller
         return response()->json([
             'has_new' => $newMessagesCount > 0,
             'last_message_id' => $lastMessage ? $lastMessage->id : $lastMessageId,
+        ]);
+    }
+
+    /**
+     * Récupérer les disponibilités et réservations pour une date (pour l'agenda dans la modale)
+     */
+    public function getAgendaForDate(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        // Vérifier les permissions (client ou gérant)
+        $isClient = !$entreprise->peutEtreGereePar($user) && !$user->is_admin;
+        $isGerant = $entreprise->peutEtreGereePar($user) || $user->is_admin;
+        
+        if (!$isClient && !$isGerant) {
+            return response()->json(['error' => 'Accès non autorisé'], 403);
+        }
+
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'reservation_id' => 'nullable|exists:reservations,id', // Pour exclure la réservation en cours de modification
+        ]);
+
+        $date = \Carbon\Carbon::parse($validated['date']);
+        
+        // Récupérer les horaires d'ouverture pour ce jour
+        $jourSemaine = $date->dayOfWeek; // 0 = dimanche, 6 = samedi
+        $horaire = $entreprise->horairesOuverture()
+            ->where(function($q) use ($date, $jourSemaine) {
+                $q->where(function($q2) use ($jourSemaine) {
+                    $q2->where('jour_semaine', $jourSemaine)
+                       ->where('est_exceptionnel', false);
+                })->orWhere(function($q2) use ($date) {
+                    $q2->where('date_exception', $date->format('Y-m-d'))
+                       ->where('est_exceptionnel', true);
+                });
+            })
+            ->first();
+
+        // Récupérer les réservations pour ce jour (exclure la réservation en cours de modification)
+        $reservations = Reservation::where('entreprise_id', $entreprise->id)
+            ->whereDate('date_reservation', $date->format('Y-m-d'))
+            ->whereIn('statut', ['en_attente', 'confirmee', 'terminee'])
+            ->when($validated['reservation_id'] ?? null, function($q, $reservationId) {
+                $q->where('id', '!=', $reservationId);
+            })
+            ->with(['user', 'typeService'])
+            ->get()
+            ->map(function($reservation) {
+                $debut = \Carbon\Carbon::parse($reservation->date_reservation);
+                $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                
+                return [
+                    'id' => $reservation->id,
+                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
+                              ($reservation->user ? ' - ' . $reservation->user->name : ''),
+                    'start' => $debut->format('H:i'),
+                    'end' => $fin->format('H:i'),
+                    'start_datetime' => $debut->toIso8601String(),
+                    'end_datetime' => $fin->toIso8601String(),
+                    'statut' => $reservation->statut,
+                    'color' => $reservation->statut === 'confirmee' ? '#10b981' : ($reservation->statut === 'en_attente' ? '#f59e0b' : '#6b7280'),
+                ];
+            });
+
+        // Horaires d'ouverture
+        $horaires = [
+            'heure_ouverture' => $horaire && $horaire->heure_ouverture ? \Carbon\Carbon::parse($horaire->heure_ouverture)->format('H:i') : null,
+            'heure_fermeture' => $horaire && $horaire->heure_fermeture ? \Carbon\Carbon::parse($horaire->heure_fermeture)->format('H:i') : null,
+            'est_ferme' => !$horaire || !$horaire->heure_ouverture || !$horaire->heure_fermeture,
+        ];
+
+        return response()->json([
+            'date' => $date->format('Y-m-d'),
+            'date_formatee' => $date->format('d/m/Y'),
+            'jour_semaine' => $date->locale('fr')->dayName,
+            'horaires' => $horaires,
+            'reservations' => $reservations,
+        ]);
+    }
+
+    /**
+     * Vérifier les conflits pour une proposition
+     */
+    public function checkConflict(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'heure_debut' => 'required|date_format:H:i',
+            'duree_minutes' => 'required|integer|min:15',
+            'reservation_id' => 'nullable|exists:reservations,id',
+        ]);
+
+        $date = \Carbon\Carbon::parse($validated['date']);
+        $heureDebut = $date->copy()->setTimeFromTimeString($validated['heure_debut']);
+        $heureFin = $heureDebut->copy()->addMinutes((int) $validated['duree_minutes']);
+
+        // Récupérer les réservations qui pourraient entrer en conflit
+        $reservations = Reservation::where('entreprise_id', $entreprise->id)
+            ->whereDate('date_reservation', $date->format('Y-m-d'))
+            ->whereIn('statut', ['en_attente', 'confirmee'])
+            ->when($validated['reservation_id'] ?? null, function($q, $reservationId) {
+                $q->where('id', '!=', $reservationId);
+            })
+            ->get();
+
+        $conflits = [];
+        foreach ($reservations as $reservation) {
+            $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
+            $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+            
+            // Vérifier le chevauchement
+            if ($heureDebut->lt($finReservation) && $heureFin->gt($debutReservation)) {
+                $conflits[] = [
+                    'id' => $reservation->id,
+                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
+                              ($reservation->user ? ' - ' . $reservation->user->name : ''),
+                    'start' => $debutReservation->format('H:i'),
+                    'end' => $finReservation->format('H:i'),
+                    'statut' => $reservation->statut,
+                ];
+            }
+        }
+
+        return response()->json([
+            'has_conflict' => count($conflits) > 0,
+            'conflits' => $conflits,
         ]);
     }
 }

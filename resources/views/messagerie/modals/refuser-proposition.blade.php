@@ -20,6 +20,23 @@
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
                     <textarea name="raison" rows="3" maxlength="500" placeholder="Expliquez pourquoi vous refusez cette proposition..." class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"></textarea>
                 </div>
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            name="creer_contre_proposition" 
+                            value="1"
+                            id="creer-contre-proposition-{{ $propositionActive->id }}"
+                            class="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                        >
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">
+                            Créer une contre-proposition après le refus
+                        </span>
+                    </label>
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 ml-7">
+                        Si coché, vous pourrez proposer une nouvelle modification juste après avoir refusé cette proposition.
+                    </p>
+                </div>
                 <div class="flex gap-3 justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
                     <button type="button" onclick="document.getElementById('modal-refuser-{{ $propositionActive->id }}').classList.add('hidden')" class="px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition font-semibold">
                         Annuler

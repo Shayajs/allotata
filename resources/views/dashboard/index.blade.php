@@ -470,17 +470,6 @@
                                                             <a href="{{ route('factures.show', $reservation->facture->id) }}" class="mt-1 inline-block text-xs text-green-600 dark:text-green-400 hover:underline">
                                                                 Voir la facture →
                                                             </a>
-                                                        @elseif(!$reservation->est_paye)
-                                                            <form action="{{ route('dashboard.reservation.marquer-payee', $reservation->id) }}" method="POST" class="mt-2 inline-block">
-                                                                @csrf
-                                                                <button 
-                                                                    type="submit" 
-                                                                    onclick="return confirm('Confirmer que cette réservation a été payée ?')"
-                                                                    class="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
-                                                                >
-                                                                    ✓ Marquer comme payée
-                                                                </button>
-                                                            </form>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -490,6 +479,33 @@
                                                 <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                                     <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes :</p>
                                                     <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->notes }}</p>
+                                                </div>
+                                            @endif
+
+                                            <!-- Actions pour le client -->
+                                            @if(in_array($reservation->statut, ['en_attente', 'confirmee']))
+                                                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2">
+                                                    @if($reservation->statut === 'en_attente')
+                                                        <!-- Modifier la réservation -->
+                                                        <button 
+                                                            onclick="openModifyModal({{ $reservation->id }}, '{{ $reservation->date_reservation->format('Y-m-d') }}', '{{ $reservation->date_reservation->format('H:i') }}', '{{ addslashes($reservation->lieu ?? '') }}', '{{ addslashes($reservation->notes ?? '') }}')"
+                                                            class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                                                        >
+                                                            ✏️ Modifier
+                                                        </button>
+                                                    @endif
+                                                    
+                                                    <!-- Annuler la réservation -->
+                                                    <form action="{{ route('dashboard.reservation.cancel', $reservation->id) }}" method="POST" class="inline-block">
+                                                        @csrf
+                                                        <button 
+                                                            type="submit" 
+                                                            onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ? L\'entreprise sera notifiée.')"
+                                                            class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                                                        >
+                                                            ✗ Annuler
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             @endif
                                         </div>
@@ -815,6 +831,109 @@
             });
         </script>
         @endif
+
+        <!-- Modale de modification de réservation -->
+        <div id="modify-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Modifier la réservation</h3>
+                    <button onclick="closeModifyModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="modify-form" method="POST" class="space-y-4">
+                    @csrf
+                    @method('PATCH')
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date *</label>
+                            <input 
+                                type="date" 
+                                name="date_reservation" 
+                                id="modify-date"
+                                required
+                                min="{{ date('Y-m-d') }}"
+                                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure *</label>
+                            <input 
+                                type="time" 
+                                name="heure_reservation" 
+                                id="modify-heure"
+                                required
+                                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Lieu (optionnel)</label>
+                        <input 
+                            type="text" 
+                            name="lieu" 
+                            id="modify-lieu"
+                            placeholder="Adresse du rendez-vous"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes (optionnel)</label>
+                        <textarea 
+                            name="notes" 
+                            id="modify-notes"
+                            rows="3"
+                            placeholder="Informations complémentaires..."
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex gap-3 pt-4">
+                        <button 
+                            type="button"
+                            onclick="closeModifyModal()"
+                            class="flex-1 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition"
+                        >
+                            Annuler
+                        </button>
+                        <button 
+                            type="submit"
+                            class="flex-1 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                        >
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openModifyModal(reservationId, date, heure, lieu, notes) {
+                document.getElementById('modify-form').action = `/dashboard/reservation/${reservationId}/modify`;
+                document.getElementById('modify-date').value = date;
+                document.getElementById('modify-heure').value = heure;
+                document.getElementById('modify-lieu').value = lieu || '';
+                document.getElementById('modify-notes').value = notes || '';
+                document.getElementById('modify-modal').classList.remove('hidden');
+            }
+
+            function closeModifyModal() {
+                document.getElementById('modify-modal').classList.add('hidden');
+            }
+
+            // Fermer la modale en cliquant en dehors
+            document.getElementById('modify-modal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModifyModal();
+                }
+            });
+        </script>
     </body>
 </html>
 

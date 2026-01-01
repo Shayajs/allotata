@@ -84,6 +84,7 @@ class Conversation extends Model
     public function propositionRendezVousActive()
     {
         return $this->propositionsRendezVous()
+            ->with(['user', 'entreprise', 'reservation'])
             ->whereIn('statut', ['proposee', 'negociee'])
             ->where('date_rdv', '>=', now()->toDateString())
             ->first();

@@ -141,7 +141,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
-    Route::post('/dashboard/reservation/{reservation}/marquer-payee', [DashboardController::class, 'marquerPayee'])->name('dashboard.reservation.marquer-payee');
+    Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
+    Route::patch('/dashboard/reservation/{reservation}/modify', [DashboardController::class, 'modify'])->name('dashboard.reservation.modify');
     
     // Création d'entreprise
     Route::get('/entreprise/create', [EntrepriseController::class, 'create'])->name('entreprise.create');
@@ -237,7 +238,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/messagerie/{slug}/accepter-proposition/{propositionId}', [MessagerieController::class, 'accepterProposition'])->name('messagerie.accepter-proposition');
     Route::post('/messagerie/{slug}/refuser-proposition/{propositionId}', [MessagerieController::class, 'refuserProposition'])->name('messagerie.refuser-proposition');
     Route::post('/m/{slug}/messagerie/{conversationId}/accepter-proposition/{propositionId}', [MessagerieController::class, 'accepterProposition'])->name('messagerie.accepter-proposition-gerant');
-    Route::post('/m/{slug}/messagerie/{conversationId}/refuser-proposition/{propositionId}', [MessagerieController::class, 'refuserProposition'])->name('messagerie.refuser-proposition-gerant');
+    Route::post('/m/{slug}/messagerie/{conversationId}/refuser-proposition/{propositionId}', [MessagerieController::class, 'refuserPropositionGerant'])->name('messagerie.refuser-proposition-gerant');
+    Route::post('/messagerie/{slug}/modify-proposition', [MessagerieController::class, 'modifyPropositionClient'])->name('messagerie.modify-proposition-client');
+    Route::post('/m/{slug}/messagerie/{conversationId}/modify-proposition', [MessagerieController::class, 'modifyPropositionGerant'])->name('messagerie.modify-proposition-gerant');
+    Route::get('/messagerie/{slug}/agenda', [MessagerieController::class, 'getAgendaForDate'])->name('messagerie.agenda');
+    Route::post('/messagerie/{slug}/check-conflict', [MessagerieController::class, 'checkConflict'])->name('messagerie.check-conflict');
     
     // Abonnements
         Route::get('/abonnement', [SubscriptionController::class, 'index'])->name('subscription.index');

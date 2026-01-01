@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('entreprises', function (Blueprint $table) {
-            $table->boolean('prix_negociables')->default(false)->after('afficher_nom_gerant');
+            $table->boolean('prix_negociables')->default(true)->after('afficher_nom_gerant');
             $table->boolean('rdv_uniquement_messagerie')->default(false)->after('prix_negociables');
         });
     }

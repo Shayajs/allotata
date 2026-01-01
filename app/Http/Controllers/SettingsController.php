@@ -62,6 +62,12 @@ class SettingsController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'photo_profil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'telephone' => ['nullable', 'string', 'max:20'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'date_naissance' => ['nullable', 'date', 'before:today'],
+            'adresse' => ['nullable', 'string', 'max:255'],
+            'ville' => ['nullable', 'string', 'max:255'],
+            'code_postal' => ['nullable', 'string', 'max:10'],
         ]);
 
         // Gérer l'upload de la photo de profil (atomicité : upload d'abord, suppression ensuite)

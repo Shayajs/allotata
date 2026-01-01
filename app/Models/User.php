@@ -30,6 +30,12 @@ class User extends Authenticatable
         'abonnement_manuel_actif_jusqu',
         'abonnement_manuel_notes',
         'notifications_erreurs_actives',
+        'telephone',
+        'bio',
+        'date_naissance',
+        'adresse',
+        'ville',
+        'code_postal',
     ];
 
     /**
@@ -59,6 +65,7 @@ class User extends Authenticatable
             'abonnement_manuel' => 'boolean',
             'abonnement_manuel_actif_jusqu' => 'date',
             'notifications_erreurs_actives' => 'boolean',
+            'date_naissance' => 'date',
         ];
     }
 

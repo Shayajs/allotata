@@ -195,6 +195,119 @@
                                 </div>
                             </div>
 
+                            <!-- Informations personnelles (optionnelles) -->
+                            <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Informations personnelles (optionnelles)</h3>
+                                
+                                <div class="space-y-6">
+                                    <!-- Téléphone -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Téléphone
+                                        </label>
+                                        <input 
+                                            type="tel" 
+                                            name="telephone" 
+                                            value="{{ old('telephone', $user->telephone) }}"
+                                            placeholder="Ex: 06 12 34 56 78"
+                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                        @error('telephone')
+                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Bio -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            À propos de moi
+                                        </label>
+                                        <textarea 
+                                            name="bio" 
+                                            rows="4"
+                                            placeholder="Parlez-nous un peu de vous..."
+                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >{{ old('bio', $user->bio) }}</textarea>
+                                        @error('bio')
+                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                            Maximum 1000 caractères
+                                        </p>
+                                    </div>
+
+                                    <!-- Date de naissance -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Date de naissance
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            name="date_naissance" 
+                                            value="{{ old('date_naissance', $user->date_naissance ? $user->date_naissance->format('Y-m-d') : '') }}"
+                                            max="{{ date('Y-m-d', strtotime('-1 day')) }}"
+                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                        @error('date_naissance')
+                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Adresse -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Adresse
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            name="adresse" 
+                                            value="{{ old('adresse', $user->adresse) }}"
+                                            placeholder="Ex: 123 Rue de la République"
+                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                        @error('adresse')
+                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Ville et Code postal -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Ville
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                name="ville" 
+                                                value="{{ old('ville', $user->ville) }}"
+                                                placeholder="Ex: Paris"
+                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                            @error('ville')
+                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Code postal
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                name="code_postal" 
+                                                value="{{ old('code_postal', $user->code_postal) }}"
+                                                placeholder="Ex: 75001"
+                                                maxlength="10"
+                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                            @error('code_postal')
+                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="flex justify-end">
                                 <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                                     Enregistrer les modifications
