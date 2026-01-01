@@ -221,7 +221,7 @@ class SearchController extends Controller
                     'type_activite' => $entreprise->type_activite,
                     'ville' => $entreprise->ville,
                     'slug' => $entreprise->slug,
-                    'logo' => $entreprise->logo ? asset('storage/' . $entreprise->logo) : null,
+                    'logo' => $entreprise->logo ? asset('media/' . $entreprise->logo) : null,
                     'est_verifiee' => $entreprise->est_verifiee,
                     'services' => $entreprise->typesServices->pluck('nom')->take(2)->toArray(),
                 ];

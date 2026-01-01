@@ -8,6 +8,9 @@ use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\Ticket;
+use App\Models\Contact;
+
 class AdminController extends Controller
 {
     /**
@@ -15,6 +18,7 @@ class AdminController extends Controller
      */
     public function index()
     {
+        // Statistiques de base
         $stats = [
             'total_users' => User::count(),
             'total_clients' => User::where('est_client', true)->count(),
@@ -24,9 +28,76 @@ class AdminController extends Controller
             'entreprises_en_attente' => Entreprise::where('est_verifiee', false)->count(),
             'total_reservations' => Reservation::count(),
             'reservations_payees' => Reservation::where('est_paye', true)->count(),
+            'abonnements_actifs' => User::where(function($q) {
+                $q->where(function($q2) {
+                    $q2->where('abonnement_manuel', true)
+                       ->where('abonnement_manuel_actif_jusqu', '>=', now());
+                })->orWhereHas('subscriptions', function($q3) {
+                    $q3->where('stripe_status', 'active');
+                });
+            })->count(),
+            'abonnements_manuels' => User::where('abonnement_manuel', true)
+                ->where('abonnement_manuel_actif_jusqu', '>=', now())->count(),
+            'abonnements_stripe' => DB::table('subscriptions')
+                ->where('stripe_status', 'active')->count(),
         ];
 
-        return view('admin.index', compact('stats'));
+        // Alertes prioritaires
+        $alertes = [
+            'entreprises_en_attente' => Entreprise::where('est_verifiee', false)->count(),
+            'tickets_urgents' => Ticket::where('statut', 'ouvert')
+                ->where('priorite', 'urgente')->count(),
+            'contacts_non_lus' => Contact::where('est_lu', false)->count(),
+        ];
+
+        // Données pour les graphiques (30 derniers jours)
+        $chartData = $this->getChartData();
+
+        // Derniers utilisateurs inscrits
+        $derniersUtilisateurs = User::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs'));
+    }
+
+    /**
+     * Générer les données pour les graphiques
+     */
+    private function getChartData(): array
+    {
+        $days = 30;
+        $labels = [];
+        $inscriptionsData = [];
+        $reservationsData = [];
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $labels[] = $date->format('d/m');
+            
+            $inscriptionsData[] = User::whereDate('created_at', $date)->count();
+            $reservationsData[] = Reservation::whereDate('created_at', $date)->count();
+        }
+
+        // Tickets par statut
+        $ticketsData = [
+            Ticket::where('statut', 'ouvert')->count(),
+            Ticket::where('statut', 'en_cours')->count(),
+            Ticket::where('statut', 'resolu')->count(),
+            Ticket::where('statut', 'ferme')->count(),
+        ];
+
+        return [
+            'inscriptions' => [
+                'labels' => $labels,
+                'data' => $inscriptionsData,
+            ],
+            'reservations' => [
+                'labels' => $labels,
+                'data' => $reservationsData,
+            ],
+            'tickets' => $ticketsData,
+        ];
     }
 
     /**

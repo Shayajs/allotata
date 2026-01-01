@@ -20,7 +20,7 @@
                 <div class="flex items-center gap-4">
                     @if($entreprise->logo)
                         <img 
-                            src="{{ asset('storage/' . $entreprise->logo) }}" 
+                            src="{{ asset('media/' . $entreprise->logo) }}" 
                             alt="Logo {{ $entreprise->nom }}"
                             class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700"
                         >
@@ -61,11 +61,11 @@
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                             Votre note *
                         </label>
-                        <div class="flex items-center gap-2" id="rating-container">
-                            @for($i = 5; $i >= 1; $i--)
+                        <div class="flex items-center gap-1" id="rating-container">
+                            @for($i = 1; $i <= 5; $i++)
                                 <button 
                                     type="button"
-                                    class="rating-star text-4xl transition-all hover:scale-110"
+                                    class="rating-star text-4xl transition-all duration-150 cursor-pointer select-none"
                                     data-rating="{{ $i }}"
                                     onclick="setRating({{ $i }})"
                                 >

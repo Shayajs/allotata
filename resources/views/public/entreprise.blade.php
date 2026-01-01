@@ -19,7 +19,7 @@
     @if($entreprise->image_fond)
         <div class="relative h-64 md:h-96 w-full overflow-hidden">
             <img 
-                src="{{ asset('storage/' . $entreprise->image_fond) }}" 
+                src="{{ asset('media/' . $entreprise->image_fond) }}" 
                 alt="Image de fond {{ $entreprise->nom }}"
                 class="w-full h-full object-cover"
             >
@@ -35,7 +35,7 @@
                     <div class="flex items-center gap-4">
                         @if($entreprise->logo)
                             <img 
-                                src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                src="{{ asset('media/' . $entreprise->logo) }}" 
                                 alt="Logo {{ $entreprise->nom }}"
                                 class="w-20 h-20 rounded-lg object-cover border-2 border-white/20 shadow-lg"
                             >
@@ -66,8 +66,10 @@
                 </div>
             </div>
         </div>
-    @else
-        <div class="max-w-4xl mx-auto py-12 px-6">
+    @endif
+    
+    <!-- Contenu principal - affiché dans tous les cas -->
+    <div class="max-w-4xl mx-auto py-12 px-6">
             <!-- Navigation -->
             <nav class="mb-6">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition">
@@ -83,7 +85,7 @@
                 <div class="flex items-center gap-4">
                     @if($entreprise->logo)
                         <img 
-                            src="{{ asset('storage/' . $entreprise->logo) }}" 
+                            src="{{ asset('media/' . $entreprise->logo) }}" 
                             alt="Logo {{ $entreprise->nom }}"
                             class="w-20 h-20 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700"
                         >
@@ -128,7 +130,7 @@
 
         @if(session('error'))
             <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div class="flex items-start gap-3">
+    <div class="max-w-4xl mx-auto px-6 py-12 relative z-10">
                     <svg class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -201,7 +203,7 @@
                             @foreach($entreprise->realisationPhotos as $photo)
                                 <div class="group relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer" onclick="openModal({{ $loop->index }})">
                                     <img 
-                                        src="{{ asset('storage/' . $photo->photo_path) }}" 
+                                        src="{{ asset('media/' . $photo->photo_path) }}" 
                                         alt="{{ $photo->titre ?? 'Réalisation' }}"
                                         class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
                                     >
@@ -248,7 +250,7 @@
                         const photos = [
                             @foreach($entreprise->realisationPhotos as $photo)
                             {
-                                path: '{{ asset('storage/' . $photo->photo_path) }}',
+                                path: '{{ asset('media/' . $photo->photo_path) }}',
                                 titre: @json($photo->titre ?? ''),
                                 description: @json($photo->description ?? ''),
                             },
@@ -434,6 +436,160 @@
         <section class="mt-12">
             <div class="flex items-center justify-between mb-6">
                 <div>
+        <!-- Section Services -->
+        @if($services->count() > 0)
+            <section class="mt-12">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+                    Services proposés
+                </h2>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach($services as $service)
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow">
+                            <!-- Image de couverture ou première image -->
+                            @php
+                                $imageCouverture = $service->imageCouverture;
+                                $premiereImage = $service->images->first();
+                                $imageAffichee = $imageCouverture ?? $premiereImage;
+                            @endphp
+                            
+                            @if($imageAffichee)
+                                <div class="relative h-48 w-full overflow-hidden group cursor-pointer" onclick="openServiceModal({{ $loop->index }})">
+                                    <img 
+                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                        alt="{{ $service->nom }}"
+                                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                    >
+                                    @if($service->images->count() > 1)
+                                        <div class="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                            {{ $service->images->count() }} photos
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="h-48 w-full bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
+                                    <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            @endif
+                            
+                            <div class="p-6">
+                                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                                    {{ $service->nom }}
+                                </h3>
+                                
+                                @if($service->description)
+                                    <p class="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2">
+                                        {{ $service->description }}
+                                    </p>
+                                @endif
+                                
+                                <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <div class="flex flex-col">
+                                        <span class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                            {{ number_format($service->prix, 2) }} €
+                                        </span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400">
+                                            Durée : {{ $service->duree_minutes }} min
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Modal pour afficher toutes les images d'un service -->
+                <div id="service-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+                    <button onclick="closeServiceModal()" class="absolute top-4 right-4 text-white hover:text-green-400 transition z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <button onclick="prevServiceImage()" class="absolute left-4 text-white hover:text-green-400 transition z-10">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <button onclick="nextServiceImage()" class="absolute right-4 text-white hover:text-green-400 transition z-10">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    <div class="max-w-4xl w-full">
+                        <img id="service-modal-image" src="" alt="" class="w-full h-auto rounded-lg">
+                        <div id="service-modal-info" class="mt-4 text-center text-white">
+                            <h3 id="service-modal-nom" class="text-xl font-bold mb-2"></h3>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    let currentServiceIndex = 0;
+                    let currentImageIndex = 0;
+                    const servicesData = [
+                        @foreach($services as $service)
+                        {
+                            nom: @json($service->nom),
+                            images: [
+                                @foreach($service->images as $image)
+                                '{{ asset('media/' . $image->image_path) }}',
+                                @endforeach
+                            ],
+                        },
+                        @endforeach
+                    ];
+
+                    function openServiceModal(serviceIndex) {
+                        currentServiceIndex = serviceIndex;
+                        currentImageIndex = 0;
+                        updateServiceModal();
+                        document.getElementById('service-modal').classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+
+                    function closeServiceModal() {
+                        document.getElementById('service-modal').classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+
+                    function prevServiceImage() {
+                        const service = servicesData[currentServiceIndex];
+                        if (service.images.length > 0) {
+                            currentImageIndex = (currentImageIndex - 1 + service.images.length) % service.images.length;
+                            updateServiceModal();
+                        }
+                    }
+
+                    function nextServiceImage() {
+                        const service = servicesData[currentServiceIndex];
+                        if (service.images.length > 0) {
+                            currentImageIndex = (currentImageIndex + 1) % service.images.length;
+                            updateServiceModal();
+                        }
+                    }
+
+                    function updateServiceModal() {
+                        const service = servicesData[currentServiceIndex];
+                        if (service.images.length > 0) {
+                            document.getElementById('service-modal-image').src = service.images[currentImageIndex];
+                            document.getElementById('service-modal-nom').textContent = service.nom + ' (' + (currentImageIndex + 1) + '/' + service.images.length + ')';
+                        }
+                    }
+
+                    // Navigation au clavier
+                    document.addEventListener('keydown', function(e) {
+                        const modal = document.getElementById('service-modal');
+                        if (!modal.classList.contains('hidden')) {
+                            if (e.key === 'Escape') closeServiceModal();
+                            if (e.key === 'ArrowLeft') prevServiceImage();
+                            if (e.key === 'ArrowRight') nextServiceImage();
+                        }
+                    });
+                </script>
+            </section>
+        @endif
+
                     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                         Avis et Notes
                     </h2>
@@ -523,7 +679,6 @@
                 </div>
             @endif
         </section>
-    @endif
     </div>
 
     <script>

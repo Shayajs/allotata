@@ -14,7 +14,7 @@ class PublicController extends Controller
     public function show($slug)
     {
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['user', 'avis.user', 'realisationPhotos'])
+            ->with(['user', 'avis.user', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
             ->firstOrFail();
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
@@ -56,10 +56,18 @@ class PublicController extends Controller
             }
         }
         
+        // Charger les services actifs avec leurs images
+        $services = $entreprise->typesServices()
+            ->where('est_actif', true)
+            ->with(['images', 'imageCouverture'])
+            ->orderBy('prix')
+            ->get();
+
         return view('public.entreprise', [
             'entreprise' => $entreprise,
             'slug' => $slug,
             'horaires' => $horaires,
+            'services' => $services,
             'avis' => $avis,
             'userAvis' => $userAvis,
             'peutLaisserAvis' => $peutLaisserAvis,

@@ -228,7 +228,7 @@ class SettingsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Logo mis à jour avec succès.',
-                'logo_url' => asset('storage/' . $logoPath),
+                'logo_url' => asset('media/' . $logoPath),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -320,7 +320,7 @@ class SettingsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Image de fond mise à jour avec succès.',
-                'image_fond_url' => asset('storage/' . $imageFondPath),
+                'image_fond_url' => asset('media/' . $imageFondPath),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

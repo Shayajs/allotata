@@ -20,14 +20,40 @@ use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\EntrepriseDashboardController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Route pour servir les fichiers storage via un contrôleur
-// Cela permet un meilleur contrôle et évite les problèmes de permissions du serveur web
-Route::get('/storage/{path}', [StorageController::class, 'serve'])
+// SOLUTION TEMPORAIRE : Utiliser /media/ au lieu de /storage/ car /storage/ est bloqué par le serveur web
+// TODO: Résoudre le problème de blocage de /storage/ par le serveur web
+Route::get('/media/{path}', [StorageController::class, 'serve'])
     ->where('path', '.*')
     ->name('storage.serve');
+
+// Ancienne route /storage/ - désactivée car bloquée par le serveur web
+// Route::get('/storage/{path}', [StorageController::class, 'serve'])
+//     ->where('path', '.*')
+//     ->name('storage.serve');
+
+// Route de test pour vérifier que Laravel répond
+Route::get('/test-storage', function() {
+    return response()->json([
+        'storage_path' => storage_path('app/public'),
+        'base_path' => base_path(),
+        'test_file' => base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png'),
+        'exists' => file_exists(base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png')),
+    ]);
+});
+
+// Route de test directe pour servir une image
+Route::get('/test-image', function() {
+    $filePath = base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png');
+    if (file_exists($filePath)) {
+        return response()->file($filePath, ['Content-Type' => 'image/png']);
+    }
+    return response()->json(['error' => 'File not found', 'path' => $filePath], 404);
+});
 
 // Webhook Stripe (doit être en dehors du middleware auth et sans CSRF)
 Route::post(
@@ -81,6 +107,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/entreprise/create', [EntrepriseController::class, 'create'])->name('entreprise.create');
     Route::post('/entreprise', [EntrepriseController::class, 'store'])->name('entreprise.store');
     
+    // Dashboard entreprise (centralisé)
+    Route::get('/m/{slug}', [EntrepriseDashboardController::class, 'index'])->name('entreprise.dashboard');
+    
     // Gestion de l'agenda (pour les gérants)
     Route::get('/m/{slug}/agenda', [AgendaController::class, 'index'])->name('agenda.index');
     Route::get('/m/{slug}/agenda/service', [AgendaController::class, 'index'])->name('agenda.service.index');
@@ -88,6 +117,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/m/{slug}/agenda/horaires', [AgendaController::class, 'storeHoraires'])->name('agenda.horaires.store');
     Route::post('/m/{slug}/agenda/service', [AgendaController::class, 'storeTypeService'])->name('agenda.service.store');
     Route::delete('/m/{slug}/agenda/service/{typeServiceId}', [AgendaController::class, 'deleteTypeService'])->name('agenda.service.delete');
+    Route::post('/m/{slug}/agenda/service/{typeServiceId}/image', [AgendaController::class, 'uploadServiceImage'])->name('agenda.service.image.upload');
+    Route::post('/m/{slug}/agenda/service/{typeServiceId}/image/{imageId}/cover', [AgendaController::class, 'setServiceImageCover'])->name('agenda.service.image.cover');
+    Route::delete('/m/{slug}/agenda/service/{typeServiceId}/image/{imageId}', [AgendaController::class, 'deleteServiceImage'])->name('agenda.service.image.delete');
     Route::post('/m/{slug}/agenda/jour-exceptionnel', [AgendaController::class, 'storeJourExceptionnel'])->name('agenda.jour-exceptionnel.store');
     Route::delete('/m/{slug}/agenda/jour-exceptionnel/{horaireId}', [AgendaController::class, 'deleteJourExceptionnel'])->name('agenda.jour-exceptionnel.delete');
     
@@ -202,6 +234,50 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{user}/subscription', [AdminController::class, 'showSubscription'])->name('users.subscription.show');
     Route::post('/users/{user}/subscription/manual', [AdminController::class, 'toggleManualSubscription'])->name('users.subscription.toggle-manual');
     Route::post('/users/{user}/subscription/cancel-stripe', [AdminController::class, 'cancelStripeSubscription'])->name('users.subscription.cancel-stripe');
+    
+    // Gestion des contacts
+    Route::get('/contacts', [ContactController::class, 'index'])->name('contacts.index');
+    Route::get('/contacts/{contact}', [ContactController::class, 'show'])->name('contacts.show');
+    Route::post('/contacts/{contact}/toggle-read', [ContactController::class, 'toggleRead'])->name('contacts.toggle-read');
+    Route::delete('/contacts/{contact}', [ContactController::class, 'destroy'])->name('contacts.destroy');
+    
+    // Gestion des tickets
+    Route::get('/tickets', [TicketController::class, 'adminIndex'])->name('tickets.index');
+    Route::get('/tickets/{ticket}', [TicketController::class, 'adminShow'])->name('tickets.show');
+    Route::post('/tickets/{ticket}', [TicketController::class, 'adminUpdate'])->name('tickets.update');
+    Route::post('/tickets/{ticket}/message', [TicketController::class, 'addMessage'])->name('tickets.message');
+    
+    // Gestion des FAQs
+    Route::get('/faqs', [FaqController::class, 'adminIndex'])->name('faqs.index');
+    Route::get('/faqs/create', [FaqController::class, 'adminCreate'])->name('faqs.create');
+    Route::post('/faqs', [FaqController::class, 'adminStore'])->name('faqs.store');
+    Route::get('/faqs/{faq}/edit', [FaqController::class, 'adminEdit'])->name('faqs.edit');
+    Route::put('/faqs/{faq}', [FaqController::class, 'adminUpdate'])->name('faqs.update');
+    Route::delete('/faqs/{faq}', [FaqController::class, 'adminDestroy'])->name('faqs.destroy');
+    
+    // Recherche globale
+    Route::get('/search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');
+    
+    // Logs d'activité
+    Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
+    
+    // Exports
+    Route::get('/exports', [\App\Http\Controllers\Admin\ExportController::class, 'index'])->name('exports.index');
+    Route::get('/exports/users', [\App\Http\Controllers\Admin\ExportController::class, 'exportUsers'])->name('exports.users');
+    Route::get('/exports/entreprises', [\App\Http\Controllers\Admin\ExportController::class, 'exportEntreprises'])->name('exports.entreprises');
+    Route::get('/exports/reservations', [\App\Http\Controllers\Admin\ExportController::class, 'exportReservations'])->name('exports.reservations');
+    
+    // Paramètres système
+    Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/store', [\App\Http\Controllers\Admin\SettingController::class, 'store'])->name('settings.store');
+    Route::delete('/settings/{setting}', [\App\Http\Controllers\Admin\SettingController::class, 'destroy'])->name('settings.destroy');
+    
+    // Annonces
+    Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
+    
+    // Codes promo
+    Route::resource('promo-codes', \App\Http\Controllers\Admin\PromoCodeController::class);
 });
 
 // Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)

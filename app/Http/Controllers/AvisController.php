@@ -11,14 +11,23 @@ class AvisController extends Controller
 {
     /**
      * Vérifie si un utilisateur peut laisser un avis pour une entreprise
-     * (doit avoir au moins une réservation validée et payée)
+     * Conditions : réservation payée OU réservation passée (date réservation < maintenant) et confirmée
      */
     private function peutLaisserAvis($user, $entreprise): bool
     {
         return \App\Models\Reservation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
-            ->where('est_paye', true)
-            ->where('statut', 'terminee')
+            ->where(function($query) {
+                // Réservation payée
+                $query->where('est_paye', true)
+                      // OU réservation passée (date réservation < maintenant) et confirmée
+                      ->orWhere(function($q) {
+                          $q->where('date_reservation', '<', now())
+                            ->where('statut', 'confirmee');
+                      })
+                      // OU réservation terminée
+                      ->orWhere('statut', 'terminee');
+            })
             ->exists();
     }
 

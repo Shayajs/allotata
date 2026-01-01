@@ -147,7 +147,7 @@
                                 <div class="flex items-center gap-4">
                                     @if($user->photo_profil)
                                         <img 
-                                            src="{{ asset('storage/' . $user->photo_profil) }}" 
+                                            src="{{ asset('media/' . $user->photo_profil) }}" 
                                             alt="Photo de profil"
                                             class="w-20 h-20 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700"
                                         >
@@ -274,7 +274,7 @@
                                             <div id="logo-preview-{{ $entreprise->id }}" class="{{ $entreprise->logo ? '' : 'hidden' }}">
                                                 <img 
                                                     id="logo-img-{{ $entreprise->id }}"
-                                                    src="{{ $entreprise->logo ? asset('storage/' . $entreprise->logo) : '' }}" 
+                                                    src="{{ $entreprise->logo ? asset('media/' . $entreprise->logo) : '' }}" 
                                                     alt="Logo {{ $entreprise->nom }}"
                                                     class="w-20 h-20 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700"
                                                 >
@@ -332,7 +332,7 @@
                                                 <div id="image-fond-preview-{{ $entreprise->id }}" class="{{ $entreprise->image_fond ? 'mb-3' : 'hidden' }}">
                                                     <img 
                                                         id="image-fond-img-{{ $entreprise->id }}"
-                                                        src="{{ $entreprise->image_fond ? asset('storage/' . $entreprise->image_fond) : '' }}" 
+                                                        src="{{ $entreprise->image_fond ? asset('media/' . $entreprise->image_fond) : '' }}" 
                                                         alt="Image de fond"
                                                         class="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
                                                     >
@@ -517,7 +517,7 @@
                                                     @foreach($entreprise->realisationPhotos as $photo)
                                                         <div class="relative group">
                                                             <img 
-                                                                src="{{ asset('storage/' . $photo->photo_path) }}" 
+                                                                src="{{ asset('media/' . $photo->photo_path) }}" 
                                                                 alt="{{ $photo->titre ?? 'Réalisation' }}"
                                                                 class="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
                                                             >

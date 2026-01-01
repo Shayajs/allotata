@@ -540,7 +540,7 @@
                                             <div class="flex items-start gap-4 flex-1">
                                                 @if($entreprise->logo)
                                                     <img 
-                                                        src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                                        src="{{ asset('media/' . $entreprise->logo) }}" 
                                                         alt="Logo {{ $entreprise->nom }}"
                                                         class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 flex-shrink-0"
                                                     >
@@ -586,33 +586,24 @@
                                         @endif
                                     </div>
                                     <div class="flex flex-col gap-2">
-                                        <a href="{{ route('public.entreprise', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-center bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
-                                            Voir la page publique
-                                        </a>
-                                        <a href="{{ route('agenda.index', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-center bg-orange-100 dark:bg-orange-900/30 hover:bg-orange-200 dark:hover:bg-orange-900/50 text-orange-800 dark:text-orange-400 rounded-lg transition">
-                                            Gérer l'agenda
-                                        </a>
-                                        <a href="{{ route('reservations.index', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-center bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-400 rounded-lg transition relative">
-                                            Réservations
+                                        <a href="{{ route('entreprise.dashboard', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-center bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg transition-all shadow-sm hover:shadow-md relative">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            Gérer l'entreprise
                                             @if(isset($entreprise->stats['reservations_en_attente']) && $entreprise->stats['reservations_en_attente'] > 0)
-                                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center">
+                                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
                                                     {{ $entreprise->stats['reservations_en_attente'] }}
                                                 </span>
                                             @endif
                                         </a>
-                                        @if($entreprise->siren_verifie)
-                                            <a href="{{ route('factures.entreprise', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-center bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-400 rounded-lg transition">
-                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                                Factures
-                                            </a>
-                                        @endif
-                                        @if($entreprise->reservations_count > 0)
-                                            <a href="#" class="px-4 py-2 text-sm font-medium text-center bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 rounded-lg transition">
-                                                Voir les réservations ({{ $entreprise->reservations_count }})
-                                            </a>
-                                        @endif
+                                        <a href="{{ route('public.entreprise', $entreprise->slug) }}" target="_blank" class="px-4 py-2 text-sm font-medium text-center bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                            Page publique
+                                        </a>
                                     </div>
                                 </div>
                             </div>

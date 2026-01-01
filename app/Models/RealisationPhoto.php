@@ -9,6 +9,7 @@ class RealisationPhoto extends Model
 {
     protected $fillable = [
         'entreprise_id',
+        'avis_id',
         'photo_path',
         'titre',
         'description',

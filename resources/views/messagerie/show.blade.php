@@ -47,7 +47,7 @@
                         <div class="relative">
                             @if($conversation->user->photo_profil)
                                 <img 
-                                    src="{{ asset('storage/' . $conversation->user->photo_profil) }}" 
+                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
                                     alt="{{ $conversation->user->name }}"
                                     class="w-20 h-20 rounded-2xl object-cover border-3 border-slate-200 dark:border-slate-700 shadow-lg"
                                 >
@@ -79,7 +79,7 @@
                         <div class="relative">
                             @if($entreprise->logo)
                                 <img 
-                                    src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                    src="{{ asset('media/' . $entreprise->logo) }}" 
                                     alt="{{ $entreprise->nom }}"
                                     class="w-20 h-20 rounded-2xl object-cover border-3 border-slate-200 dark:border-slate-700 shadow-lg"
                                 >
@@ -302,7 +302,7 @@
                             <div class="flex-shrink-0">
                                 @if($message->user->photo_profil)
                                     <img 
-                                        src="{{ asset('storage/' . $message->user->photo_profil) }}" 
+                                        src="{{ asset('media/' . $message->user->photo_profil) }}" 
                                         alt="{{ $message->user->name }}"
                                         class="w-10 h-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
                                     >
@@ -364,10 +364,10 @@
                                         @if($message->image)
                                             <div class="mt-3">
                                                 <img 
-                                                    src="{{ asset('storage/' . $message->image) }}" 
+                                                    src="{{ asset('media/' . $message->image) }}" 
                                                     alt="Image"
                                                     class="max-w-full h-auto rounded-xl cursor-pointer hover:opacity-90 transition shadow-md"
-                                                    onclick="openImageModal('{{ asset('storage/' . $message->image) }}')"
+                                                    onclick="openImageModal('{{ asset('media/' . $message->image) }}')"
                                                 >
                                             </div>
                                         @endif

@@ -40,7 +40,7 @@
                     <div class="flex items-start gap-4">
                         @if($facture->entreprise->logo)
                             <img 
-                                src="{{ asset('storage/' . $facture->entreprise->logo) }}" 
+                                src="{{ asset('media/' . $facture->entreprise->logo) }}" 
                                 alt="Logo {{ $facture->entreprise->nom }}"
                                 class="w-20 h-20 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700"
                             >

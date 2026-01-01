@@ -148,7 +148,7 @@
                                         <div class="relative flex-shrink-0">
                                             @if($conversation->entreprise->logo)
                                                 <img 
-                                                    src="{{ asset('storage/' . $conversation->entreprise->logo) }}" 
+                                                    src="{{ asset('media/' . $conversation->entreprise->logo) }}" 
                                                     alt="{{ $conversation->entreprise->nom }}"
                                                     class="w-14 h-14 rounded-xl object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
                                                 >
@@ -219,7 +219,7 @@
                                         <div class="relative flex-shrink-0">
                                             @if($conversation->user->photo_profil)
                                                 <img 
-                                                    src="{{ asset('storage/' . $conversation->user->photo_profil) }}" 
+                                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
                                                     alt="{{ $conversation->user->name }}"
                                                     class="w-14 h-14 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
                                                 >

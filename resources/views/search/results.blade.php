@@ -87,7 +87,7 @@
                                 <div class="flex items-start gap-4 mb-3">
                                     @if($entreprise->logo)
                                         <img 
-                                            src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                            src="{{ asset('media/' . $entreprise->logo) }}" 
                                             alt="Logo {{ $entreprise->nom }}"
                                             class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 flex-shrink-0"
                                         >

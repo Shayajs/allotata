@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use App\Models\HorairesOuverture;
 use App\Models\TypeService;
+use App\Models\ServiceImage;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AgendaController extends Controller
 {
@@ -25,6 +28,7 @@ class AgendaController extends Controller
             ->get();
 
         $typesServices = $entreprise->typesServices()
+            ->with(['images', 'imageCouverture'])
             ->orderBy('nom')
             ->get();
 
@@ -274,5 +278,135 @@ class AgendaController extends Controller
 
         return redirect()->route('agenda.index', $slug)
             ->with('success', 'Le type de service a été supprimé.');
+    }
+
+    /**
+     * Uploader une image pour un service
+     */
+    public function uploadServiceImage(Request $request, $slug, $typeServiceId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $typeService = TypeService::where('id', $typeServiceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $imageService = app(ImageService::class);
+        $imagePath = $imageService->processAndStore($request->file('image'), 'services');
+
+        // Déterminer l'ordre (dernier + 1)
+        $maxOrdre = ServiceImage::where('type_service_id', $typeService->id)->max('ordre') ?? 0;
+
+        // Si c'est la première image, la définir comme couverture
+        $estCouverture = ServiceImage::where('type_service_id', $typeService->id)->count() === 0;
+
+        $serviceImage = ServiceImage::create([
+            'type_service_id' => $typeService->id,
+            'image_path' => $imagePath,
+            'est_couverture' => $estCouverture,
+            'ordre' => $maxOrdre + 1,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Image uploadée avec succès.',
+            'image' => [
+                'id' => $serviceImage->id,
+                'path' => asset('media/' . $serviceImage->image_path),
+                'est_couverture' => $serviceImage->est_couverture,
+            ],
+        ]);
+    }
+
+    /**
+     * Définir une image comme couverture
+     */
+    public function setServiceImageCover(Request $request, $slug, $typeServiceId, $imageId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $typeService = TypeService::where('id', $typeServiceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $image = ServiceImage::where('id', $imageId)
+            ->where('type_service_id', $typeService->id)
+            ->firstOrFail();
+
+        // Retirer la couverture actuelle
+        ServiceImage::where('type_service_id', $typeService->id)
+            ->update(['est_couverture' => false]);
+
+        // Définir la nouvelle couverture
+        $image->update(['est_couverture' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Image de couverture mise à jour.',
+        ]);
+    }
+
+    /**
+     * Supprimer une image de service
+     */
+    public function deleteServiceImage(Request $request, $slug, $typeServiceId, $imageId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $typeService = TypeService::where('id', $typeServiceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $image = ServiceImage::where('id', $imageId)
+            ->where('type_service_id', $typeService->id)
+            ->firstOrFail();
+
+        $imagePath = $image->image_path;
+        $estCouverture = $image->est_couverture;
+
+        // Supprimer l'image
+        $image->delete();
+
+        // Supprimer le fichier
+        if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+            try {
+                $imageService = app(ImageService::class);
+                $imageService->delete($imagePath);
+            } catch (\Exception $e) {
+                \Log::warning('Erreur lors de la suppression de l\'image de service', [
+                    'path' => $imagePath,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Si c'était l'image de couverture, définir la première image restante comme couverture
+        if ($estCouverture) {
+            $premiereImage = ServiceImage::where('type_service_id', $typeService->id)
+                ->orderBy('ordre')
+                ->first();
+            
+            if ($premiereImage) {
+                $premiereImage->update(['est_couverture' => true]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Image supprimée avec succès.',
+        ]);
     }
 }

@@ -19,7 +19,8 @@
     RewriteRule ^ %1 [L,R=301]
 
     # Toutes les requêtes /storage/ passent par Laravel (via StorageController)
-    # Cela permet un meilleur contrôle de l'accès aux fichiers
+    # Nécessaire car le lien symbolique ne fonctionne pas bien avec php artisan serve
+    # et permet un meilleur contrôle de l'accès aux fichiers
     RewriteCond %{REQUEST_URI} ^/storage/
     RewriteRule ^ index.php [L]
 
