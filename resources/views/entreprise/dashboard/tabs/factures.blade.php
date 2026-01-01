@@ -111,4 +111,51 @@
                                             <div class="text-sm text-slate-500 dark:text-slate-400">{{ $facture->user->email }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-slate-900 dark:text-white">{{ $facture->date_facture->format('d/m/Y') }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-semibold text-green-600 dark:text-green-400">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                                @if($facture->statut === 'payee') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400
+                                                @elseif($facture->statut === 'annulee') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400
+                                                @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
+                                                @endif">
+                                                @if($facture->statut === 'payee') Payée
+                                                @elseif($facture->statut === 'annulee') Annulée
+                                                @else Émise
+                                                @endif
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{{ route('factures.entreprise.show', [$entreprise->slug, $facture->id]) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3">
+                                                Voir
+                                            </a>
+                                            <a href="{{ route('factures.entreprise.download', [$entreprise->slug, $facture->id]) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                                                PDF
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-6">
+                    {{ $factures->links() }}
+                </div>
+            @else
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
+                    <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-slate-900 dark:text-white mb-2">Aucune facture</h3>
+                    <p class="text-slate-600 dark:text-slate-400">
+                        Les factures sont générées automatiquement lorsqu'une réservation est marquée comme payée.
+                    </p>
+                </div>
+            @endif
 </div>

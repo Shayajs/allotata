@@ -119,7 +119,7 @@
                                     </div>
                                     <a 
                                         href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all flex-shrink-0"
                                     >
                                         Gérer →
                                     </a>
@@ -145,11 +145,11 @@
                                 <div class="space-y-3">
                                     @foreach($reservationsStatut as $reservation)
                                         <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-green-500 dark:hover:border-green-500 transition">
-                                            <div class="flex items-start justify-between">
-                                                <div class="flex-1">
-                                                    <div class="flex items-center gap-2 mb-2">
+                                            <div class="flex items-start gap-3">
+                                                <x-avatar :user="$reservation->user" size="sm" class="flex-shrink-0" />
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center gap-2 mb-1">
                                                         <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h4>
-                                                        <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</span>
                                                     </div>
                                                     <p class="text-sm text-slate-600 dark:text-slate-400">
@@ -163,7 +163,7 @@
                                                 </div>
                                                 <a 
                                                     href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                                    class="px-3 py-1 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition"
+                                                    class="px-3 py-1 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition flex-shrink-0"
                                                 >
                                                     Voir →
                                                 </a>

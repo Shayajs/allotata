@@ -9,17 +9,7 @@
                 <div class="flex items-center gap-4">
                     @if(isset($isGerant) && $isGerant)
                         <div class="relative">
-                            @if($conversation->user->photo_profil)
-                                <img 
-                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
-                                    alt="{{ $conversation->user->name }}"
-                                    class="w-20 h-20 rounded-2xl object-cover border-3 border-slate-200 dark:border-slate-700 shadow-lg"
-                                >
-                            @else
-                                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-2xl border-3 border-slate-200 dark:border-slate-700 shadow-lg">
-                                    {{ strtoupper(substr($conversation->user->name, 0, 1)) }}
-                                </div>
-                            @endif
+                            <x-avatar :user="$conversation->user" size="2xl" class="shadow-lg" />
                             <div class="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-3 border-white dark:border-slate-800"></div>
                         </div>
                         <div class="flex-1">

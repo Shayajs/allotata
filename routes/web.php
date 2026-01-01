@@ -21,6 +21,9 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\EntrepriseDashboardController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\FaqController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 

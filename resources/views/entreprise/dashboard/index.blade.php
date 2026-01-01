@@ -203,7 +203,6 @@
                             </svg>
                             Réservations
                         </button>
-                        @if($entreprise->siren_verifie)
                         <button 
                             onclick="showTab('factures')"
                             class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'factures' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
@@ -214,7 +213,16 @@
                             </svg>
                             Factures
                         </button>
-                        @endif
+                        <button 
+                            onclick="showTab('outils')"
+                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'outils' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            data-tab="outils"
+                        >
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                            Outils
+                        </button>
                         <button 
                             onclick="showTab('messagerie')"
                             class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'messagerie' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
@@ -264,11 +272,14 @@
                     </div>
 
                     <!-- Onglet Factures -->
-                    @if($entreprise->siren_verifie)
                     <div id="tab-factures" class="tab-content {{ $activeTab !== 'factures' ? 'hidden' : '' }}">
                         @include('entreprise.dashboard.tabs.factures')
                     </div>
-                    @endif
+
+                    <!-- Onglet Outils -->
+                    <div id="tab-outils" class="tab-content {{ $activeTab !== 'outils' ? 'hidden' : '' }}">
+                        @include('entreprise.dashboard.tabs.outils')
+                    </div>
 
                     <!-- Onglet Messagerie -->
                     <div id="tab-messagerie" class="tab-content {{ $activeTab !== 'messagerie' ? 'hidden' : '' }}">

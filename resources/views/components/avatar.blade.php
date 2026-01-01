@@ -13,11 +13,11 @@
         'xl' => 'w-16 h-16 text-xl',
         '2xl' => 'w-20 h-20 text-2xl',
     ];
-    $sizeClass = $sizes[$size] ?? $sizes['md'];
+    $sizeClass = isset($sizes[$size]) ? $sizes[$size] : $sizes['md'];
     
-    $name = $user?->name ?? 'U';
+    $name = ($user && $user->name) ? $user->name : 'U';
     $initial = strtoupper(substr($name, 0, 1));
-    $photo = $user?->photo_profil ?? null;
+    $photo = ($user && $user->photo_profil) ? $user->photo_profil : null;
 @endphp
 
 @if($photo)

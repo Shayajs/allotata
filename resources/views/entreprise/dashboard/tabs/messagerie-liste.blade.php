@@ -20,17 +20,7 @@
                     <div class="flex items-start gap-4">
                         <!-- Avatar du client -->
                         <div class="relative flex-shrink-0">
-                            @if($conversation->user->photo_profil)
-                                <img 
-                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
-                                    alt="{{ $conversation->user->name }}"
-                                    class="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
-                                >
-                            @else
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold">
-                                    {{ strtoupper(substr($conversation->user->name, 0, 1)) }}
-                                </div>
-                            @endif
+                            <x-avatar :user="$conversation->user" size="lg" />
                             @if($messagesNonLus > 0)
                                 <span class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                                     {{ $messagesNonLus }}

@@ -466,12 +466,25 @@
         <!-- Section Services -->
         @if($services->count() > 0)
             <section class="mt-8 sm:mt-12">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">
-                    Services proposés
-                </h2>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                        Services proposés
+                    </h2>
+                    @if($entreprise->prix_negociables)
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs sm:text-sm font-medium rounded-full border border-orange-200 dark:border-orange-800">
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Prix négociables
+                        </span>
+                    @endif
+                </div>
                 <div class="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($services as $service)
-                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow">
+                        <div 
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:border-green-300 dark:hover:border-green-700 group"
+                            onclick="openServiceDetailModal({{ $loop->index }})"
+                        >
                             <!-- Image de couverture ou première image -->
                             @php
                                 $imageCouverture = $service->imageCouverture;
@@ -480,7 +493,7 @@
                             @endphp
                             
                             @if($imageAffichee)
-                                <div class="relative h-36 sm:h-48 w-full overflow-hidden group cursor-pointer" onclick="openServiceModal({{ $loop->index }})">
+                                <div class="relative h-36 sm:h-48 w-full overflow-hidden">
                                     <img 
                                         src="{{ asset('media/' . $imageAffichee->image_path) }}" 
                                         alt="{{ $service->nom }}"
@@ -488,20 +501,30 @@
                                     >
                                     @if($service->images->count() > 1)
                                         <div class="absolute top-2 right-2 bg-black/60 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
-                                            {{ $service->images->count() }} photos
+                                            📷 {{ $service->images->count() }}
+                                        </div>
+                                    @endif
+                                    @if($entreprise->prix_negociables)
+                                        <div class="absolute top-2 left-2 bg-orange-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
+                                            💰 Négociable
                                         </div>
                                     @endif
                                 </div>
                             @else
-                                <div class="h-36 sm:h-48 w-full bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
+                                <div class="relative h-36 sm:h-48 w-full bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
                                     <svg class="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
+                                    @if($entreprise->prix_negociables)
+                                        <div class="absolute top-2 left-2 bg-orange-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
+                                            💰 Négociable
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                             
                             <div class="p-4 sm:p-6">
-                                <h3 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 truncate">
+                                <h3 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                                     {{ $service->nom }}
                                 </h3>
                                 
@@ -513,12 +536,19 @@
                                 
                                 <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700">
                                     <div class="flex flex-col">
-                                        <span class="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
-                                            {{ number_format($service->prix, 2) }} €
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
+                                                {{ number_format($service->prix, 2) }} €
+                                            </span>
+                                        </div>
                                         <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-                                            Durée : {{ $service->duree_minutes }} min
+                                            ⏱️ {{ $service->duree_minutes }} min
                                         </span>
+                                    </div>
+                                    <div class="text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
                                     </div>
                                 </div>
                             </div>
@@ -526,38 +556,138 @@
                     @endforeach
                 </div>
 
-                <!-- Modal pour afficher toutes les images d'un service -->
-                <div id="service-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-2 sm:p-4">
-                    <button onclick="closeServiceModal()" class="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:text-green-400 transition z-10">
-                        <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                    <button onclick="prevServiceImage()" class="absolute left-2 sm:left-4 text-white hover:text-green-400 transition z-10">
-                        <svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                    <button onclick="nextServiceImage()" class="absolute right-2 sm:right-4 text-white hover:text-green-400 transition z-10">
-                        <svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    <div class="max-w-4xl w-full px-8 sm:px-12">
-                        <img id="service-modal-image" src="" alt="" class="w-full h-auto rounded-lg max-h-[70vh] sm:max-h-[80vh] object-contain">
-                        <div id="service-modal-info" class="mt-2 sm:mt-4 text-center text-white">
-                            <h3 id="service-modal-nom" class="text-base sm:text-xl font-bold mb-1 sm:mb-2"></h3>
+                <!-- Modal détaillé pour un service -->
+                <div id="service-detail-modal" class="hidden fixed inset-0 bg-black/80 z-50 overflow-y-auto" onclick="closeServiceDetailModal(event)">
+                    <div class="min-h-screen py-4 sm:py-8 px-2 sm:px-4 flex items-start justify-center">
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl my-4 overflow-hidden" onclick="event.stopPropagation()">
+                            <!-- Header avec fermeture -->
+                            <div class="relative">
+                                <button onclick="closeServiceDetailModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition">
+                                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Galerie d'images -->
+                                <div id="service-detail-gallery" class="relative h-56 sm:h-72 md:h-80 bg-slate-200 dark:bg-slate-700">
+                                    <img id="service-detail-image" src="" alt="" class="w-full h-full object-cover">
+                                    
+                                    <!-- Navigation galerie -->
+                                    <button onclick="prevServiceDetailImage(event)" class="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition hidden" id="service-detail-prev">
+                                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <button onclick="nextServiceDetailImage(event)" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition hidden" id="service-detail-next">
+                                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </button>
+                                    
+                                    <!-- Indicateur de position -->
+                                    <div id="service-detail-indicator" class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 text-white text-xs sm:text-sm rounded-full hidden"></div>
+                                </div>
+                                
+                                <!-- Miniatures -->
+                                <div id="service-detail-thumbnails" class="flex gap-1.5 sm:gap-2 p-2 sm:p-3 bg-slate-100 dark:bg-slate-900 overflow-x-auto hidden"></div>
+                            </div>
+                            
+                            <!-- Contenu -->
+                            <div class="p-4 sm:p-6">
+                                <h3 id="service-detail-nom" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2"></h3>
+                                
+                                <div class="flex flex-wrap items-center gap-3 mb-4">
+                                    <div class="flex items-center gap-1.5">
+                                        <span id="service-detail-prix" class="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400"></span>
+                                        <span id="service-detail-negociable-badge" class="hidden px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-medium rounded-full">
+                                            Négociable
+                                        </span>
+                                    </div>
+                                    <span class="text-slate-500 dark:text-slate-400 text-sm">•</span>
+                                    <span id="service-detail-duree" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base"></span>
+                                </div>
+                                
+                                <div id="service-detail-description" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mb-6 whitespace-pre-line"></div>
+                                
+                                <!-- Zone de négociation -->
+                                <div id="service-detail-negociation" class="hidden mb-6 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                                    <h4 class="font-semibold text-orange-800 dark:text-orange-300 mb-2 flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        Proposer un prix
+                                    </h4>
+                                    <p class="text-sm text-orange-700 dark:text-orange-400 mb-3">
+                                        Cette entreprise accepte les négociations. Vous pouvez proposer un prix via la messagerie.
+                                    </p>
+                                    @auth
+                                        <a href="{{ route('messagerie.show', $entreprise->slug) }}" id="service-detail-negocier-btn" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition text-sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            Négocier ce service
+                                        </a>
+                                    @else
+                                        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition text-sm">
+                                            Connectez-vous pour négocier
+                                        </a>
+                                    @endauth
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    @if($entreprise->rdv_uniquement_messagerie)
+                                        @auth
+                                            <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                                Réserver via messagerie
+                                            </a>
+                                        @else
+                                            <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                                Connectez-vous pour réserver
+                                            </a>
+                                        @endauth
+                                    @else
+                                        <a href="{{ route('public.agenda', $entreprise->slug) }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Réserver ce service
+                                        </a>
+                                    @endif
+                                    @auth
+                                        <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            Poser une question
+                                        </a>
+                                    @else
+                                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            Contacter
+                                        </a>
+                                    @endauth
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <script>
-                    let currentServiceIndex = 0;
-                    let currentImageIndex = 0;
-                    const servicesData = [
+                    let currentServiceDetailIndex = 0;
+                    let currentServiceDetailImageIndex = 0;
+                    const servicesDetailData = [
                         @foreach($services as $service)
                         {
                             nom: @json($service->nom),
+                            description: @json($service->description ?? ''),
+                            prix: @json(number_format($service->prix, 2, ',', ' ')),
+                            duree: {{ $service->duree_minutes }},
                             images: [
                                 @foreach($service->images as $image)
                                 '{{ asset('media/' . $image->image_path) }}',
@@ -566,51 +696,134 @@
                         },
                         @endforeach
                     ];
+                    const prixNegociables = {{ $entreprise->prix_negociables ? 'true' : 'false' }};
 
-                    function openServiceModal(serviceIndex) {
-                        currentServiceIndex = serviceIndex;
-                        currentImageIndex = 0;
-                        updateServiceModal();
-                        document.getElementById('service-modal').classList.remove('hidden');
+                    function openServiceDetailModal(serviceIndex) {
+                        currentServiceDetailIndex = serviceIndex;
+                        currentServiceDetailImageIndex = 0;
+                        updateServiceDetailModal();
+                        document.getElementById('service-detail-modal').classList.remove('hidden');
                         document.body.style.overflow = 'hidden';
                     }
 
-                    function closeServiceModal() {
-                        document.getElementById('service-modal').classList.add('hidden');
+                    function closeServiceDetailModal(event) {
+                        if (event && event.target !== event.currentTarget) return;
+                        document.getElementById('service-detail-modal').classList.add('hidden');
                         document.body.style.overflow = '';
                     }
 
-                    function prevServiceImage() {
-                        const service = servicesData[currentServiceIndex];
-                        if (service.images.length > 0) {
-                            currentImageIndex = (currentImageIndex - 1 + service.images.length) % service.images.length;
-                            updateServiceModal();
+                    function prevServiceDetailImage(event) {
+                        event.stopPropagation();
+                        const service = servicesDetailData[currentServiceDetailIndex];
+                        if (service.images.length > 1) {
+                            currentServiceDetailImageIndex = (currentServiceDetailImageIndex - 1 + service.images.length) % service.images.length;
+                            updateServiceDetailGallery();
                         }
                     }
 
-                    function nextServiceImage() {
-                        const service = servicesData[currentServiceIndex];
-                        if (service.images.length > 0) {
-                            currentImageIndex = (currentImageIndex + 1) % service.images.length;
-                            updateServiceModal();
+                    function nextServiceDetailImage(event) {
+                        event.stopPropagation();
+                        const service = servicesDetailData[currentServiceDetailIndex];
+                        if (service.images.length > 1) {
+                            currentServiceDetailImageIndex = (currentServiceDetailImageIndex + 1) % service.images.length;
+                            updateServiceDetailGallery();
                         }
                     }
 
-                    function updateServiceModal() {
-                        const service = servicesData[currentServiceIndex];
+                    function selectServiceDetailImage(index) {
+                        currentServiceDetailImageIndex = index;
+                        updateServiceDetailGallery();
+                    }
+
+                    function updateServiceDetailModal() {
+                        const service = servicesDetailData[currentServiceDetailIndex];
+                        
+                        // Infos de base
+                        document.getElementById('service-detail-nom').textContent = service.nom;
+                        document.getElementById('service-detail-prix').textContent = service.prix + ' €';
+                        document.getElementById('service-detail-duree').textContent = '⏱️ Durée : ' + service.duree + ' minutes';
+                        document.getElementById('service-detail-description').textContent = service.description || 'Aucune description disponible.';
+                        
+                        // Badge négociable
+                        const negociableBadge = document.getElementById('service-detail-negociable-badge');
+                        const negociationZone = document.getElementById('service-detail-negociation');
+                        if (prixNegociables) {
+                            negociableBadge.classList.remove('hidden');
+                            negociationZone.classList.remove('hidden');
+                        } else {
+                            negociableBadge.classList.add('hidden');
+                            negociationZone.classList.add('hidden');
+                        }
+                        
+                        // Galerie
+                        updateServiceDetailGallery();
+                    }
+
+                    function updateServiceDetailGallery() {
+                        const service = servicesDetailData[currentServiceDetailIndex];
+                        const imageEl = document.getElementById('service-detail-image');
+                        const prevBtn = document.getElementById('service-detail-prev');
+                        const nextBtn = document.getElementById('service-detail-next');
+                        const indicator = document.getElementById('service-detail-indicator');
+                        const thumbnails = document.getElementById('service-detail-thumbnails');
+                        
                         if (service.images.length > 0) {
-                            document.getElementById('service-modal-image').src = service.images[currentImageIndex];
-                            document.getElementById('service-modal-nom').textContent = service.nom + ' (' + (currentImageIndex + 1) + '/' + service.images.length + ')';
+                            imageEl.src = service.images[currentServiceDetailImageIndex];
+                            
+                            if (service.images.length > 1) {
+                                prevBtn.classList.remove('hidden');
+                                nextBtn.classList.remove('hidden');
+                                indicator.classList.remove('hidden');
+                                indicator.textContent = (currentServiceDetailImageIndex + 1) + ' / ' + service.images.length;
+                                
+                                // Miniatures
+                                thumbnails.classList.remove('hidden');
+                                thumbnails.innerHTML = service.images.map((img, i) => `
+                                    <img 
+                                        src="${img}" 
+                                        alt="Miniature ${i + 1}"
+                                        onclick="selectServiceDetailImage(${i})"
+                                        class="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded cursor-pointer flex-shrink-0 border-2 transition ${i === currentServiceDetailImageIndex ? 'border-green-500' : 'border-transparent hover:border-slate-400'}"
+                                    >
+                                `).join('');
+                            } else {
+                                prevBtn.classList.add('hidden');
+                                nextBtn.classList.add('hidden');
+                                indicator.classList.add('hidden');
+                                thumbnails.classList.add('hidden');
+                            }
+                        } else {
+                            imageEl.src = '';
+                            document.getElementById('service-detail-gallery').innerHTML = `
+                                <div class="w-full h-full bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
+                                    <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            `;
+                            thumbnails.classList.add('hidden');
                         }
                     }
 
-                    // Navigation au clavier
+                    // Navigation au clavier pour le modal service detail
                     document.addEventListener('keydown', function(e) {
-                        const modal = document.getElementById('service-modal');
+                        const modal = document.getElementById('service-detail-modal');
                         if (!modal.classList.contains('hidden')) {
-                            if (e.key === 'Escape') closeServiceModal();
-                            if (e.key === 'ArrowLeft') prevServiceImage();
-                            if (e.key === 'ArrowRight') nextServiceImage();
+                            if (e.key === 'Escape') closeServiceDetailModal();
+                            if (e.key === 'ArrowLeft') {
+                                const service = servicesDetailData[currentServiceDetailIndex];
+                                if (service.images.length > 1) {
+                                    currentServiceDetailImageIndex = (currentServiceDetailImageIndex - 1 + service.images.length) % service.images.length;
+                                    updateServiceDetailGallery();
+                                }
+                            }
+                            if (e.key === 'ArrowRight') {
+                                const service = servicesDetailData[currentServiceDetailIndex];
+                                if (service.images.length > 1) {
+                                    currentServiceDetailImageIndex = (currentServiceDetailImageIndex + 1) % service.images.length;
+                                    updateServiceDetailGallery();
+                                }
+                            }
                         }
                     });
                 </script>
@@ -677,9 +890,7 @@
                         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
                             <div class="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                                 <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm sm:text-base flex-shrink-0">
-                                        {{ strtoupper(substr($unAvis->user->name, 0, 1)) }}
-                                    </div>
+                                    <x-avatar :user="$unAvis->user" size="md" class="flex-shrink-0" />
                                     <div class="min-w-0">
                                         <p class="font-semibold text-sm sm:text-base text-slate-900 dark:text-white truncate">{{ $unAvis->user->name }}</p>
                                         <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">{{ $unAvis->created_at->format('d/m/Y') }}</p>

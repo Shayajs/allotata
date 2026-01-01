@@ -63,8 +63,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Client</h3>
-                        <p class="text-slate-900 dark:text-white">{{ $reservation->user->name }}</p>
-                        <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</p>
+                        <div class="flex items-center gap-3">
+                            <x-avatar :user="$reservation->user" size="lg" />
+                            <div>
+                                <p class="font-medium text-slate-900 dark:text-white">{{ $reservation->user->name }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Service</h3>

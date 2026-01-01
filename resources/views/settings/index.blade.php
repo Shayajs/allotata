@@ -145,17 +145,7 @@
                                     Photo de profil
                                 </label>
                                 <div class="flex items-center gap-4">
-                                    @if($user->photo_profil)
-                                        <img 
-                                            src="{{ asset('media/' . $user->photo_profil) }}" 
-                                            alt="Photo de profil"
-                                            class="w-20 h-20 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700"
-                                        >
-                                    @else
-                                        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-2xl border-2 border-slate-200 dark:border-slate-700">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </div>
-                                    @endif
+                                    <x-avatar :user="$user" size="2xl" />
                                     <div class="flex-1">
                                         <input 
                                             type="file" 

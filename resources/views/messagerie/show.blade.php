@@ -45,17 +45,7 @@
                 <div class="flex items-center gap-4">
                     @if(isset($isGerant) && $isGerant)
                         <div class="relative">
-                            @if($conversation->user->photo_profil)
-                                <img 
-                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
-                                    alt="{{ $conversation->user->name }}"
-                                    class="w-20 h-20 rounded-2xl object-cover border-3 border-slate-200 dark:border-slate-700 shadow-lg"
-                                >
-                            @else
-                                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-2xl border-3 border-slate-200 dark:border-slate-700 shadow-lg">
-                                    {{ strtoupper(substr($conversation->user->name, 0, 1)) }}
-                                </div>
-                            @endif
+                            <x-avatar :user="$conversation->user" size="2xl" class="shadow-lg" />
                             <div class="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-3 border-white dark:border-slate-800"></div>
                         </div>
                         <div class="flex-1">
@@ -300,17 +290,7 @@
                         <div class="flex items-start gap-3 {{ $message->user_id === Auth::id() ? 'flex-row-reverse' : '' }} group">
                             <!-- Avatar -->
                             <div class="flex-shrink-0">
-                                @if($message->user->photo_profil)
-                                    <img 
-                                        src="{{ asset('media/' . $message->user->photo_profil) }}" 
-                                        alt="{{ $message->user->name }}"
-                                        class="w-10 h-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
-                                    >
-                                @else
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm border-2 border-slate-200 dark:border-slate-700 shadow-md">
-                                        {{ strtoupper(substr($message->user->name, 0, 1)) }}
-                                    </div>
-                                @endif
+                                <x-avatar :user="$message->user" size="md" class="shadow-md" />
                             </div>
                             
                             <!-- Message -->

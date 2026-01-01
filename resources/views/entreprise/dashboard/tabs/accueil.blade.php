@@ -122,7 +122,7 @@
                                     <span class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ $reservation->user->email }}</span>
                                 </div>
                                 <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                    <span class="font-medium">{{ $reservation->typeService?->nom ?? $reservation->type_service ?? 'Service' }}</span>
+                                    <span class="font-medium">{{ ($reservation->typeService ? $reservation->typeService->nom : null) ?? $reservation->type_service ?? 'Service' }}</span>
                                     - {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
                                 </p>
                                 @if($reservation->lieu)

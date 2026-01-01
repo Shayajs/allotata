@@ -217,17 +217,7 @@
                                 >
                                     <div class="flex items-start gap-4">
                                         <div class="relative flex-shrink-0">
-                                            @if($conversation->user->photo_profil)
-                                                <img 
-                                                    src="{{ asset('media/' . $conversation->user->photo_profil) }}" 
-                                                    alt="{{ $conversation->user->name }}"
-                                                    class="w-14 h-14 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
-                                                >
-                                            @else
-                                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-green-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                                                    {{ strtoupper(substr($conversation->user->name, 0, 1)) }}
-                                                </div>
-                                            @endif
+                                            <x-avatar :user="$conversation->user" size="xl" class="shadow-md" />
                                             @if($conversation->messagesNonLus(Auth::id()) > 0)
                                                 <span class="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
                                                     <span class="text-xs font-bold text-white">{{ $conversation->messagesNonLus(Auth::id()) > 9 ? '9+' : $conversation->messagesNonLus(Auth::id()) }}</span>
