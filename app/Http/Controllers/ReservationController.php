@@ -55,13 +55,25 @@ class ReservationController extends Controller
             $query->whereDate('date_reservation', '<=', $request->date_fin);
         }
 
-        $reservations = $query->orderBy('date_reservation', 'asc')
+        $reservations = $query->with('membre.user')
+            ->orderBy('date_reservation', 'asc')
             ->get()
             ->groupBy('statut');
+
+        // Charger les membres si multi-personnes
+        $membres = collect([]);
+        if ($entreprise->aGestionMultiPersonnes()) {
+            $membres = $entreprise->membres()
+                ->where('est_actif', true)
+                ->with('user')
+                ->get();
+        }
 
         return view('reservations.index', [
             'entreprise' => $entreprise,
             'reservations' => $reservations,
+            'membres' => $membres,
+            'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
         ]);
     }
 
@@ -77,12 +89,23 @@ class ReservationController extends Controller
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
-            ->with(['user', 'typeService'])
+            ->with(['user', 'typeService', 'membre.user'])
             ->firstOrFail();
+
+        // Charger les membres si multi-personnes
+        $membres = collect([]);
+        if ($entreprise->aGestionMultiPersonnes()) {
+            $membres = $entreprise->membres()
+                ->where('est_actif', true)
+                ->with('user')
+                ->get();
+        }
 
         return view('reservations.show', [
             'entreprise' => $entreprise,
             'reservation' => $reservation,
+            'membres' => $membres,
+            'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
         ]);
     }
 

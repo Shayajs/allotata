@@ -97,6 +97,9 @@
                             </svg>
                             Page publique
                         </a>
+                        <a href="{{ route('tickets.create') }}" class="px-3 py-2 text-sm font-medium bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-400 rounded-lg transition">
+                            🎫 Support
+                        </a>
                         <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition">
                             Mon compte
                         </a>
@@ -193,6 +196,18 @@
                             </svg>
                             Agenda
                         </button>
+                        @if($aGestionMultiPersonnes)
+                            <button 
+                                onclick="showTab('equipe')"
+                                class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'equipe' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                                data-tab="equipe"
+                            >
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                Équipe
+                            </button>
+                        @endif
                         <button 
                             onclick="showTab('reservations')"
                             class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'reservations' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
@@ -275,6 +290,13 @@
                     <div id="tab-agenda" class="tab-content {{ $activeTab !== 'agenda' ? 'hidden' : '' }}">
                         @include('entreprise.dashboard.tabs.agenda')
                     </div>
+
+                    <!-- Onglet Équipe (multi-personnes) -->
+                    @if($aGestionMultiPersonnes)
+                        <div id="tab-equipe" class="tab-content {{ $activeTab !== 'equipe' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.equipe')
+                        </div>
+                    @endif
 
                     <!-- Onglet Réservations -->
                     <div id="tab-reservations" class="tab-content {{ $activeTab !== 'reservations' ? 'hidden' : '' }}">

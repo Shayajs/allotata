@@ -73,6 +73,7 @@ class Entreprise extends Model
             'rdv_uniquement_messagerie' => 'boolean',
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
+            'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web
         ];
     }
 
@@ -328,5 +329,69 @@ class Entreprise extends Model
     public function peutEtreGereePar(User $user): bool
     {
         return $this->user_id === $user->id || $this->aAdministrateur($user);
+    }
+
+    /**
+     * Retourne la structure par défaut du site web vitrine
+     */
+    public static function getDefaultSiteWebContent(): array
+    {
+        return [
+            'theme' => [
+                'colors' => [
+                    'primary' => '#22c55e',
+                    'secondary' => '#f97316',
+                    'accent' => '#3b82f6',
+                    'background' => '#ffffff',
+                    'text' => '#1e293b',
+                ],
+                'fonts' => [
+                    'heading' => 'Poppins',
+                    'body' => 'Inter',
+                ],
+                'buttons' => [
+                    'style' => 'rounded', // rounded, square, pill
+                    'shadow' => true,
+                ],
+            ],
+            'blocks' => [],
+            'version' => 1,
+            'lastSaved' => null,
+        ];
+    }
+
+    /**
+     * Récupère le contenu du site web avec les valeurs par défaut
+     */
+    public function getSiteWebContentAttribute(): array
+    {
+        $content = $this->contenu_site_web;
+        
+        if (empty($content)) {
+            return self::getDefaultSiteWebContent();
+        }
+        
+        // Fusionner avec les valeurs par défaut pour s'assurer que toutes les clés existent
+        $default = self::getDefaultSiteWebContent();
+        
+        return array_replace_recursive($default, $content);
+    }
+
+    /**
+     * Récupère les blocs du site web
+     */
+    public function getSiteWebBlocks(): array
+    {
+        $content = $this->site_web_content;
+        return $content['blocks'] ?? [];
+    }
+
+    /**
+     * Récupère le thème du site web
+     */
+    public function getSiteWebTheme(): array
+    {
+        $content = $this->site_web_content;
+        return $content['theme'] ?? self::getDefaultSiteWebContent()['theme'];
     }
 }

@@ -27,6 +27,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\SiteWebController;
 use App\Http\Controllers\EntrepriseSubscriptionController;
 use App\Http\Controllers\EntrepriseMembreController;
+use App\Http\Controllers\MembreGestionController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -99,13 +100,35 @@ Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation
 
 // Sites web vitrine (Public)
 Route::get("/w/{slug}", [SiteWebController::class, 'show'])->name('site-web.show');
-Route::put("/w/{slug}", [SiteWebController::class, 'update'])->name('site-web.update')->middleware('auth');
+
+// API Site Web Vitrine (Authentifié - Propriétaire uniquement)
+Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(function () {
+    Route::put('/', [SiteWebController::class, 'update'])->name('update');
+    Route::put('/content', [SiteWebController::class, 'saveContent'])->name('content.save');
+    Route::post('/upload', [SiteWebController::class, 'uploadImage'])->name('upload');
+    Route::post('/template', [SiteWebController::class, 'loadTemplate'])->name('template.load');
+    Route::post('/render-block', [SiteWebController::class, 'renderBlock'])->name('render-block');
+    Route::get('/versions', [SiteWebController::class, 'getVersions'])->name('versions');
+    Route::post('/restore/{version}', [SiteWebController::class, 'restoreVersion'])->name('restore');
+});
+
+// Contact (public - depuis le footer)
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Tickets (public - depuis l'accueil et dashboards)
+Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 
 // Avis (nécessite authentification)
 Route::middleware('auth')->group(function () {
     Route::get("/p/{slug}/avis/create", [AvisController::class, 'create'])->name('avis.create');
     Route::post("/p/{slug}/avis", [AvisController::class, 'store'])->name('avis.store');
     Route::put("/p/{slug}/avis/{id}", [AvisController::class, 'update'])->name('avis.update');
+    
+    // Tickets utilisateur (authentifié)
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/message', [TicketController::class, 'addMessage'])->name('tickets.add-message');
 });
 
 // Routes protégées
@@ -132,6 +155,17 @@ Route::middleware('auth')->group(function () {
     Route::delete('/m/{slug}/agenda/service/{typeServiceId}/image/{imageId}', [AgendaController::class, 'deleteServiceImage'])->name('agenda.service.image.delete');
     Route::post('/m/{slug}/agenda/jour-exceptionnel', [AgendaController::class, 'storeJourExceptionnel'])->name('agenda.jour-exceptionnel.store');
     Route::delete('/m/{slug}/agenda/jour-exceptionnel/{horaireId}', [AgendaController::class, 'deleteJourExceptionnel'])->name('agenda.jour-exceptionnel.delete');
+    
+    // Gestion de l'équipe (multi-personnes)
+    Route::prefix('m/{slug}/equipe')->name('entreprise.equipe.')->group(function() {
+        Route::get('/', [MembreGestionController::class, 'index'])->name('index');
+        Route::get('/{membre}', [MembreGestionController::class, 'show'])->name('show');
+        Route::post('/{membre}/disponibilites', [MembreGestionController::class, 'updateDisponibilites'])->name('disponibilites.update');
+        Route::post('/{membre}/indisponibilites', [MembreGestionController::class, 'storeIndisponibilite'])->name('indisponibilites.store');
+        Route::delete('/{membre}/indisponibilites/{indisponibilite}', [MembreGestionController::class, 'deleteIndisponibilite'])->name('indisponibilites.delete');
+        Route::get('/{membre}/agenda', [MembreGestionController::class, 'getAgenda'])->name('agenda');
+        Route::get('/{membre}/statistiques', [MembreGestionController::class, 'getStatistiques'])->name('statistiques');
+    });
     
     // Gestion des réservations (pour les gérants)
     Route::get('/m/{slug}/reservations', [ReservationController::class, 'index'])->name('reservations.index');

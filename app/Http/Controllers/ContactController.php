@@ -33,10 +33,10 @@ class ContactController extends Controller
             'email' => $validated['email'],
             'sujet' => $validated['sujet'],
             'message' => $validated['message'],
-            'user_id' => Auth::id(),
+            'user_id' => Auth::id(), // null si non authentifié
         ]);
 
-        return redirect()->route('contact.create')
+        return redirect()->route('home')
             ->with('success', 'Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.');
     }
 

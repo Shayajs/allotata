@@ -14,6 +14,7 @@ class Reservation extends Model
     protected $fillable = [
         'user_id',
         'entreprise_id',
+        'membre_id',
         'date_reservation',
         'lieu',
         'telephone_client',
@@ -62,6 +63,14 @@ class Reservation extends Model
     public function typeService(): BelongsTo
     {
         return $this->belongsTo(TypeService::class);
+    }
+
+    /**
+     * Relation : Une réservation peut être assignée à un membre
+     */
+    public function membre(): BelongsTo
+    {
+        return $this->belongsTo(EntrepriseMembre::class, 'membre_id');
     }
 
     /**

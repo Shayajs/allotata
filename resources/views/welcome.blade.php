@@ -38,6 +38,43 @@
         </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+        <!-- Messages de session -->
+        @if(session('success'))
+            <div class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-sm text-green-800 dark:text-green-300">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+            <script>
+                setTimeout(() => {
+                    document.querySelector('.fixed.top-16').style.display = 'none';
+                }, 5000);
+            </script>
+        @endif
+
+        @if(session('error'))
+            <div class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+                <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-sm text-red-800 dark:text-red-300">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+            <script>
+                setTimeout(() => {
+                    document.querySelector('.fixed.top-16').style.display = 'none';
+                }, 5000);
+            </script>
+        @endif
+
         <!-- Navigation -->
         <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -366,7 +403,11 @@
                         <h4 class="text-white font-semibold mb-4">Support</h4>
                         <ul class="space-y-2">
                             <li><a href="#" class="hover:text-green-400 transition">Documentation</a></li>
-                            <li><a href="#" class="hover:text-green-400 transition">Contact</a></li>
+                            <li>
+                                <button onclick="document.getElementById('contact-modal').classList.remove('hidden')" class="hover:text-green-400 transition text-left">
+                                    Contact
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -375,6 +416,116 @@
                 </div>
             </div>
         </footer>
+
+        <!-- Modal de contact -->
+        <div id="contact-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target === this) document.getElementById('contact-modal').classList.add('hidden')">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Nous contacter</h3>
+                    <button onclick="document.getElementById('contact-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                @if(session('success'))
+                    <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <p class="text-sm text-green-800 dark:text-green-300">{{ session('success') }}</p>
+                    </div>
+                    <script>
+                        setTimeout(() => {
+                            document.getElementById('contact-modal').classList.add('hidden');
+                        }, 3000);
+                    </script>
+                @endif
+
+                <form action="{{ route('contact.store') }}" method="POST" class="space-y-4">
+                    @csrf
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Nom *
+                        </label>
+                        <input 
+                            type="text" 
+                            name="nom" 
+                            value="{{ old('nom', auth()->user()->name ?? '') }}"
+                            required
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                        @error('nom')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Email *
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            value="{{ old('email', auth()->user()->email ?? '') }}"
+                            required
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                        @error('email')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Sujet *
+                        </label>
+                        <input 
+                            type="text" 
+                            name="sujet" 
+                            value="{{ old('sujet') }}"
+                            required
+                            placeholder="Ex: Question sur les abonnements"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                        @error('sujet')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Message *
+                        </label>
+                        <textarea 
+                            name="message" 
+                            rows="5"
+                            required
+                            placeholder="Décrivez votre demande..."
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >{{ old('message') }}</textarea>
+                        @error('message')
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button 
+                            type="submit" 
+                            class="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition"
+                        >
+                            Envoyer
+                        </button>
+                        <button 
+                            type="button" 
+                            onclick="document.getElementById('contact-modal').classList.add('hidden')"
+                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                        >
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <script>
             // Gérer le toggle du thème

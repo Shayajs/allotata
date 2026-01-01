@@ -3,187 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $entreprise->nom }} - Site Web</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+    <title>{{ $entreprise->nom }} - Allo Tata</title>
+    <meta name="description" content="{{ $entreprise->phrase_accroche ?? $entreprise->description }}">
+    
+    {{-- Open Graph --}}
+    <meta property="og:title" content="{{ $entreprise->nom }}">
+    <meta property="og:description" content="{{ $entreprise->phrase_accroche ?? $entreprise->description }}">
+    @if(!empty($entreprise->logo))
+        <meta property="og:image" content="{{ route('storage.serve', ['path' => $entreprise->logo]) }}">
+    @endif
+    <meta property="og:type" content="website">
+    
+    {{-- Google Fonts --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Sans+Pro:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    @vite(['resources/css/app.css'])
+    
+    @php
+        $theme = $entreprise->site_web_theme;
+    @endphp
+    
+    <style>
+        :root {
+            --site-primary: {{ $theme['colors']['primary'] ?? '#22c55e' }};
+            --site-secondary: {{ $theme['colors']['secondary'] ?? '#f97316' }};
+            --site-accent: {{ $theme['colors']['accent'] ?? '#3b82f6' }};
+            --site-background: {{ $theme['colors']['background'] ?? '#ffffff' }};
+            --site-text: {{ $theme['colors']['text'] ?? '#1e293b' }};
+            --site-font-heading: '{{ $theme['fonts']['heading'] ?? 'Poppins' }}', sans-serif;
+            --site-font-body: '{{ $theme['fonts']['body'] ?? 'Inter' }}', sans-serif;
+            --site-button-radius: {{ ($theme['buttons']['style'] ?? 'rounded') === 'rounded' ? '0.5rem' : (($theme['buttons']['style'] ?? 'rounded') === 'pill' ? '9999px' : '0') }};
+            --site-button-shadow: {{ ($theme['buttons']['shadow'] ?? true) ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none' }};
         }
-    </script>
+        
+        body {
+            font-family: var(--site-font-body);
+            background: var(--site-background);
+            color: var(--site-text);
+        }
+        
+        /* Animations */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .animate-fadeIn { animation: fadeIn 0.6s ease forwards; }
+        .animate-slideUp { animation: slideUp 0.6s ease forwards; }
+        .animate-slideLeft { animation: slideLeft 0.6s ease forwards; }
+        .animate-zoomIn { animation: zoomIn 0.6s ease forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideLeft {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+<body class="antialiased">
+    {{-- Barre propriétaire en mode view --}}
     @if(isset($isOwner) && $isOwner && !empty($entreprise->slug_web))
-        <!-- Barre pour le propriétaire en mode vue -->
-        <div class="bg-blue-600 text-white py-2 px-4 shadow-md">
-            <div class="max-w-6xl mx-auto flex items-center justify-between text-sm">
-                <span>👁️ Vous visualisez votre site en mode public</span>
-                <a 
-                    href="{{ route('site-web.show', ['slug' => $entreprise->slug_web]) }}" 
-                    class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded transition font-medium"
-                >
-                    ✏️ Passer en mode édition
+        <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900 text-white py-2 px-4">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <span class="text-sm">Vous visualisez votre site en mode public</span>
+                <a href="{{ route('site-web.show', ['slug' => $entreprise->slug_web]) }}" 
+                   class="px-4 py-1 text-sm font-medium bg-green-600 hover:bg-green-700 rounded-lg transition">
+                    Retour à l'édition
                 </a>
             </div>
         </div>
-    @endif
-    <!-- En-tête avec image de fond ou logo -->
-    @if(!empty($entreprise->image_fond))
-        <div class="relative h-64 md:h-96 w-full overflow-hidden">
-            <img 
-                src="{{ route('storage.serve', ['path' => $entreprise->image_fond]) }}" 
-                alt="Image de fond {{ $entreprise->nom }}"
-                class="w-full h-full object-cover"
-            >
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                        @if(!empty($entreprise->logo))
-                            <img 
-                                src="{{ route('storage.serve', ['path' => $entreprise->logo]) }}" 
-                                alt="Logo {{ $entreprise->nom }}"
-                                class="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover border-2 border-white/20 shadow-lg flex-shrink-0"
-                            >
-                        @endif
-                        <div class="min-w-0">
-                            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
-                                {{ $entreprise->nom }}
-                            </h1>
-                            @if($entreprise->phrase_accroche)
-                                <p class="text-lg md:text-xl text-white/90">
-                                    {{ $entreprise->phrase_accroche }}
-                                </p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @else
-        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 py-8">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    @if(!empty($entreprise->logo))
-                        <img 
-                            src="{{ route('storage.serve', ['path' => $entreprise->logo]) }}" 
-                            alt="Logo {{ $entreprise->nom }}"
-                            class="w-20 h-20 md:w-24 md:h-24 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 flex-shrink-0"
-                        >
-                    @endif
-                    <div>
-                        <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent mb-2">
-                            {{ $entreprise->nom }}
-                        </h1>
-                        @if($entreprise->phrase_accroche)
-                            <p class="text-lg text-slate-600 dark:text-slate-400">
-                                {{ $entreprise->phrase_accroche }}
-                            </p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </header>
+        <div class="h-10"></div>
     @endif
     
-    <!-- Contenu principal -->
-    <div class="max-w-6xl mx-auto py-8 md:py-12 px-4 sm:px-6">
-        <!-- Description -->
-        @if($entreprise->description)
-            <section class="mb-12">
-                <div class="prose prose-lg dark:prose-invert max-w-none">
-                    <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {{ $entreprise->description }}
-                    </p>
+    {{-- Contenu principal --}}
+    <main>
+        @php
+            $blocks = $entreprise->getSiteWebBlocks();
+        @endphp
+        
+        @if(count($blocks) > 0)
+            @foreach($blocks as $block)
+                @php
+                    $animation = $block['animation'] ?? 'none';
+                    $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
+                @endphp
+                
+                <div class="{{ $animationClass }}" data-animation="{{ $animation }}">
+                    @switch($block['type'])
+                        @case('hero')
+                            <x-site-web.blocks.hero :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('text')
+                            <x-site-web.blocks.text :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('image')
+                            <x-site-web.blocks.image :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('gallery')
+                            <x-site-web.blocks.gallery :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('contact')
+                            <x-site-web.blocks.contact :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('video')
+                            <x-site-web.blocks.video :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('services')
+                            <x-site-web.blocks.services :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('testimonials')
+                            <x-site-web.blocks.testimonials :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('cta')
+                            <x-site-web.blocks.cta :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('divider')
+                            <x-site-web.blocks.divider :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('iframe')
+                            <x-site-web.blocks.iframe :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('faq')
+                            <x-site-web.blocks.faq :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('team')
+                            <x-site-web.blocks.team :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('stats')
+                            <x-site-web.blocks.stats :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('features')
+                            <x-site-web.blocks.features :block="$block" :entreprise="$entreprise" />
+                            @break
+                    @endswitch
                 </div>
-            </section>
-        @endif
-
-        <!-- Photos de réalisations -->
-        @if($entreprise->realisationPhotos->count() > 0)
-            <section class="mb-12">
-                <h2 class="text-2xl md:text-3xl font-bold mb-6">Nos réalisations</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    @foreach($entreprise->realisationPhotos as $photo)
-                        @if(!empty($photo->photo_path))
-                            <div class="relative group overflow-hidden rounded-lg aspect-square">
-                                <img 
-                                    src="{{ route('storage.serve', ['path' => $photo->photo_path]) }}" 
-                                    alt="{{ $photo->titre ?? 'Photo de réalisation' }}"
-                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                >
-                                @if($photo->titre)
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div class="absolute bottom-0 left-0 right-0 p-4">
-                                            <p class="text-white font-medium">{{ $photo->titre }}</p>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-                    @endforeach
+            @endforeach
+        @else
+            {{-- Fallback si pas de contenu --}}
+            <div class="min-h-screen flex items-center justify-center">
+                <div class="text-center p-8">
+                    @if(!empty($entreprise->logo))
+                        <img src="{{ route('storage.serve', ['path' => $entreprise->logo]) }}" alt="{{ $entreprise->nom }}" class="w-32 h-32 mx-auto mb-6 rounded-xl object-cover">
+                    @endif
+                    <h1 class="text-4xl font-bold mb-4" style="font-family: var(--site-font-heading);">
+                        {{ $entreprise->nom }}
+                    </h1>
+                    @if($entreprise->phrase_accroche)
+                        <p class="text-xl text-slate-600 dark:text-slate-400 mb-6">
+                            {{ $entreprise->phrase_accroche }}
+                        </p>
+                    @endif
+                    <a href="{{ route('public.entreprise', ['slug' => $entreprise->slug]) }}" 
+                       class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
+                       style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
+                        Voir la page entreprise
+                    </a>
                 </div>
-            </section>
-        @endif
-
-        <!-- Informations de contact -->
-        <section class="bg-white dark:bg-slate-800 rounded-lg p-6 md:p-8 border border-slate-200 dark:border-slate-700">
-            <h2 class="text-2xl md:text-3xl font-bold mb-6">Contactez-nous</h2>
-            <div class="space-y-4">
-                @if($entreprise->email)
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <a href="mailto:{{ $entreprise->email }}" class="text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400">
-                            {{ $entreprise->email }}
-                        </a>
-                    </div>
-                @endif
-                @if($entreprise->telephone)
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                        </svg>
-                        <a href="tel:{{ $entreprise->telephone }}" class="text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400">
-                            {{ $entreprise->telephone }}
-                        </a>
-                    </div>
-                @endif
-                @if($entreprise->ville)
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        <span class="text-slate-700 dark:text-slate-300">{{ $entreprise->ville }}</span>
-                    </div>
-                @endif
             </div>
-        </section>
-
-        <!-- Lien vers le profil complet sur Allo Tata -->
-        <div class="mt-8 text-center">
-            <a 
-                href="{{ route('public.entreprise', ['slug' => $entreprise->slug]) }}" 
-                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-orange-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-orange-600 transition"
-            >
-                Voir le profil complet sur Allo Tata
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </a>
-        </div>
-    </div>
-
-    <!-- Pied de page -->
-    <footer class="bg-slate-800 dark:bg-slate-900 text-slate-400 py-8 mt-12">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-            <p class="text-sm">
-                Site web créé avec <a href="{{ route('home') }}" class="text-green-400 hover:text-green-300">Allo Tata</a>
-            </p>
-        </div>
+        @endif
+    </main>
+    
+    {{-- Footer simple --}}
+    <footer class="py-8 px-4 text-center border-t border-slate-200 dark:border-slate-700">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+            © {{ date('Y') }} {{ $entreprise->nom }}. Tous droits réservés.
+        </p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+            Propulsé par <a href="{{ route('home') }}" class="hover:underline" style="color: var(--site-primary);">Allo Tata</a>
+        </p>
     </footer>
+    
+    {{-- Script pour animations au scroll --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const animatedElements = document.querySelectorAll('.animate-on-scroll');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const animation = entry.target.dataset.animation;
+                        entry.target.classList.add('visible');
+                        if (animation && animation !== 'none') {
+                            entry.target.classList.add('animate-' + animation);
+                        }
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            animatedElements.forEach(el => observer.observe(el));
+        });
+    </script>
 </body>
 </html>

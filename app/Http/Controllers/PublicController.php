@@ -208,6 +208,8 @@ class PublicController extends Controller
             'horaires' => $horaires,
             'jours' => $jours,
             'isOwner' => $isOwner,
+            'membres' => $membres,
+            'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
         ]);
     }
 
@@ -223,11 +225,24 @@ class PublicController extends Controller
             'type_service_id' => 'required|exists:types_services,id',
             'date_reservation' => 'required|date|after:now',
             'heure_reservation' => 'required|date_format:H:i',
+            'membre_id' => 'nullable|exists:entreprise_membres,id',
             'lieu' => 'nullable|string|max:255',
             'telephone_client' => 'required|string|max:20',
             'telephone_cache' => 'boolean',
             'notes' => 'nullable|string',
         ]);
+
+        // Vérifier que le membre appartient à l'entreprise si spécifié
+        if ($validated['membre_id']) {
+            $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+            
+            if (!$membre) {
+                return back()->withErrors(['membre_id' => 'Membre invalide.']);
+            }
+        }
 
         // Vérifier que le type de service appartient à l'entreprise
         $typeService = TypeService::where('id', $validated['type_service_id'])
@@ -268,6 +283,7 @@ class PublicController extends Controller
         $reservation = Reservation::create([
             'user_id' => $userId,
             'entreprise_id' => $entreprise->id,
+            'membre_id' => $membreId,
             'type_service_id' => $typeService->id,
             'date_reservation' => $dateTime,
             'lieu' => $validated['lieu'] ?? null,
@@ -315,10 +331,19 @@ class PublicController extends Controller
     {
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
 
+        // Récupérer le membre sélectionné depuis la requête (si multi-personnes)
+        $membreId = request()->get('membre_id');
+
         // Récupérer les réservations confirmées et en attente
-        $reservations = Reservation::where('entreprise_id', $entreprise->id)
-            ->whereIn('statut', ['en_attente', 'confirmee'])
-            ->get()
+        $query = Reservation::where('entreprise_id', $entreprise->id)
+            ->whereIn('statut', ['en_attente', 'confirmee']);
+        
+        // Filtrer par membre si spécifié
+        if ($membreId && $entreprise->aGestionMultiPersonnes()) {
+            $query->where('membre_id', $membreId);
+        }
+        
+        $reservations = $query->get()
             ->map(function($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
                 $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);

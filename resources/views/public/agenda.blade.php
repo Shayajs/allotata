@@ -234,6 +234,33 @@
                                     @enderror
                                 </div>
 
+                                <!-- Sélection de la personne (si multi-personnes) -->
+                                @if($aGestionMultiPersonnes && $membres->count() > 0)
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                            Personne
+                                        </label>
+                                        <select 
+                                            name="membre_id" 
+                                            id="membre_id"
+                                            class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        >
+                                            <option value="">Qu'importe (sélection automatique)</option>
+                                            @foreach($membres as $membre)
+                                                <option value="{{ $membre->id }}" {{ old('membre_id') == $membre->id ? 'selected' : '' }}>
+                                                    {{ $membre->user->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                            Si "Qu'importe" est sélectionné, le système choisira automatiquement la personne la moins chargée.
+                                        </p>
+                                        @error('membre_id')
+                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+
                                 <!-- Date et heure sélectionnées -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>

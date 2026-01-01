@@ -1,0 +1,581 @@
+/**
+ * Allo Tata - Styles de l'éditeur de Site Web Vitrine
+ */
+
+/* Variables CSS du thème */
+:root {
+    --site-primary: #22c55e;
+    --site-secondary: #f97316;
+    --site-accent: #3b82f6;
+    --site-background: #ffffff;
+    --site-text: #1e293b;
+    --site-font-heading: 'Poppins', sans-serif;
+    --site-font-body: 'Inter', sans-serif;
+    --site-button-radius: 0.5rem;
+    --site-button-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Layout principal de l'éditeur */
+.editor-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.editor-main {
+    flex: 1;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+.dark .editor-main {
+    background: #0f172a;
+}
+
+.editor-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: white;
+    border-left: 1px solid #e2e8f0;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+}
+
+.dark .editor-sidebar {
+    background: #1e293b;
+    border-left-color: #334155;
+}
+
+/* Barre d'outils principale */
+.editor-toolbar {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.dark .editor-toolbar {
+    background: #1e293b;
+    border-bottom-color: #334155;
+}
+
+/* Blocs éditables */
+.editor-block {
+    position: relative;
+    margin: 1rem;
+    border: 2px solid transparent;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    background: white;
+    overflow: hidden;
+}
+
+.dark .editor-block {
+    background: #1e293b;
+}
+
+.editor-block:hover {
+    border-color: #94a3b8;
+}
+
+.editor-block.selected {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* Barre d'outils du bloc */
+.block-toolbar {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+    background: white;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .block-toolbar {
+    background: #334155;
+}
+
+.editor-block:hover .block-toolbar,
+.editor-block.selected .block-toolbar {
+    opacity: 1;
+}
+
+.block-toolbar button {
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    color: #64748b;
+    transition: all 0.15s ease;
+}
+
+.block-toolbar button:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.dark .block-toolbar button:hover {
+    background: #475569;
+    color: #f1f5f9;
+}
+
+.block-drag-handle {
+    cursor: grab;
+}
+
+.block-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* États du drag & drop */
+.block-ghost {
+    opacity: 0.4;
+    background: #f1f5f9 !important;
+}
+
+.block-chosen {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.block-drag {
+    opacity: 0.9;
+}
+
+/* Contenu du bloc */
+.block-content {
+    position: relative;
+}
+
+/* Édition inline */
+[data-editable] {
+    cursor: text;
+    transition: all 0.15s ease;
+    border-radius: 0.25rem;
+}
+
+[data-editable]:hover {
+    outline: 2px dashed #94a3b8;
+    outline-offset: 2px;
+}
+
+[data-editable].editing {
+    outline: 2px solid #22c55e;
+    outline-offset: 2px;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+[contenteditable="true"]:focus {
+    outline: none;
+}
+
+/* Panneau de blocs disponibles */
+.available-blocks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.available-block-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    cursor: grab;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.dark .available-block-item {
+    border-color: #334155;
+}
+
+.available-block-item:hover {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.available-block-item:active {
+    cursor: grabbing;
+}
+
+.available-block-item svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #64748b;
+}
+
+.available-block-item span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Panneau de propriétés */
+.properties-panel {
+    border-top: 1px solid #e2e8f0;
+}
+
+.dark .properties-panel {
+    border-top-color: #334155;
+}
+
+/* Panneau de thème */
+.theme-panel {
+    padding: 1rem;
+}
+
+.theme-color-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.theme-color-picker input[type="color"] {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dark .theme-color-picker input[type="color"] {
+    border-color: #334155;
+}
+
+.theme-color-picker input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.theme-color-picker input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.375rem;
+}
+
+/* Thèmes prédéfinis */
+.preset-themes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.preset-theme-btn {
+    aspect-ratio: 1;
+    border-radius: 0.5rem;
+    border: 2px solid #e2e8f0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.dark .preset-theme-btn {
+    border-color: #334155;
+}
+
+.preset-theme-btn:hover {
+    border-color: #22c55e;
+    transform: scale(1.05);
+}
+
+.preset-theme-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--theme-primary) 50%, var(--theme-secondary) 50%);
+}
+
+/* Indicateur de sauvegarde */
+.save-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* Animations des blocs */
+.block-animation-fadeIn {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.block-animation-slideUp {
+    animation: slideUp 0.5s ease-out;
+}
+
+.block-animation-slideLeft {
+    animation: slideLeft 0.5s ease-out;
+}
+
+.block-animation-zoomIn {
+    animation: zoomIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideLeft {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Scrollbar personnalisée pour la sidebar */
+.editor-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.editor-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.editor-sidebar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.dark .editor-sidebar::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .editor-sidebar {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        z-index: 100;
+        box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .editor-sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Overlay pour sidebar mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* Preview mobile */
+.preview-mobile .editor-main {
+    max-width: 375px;
+    margin: 0 auto;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.preview-tablet .editor-main {
+    max-width: 768px;
+    margin: 0 auto;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+/* Zone de drop pour les blocs */
+.blocks-drop-zone {
+    min-height: 200px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 0.75rem;
+    margin: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.dark .blocks-drop-zone {
+    border-color: #334155;
+}
+
+.blocks-drop-zone.drag-over {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.blocks-drop-zone-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 2rem;
+}
+
+.blocks-drop-zone-empty svg {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+}
+
+/* Tabs dans la sidebar */
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .sidebar-tabs {
+    border-bottom-color: #334155;
+}
+
+.sidebar-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.sidebar-tab:hover {
+    color: #1e293b;
+}
+
+.dark .sidebar-tab:hover {
+    color: #f1f5f9;
+}
+
+.sidebar-tab.active {
+    color: #22c55e;
+    border-bottom-color: #22c55e;
+}
+
+.sidebar-tab-content {
+    display: none;
+}
+
+.sidebar-tab-content.active {
+    display: block;
+}
+
+/* Accordion pour les sections */
+.accordion-section {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .accordion-section {
+    border-bottom-color: #334155;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #1e293b;
+    transition: background 0.15s ease;
+}
+
+.dark .accordion-header {
+    color: #f1f5f9;
+}
+
+.accordion-header:hover {
+    background: #f8fafc;
+}
+
+.dark .accordion-header:hover {
+    background: #334155;
+}
+
+.accordion-content {
+    display: none;
+    padding: 0 1rem 1rem;
+}
+
+.accordion-section.open .accordion-content {
+    display: block;
+}
+
+.accordion-icon {
+    transition: transform 0.2s ease;
+}
+
+.accordion-section.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+/* Boutons d'action flottants */
+.floating-actions {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    z-index: 50;
+}
+
+.floating-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+}
+
+.floating-btn-primary {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+}
+
+.floating-btn-secondary {
+    background: white;
+    color: #1e293b;
+}
+
+.dark .floating-btn-secondary {
+    background: #334155;
+    color: #f1f5f9;
+}

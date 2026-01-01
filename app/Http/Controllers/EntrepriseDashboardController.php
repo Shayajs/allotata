@@ -87,6 +87,8 @@ class EntrepriseDashboardController extends Controller
             'factures' => $factures,
             // Messagerie
             'conversations' => $conversations,
+            // Multi-personnes
+            'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
         ]);
     }
 

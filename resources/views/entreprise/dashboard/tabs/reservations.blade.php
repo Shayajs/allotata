@@ -108,6 +108,11 @@
                                             {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
                                             ({{ $reservation->duree_minutes }} min)
                                         </p>
+                                        @if($aGestionMultiPersonnes && $reservation->membre)
+                                            <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                                                👤 Assigné à : {{ $reservation->membre->user->name ?? 'Membre' }}
+                                            </p>
+                                        @endif
                                         @if($reservation->lieu)
                                             <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                                 📍 {{ $reservation->lieu }}
@@ -160,6 +165,11 @@
                                                             <span class="ml-2 text-red-600 dark:text-red-400">✗ Non payé</span>
                                                         @endif
                                                     </p>
+                                                    @if($aGestionMultiPersonnes && $reservation->membre)
+                                                        <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                                            👤 Assigné à : {{ $reservation->membre->user->name ?? 'Membre' }}
+                                                        </p>
+                                                    @endif
                                                 </div>
                                                 <a 
                                                     href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
