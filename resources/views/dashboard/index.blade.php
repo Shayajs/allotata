@@ -677,7 +677,7 @@
             }
 
             function markErrorAsRead(errorId) {
-                fetch(`{{ route('admin.errors.mark-read', ['id' => '']) }}/${errorId}`, {
+                fetch(`/admin/errors/${errorId}/read`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',

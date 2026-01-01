@@ -12,6 +12,7 @@ use App\Models\TypeService;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class MessagerieController extends Controller
@@ -94,6 +95,11 @@ class MessagerieController extends Controller
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
+        }
+        
+        // Charger la réservation si la colonne existe
+        if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
+            $conversation->load('reservation');
         }
         
         // Charger les messages avec leurs propositions
@@ -198,6 +204,11 @@ class MessagerieController extends Controller
             ->where('entreprise_id', $entreprise->id)
             ->with(['user', 'entreprise'])
             ->firstOrFail();
+        
+        // Charger la réservation si la colonne existe
+        if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
+            $conversation->load('reservation');
+        }
         
         // Charger les messages avec leurs propositions
         $messages = $conversation->messages()
@@ -330,11 +341,16 @@ class MessagerieController extends Controller
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
         // Créer la proposition (liée à la réservation si la conversation est liée à une réservation)
+        $reservationId = null;
+        if (\Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
+            $reservationId = $conversation->reservation_id;
+        }
+        
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
             'entreprise_id' => $entreprise->id,
-            'reservation_id' => $conversation->reservation_id, // Lier à la réservation si présente
+            'reservation_id' => $reservationId, // Lier à la réservation si présente
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut,
             'heure_fin' => $heureFin,
@@ -348,8 +364,8 @@ class MessagerieController extends Controller
 
         // Créer le message associé
         $serviceNom = isset($typeService) ? $typeService->nom : 'Service personnalisé';
-        $messageContenu = $conversation->reservation_id 
-            ? "📝 Proposition de modification pour la réservation #{$conversation->reservation_id} : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €"
+        $messageContenu = $reservationId 
+            ? "📝 Proposition de modification pour la réservation #{$reservationId} : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €"
             : "Proposition de rendez-vous : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €";
         
         $message = Message::create([
@@ -530,7 +546,10 @@ class MessagerieController extends Controller
             return back()->withErrors(['error' => 'Cette proposition a déjà été acceptée.']);
         }
 
-        $dateTime = $proposition->date_rdv->format('Y-m-d') . ' ' . $proposition->heure_debut->format('H:i');
+        // Formater la date et l'heure correctement
+        // heure_debut est stocké comme time dans la DB mais casté en datetime dans le modèle
+        $heureDebutCarbon = \Carbon\Carbon::parse($proposition->heure_debut);
+        $dateTime = $proposition->date_rdv->format('Y-m-d') . ' ' . $heureDebutCarbon->format('H:i:s');
         $prixFinal = $proposition->prix_final ?? $proposition->prix_propose;
 
         // Si la proposition est liée à une réservation existante, la mettre à jour
@@ -574,13 +593,16 @@ class MessagerieController extends Controller
 
         // Créer un message de confirmation
         $isModification = $proposition->reservation_id !== null;
+        $heureDebutCarbon = \Carbon\Carbon::parse($proposition->heure_debut);
+        $heureDebutFormatee = $heureDebutCarbon->format('H:i');
+        
         $messageContenu = $isModification
             ? ($isClient 
-                ? "✓ Modification acceptée ! La réservation #{$reservation->id} a été mise à jour : {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €"
-                : "✓ J'ai accepté votre proposition de modification pour la réservation #{$reservation->id} : {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €")
+                ? "✓ Modification acceptée ! La réservation #{$reservation->id} a été mise à jour : {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €"
+                : "✓ J'ai accepté votre proposition de modification pour la réservation #{$reservation->id} : {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €")
             : ($isClient 
-                ? "✓ Rendez-vous accepté ! Le rendez-vous est confirmé pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €"
-                : "✓ J'ai accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €");
+                ? "✓ Rendez-vous accepté ! Le rendez-vous est confirmé pour le {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €"
+                : "✓ J'ai accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €");
         
         $message = Message::create([
             'conversation_id' => $proposition->conversation_id,

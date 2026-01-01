@@ -195,53 +195,6 @@
                                 </div>
                             </div>
 
-                            <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Changer le mot de passe</h3>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                            Mot de passe actuel
-                                        </label>
-                                        <input 
-                                            type="password" 
-                                            name="current_password" 
-                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        >
-                                        @error('current_password')
-                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                                Nouveau mot de passe
-                                            </label>
-                                            <input 
-                                                type="password" 
-                                                name="new_password" 
-                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            >
-                                            @error('new_password')
-                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <div>
-                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                                Confirmer le mot de passe
-                                            </label>
-                                            <input 
-                                                type="password" 
-                                                name="new_password_confirmation" 
-                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            >
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div class="flex justify-end">
                                 <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                                     Enregistrer les modifications
@@ -800,6 +753,71 @@
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Sécurité</h2>
                         
                         <div class="space-y-6">
+                            <!-- Changer le mot de passe -->
+                            <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Changer le mot de passe</h3>
+                                
+                                <form action="{{ route('settings.password.update') }}" method="POST" class="space-y-4">
+                                    @csrf
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Mot de passe actuel *
+                                        </label>
+                                        <input 
+                                            type="password" 
+                                            name="current_password" 
+                                            required
+                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                        @error('current_password')
+                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Nouveau mot de passe *
+                                            </label>
+                                            <input 
+                                                type="password" 
+                                                name="new_password" 
+                                                required
+                                                minlength="8"
+                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                            @error('new_password')
+                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            @enderror
+                                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                Minimum 8 caractères
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                Confirmer le mot de passe *
+                                            </label>
+                                            <input 
+                                                type="password" 
+                                                name="new_password_confirmation" 
+                                                required
+                                                minlength="8"
+                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                            Mettre à jour le mot de passe
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Sessions actives -->
                             <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg">
                                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Sessions actives</h3>
                                 <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
@@ -816,6 +834,7 @@
                                 </div>
                             </div>
 
+                            <!-- Zone de danger -->
                             <div class="p-6 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20">
                                 <h3 class="text-lg font-semibold text-red-900 dark:text-red-400 mb-2">Zone de danger</h3>
                                 <p class="text-sm text-red-800 dark:text-red-300 mb-4">

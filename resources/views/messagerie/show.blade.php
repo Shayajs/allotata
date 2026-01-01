@@ -95,7 +95,7 @@
                         </div>
                     @endif
                     
-                    @if($conversation->reservation)
+                    @if(isset($conversation->reservation) && $conversation->reservation)
                         <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                             <div class="flex items-center gap-2 mb-1">
                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

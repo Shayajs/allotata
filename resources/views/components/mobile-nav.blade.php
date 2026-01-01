@@ -7,7 +7,7 @@
 @endphp
 
 <!-- Menu Burger pour Web Mobile -->
-<div class="mobile-nav-burger" style="display: block !important; visibility: visible !important; opacity: 1 !important; z-index: 100 !important;">
+<div class="mobile-nav-burger" style="z-index: 100 !important;">
     <!-- Bouton burger -->
     <button 
         id="{{ $uniqueId }}_button"

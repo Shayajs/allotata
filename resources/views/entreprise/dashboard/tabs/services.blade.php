@@ -80,7 +80,7 @@
                                 data-service-duree="{{ $service->duree_minutes }}"
                                 data-service-prix="{{ $service->prix }}"
                                 data-service-actif="{{ $service->est_actif ? 'true' : 'false' }}"
-                                data-service-images="{{ htmlspecialchars(json_encode($service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values()), ENT_QUOTES, 'UTF-8') }}"
+                                data-service-images="{{ base64_encode(json_encode($service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                             >
                                 Modifier
@@ -292,11 +292,15 @@
         const duree = parseInt(button.getAttribute('data-service-duree')) || 30;
         const prix = parseFloat(button.getAttribute('data-service-prix')) || 0;
         const estActif = button.getAttribute('data-service-actif') === 'true';
-        const imagesJson = button.getAttribute('data-service-images') || '[]';
+        const imagesBase64 = button.getAttribute('data-service-images') || '';
         
         let images = [];
         try {
-            images = JSON.parse(imagesJson);
+            // Décoder le base64 puis parser le JSON
+            if (imagesBase64) {
+                const imagesJson = atob(imagesBase64);
+                images = JSON.parse(imagesJson);
+            }
         } catch (e) {
             console.error('Erreur parsing images:', e);
             images = [];

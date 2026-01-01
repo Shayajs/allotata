@@ -186,6 +186,7 @@ Route::middleware('auth')->group(function () {
     // Paramètres
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
     Route::post('/settings/error-notifications', [SettingsController::class, 'updateErrorNotifications'])->name('settings.error-notifications.update');
     Route::post('/settings/entreprise/{slug}', [SettingsController::class, 'updateEntreprise'])->name('settings.entreprise.update');
     Route::post('/settings/entreprise/{slug}/logo/upload', [SettingsController::class, 'uploadLogo'])->name('settings.entreprise.logo.upload');

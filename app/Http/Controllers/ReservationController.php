@@ -7,6 +7,7 @@ use App\Models\Entreprise;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class ReservationController extends Controller
 {
@@ -106,7 +107,11 @@ class ReservationController extends Controller
         }
 
         // Vérifier si une conversation existe déjà pour cette réservation
-        $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+        // Vérifier d'abord si la colonne existe (pour éviter l'erreur si la migration n'est pas exécutée)
+        $conversation = null;
+        if (Schema::hasColumn('conversations', 'reservation_id')) {
+            $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+        }
 
         return view('reservations.show', [
             'entreprise' => $entreprise,
@@ -132,7 +137,13 @@ class ReservationController extends Controller
             ->firstOrFail();
 
         // Vérifier si une conversation existe déjà pour cette réservation
-        $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+        // Vérifier d'abord si la colonne existe (pour éviter l'erreur si la migration n'est pas exécutée)
+        $hasReservationIdColumn = \Schema::hasColumn('conversations', 'reservation_id');
+        
+        $conversation = null;
+        if ($hasReservationIdColumn) {
+            $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+        }
 
         if (!$conversation) {
             // Vérifier si une conversation existe déjà entre le client et l'entreprise
@@ -142,16 +153,21 @@ class ReservationController extends Controller
                 ->first();
 
             if ($existingConversation) {
-                // Lier la réservation à la conversation existante
-                $existingConversation->update(['reservation_id' => $reservation->id]);
+                // Lier la réservation à la conversation existante si la colonne existe
+                if ($hasReservationIdColumn) {
+                    $existingConversation->update(['reservation_id' => $reservation->id]);
+                }
                 $conversation = $existingConversation;
             } else {
                 // Créer une nouvelle conversation liée à la réservation
-                $conversation = \App\Models\Conversation::create([
+                $conversationData = [
                     'user_id' => $reservation->user_id,
                     'entreprise_id' => $entreprise->id,
-                    'reservation_id' => $reservation->id,
-                ]);
+                ];
+                if ($hasReservationIdColumn) {
+                    $conversationData['reservation_id'] = $reservation->id;
+                }
+                $conversation = \App\Models\Conversation::create($conversationData);
             }
 
             // Créer un message initial pour expliquer la conversation

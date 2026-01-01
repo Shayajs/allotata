@@ -62,17 +62,7 @@ class SettingsController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'photo_profil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
-            'current_password' => ['nullable', 'required_with:new_password'],
-            'new_password' => ['nullable', 'min:8', 'confirmed'],
         ]);
-
-        // Vérifier le mot de passe actuel si un nouveau est fourni
-        if ($request->filled('new_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.']);
-            }
-            $validated['password'] = Hash::make($validated['new_password']);
-        }
 
         // Gérer l'upload de la photo de profil (atomicité : upload d'abord, suppression ensuite)
         if ($request->hasFile('photo_profil')) {
@@ -108,12 +98,36 @@ class SettingsController extends Controller
             }
         }
 
-        unset($validated['current_password'], $validated['new_password'], $validated['new_password_confirmation']);
-
         $user->update($validated);
 
-        return redirect()->route('settings.index')
+        return redirect()->route('settings.index', ['tab' => 'account'])
             ->with('success', 'Vos informations de compte ont été mises à jour.');
+    }
+
+    /**
+     * Mettre à jour le mot de passe
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'current_password' => ['required'],
+            'new_password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        // Vérifier le mot de passe actuel
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return back()->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.']);
+        }
+
+        // Mettre à jour le mot de passe
+        $user->update([
+            'password' => Hash::make($validated['new_password']),
+        ]);
+
+        return redirect()->route('settings.index', ['tab' => 'security'])
+            ->with('success', 'Votre mot de passe a été mis à jour avec succès.');
     }
 
     /**
