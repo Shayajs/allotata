@@ -20,8 +20,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $horaires = $entreprise->horairesOuverture()
             ->orderBy('jour_semaine')
@@ -63,12 +67,16 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         // Récupérer toutes les réservations (y compris terminées pour historique)
         $reservations = \App\Models\Reservation::where('entreprise_id', $entreprise->id)
-            ->with(['user', 'typeService'])
+            ->with(['user', 'typeService', 'membre.user'])
             ->get()
             ->map(function($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
@@ -86,10 +94,16 @@ class AgendaController extends Controller
                     $color = '#6b7280'; // Gris foncé
                 }
                 
+                // Titre avec membre si assigné
+                $title = ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
+                         ($reservation->user ? ' - ' . $reservation->user->name : '');
+                if ($reservation->membre && $reservation->membre->user) {
+                    $title .= ' [' . $reservation->membre->user->name . ']';
+                }
+                
                 return [
                     'id' => $reservation->id,
-                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
-                              ($reservation->user ? ' - ' . $reservation->user->name : ''),
+                    'title' => $title,
                     'start' => $debut->toIso8601String(),
                     'end' => $fin->toIso8601String(),
                     'color' => $color,
@@ -104,6 +118,7 @@ class AgendaController extends Controller
                         'telephone' => $reservation->telephone_client,
                         'notes' => $reservation->notes,
                         'type_service' => $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'N/A'),
+                        'membre' => $reservation->membre && $reservation->membre->user ? $reservation->membre->user->name : null,
                     ],
                 ];
             });
@@ -160,8 +175,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $validated = $request->validate([
             'date_exception' => 'required|date|after_or_equal:today',
@@ -203,8 +222,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $horaire = HorairesOuverture::where('id', $horaireId)
             ->where('entreprise_id', $entreprise->id)
@@ -224,8 +247,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
@@ -287,8 +314,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $typeService = TypeService::where('id', $typeServiceId)
             ->where('entreprise_id', $entreprise->id)
@@ -332,8 +363,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $typeService = TypeService::where('id', $typeServiceId)
             ->where('entreprise_id', $entreprise->id)
@@ -363,8 +398,12 @@ class AgendaController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $typeService = TypeService::where('id', $typeServiceId)
             ->where('entreprise_id', $entreprise->id)

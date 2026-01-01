@@ -129,4 +129,13 @@ class Reservation extends Model
     {
         return number_format($this->prix, 2, ',', ' ') . ' €';
     }
+
+    /**
+     * Accesseur pour le membre avec fallback
+     * Retourne le membre assigné ou null
+     */
+    public function getMembreAttribute(): ?EntrepriseMembre
+    {
+        return $this->membre()->first();
+    }
 }

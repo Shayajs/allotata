@@ -88,8 +88,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         // Générer automatiquement les factures pour les réservations payées sans facture
         $reservationsPayeesSansFacture = Reservation::where('entreprise_id', $entreprise->id)
@@ -149,8 +153,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $facture = Facture::where('entreprise_id', $entreprise->id)
             ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
@@ -184,8 +192,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $facture = Facture::where('entreprise_id', $entreprise->id)
             ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
@@ -203,8 +215,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         // Période par défaut : année en cours
         $dateDebut = $request->filled('date_debut') ? $request->date_debut : now()->startOfYear()->format('Y-m-d');
@@ -273,8 +289,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         // Récupérer les types de services et les clients pour les filtres
         $typesServices = \App\Models\TypeService::where('entreprise_id', $entreprise->id)
@@ -300,8 +320,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $query = Reservation::where('entreprise_id', $entreprise->id)
             ->where('est_paye', true)
@@ -365,8 +389,12 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $entreprise = \App\Models\Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $validated = $request->validate([
             'reservation_ids' => 'required|array|min:1',

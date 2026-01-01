@@ -112,12 +112,20 @@
             opacity: 0.4;
             outline: 3px dashed var(--site-primary) !important;
         }
-        
+
         .editable-block.sortable-chosen {
             cursor: grabbing;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             transform: scale(1.01);
             z-index: 100;
+        }
+        
+        /* Empêcher la sélection de texte pendant le drag */
+        body.is-dragging,
+        body.is-dragging * {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            cursor: grabbing !important;
         }
         
         .editable-block.sortable-drag {
@@ -155,6 +163,8 @@
             cursor: grab;
             z-index: 51;
             display: flex;
+            user-select: none;
+            -webkit-user-select: none;
             align-items: center;
             gap: 6px;
             font-family: system-ui, sans-serif;
@@ -284,14 +294,32 @@
             padding: 12px 8px;
             background: #334155;
             border-radius: 8px;
-            cursor: pointer;
+            cursor: grab;
             transition: all 0.15s ease;
             text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
         }
         
         .block-item:hover {
             background: #475569;
             transform: translateY(-2px);
+        }
+        
+        .block-item.sortable-chosen {
+            background: #22c55e;
+            transform: scale(1.05);
+        }
+        
+        .block-item.sortable-ghost {
+            opacity: 0.5;
+        }
+        
+        /* Style pour le clone en cours de drag */
+        .block-item.sortable-drag {
+            background: #22c55e;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         
         .block-item svg {
@@ -725,64 +753,64 @@
                 <p class="text-xs text-slate-400 mt-1">Cliquez pour ajouter à la fin</p>
             </div>
             
-            <div class="blocks-grid">
-                <div class="block-item" onclick="addBlock('hero')">
+            <div id="sidebar-blocks-grid" class="blocks-grid">
+                <div class="block-item" data-block-type="hero">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path></svg>
                     <span>Hero</span>
                 </div>
-                <div class="block-item" onclick="addBlock('text')">
+                <div class="block-item" data-block-type="text">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h7"></path></svg>
                     <span>Texte</span>
                 </div>
-                <div class="block-item" onclick="addBlock('image')">
+                <div class="block-item" data-block-type="image">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     <span>Image</span>
                 </div>
-                <div class="block-item" onclick="addBlock('gallery')">
+                <div class="block-item" data-block-type="gallery">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path></svg>
                     <span>Galerie</span>
                 </div>
-                <div class="block-item" onclick="addBlock('services')">
+                <div class="block-item" data-block-type="services">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2"></path></svg>
                     <span>Services</span>
                 </div>
-                <div class="block-item" onclick="addBlock('testimonials')">
+                <div class="block-item" data-block-type="testimonials">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     <span>Avis</span>
                 </div>
-                <div class="block-item" onclick="addBlock('contact')">
+                <div class="block-item" data-block-type="contact">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <span>Contact</span>
                 </div>
-                <div class="block-item" onclick="addBlock('cta')">
+                <div class="block-item" data-block-type="cta">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"></path></svg>
                     <span>CTA</span>
                 </div>
-                <div class="block-item" onclick="addBlock('video')">
+                <div class="block-item" data-block-type="video">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
                     <span>Vidéo</span>
                 </div>
-                <div class="block-item" onclick="addBlock('stats')">
+                <div class="block-item" data-block-type="stats">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <span>Stats</span>
                 </div>
-                <div class="block-item" onclick="addBlock('features')">
+                <div class="block-item" data-block-type="features">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138"></path></svg>
                     <span>Features</span>
                 </div>
-                <div class="block-item" onclick="addBlock('faq')">
+                <div class="block-item" data-block-type="faq">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>FAQ</span>
                 </div>
-                <div class="block-item" onclick="addBlock('team')">
+                <div class="block-item" data-block-type="team">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"></path></svg>
                     <span>Équipe</span>
                 </div>
-                <div class="block-item" onclick="addBlock('divider')">
+                <div class="block-item" data-block-type="divider">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12h16"></path></svg>
                     <span>Séparateur</span>
                 </div>
-                <div class="block-item" onclick="addBlock('iframe')">
+                <div class="block-item" data-block-type="iframe">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     <span>Iframe</span>
                 </div>
@@ -934,6 +962,14 @@
                 });
             });
             
+            // Clic sur les blocs de la sidebar
+            document.querySelectorAll('#sidebar-blocks-grid .block-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const type = item.dataset.blockType;
+                    if (type) addBlock(type);
+                });
+            });
+            
             // Initialiser le drag & drop avec SortableJS
             initSortable();
         });
@@ -941,50 +977,108 @@
         // Initialiser SortableJS
         function initSortable() {
             const container = document.getElementById('blocks-container');
-            if (!container || container.querySelectorAll('.editable-block').length === 0) return;
+            const sidebarGrid = document.getElementById('sidebar-blocks-grid');
             
-            new Sortable(container, {
-                animation: 200,
-                // Pas de handle = on peut drag depuis n'importe où sur le bloc
-                // Mais on filtre les éléments interactifs
-                filter: '.block-toolbar, a, button, input, textarea, select, iframe',
-                preventOnFilter: false,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'sortable-drag',
-                forceFallback: true, // Meilleur rendu cross-browser
-                fallbackClass: 'sortable-fallback',
-                fallbackOnBody: true,
-                swapThreshold: 0.65,
-                delay: 150, // Petit délai pour distinguer clic et drag
-                delayOnTouchOnly: true,
-                
-                onStart: function(evt) {
-                    // Désélectionner le bloc actuel pendant le drag
-                    document.querySelectorAll('.editable-block.selected').forEach(el => el.classList.remove('selected'));
-                },
-                
-                onEnd: function(evt) {
-                    if (evt.oldIndex === evt.newIndex) return;
+            // Sortable pour la sidebar (source - drag to clone)
+            if (sidebarGrid) {
+                new Sortable(sidebarGrid, {
+                    group: {
+                        name: 'editor-blocks',
+                        pull: 'clone',
+                        put: false
+                    },
+                    sort: false,
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    forceFallback: true,
+                    fallbackClass: 'sortable-fallback',
                     
-                    // Mettre à jour l'ordre dans l'état
-                    const [movedBlock] = editorState.content.blocks.splice(evt.oldIndex, 1);
-                    editorState.content.blocks.splice(evt.newIndex, 0, movedBlock);
+                    onStart: function() {
+                        document.body.classList.add('is-dragging');
+                    },
+                    onEnd: function() {
+                        document.body.classList.remove('is-dragging');
+                    }
+                });
+            }
+            
+            // Sortable pour les blocs existants (destination + réordonnement)
+            if (container) {
+                new Sortable(container, {
+                    group: {
+                        name: 'editor-blocks',
+                        pull: false,
+                        put: ['editor-blocks'] // Accepter les éléments du groupe editor-blocks
+                    },
+                    animation: 200,
+                    // Les blocs existants ne peuvent être draggés QUE via le handle
+                    handle: '.drag-handle',
+                    // Éléments qui peuvent être draggés : blocs existants ET items de la sidebar
+                    draggable: '.editable-block, .block-item',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    forceFallback: true,
+                    fallbackClass: 'sortable-fallback',
+                    fallbackOnBody: true,
+                    swapThreshold: 0.65,
                     
-                    // Mettre à jour les attributs data-block-index
-                    container.querySelectorAll('.editable-block').forEach((el, index) => {
-                        el.setAttribute('data-block-index', index);
-                    });
+                    onStart: function(evt) {
+                        // Empêcher la sélection de texte pendant le drag
+                        document.body.classList.add('is-dragging');
+                        // Désélectionner pendant le drag
+                        document.querySelectorAll('.editable-block.selected').forEach(el => el.classList.remove('selected'));
+                    },
                     
-                    // Sauvegarder
-                    scheduleAutoSave();
+                    // Quand un élément de la sidebar est droppé dans le container
+                    onAdd: function(evt) {
+                        const blockType = evt.item.dataset.blockType;
+                        const insertIndex = evt.newIndex;
+                        
+                        // Supprimer l'élément cloné de la sidebar
+                        evt.item.remove();
+                        
+                        // Ajouter le vrai bloc à la position
+                        if (blockType) {
+                            addBlockAtIndex(blockType, insertIndex);
+                        }
+                    },
                     
-                    // Sélectionner le bloc déplacé
-                    selectBlock(movedBlock.id);
-                    
-                    // Feedback visuel
-                    showToast('Bloc déplacé');
-                }
+                    onEnd: function(evt) {
+                        // Réactiver la sélection de texte
+                        document.body.classList.remove('is-dragging');
+                        
+                        // Ignorer les éléments de la sidebar (gérés par onAdd)
+                        if (evt.item.classList.contains('block-item')) return;
+                        
+                        if (evt.oldIndex === evt.newIndex) return;
+                        
+                        // Mettre à jour l'ordre dans l'état
+                        const [movedBlock] = editorState.content.blocks.splice(evt.oldIndex, 1);
+                        editorState.content.blocks.splice(evt.newIndex, 0, movedBlock);
+                        
+                        // Mettre à jour les attributs data-block-index
+                        updateBlockIndexes();
+                        
+                        // Sauvegarder
+                        scheduleAutoSave();
+                        
+                        // Sélectionner le bloc déplacé
+                        selectBlock(movedBlock.id);
+                        
+                        // Feedback visuel
+                        showToast('Bloc déplacé');
+                    }
+                });
+            }
+        }
+        
+        // Mettre à jour les index des blocs
+        function updateBlockIndexes() {
+            const container = document.getElementById('blocks-container');
+            container.querySelectorAll('.editable-block').forEach((el, index) => {
+                el.setAttribute('data-block-index', index);
             });
         }
         
@@ -1237,8 +1331,13 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
         
-        // Ajouter un bloc
+        // Ajouter un bloc (à la fin)
         function addBlock(type) {
+            addBlockAtIndex(type, editorState.content.blocks.length);
+        }
+        
+        // Ajouter un bloc à un index spécifique
+        async function addBlockAtIndex(type, index) {
             const newBlock = {
                 id: 'block-' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36),
                 type: type,
@@ -1247,11 +1346,116 @@
                 animation: 'fadeIn'
             };
             
-            editorState.content.blocks.push(newBlock);
+            // Ajouter à l'état
+            editorState.content.blocks.splice(index, 0, newBlock);
+            
+            // Insérer dans le DOM
+            await insertBlockElement(newBlock, index);
+            
+            // Sauvegarder
             scheduleAutoSave();
             
-            // Recharger la page pour voir le nouveau bloc
-            location.reload();
+            // Sélectionner le nouveau bloc
+            selectBlock(newBlock.id);
+            
+            // Feedback
+            showToast('Bloc ajouté');
+            
+            // Scroll vers le bloc
+            setTimeout(() => {
+                const blockEl = document.querySelector(`[data-block-id="${newBlock.id}"]`);
+                if (blockEl) {
+                    blockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+        
+        // Insérer un élément de bloc dans le DOM
+        async function insertBlockElement(block, index) {
+            const container = document.getElementById('blocks-container');
+            
+            // Masquer la zone vide si présente
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            // Récupérer le HTML du bloc via l'API
+            try {
+                const response = await fetch(`/w/${editorState.slug}/render-block`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': editorState.csrf,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ block })
+                });
+                
+                if (!response.ok) throw new Error('Erreur API');
+                
+                const data = await response.json();
+                
+                // Créer le wrapper du bloc
+                const wrapper = document.createElement('div');
+                wrapper.className = 'editable-block';
+                wrapper.dataset.blockId = block.id;
+                wrapper.dataset.blockIndex = index;
+                wrapper.setAttribute('onclick', `selectBlock('${block.id}', event)`);
+                
+                wrapper.innerHTML = `
+                    <div class="drag-handle" title="Maintenez et glissez pour déplacer">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                        </svg>
+                        Déplacer
+                    </div>
+                    <div class="block-type-label">${block.type.charAt(0).toUpperCase() + block.type.slice(1)}</div>
+                    <div class="block-toolbar">
+                        <button type="button" onclick="moveBlock('${block.id}', -1); event.stopPropagation();" title="Monter">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="moveBlock('${block.id}', 1); event.stopPropagation();" title="Descendre">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="duplicateBlock('${block.id}'); event.stopPropagation();" title="Dupliquer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="deleteBlock('${block.id}'); event.stopPropagation();" title="Supprimer" class="danger">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${data.html}
+                `;
+                
+                // Insérer à la bonne position
+                const existingBlocks = container.querySelectorAll('.editable-block');
+                const addZone = document.getElementById('add-block-zone');
+                
+                if (index >= existingBlocks.length) {
+                    // Insérer avant la zone "ajouter" si elle existe, sinon à la fin
+                    if (addZone) {
+                        container.insertBefore(wrapper, addZone);
+                    } else {
+                        container.appendChild(wrapper);
+                    }
+                } else {
+                    container.insertBefore(wrapper, existingBlocks[index]);
+                }
+                
+                // Mettre à jour les index
+                updateBlockIndexes();
+                
+            } catch (error) {
+                console.error('Erreur insertion bloc:', error);
+                showToast('Erreur lors de l\'ajout du bloc');
+            }
         }
         
         // Contenu par défaut
@@ -1287,32 +1491,65 @@
             return defaults[type] || {};
         }
         
-        // Supprimer un bloc
+        // Supprimer un bloc (sans rechargement)
         function deleteBlock(blockId) {
             if (!confirm('Supprimer ce bloc ?')) return;
             
             const index = editorState.content.blocks.findIndex(b => b.id === blockId);
-            if (index !== -1) {
-                editorState.content.blocks.splice(index, 1);
-                scheduleAutoSave();
-                location.reload();
+            if (index === -1) return;
+            
+            // Supprimer de l'état
+            editorState.content.blocks.splice(index, 1);
+            
+            // Supprimer du DOM
+            const blockEl = document.querySelector(`[data-block-id="${blockId}"]`);
+            if (blockEl) {
+                blockEl.remove();
             }
+            
+            // Mettre à jour les index
+            updateBlockIndexes();
+            
+            // Sauvegarder
+            scheduleAutoSave();
+            
+            // Afficher zone vide si plus de blocs
+            if (editorState.content.blocks.length === 0) {
+                const emptyState = document.getElementById('empty-state');
+                if (emptyState) emptyState.style.display = '';
+            }
+            
+            // Feedback
+            showToast('Bloc supprimé');
         }
         
-        // Dupliquer un bloc
-        function duplicateBlock(blockId) {
+        // Dupliquer un bloc (sans rechargement)
+        async function duplicateBlock(blockId) {
             const index = editorState.content.blocks.findIndex(b => b.id === blockId);
             if (index === -1) return;
             
-            const newBlock = JSON.parse(JSON.stringify(editorState.content.blocks[index]));
+            // Créer une copie du bloc
+            const originalBlock = editorState.content.blocks[index];
+            const newBlock = JSON.parse(JSON.stringify(originalBlock));
             newBlock.id = 'block-' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
             
+            // Ajouter à l'état après l'original
             editorState.content.blocks.splice(index + 1, 0, newBlock);
+            
+            // Insérer dans le DOM
+            await insertBlockElement(newBlock, index + 1);
+            
+            // Sauvegarder
             scheduleAutoSave();
-            location.reload();
+            
+            // Sélectionner le nouveau bloc
+            selectBlock(newBlock.id);
+            
+            // Feedback
+            showToast('Bloc dupliqué');
         }
         
-        // Déplacer un bloc
+        // Déplacer un bloc (sans rechargement)
         function moveBlock(blockId, direction) {
             const index = editorState.content.blocks.findIndex(b => b.id === blockId);
             if (index === -1) return;
@@ -1320,10 +1557,94 @@
             const newIndex = index + direction;
             if (newIndex < 0 || newIndex >= editorState.content.blocks.length) return;
             
+            // Mettre à jour l'état
             const [block] = editorState.content.blocks.splice(index, 1);
             editorState.content.blocks.splice(newIndex, 0, block);
+            
+            // Mettre à jour le DOM
+            const container = document.getElementById('blocks-container');
+            const blockEl = document.querySelector(`[data-block-id="${blockId}"]`);
+            const blocks = container.querySelectorAll('.editable-block');
+            
+            if (direction < 0 && newIndex >= 0) {
+                // Monter
+                container.insertBefore(blockEl, blocks[newIndex]);
+            } else if (direction > 0 && newIndex < blocks.length) {
+                // Descendre
+                const nextBlock = blocks[newIndex + 1];
+                if (nextBlock) {
+                    container.insertBefore(blockEl, nextBlock);
+                } else {
+                    // C'est le dernier, insérer avant la zone "ajouter" ou à la fin
+                    const addZone = document.getElementById('add-block-zone');
+                    if (addZone) {
+                        container.insertBefore(blockEl, addZone);
+                    } else {
+                        container.appendChild(blockEl);
+                    }
+                }
+            }
+            
+            // Mettre à jour les index
+            updateBlockIndexes();
+            
+            // Sauvegarder
             scheduleAutoSave();
-            location.reload();
+            
+            // Feedback
+            showToast('Bloc déplacé');
+        }
+        
+        // Re-rendre un bloc après modification des propriétés
+        async function refreshBlockVisual(blockId) {
+            const block = editorState.content.blocks.find(b => b.id === blockId);
+            if (!block) return;
+            
+            const blockEl = document.querySelector(`[data-block-id="${blockId}"]`);
+            if (!blockEl) return;
+            
+            try {
+                const response = await fetch(`/w/${editorState.slug}/render-block`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': editorState.csrf,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ block })
+                });
+                
+                if (!response.ok) throw new Error('Erreur API');
+                const data = await response.json();
+                
+                // Trouver le contenu du bloc (section ou premier div qui n'est pas un élément de l'éditeur)
+                const editorElements = blockEl.querySelectorAll('.drag-handle, .block-toolbar, .block-type-label');
+                const allChildren = Array.from(blockEl.children);
+                
+                // Trouver le premier enfant qui n'est pas un élément de l'éditeur
+                let contentElement = null;
+                for (const child of allChildren) {
+                    if (!child.classList.contains('drag-handle') && 
+                        !child.classList.contains('block-toolbar') && 
+                        !child.classList.contains('block-type-label')) {
+                        contentElement = child;
+                        break;
+                    }
+                }
+                
+                if (contentElement) {
+                    // Créer un élément temporaire pour parser le nouveau HTML
+                    const temp = document.createElement('div');
+                    temp.innerHTML = data.html;
+                    const newContent = temp.firstElementChild;
+                    
+                    if (newContent) {
+                        contentElement.replaceWith(newContent);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur refresh bloc:', error);
+            }
         }
         
         // Mettre à jour le contenu d'un bloc
@@ -1332,6 +1653,7 @@
             if (block) {
                 block.content[field] = value;
                 scheduleAutoSave();
+                refreshBlockVisual(blockId);
             }
         }
         
@@ -1341,6 +1663,7 @@
             if (block) {
                 block.settings[field] = value;
                 scheduleAutoSave();
+                refreshBlockVisual(blockId);
             }
         }
         

@@ -650,47 +650,71 @@ class AdminController extends Controller
      */
     public function ajouterMembreEntreprise(Request $request, Entreprise $entreprise)
     {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        
         $validated = $request->validate([
-            'email' => ['required', 'email', 'exists:users,email'],
+            'email' => ['required', 'email'],
             'role' => ['required', 'in:administrateur,membre'],
         ]);
 
-        // Trouver l'utilisateur par email
-        $userInvite = User::where('email', $validated['email'])->first();
-
-        if (!$userInvite) {
-            return back()->withErrors(['error' => 'Utilisateur introuvable.']);
-        }
-
-        // Vérifier que l'utilisateur n'est pas le propriétaire
-        if ($entreprise->user_id === $userInvite->id) {
+        // Vérifier que l'email n'est pas celui du propriétaire
+        if ($entreprise->email === $validated['email'] || $entreprise->user->email === $validated['email']) {
             return back()->withErrors(['error' => 'Le propriétaire de l\'entreprise est automatiquement administrateur.']);
         }
 
-        // Vérifier si l'utilisateur est déjà membre (actif ou inactif)
-        $membreExistant = $entreprise->tousMembres()->where('user_id', $userInvite->id)->first();
+        // Vérifier qu'il n'y a pas déjà une invitation en attente pour cet email
+        $invitationExistante = \App\Models\EntrepriseInvitation::where('entreprise_id', $entreprise->id)
+            ->where('email', $validated['email'])
+            ->whereIn('statut', ['en_attente_compte', 'en_attente_acceptation'])
+            ->first();
 
-        if ($membreExistant) {
-            // Réactiver et mettre à jour le membre existant
-            $membreExistant->update([
-                'role' => $validated['role'],
-                'est_actif' => true,
-                'accepte_at' => now(),
-            ]);
-            $membre = $membreExistant;
-        } else {
-            // Créer un nouveau membre (admin peut ajouter même si l'abonnement n'est pas actif)
-            $membre = \App\Models\EntrepriseMembre::create([
-                'entreprise_id' => $entreprise->id,
-                'user_id' => $userInvite->id,
-                'role' => $validated['role'],
-                'est_actif' => true,
-                'invite_at' => now(),
-                'accepte_at' => now(),
-            ]);
+        if ($invitationExistante) {
+            return back()->withErrors(['error' => 'Une invitation est déjà en cours pour cet email.']);
         }
 
-        return back()->with('success', 'L\'utilisateur a été ajouté comme ' . ($validated['role'] === 'administrateur' ? 'administrateur' : 'membre') . ' de l\'entreprise.');
+        $invitationService = app(\App\Services\InvitationService::class);
+
+        // Chercher l'utilisateur par email
+        $userInvite = User::where('email', $validated['email'])->first();
+
+        if ($userInvite) {
+            // Utilisateur existe déjà
+            // Vérifier qu'il n'est pas déjà membre actif
+            $membreExistant = \App\Models\EntrepriseMembre::where('entreprise_id', $entreprise->id)
+                ->where('user_id', $userInvite->id)
+                ->where('est_actif', true)
+                ->first();
+
+            if ($membreExistant) {
+                return back()->withErrors(['error' => 'Cet utilisateur est déjà membre de cette entreprise.']);
+            }
+
+            // Créer une invitation pour utilisateur existant
+            $invitation = $invitationService->creerInvitationPourUtilisateurExistant(
+                $entreprise,
+                $userInvite,
+                $validated['role'],
+                $user
+            );
+
+            // Envoyer l'email d'invitation
+            $invitationService->envoyerEmailInvitation($invitation);
+
+            return back()->with('success', 'Une invitation a été envoyée à ' . $validated['email'] . '.');
+        } else {
+            // Utilisateur n'existe pas, créer une invitation en attente de compte
+            $invitation = $invitationService->creerInvitation(
+                $entreprise,
+                $validated['email'],
+                $validated['role'],
+                $user
+            );
+
+            // Envoyer l'email d'invitation pour créer un compte
+            $invitationService->envoyerEmailInvitation($invitation);
+
+            return back()->with('success', 'Une invitation a été envoyée à ' . $validated['email'] . '. L\'utilisateur devra créer un compte pour accepter.');
+        }
     }
 
     /**

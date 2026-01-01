@@ -18,6 +18,7 @@ class EntrepriseMembre extends Model
         'est_actif',
         'invite_at',
         'accepte_at',
+        'invitation_id',
     ];
 
     protected function casts(): array
@@ -91,6 +92,14 @@ class EntrepriseMembre extends Model
     public function statistiques(): HasMany
     {
         return $this->hasMany(MembreStatistique::class, 'membre_id');
+    }
+
+    /**
+     * Relation : Un membre peut provenir d'une invitation
+     */
+    public function invitation(): BelongsTo
+    {
+        return $this->belongsTo(EntrepriseInvitation::class, 'invitation_id');
     }
 
     /**

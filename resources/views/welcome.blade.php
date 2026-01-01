@@ -28,14 +28,7 @@
                 animation: gradient-flow 4s ease-in-out infinite;
             }
         </style>
-        <script>
-            // Détecter la préférence système et appliquer le thème au chargement
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        </script>
+        @include('partials.theme-script')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Messages de session -->
@@ -528,19 +521,6 @@
         </div>
 
         <script>
-            // Gérer le toggle du thème
-            document.getElementById('theme-toggle').addEventListener('click', function() {
-                const html = document.documentElement;
-                html.classList.toggle('dark');
-                
-                // Sauvegarder la préférence
-                if (html.classList.contains('dark')) {
-                    localStorage.theme = 'dark';
-                } else {
-                    localStorage.theme = 'light';
-                }
-            });
-
             // Recherche en temps réel
             (function() {
                 const searchInput = document.getElementById('search-input-home');

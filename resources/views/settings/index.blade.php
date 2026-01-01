@@ -7,13 +7,7 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script>
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        </script>
+        @include('partials.theme-script')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
@@ -1089,8 +1083,8 @@
                                         <p class="font-medium text-slate-900 dark:text-white">Thème sombre</p>
                                         <p class="text-sm text-slate-600 dark:text-slate-400">Activez le mode sombre pour une meilleure expérience</p>
                                     </div>
-                                    <button 
-                                        id="theme-toggle-settings"
+                                    <button
+                                        id="theme-toggle"
                                         class="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                                     >
                                         <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1218,18 +1212,6 @@
                     activeButton.classList.add('border-green-500', 'text-green-600', 'dark:text-green-400');
                 }
             }
-
-            // Gérer le toggle du thème
-            document.getElementById('theme-toggle-settings')?.addEventListener('click', function() {
-                const html = document.documentElement;
-                html.classList.toggle('dark');
-                
-                if (html.classList.contains('dark')) {
-                    localStorage.theme = 'dark';
-                } else {
-                    localStorage.theme = 'light';
-                }
-            });
 
             // Afficher l'onglet par défaut ou depuis l'URL
             const urlParams = new URLSearchParams(window.location.search);

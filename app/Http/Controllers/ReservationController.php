@@ -17,8 +17,12 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $query = $entreprise->reservations()
             ->with(['user', 'typeService']);
@@ -116,8 +120,12 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
@@ -153,8 +161,12 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
@@ -218,8 +230,12 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)

@@ -6,13 +6,7 @@
     <title>Agenda - {{ $entreprise->nom }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
+    @include('partials.theme-script')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -640,12 +634,6 @@
             serviceSelect?.addEventListener('change', updateRecap);
             dateInput?.addEventListener('change', updateRecap);
             heureInput?.addEventListener('change', updateRecap);
-            
-            // Toggle thème
-            document.getElementById('theme-toggle')?.addEventListener('click', function() {
-                document.documentElement.classList.toggle('dark');
-                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-            });
             
             // Initialiser
             renderCalendar();

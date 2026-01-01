@@ -101,6 +101,15 @@ class PublicController extends Controller
                 ->with('info', 'Cette entreprise accepte les rendez-vous uniquement via la messagerie. Veuillez contacter l\'entreprise pour prendre rendez-vous.');
         }
 
+        // Charger les membres si l'entreprise a la gestion multi-personnes
+        $membres = collect([]);
+        if ($entreprise->aGestionMultiPersonnes()) {
+            $membres = $entreprise->membres()
+                ->where('est_actif', true)
+                ->with('user')
+                ->get();
+        }
+
         $horairesRaw = $entreprise->horairesOuverture()
             ->orderBy('jour_semaine')
             ->get();
@@ -232,18 +241,6 @@ class PublicController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Vérifier que le membre appartient à l'entreprise si spécifié
-        if ($validated['membre_id']) {
-            $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
-                ->where('entreprise_id', $entreprise->id)
-                ->where('est_actif', true)
-                ->first();
-            
-            if (!$membre) {
-                return back()->withErrors(['membre_id' => 'Membre invalide.']);
-            }
-        }
-
         // Vérifier que le type de service appartient à l'entreprise
         $typeService = TypeService::where('id', $validated['type_service_id'])
             ->where('entreprise_id', $entreprise->id)
@@ -252,6 +249,8 @@ class PublicController extends Controller
 
         // Combiner date et heure
         $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+        $debutReservation = \Carbon\Carbon::parse($dateTime);
+        $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
 
         // Vérifier si l'utilisateur est connecté
         $userId = Auth::id();
@@ -260,13 +259,47 @@ class PublicController extends Controller
                 ->with('error', 'Vous devez être connecté pour prendre un rendez-vous.');
         }
 
+        // Gérer la sélection du membre
+        $membreId = null;
+        if ($validated['membre_id']) {
+            // Membre spécifié par l'utilisateur
+            $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+            
+            if (!$membre) {
+                return back()->withErrors(['membre_id' => 'Membre invalide.']);
+            }
+            
+            $membreId = $membre->id;
+        } elseif ($entreprise->aGestionMultiPersonnes()) {
+            // Sélection automatique si multi-personnes et aucun membre spécifié
+            $selectionService = app(\App\Services\MembreSelectionService::class);
+            $membreSelectionne = $selectionService->selectionnerMembre(
+                $entreprise,
+                $debutReservation,
+                $heureReservation,
+                $typeService->duree_minutes
+            );
+            
+            if ($membreSelectionne) {
+                $membreId = $membreSelectionne->id;
+            }
+        }
+
         // Vérifier si le créneau n'est pas déjà pris (y compris les réservations en attente)
-        $debutReservation = \Carbon\Carbon::parse($dateTime);
         $finReservation = $debutReservation->copy()->addMinutes($typeService->duree_minutes);
         
-        $creneauDejaPris = Reservation::where('entreprise_id', $entreprise->id)
-            ->whereIn('statut', ['en_attente', 'confirmee'])
-            ->get()
+        $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
+            ->whereIn('statut', ['en_attente', 'confirmee']);
+        
+        // Si un membre est spécifié, vérifier seulement ses créneaux
+        if ($membreId) {
+            $queryReservations->where('membre_id', $membreId);
+        }
+        
+        $creneauDejaPris = $queryReservations->get()
             ->filter(function($r) use ($debutReservation, $finReservation) {
                 $debutR = \Carbon\Carbon::parse($r->date_reservation);
                 $finR = $debutR->copy()->addMinutes($r->duree_minutes ?? 30);

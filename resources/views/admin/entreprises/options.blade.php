@@ -7,13 +7,7 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script>
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        </script>
+        @include('partials.theme-script')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         @include('admin.partials.nav')
@@ -335,7 +329,7 @@
                                                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                             >
                                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                L'utilisateur doit déjà avoir un compte sur la plateforme.
+                                                Si l'utilisateur n'existe pas, une invitation sera envoyée par email pour créer un compte.
                                             </p>
                                             @error('email')
                                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -476,7 +470,7 @@
                                                 class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                             >
                                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                L'utilisateur doit déjà avoir un compte sur la plateforme.
+                                                Si l'utilisateur n'existe pas, une invitation sera envoyée par email pour créer un compte.
                                             </p>
                                         </div>
                                         <div>

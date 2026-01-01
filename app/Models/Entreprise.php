@@ -208,6 +208,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Les invitations de l'entreprise
+     */
+    public function invitations()
+    {
+        return $this->hasMany(EntrepriseInvitation::class);
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string

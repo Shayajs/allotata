@@ -485,4 +485,48 @@ class SiteWebController extends Controller
             'content' => $content,
         ]);
     }
+
+    /**
+     * Rendre un bloc en HTML (pour insertion AJAX)
+     */
+    public function renderBlock(Request $request, $slug)
+    {
+        $entreprise = $this->findEntrepriseBySlug($slug);
+        
+        if (!$entreprise) {
+            return response()->json(['error' => 'Site introuvable ou accès non autorisé'], 403);
+        }
+
+        $validated = $request->validate([
+            'block' => ['required', 'array'],
+            'block.id' => ['required', 'string'],
+            'block.type' => ['required', 'string', 'in:hero,text,image,gallery,contact,video,services,testimonials,cta,divider,iframe,faq,team,stats,features'],
+            'block.content' => ['required', 'array'],
+            'block.settings' => ['nullable', 'array'],
+            'block.animation' => ['nullable', 'string'],
+        ]);
+
+        $block = $validated['block'];
+        
+        // Charger les relations nécessaires pour certains blocs
+        $entreprise->load(['typesServices', 'realisationPhotos', 'avis', 'user']);
+
+        try {
+            $html = view('components.site-web.blocks.' . $block['type'], [
+                'block' => $block,
+                'entreprise' => $entreprise,
+                'editMode' => true,
+            ])->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors du rendu du bloc: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

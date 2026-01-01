@@ -20,14 +20,15 @@ class EntrepriseDashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Récupérer l'entreprise avec vérification des droits
+        // Récupérer l'entreprise
         $entreprise = Entreprise::where('slug', $slug)
-            ->where(function($query) use ($user) {
-                $query->where('user_id', $user->id)
-                      ->orWhere(fn($q) => $q->whereRaw('1=1')->where(fn($sq) => $sq->whereRaw($user->is_admin ? '1=1' : '0=1')));
-            })
             ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
             ->firstOrFail();
+        
+        // Vérifier les permissions (propriétaire ou administrateur)
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         // Charger les autres entreprises de l'utilisateur (pour le switch)
         $autresEntreprises = Entreprise::where('user_id', $user->id)
@@ -67,6 +68,32 @@ class EntrepriseDashboardController extends Controller
         // ===== Données pour l'onglet Messagerie =====
         $conversations = $this->getConversations($entreprise);
 
+        // ===== Données pour l'onglet Équipe (multi-personnes) =====
+        $membresAvecStats = collect([]);
+        if ($entreprise->aGestionMultiPersonnes()) {
+            $membres = $entreprise->membres()
+                ->with('user')
+                ->get();
+
+            // Calculer les stats pour chaque membre
+            $membresAvecStats = $membres->map(function($membre) {
+                $moisActuel = now();
+                $dateDebut = $moisActuel->copy()->startOfMonth();
+                $dateFin = $moisActuel->copy()->endOfMonth();
+                
+                $charge = $membre->getChargeTravail($dateDebut, $dateFin);
+                
+                return [
+                    'membre' => $membre,
+                    'stats' => [
+                        'reservations_mois' => $charge['nombre_reservations'],
+                        'revenu_mois' => $charge['revenu_total'],
+                        'duree_totale' => $charge['duree_totale_minutes'],
+                    ],
+                ];
+            });
+        }
+
         // Onglet actif (par défaut: accueil)
         $activeTab = $request->get('tab', 'accueil');
 
@@ -89,6 +116,7 @@ class EntrepriseDashboardController extends Controller
             'conversations' => $conversations,
             // Multi-personnes
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
+            'membresAvecStats' => $membresAvecStats,
         ]);
     }
 
@@ -138,7 +166,7 @@ class EntrepriseDashboardController extends Controller
     {
         return Reservation::where('entreprise_id', $entreprise->id)
             ->where('statut', 'en_attente')
-            ->with(['user', 'typeService'])
+            ->with(['user', 'typeService', 'membre.user'])
             ->orderBy('date_reservation', 'asc')
             ->get();
     }
@@ -149,7 +177,7 @@ class EntrepriseDashboardController extends Controller
     private function getReservationsGroupedByStatus(Request $request, Entreprise $entreprise)
     {
         $query = Reservation::where('entreprise_id', $entreprise->id)
-            ->with(['user', 'typeService', 'facture']);
+            ->with(['user', 'typeService', 'facture', 'membre.user']);
 
         // Recherche
         if ($request->filled('search')) {

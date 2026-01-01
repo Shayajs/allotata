@@ -6,9 +6,57 @@
                 Gérez les membres de votre équipe, leurs disponibilités et leurs performances
             </p>
         </div>
-        <a href="{{ route('entreprise.membres.index', $entreprise->slug) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
-            Gérer les membres
-        </a>
+        <button onclick="toggleAddMemberForm()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+            ➕ Ajouter un membre
+        </button>
+    </div>
+
+    <!-- Formulaire d'ajout de membre (masqué par défaut) -->
+    <div id="add-member-form" class="hidden mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">➕ Ajouter un membre</h3>
+        <form action="{{ route('entreprise.membres.store', $entreprise->slug) }}" method="POST">
+            @csrf
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Email de l'utilisateur
+                    </label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="email"
+                        required
+                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        placeholder="email@exemple.com"
+                    >
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Si l'utilisateur n'existe pas, une invitation sera envoyée par email pour créer un compte.
+                    </p>
+                </div>
+                <div>
+                    <label for="role" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Rôle
+                    </label>
+                    <select 
+                        name="role" 
+                        id="role"
+                        required
+                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    >
+                        <option value="administrateur">Administrateur</option>
+                        <option value="membre" selected>Membre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                    Ajouter le membre
+                </button>
+                <button type="button" onclick="toggleAddMemberForm()" class="px-6 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition">
+                    Annuler
+                </button>
+            </div>
+        </form>
     </div>
 
     @if($membresAvecStats->count() > 0)
@@ -69,12 +117,25 @@
             <p class="text-slate-600 dark:text-slate-400 mb-6">
                 Ajoutez des membres à votre équipe pour commencer à gérer leurs disponibilités et leurs performances.
             </p>
-            <a href="{{ route('entreprise.membres.index', $entreprise->slug) }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
+            <button onclick="toggleAddMemberForm()" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
                 Ajouter un membre
-            </a>
+            </button>
         </div>
     @endif
 </div>
+
+<script>
+    function toggleAddMemberForm() {
+        const form = document.getElementById('add-member-form');
+        if (form) {
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                document.getElementById('email')?.focus();
+            }
+        }
+    }
+</script>

@@ -5,14 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $entreprise->nom }} - Allo Tata</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
-        // Détecter la préférence système et appliquer le thème au chargement
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
+    @include('partials.theme-script')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
     <!-- Image de fond en en-tête -->
@@ -118,8 +111,7 @@
                         </div>
                     </div>
                     <button 
-                        id="theme-toggle"
-                        class="self-end sm:self-auto p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                        class="theme-toggle-btn self-end sm:self-auto p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                         aria-label="Basculer le thème"
                     >
                         <svg class="w-5 h-5 sm:w-6 sm:h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,8 +127,7 @@
             <!-- Bouton thème flottant si image de fond -->
             <div class="flex justify-end mb-4 sm:mb-6">
                 <button 
-                    id="theme-toggle"
-                    class="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    class="theme-toggle-btn p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                     aria-label="Basculer le thème"
                 >
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -996,21 +987,6 @@
     </div>
 
     <script>
-        // Gérer le toggle du thème (plusieurs boutons possibles selon le contexte)
-        document.querySelectorAll('#theme-toggle').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const html = document.documentElement;
-                html.classList.toggle('dark');
-                
-                // Sauvegarder la préférence
-                if (html.classList.contains('dark')) {
-                    localStorage.theme = 'dark';
-                } else {
-                    localStorage.theme = 'light';
-                }
-            });
-        });
-
         // Fonctions pour le modal des photos d'avis
         function openAvisPhoto(src) {
             document.getElementById('avis-modal-photo').src = src;

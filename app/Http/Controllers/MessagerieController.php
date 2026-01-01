@@ -187,8 +187,12 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
         
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
@@ -233,8 +237,12 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
         
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
@@ -369,8 +377,12 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
         
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
@@ -573,7 +585,7 @@ class MessagerieController extends Controller
             ->firstOrFail();
 
         $isClient = $proposition->user_id === $user->id;
-        $isGerant = $entreprise->user_id === $user->id;
+        $isGerant = $entreprise->peutEtreGereePar($user) || $user->is_admin;
 
         if (!$isClient && !$isGerant) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit de refuser cette proposition.']);

@@ -117,7 +117,7 @@
                             </ul>
                         </div>
                         <div class="flex items-center gap-3">
-                            <a href="{{ route('entreprise.membres.index', $entreprise->slug) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                            <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'equipe']) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                                 Gérer les membres
                             </a>
                             @if($abonnementMultiPersonnes && !$abonnementMultiPersonnes->est_manuel)

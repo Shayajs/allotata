@@ -28,6 +28,7 @@ use App\Http\Controllers\SiteWebController;
 use App\Http\Controllers\EntrepriseSubscriptionController;
 use App\Http\Controllers\EntrepriseMembreController;
 use App\Http\Controllers\MembreGestionController;
+use App\Http\Controllers\InvitationController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -88,6 +89,11 @@ Route::post('/signup', [AuthController::class, 'register'])->name('register');
 // Connexion (Signin)
 Route::get('/signin', [AuthController::class, 'showSignin'])->name('login');
 Route::post('/signin', [AuthController::class, 'login']);
+
+// Invitations (public et authentifié)
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
+Route::post('/invitations/{token}/accepter', [InvitationController::class, 'accepter'])->name('invitations.accepter');
+Route::post('/invitations/{token}/refuser', [InvitationController::class, 'refuser'])->name('invitations.refuser');
 
 // Déconnexion
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
