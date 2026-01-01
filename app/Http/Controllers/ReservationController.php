@@ -105,12 +105,69 @@ class ReservationController extends Controller
                 ->get();
         }
 
+        // Vérifier si une conversation existe déjà pour cette réservation
+        $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+
         return view('reservations.show', [
             'entreprise' => $entreprise,
             'reservation' => $reservation,
             'membres' => $membres,
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
+            'conversation' => $conversation,
         ]);
+    }
+
+    /**
+     * Démarrer une conversation depuis une réservation
+     */
+    public function startConversation($slug, $id)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $reservation = Reservation::where('id', $id)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        // Vérifier si une conversation existe déjà pour cette réservation
+        $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
+
+        if (!$conversation) {
+            // Vérifier si une conversation existe déjà entre le client et l'entreprise
+            $existingConversation = \App\Models\Conversation::where('user_id', $reservation->user_id)
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_archivee', false)
+                ->first();
+
+            if ($existingConversation) {
+                // Lier la réservation à la conversation existante
+                $existingConversation->update(['reservation_id' => $reservation->id]);
+                $conversation = $existingConversation;
+            } else {
+                // Créer une nouvelle conversation liée à la réservation
+                $conversation = \App\Models\Conversation::create([
+                    'user_id' => $reservation->user_id,
+                    'entreprise_id' => $entreprise->id,
+                    'reservation_id' => $reservation->id,
+                ]);
+            }
+
+            // Créer un message initial pour expliquer la conversation
+            \App\Models\Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $user->id,
+                'contenu' => "💬 Conversation démarrée à propos de la réservation #{$reservation->id} du {$reservation->date_reservation->format('d/m/Y à H:i')}. Vous pouvez discuter et proposer des modifications.",
+                'est_lu' => false,
+            ]);
+
+            $conversation->update(['dernier_message_at' => now()]);
+        }
+
+        // Rediriger vers la conversation (pour le gérant)
+        return redirect()->route('messagerie.show-gerant', [$entreprise->slug, $conversation->id])
+            ->with('success', 'Conversation démarrée ! Vous pouvez maintenant discuter et proposer des modifications à la réservation.');
     }
 
     /**

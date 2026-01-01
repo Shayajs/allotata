@@ -116,6 +116,45 @@
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
                         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Actions</h3>
                         
+                        @if($conversation)
+                            <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="font-medium text-blue-900 dark:text-blue-300">Conversation active</p>
+                                            <p class="text-sm text-blue-700 dark:text-blue-400">Vous pouvez discuter et proposer des modifications</p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('messagerie.show-gerant', [$entreprise->slug, $conversation->id]) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                                        Ouvrir la conversation
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mb-4 p-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="font-medium text-slate-900 dark:text-white">Besoin de clarifier cette réservation ?</p>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">Démarrez une conversation pour discuter et proposer des modifications</p>
+                                        </div>
+                                    </div>
+                                    <form action="{{ route('reservations.start-conversation', [$entreprise->slug, $reservation->id]) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                                            💬 Démarrer une conversation
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Accepter -->
                             <form action="{{ route('reservations.accept', [$entreprise->slug, $reservation->id]) }}" method="POST">

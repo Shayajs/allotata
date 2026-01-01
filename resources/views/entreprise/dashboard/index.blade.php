@@ -193,6 +193,16 @@
                             </svg>
                             Agenda
                         </button>
+                        <button 
+                            onclick="showTab('services')"
+                            class="tab-button mobile-tab px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'services' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }} touch-target"
+                            data-tab="services"
+                        >
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            Services
+                        </button>
                         @if($aGestionMultiPersonnes)
                             <button 
                                 onclick="showTab('equipe')"
@@ -321,6 +331,9 @@
                     </div>
 
                     <!-- Onglet Paramètres -->
+                    <div id="tab-services" class="tab-content {{ $activeTab !== 'services' ? 'hidden' : '' }}">
+                        @include('entreprise.dashboard.tabs.services')
+                    </div>
                     <div id="tab-parametres" class="tab-content {{ $activeTab !== 'parametres' ? 'hidden' : '' }}">
                         @include('entreprise.dashboard.tabs.parametres')
                     </div>

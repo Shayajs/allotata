@@ -99,6 +99,14 @@ class Reservation extends Model
     }
 
     /**
+     * Relation : Une réservation peut avoir une conversation
+     */
+    public function conversation()
+    {
+        return $this->hasOne(Conversation::class);
+    }
+
+    /**
      * Vérifie si la réservation est payée
      */
     public function estPayee(): bool

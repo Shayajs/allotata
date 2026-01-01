@@ -174,7 +174,8 @@ class SettingsController extends Controller
 
         $entreprise->update($validated);
 
-        return redirect()->route('settings.index', ['tab' => 'entreprise'])
+        // Rediriger vers le dashboard de l'entreprise avec l'onglet paramètres
+        return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
             ->with('success', 'Les informations de l\'entreprise ont été mises à jour.');
     }
 
@@ -415,7 +416,7 @@ class SettingsController extends Controller
             'ordre' => $maxOrdre + 1,
         ]);
 
-        return redirect()->route('settings.index', ['tab' => 'entreprise'])
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'La photo a été ajoutée avec succès.');
     }
 
@@ -438,7 +439,7 @@ class SettingsController extends Controller
 
         $photo->delete();
 
-        return redirect()->route('settings.index', ['tab' => 'entreprise'])
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'La photo a été supprimée.');
     }
 

@@ -94,6 +94,25 @@
                             @endif
                         </div>
                     @endif
+                    
+                    @if($conversation->reservation)
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <span class="text-sm font-semibold text-blue-900 dark:text-blue-300">Réservation #{{ $conversation->reservation->id }}</span>
+                            </div>
+                            <p class="text-xs text-blue-700 dark:text-blue-400">
+                                Cette conversation concerne la réservation du {{ $conversation->reservation->date_reservation->format('d/m/Y à H:i') }}
+                            </p>
+                            @if(isset($isGerant) && $isGerant)
+                                <a href="{{ route('reservations.show', [$entreprise->slug, $conversation->reservation->id]) }}" class="mt-2 inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                    Voir la réservation →
+                                </a>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 

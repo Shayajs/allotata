@@ -261,7 +261,7 @@ class PublicController extends Controller
 
         // Gérer la sélection du membre
         $membreId = null;
-        if ($validated['membre_id']) {
+        if (!empty($validated['membre_id'] ?? null)) {
             // Membre spécifié par l'utilisateur
             $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
                 ->where('entreprise_id', $entreprise->id)

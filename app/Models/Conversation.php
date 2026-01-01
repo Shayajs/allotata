@@ -14,6 +14,7 @@ class Conversation extends Model
     protected $fillable = [
         'user_id',
         'entreprise_id',
+        'reservation_id',
         'dernier_message_at',
         'est_archivee',
     ];
@@ -86,5 +87,13 @@ class Conversation extends Model
             ->whereIn('statut', ['proposee', 'negociee'])
             ->where('date_rdv', '>=', now()->toDateString())
             ->first();
+    }
+
+    /**
+     * Relation : Une conversation peut être liée à une réservation
+     */
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 }

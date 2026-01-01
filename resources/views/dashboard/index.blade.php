@@ -251,6 +251,57 @@
                 </div>
             @endif
 
+            <!-- Section Réservations en attente (pour les gérants) -->
+            @if($user->est_gerant && $reservationsEnAttente->count() > 0)
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-600 rounded-xl shadow-sm p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                                ⚠️ Réservations en attente
+                            </h2>
+                            <p class="text-slate-600 dark:text-slate-400">
+                                {{ $reservationsEnAttente->count() }} réservation(s) nécessitent votre validation
+                            </p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        @foreach($reservationsEnAttente->take(5) as $reservation)
+                            <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <div class="flex items-start gap-3">
+                                    <x-avatar :user="$reservation->user" size="md" class="flex-shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h3>
+                                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->entreprise->nom }}</span>
+                                        </div>
+                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                            {{ $reservation->type_service ?? 'Service' }} - 
+                                            {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
+                                        </p>
+                                        <p class="text-sm font-semibold text-green-600 dark:text-green-400">
+                                            {{ number_format($reservation->prix, 2, ',', ' ') }} €
+                                        </p>
+                                    </div>
+                                    <a 
+                                        href="{{ route('reservations.show', [$reservation->entreprise->slug, $reservation->id]) }}" 
+                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all flex-shrink-0"
+                                    >
+                                        Gérer →
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if($reservationsEnAttente->count() > 5)
+                        <div class="mt-4 text-center">
+                            <a href="#" class="text-sm text-green-600 dark:text-green-400 hover:underline">
+                                Voir toutes les réservations en attente ({{ $reservationsEnAttente->count() }})
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             <!-- Section Réservations (pour les clients) -->
             @if($user->est_client)
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
@@ -460,57 +511,6 @@
                                     Rechercher une entreprise
                                 </a>
                             </div>
-                        </div>
-                    @endif
-                </div>
-            @endif
-
-            <!-- Section Réservations en attente (pour les gérants) -->
-            @if($user->est_gerant && $reservationsEnAttente->count() > 0)
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-600 rounded-xl shadow-sm p-6 mb-8">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                                ⚠️ Réservations en attente
-                            </h2>
-                            <p class="text-slate-600 dark:text-slate-400">
-                                {{ $reservationsEnAttente->count() }} réservation(s) nécessitent votre validation
-                            </p>
-                        </div>
-                    </div>
-                    <div class="space-y-3 max-h-96 overflow-y-auto">
-                        @foreach($reservationsEnAttente->take(5) as $reservation)
-                            <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                                <div class="flex items-start gap-3">
-                                    <x-avatar :user="$reservation->user" size="md" class="flex-shrink-0" />
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h3>
-                                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->entreprise->nom }}</span>
-                                        </div>
-                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                            {{ $reservation->type_service ?? 'Service' }} - 
-                                            {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
-                                        </p>
-                                        <p class="text-sm font-semibold text-green-600 dark:text-green-400">
-                                            {{ number_format($reservation->prix, 2, ',', ' ') }} €
-                                        </p>
-                                    </div>
-                                    <a 
-                                        href="{{ route('reservations.show', [$reservation->entreprise->slug, $reservation->id]) }}" 
-                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all flex-shrink-0"
-                                    >
-                                        Gérer →
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    @if($reservationsEnAttente->count() > 5)
-                        <div class="mt-4 text-center">
-                            <a href="#" class="text-sm text-green-600 dark:text-green-400 hover:underline">
-                                Voir toutes les réservations en attente ({{ $reservationsEnAttente->count() }})
-                            </a>
                         </div>
                     @endif
                 </div>

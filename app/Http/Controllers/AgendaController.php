@@ -260,12 +260,15 @@ class AgendaController extends Controller
             'duree_minutes' => 'required|integer|min:1',
             'prix' => 'required|numeric|min:0',
             'est_actif' => 'nullable|boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
         // Gérer le champ est_actif (checkbox : si présent = true, sinon = false)
         $validated['est_actif'] = $request->has('est_actif') && $request->est_actif == '1';
 
         try {
+            $imageService = app(ImageService::class);
+            
             if ($request->has('type_service_id') && !empty($request->type_service_id)) {
                 $typeService = TypeService::where('id', $request->type_service_id)
                     ->where('entreprise_id', $entreprise->id)
@@ -274,14 +277,41 @@ class AgendaController extends Controller
                 $message = 'Le type de service a été mis à jour avec succès.';
             } else {
                 $validated['entreprise_id'] = $entreprise->id;
-                TypeService::create($validated);
+                $typeService = TypeService::create($validated);
                 $message = 'Le type de service a été créé avec succès.';
             }
 
-            return redirect()->route('agenda.index', $slug)
+            // Gérer l'upload des images
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                $maxOrdre = ServiceImage::where('type_service_id', $typeService->id)->max('ordre') ?? 0;
+                $hasCouverture = ServiceImage::where('type_service_id', $typeService->id)->where('est_couverture', true)->exists();
+                
+                foreach ($images as $index => $image) {
+                    $imagePath = $imageService->processAndStore($image, 'services');
+                    $estCouverture = !$hasCouverture && $index === 0; // La première image devient couverture si aucune n'existe
+                    
+                    ServiceImage::create([
+                        'type_service_id' => $typeService->id,
+                        'image_path' => $imagePath,
+                        'est_couverture' => $estCouverture,
+                        'ordre' => $maxOrdre + $index + 1,
+                    ]);
+                    
+                    if ($estCouverture) {
+                        $hasCouverture = true;
+                    }
+                }
+            }
+
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
                 ->with('success', $message);
         } catch (\Exception $e) {
-            return redirect()->route('agenda.index', $slug)
+            \Log::error('Erreur lors de l\'enregistrement du service', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
                 ->withInput()
                 ->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement du service. Veuillez réessayer.']);
         }
@@ -303,7 +333,7 @@ class AgendaController extends Controller
 
         $typeService->delete();
 
-        return redirect()->route('agenda.index', $slug)
+        return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
             ->with('success', 'Le type de service a été supprimé.');
     }
 
@@ -443,9 +473,15 @@ class AgendaController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Image supprimée avec succès.',
-        ]);
+        // Si on vient du dashboard, rediriger vers l'onglet services
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Image supprimée avec succès.',
+            ]);
+        }
+        
+        return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+            ->with('success', 'Image supprimée avec succès.');
     }
 }

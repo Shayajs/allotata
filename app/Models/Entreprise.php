@@ -267,7 +267,7 @@ class Entreprise extends Model
                 'label' => 'Ajouter un premier service',
                 'completed' => $this->typesServices()->where('est_actif', true)->count() > 0,
                 'route_key' => 'entreprise.dashboard',
-                'route_params' => ['slug' => $this->slug, 'tab' => 'agenda'],
+                'route_params' => ['slug' => $this->slug, 'tab' => 'services'],
             ],
         ];
 

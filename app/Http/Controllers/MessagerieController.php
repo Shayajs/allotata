@@ -288,15 +288,18 @@ class MessagerieController extends Controller
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
         // Récupérer ou créer la conversation
-        $conversation = Conversation::firstOrCreate(
-            [
+        $conversation = Conversation::where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_archivee', false)
+            ->first();
+        
+        if (!$conversation) {
+            $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
-            ],
-            [
                 'est_archivee' => false,
-            ]
-        );
+            ]);
+        }
 
         $validated = $request->validate([
             'date_rdv' => 'required|date|after_or_equal:today',
@@ -326,11 +329,12 @@ class MessagerieController extends Controller
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
-        // Créer la proposition
+        // Créer la proposition (liée à la réservation si la conversation est liée à une réservation)
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
             'entreprise_id' => $entreprise->id,
+            'reservation_id' => $conversation->reservation_id, // Lier à la réservation si présente
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut,
             'heure_fin' => $heureFin,
@@ -344,12 +348,16 @@ class MessagerieController extends Controller
 
         // Créer le message associé
         $serviceNom = isset($typeService) ? $typeService->nom : 'Service personnalisé';
+        $messageContenu = $conversation->reservation_id 
+            ? "📝 Proposition de modification pour la réservation #{$conversation->reservation_id} : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €"
+            : "Proposition de rendez-vous : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €";
+        
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
             'type_message' => 'proposition_rdv',
             'proposition_rdv_id' => $proposition->id,
-            'contenu' => "Proposition de rendez-vous : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €",
+            'contenu' => $messageContenu,
             'est_lu' => false,
         ]);
 
@@ -387,7 +395,7 @@ class MessagerieController extends Controller
         
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
-            ->with('user')
+            ->with(['user', 'reservation'])
             ->firstOrFail();
 
         $validated = $request->validate([
@@ -404,11 +412,12 @@ class MessagerieController extends Controller
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
-        // Créer la proposition
+        // Créer la proposition (liée à la réservation si la conversation est liée à une réservation)
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
             'user_id' => $conversation->user_id,
             'entreprise_id' => $entreprise->id,
+            'reservation_id' => $conversation->reservation_id, // Lier à la réservation si présente
             'date_rdv' => $validated['date_rdv'],
             'heure_debut' => $heureDebut, // Format datetime complet
             'heure_fin' => $heureFin, // Format datetime complet
@@ -521,23 +530,40 @@ class MessagerieController extends Controller
             return back()->withErrors(['error' => 'Cette proposition a déjà été acceptée.']);
         }
 
-        // Créer la réservation
-        $dateTime = $proposition->date_rdv->format('Y-m-d') . ' ' . $proposition->heure_debut;
+        $dateTime = $proposition->date_rdv->format('Y-m-d') . ' ' . $proposition->heure_debut->format('H:i');
         $prixFinal = $proposition->prix_final ?? $proposition->prix_propose;
 
-        $reservation = Reservation::create([
-            'user_id' => $proposition->user_id,
-            'entreprise_id' => $entreprise->id,
-            'date_reservation' => $dateTime,
-            'type_service' => 'Rendez-vous via messagerie',
-            'lieu' => $proposition->lieu ?? null,
-            'prix' => $prixFinal,
-            'duree_minutes' => $proposition->duree_minutes,
-            'statut' => 'confirmee', // Directement confirmée car acceptée dans la messagerie
-            'notes' => $proposition->notes ?? null,
-            'telephone_client' => $proposition->user->telephone ?? 'Non renseigné',
-            'telephone_cache' => false,
-        ]);
+        // Si la proposition est liée à une réservation existante, la mettre à jour
+        if ($proposition->reservation_id) {
+            $reservation = Reservation::where('id', $proposition->reservation_id)
+                ->where('entreprise_id', $entreprise->id)
+                ->firstOrFail();
+            
+            // Mettre à jour la réservation existante
+            $reservation->update([
+                'date_reservation' => $dateTime,
+                'lieu' => $proposition->lieu ?? $reservation->lieu,
+                'prix' => $prixFinal,
+                'duree_minutes' => $proposition->duree_minutes,
+                'statut' => 'confirmee', // Confirmer la réservation modifiée
+                'notes' => $proposition->notes ? ($reservation->notes ? $reservation->notes . "\n\n[Modifiée] " . $proposition->notes : $proposition->notes) : $reservation->notes,
+            ]);
+        } else {
+            // Créer une nouvelle réservation
+            $reservation = Reservation::create([
+                'user_id' => $proposition->user_id,
+                'entreprise_id' => $entreprise->id,
+                'date_reservation' => $dateTime,
+                'type_service' => 'Rendez-vous via messagerie',
+                'lieu' => $proposition->lieu ?? null,
+                'prix' => $prixFinal,
+                'duree_minutes' => $proposition->duree_minutes,
+                'statut' => 'confirmee', // Directement confirmée car acceptée dans la messagerie
+                'notes' => $proposition->notes ?? null,
+                'telephone_client' => $proposition->user->telephone ?? 'Non renseigné',
+                'telephone_cache' => false,
+            ]);
+        }
 
         // Mettre à jour la proposition
         $proposition->update([
@@ -547,12 +573,19 @@ class MessagerieController extends Controller
         ]);
 
         // Créer un message de confirmation
+        $isModification = $proposition->reservation_id !== null;
+        $messageContenu = $isModification
+            ? ($isClient 
+                ? "✓ Modification acceptée ! La réservation #{$reservation->id} a été mise à jour : {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €"
+                : "✓ J'ai accepté votre proposition de modification pour la réservation #{$reservation->id} : {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €")
+            : ($isClient 
+                ? "✓ Rendez-vous accepté ! Le rendez-vous est confirmé pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €"
+                : "✓ J'ai accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut->format('H:i')} - Prix : {$prixFinal} €");
+        
         $message = Message::create([
             'conversation_id' => $proposition->conversation_id,
             'user_id' => $user->id,
-            'contenu' => $isClient 
-                ? "✓ Rendez-vous accepté ! Le rendez-vous est confirmé pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut} - Prix : {$prixFinal} €"
-                : "✓ J'ai accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')} à {$proposition->heure_debut} - Prix : {$prixFinal} €",
+            'contenu' => $messageContenu,
             'est_lu' => false,
         ]);
 
@@ -560,18 +593,30 @@ class MessagerieController extends Controller
 
         // Notifier l'autre partie
         $autreUserId = $isClient ? $entreprise->user_id : $proposition->user_id;
+        $isModification = $proposition->reservation_id !== null;
+        $notificationTitre = $isModification ? 'Modification de réservation acceptée' : 'Rendez-vous accepté';
+        $notificationMessage = $isModification
+            ? ($isClient 
+                ? "{$user->name} a accepté votre proposition de modification pour la réservation #{$reservation->id}."
+                : "{$entreprise->nom} a accepté votre proposition de modification pour la réservation #{$reservation->id}.")
+            : ($isClient 
+                ? "{$user->name} a accepté votre proposition de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}."
+                : "{$entreprise->nom} a accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}.");
+        
         Notification::creer(
             $autreUserId,
             'reservation',
-            'Rendez-vous accepté',
-            $isClient 
-                ? "{$user->name} a accepté votre proposition de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}."
-                : "{$entreprise->nom} a accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}.",
+            $notificationTitre,
+            $notificationMessage,
             route($isClient ? 'messagerie.show-gerant' : 'messagerie.show', $isClient ? [$entreprise->slug, $proposition->conversation_id] : $entreprise->slug),
             ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Rendez-vous accepté et créé avec succès !');
+        $successMessage = $isModification 
+            ? 'Modification acceptée ! La réservation a été mise à jour avec succès.'
+            : 'Rendez-vous accepté et créé avec succès !';
+        
+        return back()->with('success', $successMessage);
     }
 
     /**

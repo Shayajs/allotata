@@ -177,6 +177,7 @@ Route::middleware('auth')->group(function () {
     // Gestion des réservations (pour les gérants)
     Route::get('/m/{slug}/reservations', [ReservationController::class, 'index'])->name('reservations.index');
     Route::get('/m/{slug}/reservations/{id}', [ReservationController::class, 'show'])->name('reservations.show');
+    Route::post('/m/{slug}/reservations/{id}/start-conversation', [ReservationController::class, 'startConversation'])->name('reservations.start-conversation');
     Route::post('/m/{slug}/reservations/{id}/accept', [ReservationController::class, 'accept'])->name('reservations.accept');
     Route::post('/m/{slug}/reservations/{id}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
     Route::post('/m/{slug}/reservations/{id}/notes', [ReservationController::class, 'addNotes'])->name('reservations.notes');
