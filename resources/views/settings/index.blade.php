@@ -639,6 +639,125 @@
                                                     </div>
                                                 </label>
                                             </div>
+
+                                            <!-- Options supplémentaires -->
+                                            <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+                                                <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                                    ⚡ Options supplémentaires
+                                                </h4>
+                                                
+                                                @php
+                                                    $abonnementSiteWeb = $entreprise->abonnementSiteWeb();
+                                                    $abonnementMultiPersonnes = $entreprise->abonnementMultiPersonnes();
+                                                    $aSiteWebActif = $entreprise->aSiteWebActif();
+                                                    $aGestionMultiPersonnes = $entreprise->aGestionMultiPersonnes();
+                                                @endphp
+
+                                                <!-- Site Web Vitrine -->
+                                                <div class="mb-4 p-4 border border-slate-200 dark:border-slate-700 rounded-lg {{ $aSiteWebActif ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+                                                    <div class="flex items-start justify-between">
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <h5 class="font-semibold text-slate-900 dark:text-white">🌐 Site Web Vitrine</h5>
+                                                                @if($aSiteWebActif)
+                                                                    <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                                                        Actif
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                                Créez une page vitrine personnalisée pour votre entreprise accessible via /w/{slug}. 
+                                                                Inclut logo, phrase d'accroche, photos et sections configurables.
+                                                            </p>
+                                                            @if($aSiteWebActif && !empty($entreprise->slug_web))
+                                                                <div class="text-sm text-slate-700 dark:text-slate-300 mb-3">
+                                                                    <p><strong>URL de votre site :</strong> 
+                                                                        <a href="{{ route('site-web.show', ['slug' => $entreprise->slug_web]) }}" target="_blank" class="text-green-600 dark:text-green-400 hover:underline">
+                                                                            {{ url('/w/' . $entreprise->slug_web) }}
+                                                                        </a>
+                                                                    </p>
+                                                                </div>
+                                                                <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                    Gérer l'abonnement
+                                                                </a>
+                                                            @else
+                                                                <div class="flex items-center gap-3">
+                                                                    <span class="text-lg font-bold text-green-600 dark:text-green-400">2€/mois</span>
+                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                        S'abonner
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Gestion Multi-Personnes -->
+                                                <div class="mb-4 p-4 border border-slate-200 dark:border-slate-700 rounded-lg {{ $aGestionMultiPersonnes ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+                                                    <div class="flex items-start justify-between">
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <h5 class="font-semibold text-slate-900 dark:text-white">👥 Gestion Multi-Personnes</h5>
+                                                                @if($aGestionMultiPersonnes)
+                                                                    <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                                                        Actif
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                                Gérez plusieurs personnes pour votre entreprise. Ajoutez des administrateurs, 
+                                                                accédez à des statistiques avancées et gérez plusieurs établissements.
+                                                            </p>
+                                                            @if($aGestionMultiPersonnes)
+                                                                <div class="flex items-center gap-3">
+                                                                    <a href="{{ route('entreprise.membres.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                                                        Gérer les membres
+                                                                    </a>
+                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                        Gérer l'abonnement
+                                                                    </a>
+                                                                </div>
+                                                            @else
+                                                                <div class="flex items-center gap-3">
+                                                                    <span class="text-lg font-bold text-green-600 dark:text-green-400">20€/mois</span>
+                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                        S'abonner
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Site Web Externe (Gratuit) -->
+                                                <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                                                    <div class="flex items-start justify-between">
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <h5 class="font-semibold text-slate-900 dark:text-white">🔗 Lier un site web externe</h5>
+                                                                <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">
+                                                                    Gratuit
+                                                                </span>
+                                                            </div>
+                                                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                                Si vous avez déjà un site web, vous pouvez le lier à votre entreprise.
+                                                            </p>
+                                                            <div class="mt-2">
+                                                                <input 
+                                                                    type="url" 
+                                                                    name="site_web_externe" 
+                                                                    value="{{ old('site_web_externe', $entreprise->site_web_externe) }}"
+                                                                    placeholder="https://votre-site.com"
+                                                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                                                >
+                                                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                                    L'URL sera visible sur votre profil public.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -885,6 +1004,76 @@
                                     </div>
                                 @endif
                             </div>
+
+                            <!-- Abonnements des entreprises -->
+                            @if($entreprises->count() > 0)
+                                <div class="mt-8 border-t border-slate-200 dark:border-slate-700 pt-8">
+                                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">📦 Abonnements de vos entreprises</h3>
+                                    
+                                    <div class="space-y-4">
+                                        @foreach($entreprises as $entreprise)
+                                            @php
+                                                $abonnementSiteWeb = $entreprise->abonnementSiteWeb();
+                                                $abonnementMultiPersonnes = $entreprise->abonnementMultiPersonnes();
+                                            @endphp
+                                            
+                                            <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                                                <div class="flex items-start justify-between mb-4">
+                                                    <div>
+                                                        <h4 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $entreprise->nom }}</h4>
+                                                        <p class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->type_activite }}</p>
+                                                    </div>
+                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->slug) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                        Gérer
+                                                    </a>
+                                                </div>
+
+                                                <div class="space-y-3">
+                                                    <!-- Site Web -->
+                                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                                        <div class="flex items-center gap-3">
+                                                            <span class="text-lg">🌐</span>
+                                                            <div>
+                                                                <p class="font-medium text-slate-900 dark:text-white">Site Web Vitrine</p>
+                                                                <p class="text-xs text-slate-600 dark:text-slate-400">2€/mois</p>
+                                                            </div>
+                                                        </div>
+                                                        @if($abonnementSiteWeb && $abonnementSiteWeb->estActif())
+                                                            <span class="px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                                                Actif
+                                                            </span>
+                                                        @else
+                                                            <span class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-400 rounded-full">
+                                                                Inactif
+                                                            </span>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Multi-Personnes -->
+                                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                                        <div class="flex items-center gap-3">
+                                                            <span class="text-lg">👥</span>
+                                                            <div>
+                                                                <p class="font-medium text-slate-900 dark:text-white">Gestion Multi-Personnes</p>
+                                                                <p class="text-xs text-slate-600 dark:text-slate-400">20€/mois</p>
+                                                            </div>
+                                                        </div>
+                                                        @if($abonnementMultiPersonnes && $abonnementMultiPersonnes->estActif())
+                                                            <span class="px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                                                Actif
+                                                            </span>
+                                                        @else
+                                                            <span class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-400 rounded-full">
+                                                                Inactif
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endif
 

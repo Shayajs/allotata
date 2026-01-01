@@ -276,37 +276,15 @@
                         </div>
                     @endif
 
-                    <!-- Gestion de l'abonnement manuel -->
+                    <!-- Options d'entreprise -->
                     <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 p-6 mt-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">💳 Abonnement manuel</h2>
-                        @if($entreprise->user->abonnement_manuel && $entreprise->user->abonnement_manuel_actif_jusqu)
-                            <div class="mb-4">
-                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                    <strong>Statut :</strong> <span class="text-green-600 dark:text-green-400">Actif</span>
-                                </p>
-                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                    <strong>Actif jusqu'au :</strong> {{ $entreprise->user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}
-                                </p>
-                                @if($entreprise->user->abonnement_manuel_notes)
-                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                                        <strong>Notes :</strong> {{ $entreprise->user->abonnement_manuel_notes }}
-                                    </p>
-                                @endif
-                                <form action="{{ route('admin.entreprises.deactivate-subscription', $entreprise) }}" method="POST" onsubmit="return confirm('Désactiver l\'abonnement manuel ?');" class="mt-4">
-                                    @csrf
-                                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition">
-                                        Désactiver l'abonnement
-                                    </button>
-                                </form>
-                            </div>
-                        @else
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                                Aucun abonnement manuel actif. Vous pouvez en activer un pour cette entreprise (paiement direct, ristourne, etc.).
-                            </p>
-                            <a href="{{ route('admin.entreprises.manage-subscription', $entreprise) }}" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
-                                Gérer l'abonnement manuel
-                            </a>
-                        @endif
+                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">⚡ Options d'entreprise</h2>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                            Gérez les abonnements et options de cette entreprise.
+                        </p>
+                        <a href="{{ route('admin.entreprises.options', $entreprise) }}" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+                            Gérer les options
+                        </a>
                     </div>
                 </div>
             </div>

@@ -24,6 +24,9 @@ use App\Http\Controllers\EntrepriseDashboardController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\FaqController;
+use App\Http\Controllers\SiteWebController;
+use App\Http\Controllers\EntrepriseSubscriptionController;
+use App\Http\Controllers\EntrepriseMembreController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -94,6 +97,10 @@ Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('publi
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');
 Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation'])->name('public.reservation.store');
 
+// Sites web vitrine (Public)
+Route::get("/w/{slug}", [SiteWebController::class, 'show'])->name('site-web.show');
+Route::put("/w/{slug}", [SiteWebController::class, 'update'])->name('site-web.update')->middleware('auth');
+
 // Avis (nécessite authentification)
 Route::middleware('auth')->group(function () {
     Route::get("/p/{slug}/avis/create", [AvisController::class, 'create'])->name('avis.create');
@@ -145,6 +152,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/settings/entreprise/{slug}/image-fond', [SettingsController::class, 'deleteImageFond'])->name('settings.entreprise.image-fond.delete');
     Route::post('/settings/entreprise/{slug}/photo', [SettingsController::class, 'addRealisationPhoto'])->name('settings.entreprise.photo.add');
     Route::delete('/settings/entreprise/{slug}/photo/{photoId}', [SettingsController::class, 'deleteRealisationPhoto'])->name('settings.entreprise.photo.delete');
+    
+    // Abonnements d'entreprise
+    Route::get('/m/{slug}/abonnements', [EntrepriseSubscriptionController::class, 'index'])->name('entreprise.subscriptions.index');
+    Route::post('/m/{slug}/abonnements/checkout', [EntrepriseSubscriptionController::class, 'checkout'])->name('entreprise.subscriptions.checkout');
+    Route::get('/m/{slug}/abonnements/success/{type}', [EntrepriseSubscriptionController::class, 'success'])->name('entreprise.subscriptions.success');
+    Route::post('/m/{slug}/abonnements/{type}/cancel', [EntrepriseSubscriptionController::class, 'cancel'])->name('entreprise.subscriptions.cancel');
+    
+    // Gestion des membres d'entreprise
+    Route::get('/m/{slug}/membres', [EntrepriseMembreController::class, 'index'])->name('entreprise.membres.index');
+    Route::post('/m/{slug}/membres', [EntrepriseMembreController::class, 'store'])->name('entreprise.membres.store');
+    Route::put('/m/{slug}/membres/{membre}', [EntrepriseMembreController::class, 'update'])->name('entreprise.membres.update');
+    Route::delete('/m/{slug}/membres/{membre}', [EntrepriseMembreController::class, 'destroy'])->name('entreprise.membres.destroy');
     
     // Factures
     Route::get('/factures', [FactureController::class, 'index'])->name('factures.index');
@@ -229,9 +248,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/entreprises/{entreprise}/reject', [AdminController::class, 'rejectEntreprise'])->name('entreprises.reject');
     Route::post('/entreprises/{entreprise}/renvoyer', [AdminController::class, 'renvoyerEntreprise'])->name('entreprises.renvoyer');
     
-    // Gestion des abonnements via les entreprises (redirige vers l'utilisateur)
-    Route::get('/entreprises/{entreprise}/subscription', [AdminController::class, 'manageSubscription'])->name('entreprises.manage-subscription');
-    Route::post('/entreprises/{entreprise}/subscription/deactivate', [AdminController::class, 'deactivateSubscription'])->name('entreprises.deactivate-subscription');
+    // Gestion des options d'entreprise
+    Route::get('/entreprises/{entreprise}/options', [AdminController::class, 'optionsEntreprise'])->name('entreprises.options');
+    Route::post('/entreprises/{entreprise}/options/activer', [AdminController::class, 'activerOptionEntreprise'])->name('entreprises.options.activer');
+    Route::post('/entreprises/{entreprise}/options/{type}/desactiver', [AdminController::class, 'desactiverOptionEntreprise'])->name('entreprises.options.desactiver');
+    
+    // Gestion des membres d'entreprise (admin)
+    Route::post('/entreprises/{entreprise}/membres', [AdminController::class, 'ajouterMembreEntreprise'])->name('entreprises.membres.store');
+    Route::put('/entreprises/{entreprise}/membres/{membre}', [AdminController::class, 'mettreAJourRoleMembre'])->name('entreprises.membres.update');
+    Route::delete('/entreprises/{entreprise}/membres/{membre}', [AdminController::class, 'supprimerMembreEntreprise'])->name('entreprises.membres.destroy');
     
     // Gestion des abonnements utilisateurs
     Route::get('/users/{user}/subscription', [AdminController::class, 'showSubscription'])->name('users.subscription.show');

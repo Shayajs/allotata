@@ -242,6 +242,16 @@
                             @endif
                         </button>
                         <button 
+                            onclick="showTab('abonnements')"
+                            class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'abonnements' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
+                            data-tab="abonnements"
+                        >
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            Abonnements
+                        </button>
+                        <button 
                             onclick="showTab('parametres')"
                             class="tab-button px-6 py-4 text-sm font-medium whitespace-nowrap {{ $activeTab === 'parametres' ? 'border-b-2 border-green-500 text-green-600 dark:text-green-400' : 'border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600' }}"
                             data-tab="parametres"
@@ -284,6 +294,11 @@
                     <!-- Onglet Messagerie -->
                     <div id="tab-messagerie" class="tab-content {{ $activeTab !== 'messagerie' ? 'hidden' : '' }}">
                         @include('entreprise.dashboard.tabs.messagerie-liste')
+                    </div>
+
+                    <!-- Onglet Abonnements -->
+                    <div id="tab-abonnements" class="tab-content {{ $activeTab !== 'abonnements' ? 'hidden' : '' }}">
+                        @include('entreprise.dashboard.tabs.abonnements')
                     </div>
 
                     <!-- Onglet Paramètres -->

@@ -43,7 +43,9 @@ return [
             'secret' => env('STRIPE_WEBHOOK_SECRET'),
             'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
         ],
-        'price_id' => env('STRIPE_PRICE_ID'), // ID du prix d'abonnement mensuel (15€)
+        'price_id' => env('STRIPE_PRICE_ID'), // ID du prix d'abonnement mensuel utilisateur (15€)
+        'price_id_site_web' => env('STRIPE_PRICE_ID_SITE_WEB'), // ID du prix site web vitrine (2€/mois)
+        'price_id_multi_personnes' => env('STRIPE_PRICE_ID_MULTI_PERSONNES'), // ID du prix gestion multi-personnes (20€/mois)
     ],
 
 ];

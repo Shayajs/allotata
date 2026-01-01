@@ -1,6 +1,109 @@
 <div>
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Paramètres de l'entreprise</h2>
 
+    <!-- Logo et Image de fond (en dehors du formulaire principal) -->
+    <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🖼️ Logo et Image de fond</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Logo -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                    Logo de l'entreprise
+                </label>
+                
+                @if($entreprise->logo)
+                    <div class="mb-4 relative inline-block">
+                        <img 
+                            src="{{ asset('storage/' . $entreprise->logo) }}" 
+                            alt="Logo {{ $entreprise->nom }}"
+                            class="w-32 h-32 object-contain rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2"
+                        >
+                        <form action="{{ route('settings.entreprise.logo.delete', $entreprise->slug) }}" method="POST" class="mt-2">
+                            @csrf
+                            @method('DELETE')
+                            <button 
+                                type="submit"
+                                onclick="return confirm('Supprimer le logo ?')"
+                                class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
+                            >
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <div class="mb-4 w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <span class="text-slate-400 text-sm">Aucun logo</span>
+                    </div>
+                @endif
+                
+                <form action="{{ route('settings.entreprise.logo.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="logo-form">
+                    @csrf
+                    <input 
+                        type="file" 
+                        name="logo" 
+                        id="logo-input"
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                        required
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
+                        onchange="document.getElementById('logo-form').submit()"
+                    >
+                </form>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    Format recommandé : PNG ou JPG, max 2MB. Le logo sera affiché sur votre page publique.
+                </p>
+            </div>
+
+            <!-- Image de fond -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                    Image de fond
+                </label>
+                
+                @if($entreprise->image_fond)
+                    <div class="mb-4 relative inline-block">
+                        <img 
+                            src="{{ asset('storage/' . $entreprise->image_fond) }}" 
+                            alt="Image de fond {{ $entreprise->nom }}"
+                            class="w-full max-w-md h-48 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-600"
+                        >
+                        <form action="{{ route('settings.entreprise.image-fond.delete', $entreprise->slug) }}" method="POST" class="mt-2">
+                            @csrf
+                            @method('DELETE')
+                            <button 
+                                type="submit"
+                                onclick="return confirm('Supprimer l\'image de fond ?')"
+                                class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
+                            >
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <div class="mb-4 w-full max-w-md h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <span class="text-slate-400 text-sm">Aucune image de fond</span>
+                    </div>
+                @endif
+                
+                <form action="{{ route('settings.entreprise.image-fond.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="image-fond-form">
+                    @csrf
+                    <input 
+                        type="file" 
+                        name="image_fond" 
+                        id="image-fond-input"
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                        required
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
+                        onchange="document.getElementById('image-fond-form').submit()"
+                    >
+                </form>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    Format recommandé : JPG ou PNG, max 2MB. L'image sera affichée en arrière-plan de votre page publique.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Formulaire principal -->
     <form action="{{ route('settings.entreprise.update', $entreprise->slug) }}" method="POST" class="space-y-6">
         @csrf
@@ -118,109 +221,6 @@
             </div>
         </div>
 
-        <!-- Logo et Image de fond -->
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🖼️ Logo et Image de fond</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Logo -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                        Logo de l'entreprise
-                    </label>
-                    
-                    @if($entreprise->logo)
-                        <div class="mb-4 relative inline-block">
-                            <img 
-                                src="{{ asset('media/' . $entreprise->logo) }}" 
-                                alt="Logo {{ $entreprise->nom }}"
-                                class="w-32 h-32 object-contain rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2"
-                            >
-                            <form action="{{ route('settings.entreprise.logo.delete', $entreprise->slug) }}" method="POST" class="mt-2">
-                                @csrf
-                                @method('DELETE')
-                                <button 
-                                    type="submit"
-                                    onclick="return confirm('Supprimer le logo ?')"
-                                    class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
-                                >
-                                    Supprimer
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <div class="mb-4 w-32 h-32 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                            <span class="text-slate-400 text-sm">Aucun logo</span>
-                        </div>
-                    @endif
-                    
-                    <form action="{{ route('settings.entreprise.logo.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="logo-form">
-                        @csrf
-                        <input 
-                            type="file" 
-                            name="logo" 
-                            id="logo-input"
-                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                            required
-                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
-                            onchange="document.getElementById('logo-form').submit()"
-                        >
-                    </form>
-                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        Format recommandé : PNG ou JPG, max 2MB. Le logo sera affiché sur votre page publique.
-                    </p>
-                </div>
-
-                <!-- Image de fond -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                        Image de fond
-                    </label>
-                    
-                    @if($entreprise->image_fond)
-                        <div class="mb-4 relative inline-block">
-                            <img 
-                                src="{{ asset('media/' . $entreprise->image_fond) }}" 
-                                alt="Image de fond {{ $entreprise->nom }}"
-                                class="w-full max-w-md h-48 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-600"
-                            >
-                            <form action="{{ route('settings.entreprise.image-fond.delete', $entreprise->slug) }}" method="POST" class="mt-2">
-                                @csrf
-                                @method('DELETE')
-                                <button 
-                                    type="submit"
-                                    onclick="return confirm('Supprimer l\'image de fond ?')"
-                                    class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
-                                >
-                                    Supprimer
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <div class="mb-4 w-full max-w-md h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                            <span class="text-slate-400 text-sm">Aucune image de fond</span>
-                        </div>
-                    @endif
-                    
-                    <form action="{{ route('settings.entreprise.image-fond.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="image-fond-form">
-                        @csrf
-                        <input 
-                            type="file" 
-                            name="image_fond" 
-                            id="image-fond-input"
-                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                            required
-                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
-                            onchange="document.getElementById('image-fond-form').submit()"
-                        >
-                    </form>
-                    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                        Format recommandé : JPG ou PNG, max 2MB. L'image sera affichée en arrière-plan de votre page publique.
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <!-- Options -->
         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Options</h3>
@@ -298,7 +298,7 @@
                 @foreach($entreprise->realisationPhotos as $photo)
                     <div class="relative group">
                         <img 
-                            src="{{ asset('media/' . $photo->photo_path) }}" 
+                            src="{{ asset('storage/' . $photo->photo_path) }}" 
                             alt="{{ $photo->titre ? $photo->titre : 'Réalisation' }}"
                             class="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
                         >

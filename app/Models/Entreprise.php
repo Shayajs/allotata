@@ -11,6 +11,14 @@ class Entreprise extends Model
     use HasFactory;
 
     /**
+     * Obtenir le nom de la clé de route (pour le route model binding)
+     */
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
+    /**
      * Les attributs que l'utilisateur peut remplir lui-même.
      * Note : 'est_verifiee' est exclu pour éviter toute falsification (Cyber-sécurité).
      *
@@ -20,6 +28,7 @@ class Entreprise extends Model
         'user_id',
         'nom',
         'slug',
+        'slug_web',
         'type_activite',
         'siren',
         'siren_verifie',
@@ -42,6 +51,9 @@ class Entreprise extends Model
         'prix_negociables',
         'rdv_uniquement_messagerie',
         'est_verifiee', // Permet la mise à jour par les contrôleurs admin
+        'contenu_site_web',
+        'phrase_accroche',
+        'site_web_externe',
     ];
 
     /**
@@ -171,6 +183,30 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs abonnements
+     */
+    public function abonnements()
+    {
+        return $this->hasMany(EntrepriseSubscription::class);
+    }
+
+    /**
+     * Relation : Une entreprise peut avoir plusieurs membres
+     */
+    public function membres()
+    {
+        return $this->hasMany(EntrepriseMembre::class)->where('est_actif', true);
+    }
+
+    /**
+     * Relation : Tous les membres (y compris inactifs)
+     */
+    public function tousMembres()
+    {
+        return $this->hasMany(EntrepriseMembre::class);
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string
@@ -221,5 +257,76 @@ class Entreprise extends Model
     public function aDesRefus(): bool
     {
         return $this->nom_valide === false || $this->siren_valide === false;
+    }
+
+    /**
+     * Vérifie si l'entreprise a un abonnement site web actif
+     */
+    public function aSiteWebActif(): bool
+    {
+        $subscription = $this->abonnements()
+            ->where('type', 'site_web')
+            ->first();
+
+        return $subscription && $subscription->estActif();
+    }
+
+    /**
+     * Vérifie si l'entreprise a un abonnement multi-personnes actif
+     */
+    public function aGestionMultiPersonnes(): bool
+    {
+        $subscription = $this->abonnements()
+            ->where('type', 'multi_personnes')
+            ->first();
+
+        return $subscription && $subscription->estActif();
+    }
+
+    /**
+     * Récupère l'abonnement site web
+     */
+    public function abonnementSiteWeb()
+    {
+        return $this->abonnements()->where('type', 'site_web')->first();
+    }
+
+    /**
+     * Récupère l'abonnement multi-personnes
+     */
+    public function abonnementMultiPersonnes()
+    {
+        return $this->abonnements()->where('type', 'multi_personnes')->first();
+    }
+
+    /**
+     * Vérifie si un utilisateur est membre de l'entreprise (actif ou inactif)
+     */
+    public function aMembre(User $user): bool
+    {
+        return $this->tousMembres()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Vérifie si un utilisateur est administrateur de l'entreprise
+     */
+    public function aAdministrateur(User $user): bool
+    {
+        // Le propriétaire (user_id) est toujours administrateur
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        // Vérifier si l'utilisateur est membre avec le rôle administrateur
+        $membre = $this->membres()->where('user_id', $user->id)->first();
+        return $membre && $membre->estAdministrateur();
+    }
+
+    /**
+     * Vérifie si un utilisateur peut gérer l'entreprise (propriétaire ou administrateur)
+     */
+    public function peutEtreGereePar(User $user): bool
+    {
+        return $this->user_id === $user->id || $this->aAdministrateur($user);
     }
 }

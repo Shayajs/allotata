@@ -19,7 +19,7 @@ class SettingsController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $entreprises = $user->entreprises()->with('realisationPhotos')->get();
+        $entreprises = $user->entreprises()->with(['realisationPhotos', 'abonnements'])->get();
 
         // Récupérer les informations d'abonnement Stripe
         $subscription = $user->subscription('default');
@@ -140,6 +140,7 @@ class SettingsController extends Controller
             'afficher_nom_gerant' => ['nullable'],
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
+            'site_web_externe' => ['nullable', 'url', 'max:255'],
         ]);
 
         // Générer un nouveau slug si le nom a changé

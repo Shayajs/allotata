@@ -572,26 +572,173 @@ class AdminController extends Controller
     }
 
     /**
-     * Gérer l'abonnement d'une entreprise (redirige vers la page de gestion de l'utilisateur)
+     * Afficher la page de gestion des options d'entreprise
      */
-    public function manageSubscription(Entreprise $entreprise)
+    public function optionsEntreprise(Entreprise $entreprise)
     {
-        return redirect()->route('admin.users.subscription.show', $entreprise->user);
+        $abonnementSiteWeb = $entreprise->abonnementSiteWeb();
+        $abonnementMultiPersonnes = $entreprise->abonnementMultiPersonnes();
+        // Charger tous les membres (actifs et inactifs) pour l'admin
+        $membres = $entreprise->tousMembres()->with('user')->get();
+
+        return view('admin.entreprises.options', [
+            'entreprise' => $entreprise,
+            'abonnementSiteWeb' => $abonnementSiteWeb,
+            'abonnementMultiPersonnes' => $abonnementMultiPersonnes,
+            'membres' => $membres,
+        ]);
     }
 
     /**
-     * Désactiver l'abonnement manuel d'une entreprise (via son gérant)
+     * Activer manuellement une option pour une entreprise
      */
-    public function deactivateSubscription(Entreprise $entreprise)
+    public function activerOptionEntreprise(Request $request, Entreprise $entreprise)
     {
-        $user = $entreprise->user;
-        
-        $user->update([
-            'abonnement_manuel' => false,
-            'abonnement_manuel_actif_jusqu' => null,
-            'abonnement_manuel_notes' => null,
+        $validated = $request->validate([
+            'type' => ['required', 'in:site_web,multi_personnes'],
+            'date_fin' => ['required', 'date', 'after:today'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        return back()->with('success', 'Abonnement manuel désactivé.');
+        // Créer ou mettre à jour l'abonnement manuel
+        $abonnement = \App\Models\EntrepriseSubscription::updateOrCreate(
+            [
+                'entreprise_id' => $entreprise->id,
+                'type' => $validated['type'],
+            ],
+            [
+                'name' => 'manuel_' . $validated['type'],
+                'est_manuel' => true,
+                'actif_jusqu' => $validated['date_fin'],
+                'notes_manuel' => $validated['notes'] ?? null,
+                'stripe_id' => null,
+                'stripe_status' => null,
+                'stripe_price' => null,
+            ]
+        );
+
+        return back()->with('success', 'L\'option ' . ($validated['type'] === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes') . ' a été activée jusqu\'au ' . \Carbon\Carbon::parse($validated['date_fin'])->format('d/m/Y') . '.');
+    }
+
+    /**
+     * Désactiver une option d'entreprise
+     */
+    public function desactiverOptionEntreprise(Request $request, Entreprise $entreprise, $type)
+    {
+        $abonnement = $entreprise->abonnements()->where('type', $type)->first();
+
+        if (!$abonnement) {
+            return back()->with('error', 'Option introuvable.');
+        }
+
+        // Si c'est un abonnement manuel, on le supprime ou on le désactive
+        if ($abonnement->est_manuel) {
+            $abonnement->update([
+                'actif_jusqu' => now()->subDay(), // Désactiver immédiatement
+            ]);
+        } else {
+            // Si c'est un abonnement Stripe, on ne peut que le marquer comme terminé
+            // L'utilisateur devra l'annuler depuis son compte
+            return back()->with('error', 'Cet abonnement est géré via Stripe. L\'utilisateur doit l\'annuler depuis son compte.');
+        }
+
+        return back()->with('success', 'L\'option a été désactivée.');
+    }
+
+    /**
+     * Ajouter un membre administrateur à une entreprise (admin uniquement)
+     */
+    public function ajouterMembreEntreprise(Request $request, Entreprise $entreprise)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+            'role' => ['required', 'in:administrateur,membre'],
+        ]);
+
+        // Trouver l'utilisateur par email
+        $userInvite = User::where('email', $validated['email'])->first();
+
+        if (!$userInvite) {
+            return back()->withErrors(['error' => 'Utilisateur introuvable.']);
+        }
+
+        // Vérifier que l'utilisateur n'est pas le propriétaire
+        if ($entreprise->user_id === $userInvite->id) {
+            return back()->withErrors(['error' => 'Le propriétaire de l\'entreprise est automatiquement administrateur.']);
+        }
+
+        // Vérifier si l'utilisateur est déjà membre (actif ou inactif)
+        $membreExistant = $entreprise->tousMembres()->where('user_id', $userInvite->id)->first();
+
+        if ($membreExistant) {
+            // Réactiver et mettre à jour le membre existant
+            $membreExistant->update([
+                'role' => $validated['role'],
+                'est_actif' => true,
+                'accepte_at' => now(),
+            ]);
+            $membre = $membreExistant;
+        } else {
+            // Créer un nouveau membre (admin peut ajouter même si l'abonnement n'est pas actif)
+            $membre = \App\Models\EntrepriseMembre::create([
+                'entreprise_id' => $entreprise->id,
+                'user_id' => $userInvite->id,
+                'role' => $validated['role'],
+                'est_actif' => true,
+                'invite_at' => now(),
+                'accepte_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'L\'utilisateur a été ajouté comme ' . ($validated['role'] === 'administrateur' ? 'administrateur' : 'membre') . ' de l\'entreprise.');
+    }
+
+    /**
+     * Mettre à jour le rôle d'un membre (admin uniquement)
+     */
+    public function mettreAJourRoleMembre(Request $request, Entreprise $entreprise, EntrepriseMembre $membre)
+    {
+        $validated = $request->validate([
+            'role' => ['required', 'in:administrateur,membre'],
+        ]);
+
+        // Vérifier que le membre appartient à cette entreprise
+        if ($membre->entreprise_id !== $entreprise->id) {
+            return back()->withErrors(['error' => 'Membre introuvable.']);
+        }
+
+        // Ne pas permettre de modifier le propriétaire
+        if ($membre->user_id === $entreprise->user_id) {
+            return back()->withErrors(['error' => 'Le propriétaire de l\'entreprise ne peut pas être modifié.']);
+        }
+
+        $membre->update([
+            'role' => $validated['role'],
+        ]);
+
+        return back()->with('success', 'Le rôle du membre a été mis à jour.');
+    }
+
+    /**
+     * Supprimer un membre (admin uniquement)
+     */
+    public function supprimerMembreEntreprise(Entreprise $entreprise, EntrepriseMembre $membre)
+    {
+        // Vérifier que le membre appartient à cette entreprise
+        if ($membre->entreprise_id !== $entreprise->id) {
+            return back()->withErrors(['error' => 'Membre introuvable.']);
+        }
+
+        // Ne pas permettre de supprimer le propriétaire
+        if ($membre->user_id === $entreprise->user_id) {
+            return back()->withErrors(['error' => 'Le propriétaire de l\'entreprise ne peut pas être supprimé.']);
+        }
+
+        // Désactiver le membre
+        $membre->update([
+            'est_actif' => false,
+        ]);
+
+        return back()->with('success', 'Le membre a été retiré de l\'entreprise.');
     }
 }

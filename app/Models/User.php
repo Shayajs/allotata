@@ -119,6 +119,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relation : Un utilisateur peut être membre de plusieurs entreprises
+     */
+    public function entreprisesMembres()
+    {
+        return $this->hasMany(EntrepriseMembre::class);
+    }
+
+    /**
      * Notifications non lues
      */
     public function notificationsNonLues()
