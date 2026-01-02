@@ -161,24 +161,11 @@
                 </a>
             </nav>
 
-            <!-- Footer -->
-            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                <div class="flex items-center justify-between">
-                    <a href="{{ route('dashboard') }}" class="text-sm text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400">
-                        ← Mon compte
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
-                            Déconnexion
-                        </button>
-                    </form>
-                </div>
-            </div>
+
         </aside>
 
         <!-- Main content -->
-        <main class="flex-1 min-w-0" style="margin-left: 16rem;">
+        <main class="flex-1 flex flex-col min-w-0" style="margin-left: 16rem;">
             <!-- Top bar -->
             <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-8 py-4 sticky top-0 z-20">
                 <div class="flex items-center justify-between">
@@ -210,12 +197,44 @@
                             <span class="dark:hidden">🌙</span>
                             <span class="hidden dark:inline">☀️</span>
                         </button>
-                        <!-- Admin info -->
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <span class="text-sm">👤</span>
+                        <!-- Admin info & Actions -->
+                        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-700 pl-4">
+                            <div class="flex items-center gap-3">
+                                <div class="text-right hidden sm:block">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white">{{ auth()->user()->name }}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">Administrateur</div>
+                                </div>
+                                <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                    @if(auth()->user()->photo_profil)
+                                        <img 
+                                            src="{{ asset('media/' . auth()->user()->photo_profil) }}" 
+                                            alt="{{ auth()->user()->name }}" 
+                                            class="w-full h-full object-cover"
+                                        >
+                                    @else
+                                        <span class="text-sm font-bold">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                    @endif
+                                </div>
                             </div>
-                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ auth()->user()->name }}</span>
+                            
+                            <!-- Actions -->
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('dashboard') }}" class="p-2 text-slate-500 hover:text-green-600 dark:text-slate-400 dark:hover:text-green-400 transition" title="Mon compte client">
+                                    <span class="sr-only">Mon compte</span>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="p-2 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition" title="Déconnexion">
+                                        <span class="sr-only">Déconnexion</span>
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -237,8 +256,12 @@
 
                 @yield('content')
             </div>
+
+
         </main>
     </div>
+
+    @include('partials.cookie-banner')
 
     @stack('scripts')
 </body>

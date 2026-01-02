@@ -238,6 +238,8 @@
                             </div>
                         @endif
 
+
+
                         @if($entreprise->afficher_nom_gerant && $entreprise->user)
                             <div class="flex items-center gap-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,10 +459,33 @@
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                            💬 Se connecter pour contacter
                         </a>
                     @endauth
                 </div>
+
+                @if(($entreprise->site_web_externe) || ($entreprise->aSiteWebActif() && $entreprise->slug_web))
+                    <div class="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+                        <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                            </svg>
+                            Sites Web
+                        </h3>
+                        
+                        @if($entreprise->aSiteWebActif() && $entreprise->slug_web)
+                            <a href="{{ route('site-web.show', $entreprise->slug_web) }}" target="_blank" class="block w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition text-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                                Site A.T. de {{ $entreprise->nom }}
+                            </a>
+                        @endif
+
+                        @if($entreprise->site_web_externe)
+                            <a href="{{ $entreprise->site_web_externe }}" target="_blank" rel="noopener noreferrer" class="block w-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold py-3 px-4 rounded-lg transition text-center border border-slate-200 dark:border-slate-600">
+                                Accéder à {{ parse_url($entreprise->site_web_externe, PHP_URL_HOST) ?? $entreprise->site_web_externe }}
+                            </a>
+                        @endif
+                    </div>
+                @endif
+
             </div>
         </main>
 

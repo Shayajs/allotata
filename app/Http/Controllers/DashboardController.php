@@ -15,7 +15,20 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $entreprises = $user->entreprises()->withCount('reservations')->get();
+        
+        // Récupérer les entreprises (y compris celles archivées récemment)
+        $entreprises = $user->entreprises()
+            ->withTrashed()
+            ->withCount('reservations')
+            ->get()
+            ->filter(function ($entreprise) {
+                // Garder les actives
+                if (!$entreprise->trashed()) {
+                    return true;
+                }
+                // Garder les archivées restaurables (< 30 jours)
+                return $entreprise->canBeRestoredByUser();
+            });
         
         // Charger les réservations du client (si c'est un client)
         $reservations = collect([]);

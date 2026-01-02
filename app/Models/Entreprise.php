@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Entreprise extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * Obtenir le nom de la clé de route (pour le route model binding)
@@ -489,5 +490,51 @@ class Entreprise extends Model
     {
         $content = $this->site_web_content;
         return $content['theme'] ?? self::getDefaultSiteWebContent()['theme'];
+    }
+
+    /**
+     * Vérifie si l'entreprise peut être archivée (supprimée par l'utilisateur)
+     * Possible uniquement si aucun abonnement actif lié à l'entreprise.
+     * Note: On ne vérifie PAS l'abonnement utilisateur, seulement les abonnements entreprise.
+     */
+    public function canBeArchived(): bool
+    {
+        // Vérifier uniquement les abonnements liés à l'entreprise (site_web, multi_personnes)
+        return !$this->aSiteWebActif() && !$this->aGestionMultiPersonnes();
+    }
+
+    /**
+     * Vérifie si l'entreprise est archivée (soft deleted)
+     */
+    public function isArchived(): bool
+    {
+        return $this->trashed();
+    }
+
+    /**
+     * Vérifie si l'entreprise peut être restaurée par l'utilisateur
+     * Possible pendant 30 jours après l'archivage.
+     */
+    public function canBeRestoredByUser(): bool
+    {
+        if (!$this->isArchived()) {
+            return false;
+        }
+
+        // Si supprimé il y a moins de 30 jours
+        return $this->deleted_at->addDays(30)->isFuture();
+    }
+
+    /**
+     * Retourne le nombre de jours restants avant suppression définitive (vue utilisateur)
+     */
+    public function daysUntilPermanentDeletion(): int
+    {
+        if (!$this->isArchived()) {
+            return 30;
+        }
+
+        $remaining = now()->diffInDays($this->deleted_at->addDays(30), false);
+        return max(0, (int)$remaining);
     }
 }

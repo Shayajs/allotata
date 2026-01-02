@@ -39,7 +39,7 @@ class ErrorLogController extends Controller
         }
         
         // Récupérer les erreurs paginées
-        $errors = $query->orderBy('created_at', 'desc')->paginate(20);
+        $errors = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
         
         // Statistiques
         $stats = [

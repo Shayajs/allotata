@@ -12,18 +12,18 @@
                 <div class="flex items-center gap-2">
                     <label for="filter-level" class="text-sm font-medium text-slate-700 dark:text-slate-300">Niveau :</label>
                     <select id="filter-level" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500">
-                        <option value="">Tous</option>
-                        <option value="error">Erreur</option>
-                        <option value="warning">Avertissement</option>
-                        <option value="critical">Critique</option>
+                        <option value="" {{ request('level') == '' ? 'selected' : '' }}>Tous</option>
+                        <option value="error" {{ request('level') == 'error' ? 'selected' : '' }}>Erreur</option>
+                        <option value="warning" {{ request('level') == 'warning' ? 'selected' : '' }}>Avertissement</option>
+                        <option value="critical" {{ request('level') == 'critical' ? 'selected' : '' }}>Critique</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="filter-status" class="text-sm font-medium text-slate-700 dark:text-slate-300">Statut :</label>
                     <select id="filter-status" class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500">
-                        <option value="unread">Non lues</option>
-                        <option value="all">Toutes</option>
-                        <option value="read">Lues</option>
+                        <option value="unread" {{ request('status', 'unread') == 'unread' ? 'selected' : '' }}>Non lues</option>
+                        <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>Toutes</option>
+                        <option value="read" {{ request('status') == 'read' ? 'selected' : '' }}>Lues</option>
                     </select>
                 </div>
             </div>
@@ -310,6 +310,34 @@
         document.getElementById('refresh-btn').addEventListener('click', function() {
             location.reload();
         });
+
+        // Gestion des filtres
+        function updateFilters() {
+            const level = document.getElementById('filter-level').value;
+            const status = document.getElementById('filter-status').value;
+            
+            const url = new URL(window.location.href);
+            
+            if (level) {
+                url.searchParams.set('level', level);
+            } else {
+                url.searchParams.delete('level');
+            }
+            
+            if (status) {
+                url.searchParams.set('status', status);
+            } else {
+                url.searchParams.delete('status');
+            }
+            
+            // Revenir à la première page lors du changement de filtre
+            url.searchParams.delete('page');
+            
+            window.location.href = url.toString();
+        }
+
+        document.getElementById('filter-level').addEventListener('change', updateFilters);
+        document.getElementById('filter-status').addEventListener('change', updateFilters);
         
         // Fermer modal avec Escape
         document.addEventListener('keydown', function(e) {

@@ -12,6 +12,17 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\LegalController;
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
+
+// Pages Légales
+Route::get('/legal/mentions-legales', [LegalController::class, 'mentionsLegales'])->name('legal.mentions');
+Route::get('/legal/confidentialite', [LegalController::class, 'politiqueConfidentialite'])->name('legal.confidentialite');
+Route::get('/legal/cgu', [LegalController::class, 'cgu'])->name('legal.cgu');
+Route::get('/legal/cgv', [LegalController::class, 'cgv'])->name('legal.cgv');
+Route::get('/legal/cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
 use App\Http\Controllers\FactureController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\TempAdminController;
@@ -30,7 +41,8 @@ use App\Http\Controllers\EntrepriseMembreController;
 use App\Http\Controllers\MembreGestionController;
 use App\Http\Controllers\InvitationController;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
 
 // Route pour servir les fichiers storage via un contrôleur
 // SOLUTION TEMPORAIRE : Utiliser /media/ au lieu de /storage/ car /storage/ est bloqué par le serveur web
@@ -196,6 +208,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/settings/entreprise/{slug}/image-fond', [SettingsController::class, 'deleteImageFond'])->name('settings.entreprise.image-fond.delete');
     Route::post('/settings/entreprise/{slug}/photo', [SettingsController::class, 'addRealisationPhoto'])->name('settings.entreprise.photo.add');
     Route::delete('/settings/entreprise/{slug}/photo/{photoId}', [SettingsController::class, 'deleteRealisationPhoto'])->name('settings.entreprise.photo.delete');
+    Route::delete('/settings/entreprise/{slug}', [SettingsController::class, 'deleteEntreprise'])->name('settings.entreprise.delete');
+    Route::post('/settings/entreprise/{slug}/restore', [SettingsController::class, 'restoreEntreprise'])->name('settings.entreprise.restore');
     
     // Abonnements d'entreprise
     Route::get('/m/{slug}/abonnements', [EntrepriseSubscriptionController::class, 'index'])->name('entreprise.subscriptions.index');

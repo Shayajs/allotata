@@ -491,4 +491,49 @@ class SettingsController extends Controller
             ->with('success', 'Préférences de notifications mises à jour.');
     }
 
+
+    /**
+     * Archiver (supprimer) une entreprise
+     */
+    public function deleteEntreprise(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Vérifier si la suppression est possible
+        if (!$entreprise->canBeArchived()) {
+            return back()->with('error', 'Impossible de supprimer cette entreprise car elle possède des abonnements actifs.');
+        }
+
+        $entreprise->delete(); // Soft delete
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Votre entreprise a été archivée. Vous avez 30 jours pour annuler cette action.');
+    }
+
+    /**
+     * Restaurer une entreprise archivée
+     */
+    public function restoreEntreprise(Request $request, $slug)
+    {
+        $user = Auth::user();
+        
+        // Chercher parmi les entreprises supprimées (withTrashed)
+        $entreprise = Entreprise::withTrashed()
+            ->where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Vérifier si la restauration est possible par l'utilisateur
+        if (!$entreprise->canBeRestoredByUser()) {
+            return back()->with('error', 'Impossible de restaurer cette entreprise. Le délai de 30 jours est dépassé.');
+        }
+
+        $entreprise->restore();
+
+        return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug])
+            ->with('success', 'Votre entreprise a été restaurée avec succès.');
+    }
 }
