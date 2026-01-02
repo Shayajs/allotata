@@ -63,7 +63,11 @@
                         Abonnement Premium
                     </h2>
                     <div class="flex items-baseline justify-center gap-2 mb-4">
-                        <span class="text-5xl font-bold text-green-600 dark:text-green-400">15€</span>
+                        @if($currentPriceAmount)
+                            <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ number_format($currentPriceAmount, 2, ',', ' ') }}€</span>
+                        @else
+                            <span class="text-5xl font-bold text-green-600 dark:text-green-400">-</span>
+                        @endif
                         <span class="text-xl text-slate-600 dark:text-slate-400">/mois</span>
                     </div>
                     <p class="text-slate-600 dark:text-slate-400">
@@ -100,14 +104,17 @@
                                     </form>
                                 @else
                                     <p><strong>Statut :</strong> <span class="text-green-600 dark:text-green-400">Actif</span></p>
-                                    @if($subscription->asStripeSubscription())
+                                    @if($subscription->asStripeSubscription() && isset($subscription->asStripeSubscription()->current_period_end))
                                         <p><strong>Prochain paiement :</strong> {{ \Carbon\Carbon::createFromTimestamp($subscription->asStripeSubscription()->current_period_end)->format('d/m/Y') }}</p>
                                     @endif
-                                    <form action="{{ route('subscription.cancel') }}" method="POST" class="mt-4" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler votre abonnement ?');">
+                                    <form action="{{ route('subscription.cancel') }}" method="POST" class="mt-4">
                                         @csrf
                                         <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
-                                            Annuler l'abonnement
+                                            Gérer l'abonnement sur Stripe
                                         </button>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                            Vous serez redirigé vers le portail Stripe pour gérer votre abonnement (annulation, reprise, méthode de paiement, factures).
+                                        </p>
                                     </form>
                                 @endif
                             </div>
@@ -139,7 +146,11 @@
                             <form action="{{ route('subscription.checkout') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                                    Souscrire à l'abonnement (15€/mois)
+                                    @if($currentPriceAmount)
+                                        Souscrire à l'abonnement ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
+                                    @else
+                                        Souscrire à l'abonnement
+                                    @endif
                                 </button>
                             </form>
                         @endif

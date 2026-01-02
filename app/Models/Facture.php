@@ -15,6 +15,8 @@ class Facture extends Model
         'reservation_id',
         'entreprise_id',
         'user_id',
+        'entreprise_subscription_id',
+        'type_facture',
         'numero_facture',
         'date_facture',
         'date_echeance',
@@ -80,6 +82,14 @@ class Facture extends Model
     }
 
     /**
+     * Relation : Une facture peut appartenir à un abonnement entreprise
+     */
+    public function entrepriseSubscription(): BelongsTo
+    {
+        return $this->belongsTo(EntrepriseSubscription::class);
+    }
+
+    /**
      * Génère un numéro de facture unique
      */
     public static function generateNumeroFacture(): string
@@ -92,6 +102,138 @@ class Facture extends Model
         $number = $lastFacture ? (int) substr($lastFacture->numero_facture, -6) + 1 : 1;
         
         return 'FAC-' . $year . '-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Génère une facture pour un abonnement manuel utilisateur
+     */
+    public static function generateFromManualSubscription(User $user, \Carbon\Carbon $dateFacture = null): ?Facture
+    {
+        if (!$user->abonnement_manuel || !$user->abonnement_manuel_montant) {
+            return null;
+        }
+
+        $dateFacture = $dateFacture ?? now();
+        
+        // Vérifier si une facture existe déjà pour cette période
+        $periodeDebut = $dateFacture->copy()->startOfMonth();
+        $periodeFin = $dateFacture->copy()->endOfMonth();
+        
+        if ($user->abonnement_manuel_type_renouvellement === 'annuel') {
+            $periodeDebut = $dateFacture->copy()->startOfYear();
+            $periodeFin = $dateFacture->copy()->endOfYear();
+        }
+
+        $factureExistante = self::where('user_id', $user->id)
+            ->where('type_facture', 'abonnement_manuel')
+            ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
+            ->first();
+
+        if ($factureExistante) {
+            return $factureExistante;
+        }
+
+        // Calculer les montants (TVA à 0% par défaut)
+        $montantHT = $user->abonnement_manuel_montant;
+        $tauxTVA = 0;
+        $montantTVA = 0;
+        $montantTTC = $montantHT;
+
+        // Créer la facture
+        // Note: Pour les abonnements utilisateurs, on doit créer une entreprise virtuelle ou utiliser null
+        // Mais la table factures nécessite une entreprise_id, donc on va créer une facture sans entreprise
+        // en modifiant la contrainte ou en utilisant une entreprise système
+        
+        // Pour l'instant, on va utiliser l'entreprise du user s'il en a une, sinon null (nécessitera une migration)
+        $entrepriseId = $user->entreprises()->first()?->id ?? null;
+        
+        $facture = self::create([
+            'user_id' => $user->id,
+            'entreprise_id' => $entrepriseId, // Utiliser la première entreprise de l'utilisateur si disponible
+            'reservation_id' => null,
+            'type_facture' => 'abonnement_manuel',
+            'numero_facture' => self::generateNumeroFacture(),
+            'date_facture' => $dateFacture,
+            'date_echeance' => $dateFacture->copy()->addDays(30), // Échéance 30 jours
+            'montant_ht' => $montantHT,
+            'taux_tva' => $tauxTVA,
+            'montant_tva' => $montantTVA,
+            'montant_ttc' => $montantTTC,
+            'statut' => 'emise',
+            'notes' => 'Facture d\'abonnement ' . ($user->abonnement_manuel_type_renouvellement === 'mensuel' ? 'mensuel' : 'annuel') . ' - Période du ' . $periodeDebut->format('d/m/Y') . ' au ' . $periodeFin->format('d/m/Y'),
+        ]);
+
+        \Log::info('Facture d\'abonnement manuel générée', [
+            'facture_id' => $facture->id,
+            'user_id' => $user->id,
+            'montant' => $montantTTC,
+        ]);
+
+        return $facture;
+    }
+
+    /**
+     * Génère une facture pour un abonnement manuel entreprise
+     */
+    public static function generateFromManualEntrepriseSubscription(EntrepriseSubscription $subscription, \Carbon\Carbon $dateFacture = null): ?Facture
+    {
+        if (!$subscription->est_manuel || !$subscription->montant) {
+            return null;
+        }
+
+        $dateFacture = $dateFacture ?? now();
+        $entreprise = $subscription->entreprise;
+        
+        // Vérifier si une facture existe déjà pour cette période
+        $periodeDebut = $dateFacture->copy()->startOfMonth();
+        $periodeFin = $dateFacture->copy()->endOfMonth();
+        
+        if ($subscription->type_renouvellement === 'annuel') {
+            $periodeDebut = $dateFacture->copy()->startOfYear();
+            $periodeFin = $dateFacture->copy()->endOfYear();
+        }
+
+        $factureExistante = self::where('entreprise_subscription_id', $subscription->id)
+            ->where('type_facture', 'abonnement_manuel')
+            ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
+            ->first();
+
+        if ($factureExistante) {
+            return $factureExistante;
+        }
+
+        // Calculer les montants (TVA à 0% par défaut)
+        $montantHT = $subscription->montant;
+        $tauxTVA = 0;
+        $montantTVA = 0;
+        $montantTTC = $montantHT;
+
+        // Créer la facture
+        $facture = self::create([
+            'user_id' => $entreprise->user_id,
+            'entreprise_id' => $entreprise->id,
+            'entreprise_subscription_id' => $subscription->id,
+            'reservation_id' => null,
+            'type_facture' => 'abonnement_manuel',
+            'numero_facture' => self::generateNumeroFacture(),
+            'date_facture' => $dateFacture,
+            'date_echeance' => $dateFacture->copy()->addDays(30), // Échéance 30 jours
+            'montant_ht' => $montantHT,
+            'taux_tva' => $tauxTVA,
+            'montant_tva' => $montantTVA,
+            'montant_ttc' => $montantTTC,
+            'statut' => 'emise',
+            'notes' => 'Facture d\'abonnement ' . ($subscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes') . ' (' . ($subscription->type_renouvellement === 'mensuel' ? 'mensuel' : 'annuel') . ') - Période du ' . $periodeDebut->format('d/m/Y') . ' au ' . $periodeFin->format('d/m/Y'),
+        ]);
+
+        \Log::info('Facture d\'abonnement manuel entreprise générée', [
+            'facture_id' => $facture->id,
+            'entreprise_id' => $entreprise->id,
+            'subscription_id' => $subscription->id,
+            'montant' => $montantTTC,
+        ]);
+
+        return $facture;
     }
 
     /**

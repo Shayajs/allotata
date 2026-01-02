@@ -20,6 +20,10 @@ class EntrepriseSubscription extends Model
         'est_manuel',
         'actif_jusqu',
         'notes_manuel',
+        'type_renouvellement',
+        'jour_renouvellement',
+        'date_debut',
+        'montant',
         'trial_ends_at',
         'ends_at',
     ];
@@ -29,6 +33,8 @@ class EntrepriseSubscription extends Model
         return [
             'est_manuel' => 'boolean',
             'actif_jusqu' => 'date',
+            'date_debut' => 'date',
+            'montant' => 'decimal:2',
             'trial_ends_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -57,7 +63,19 @@ class EntrepriseSubscription extends Model
 
         // Si c'est un abonnement Stripe
         if ($this->stripe_id && $this->stripe_status) {
-            return $this->stripe_status === 'active' || $this->stripe_status === 'trialing';
+            // Si l'abonnement est annulé mais en période de grâce, il est encore actif
+            if ($this->stripe_status === 'active' && $this->ends_at && $this->ends_at->isFuture()) {
+                return true; // En période de grâce, toujours actif
+            }
+            
+            // Vérifier le statut
+            if ($this->stripe_status === 'active' || $this->stripe_status === 'trialing') {
+                // Si ends_at est défini et dans le passé, l'abonnement n'est plus actif
+                if ($this->ends_at && $this->ends_at->isPast()) {
+                    return false;
+                }
+                return true;
+            }
         }
 
         return false;

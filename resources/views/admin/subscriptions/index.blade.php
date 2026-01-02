@@ -1,0 +1,289 @@
+@extends('admin.layout')
+
+@section('content')
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white">💳 Gestion des abonnements</h1>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Consultez et gérez tous les abonnements actifs (utilisateurs et entreprises).
+        </p>
+    </div>
+
+    @if(session('success'))
+        <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p class="text-sm text-green-800 dark:text-green-400">{{ session('success') }}</p>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <ul class="text-sm text-red-800 dark:text-red-400">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Filtres -->
+    <div class="mb-6 flex gap-3">
+        <a href="{{ route('admin.subscriptions.index', ['filter' => 'all']) }}" 
+           class="px-4 py-2 rounded-lg transition {{ $filter === 'all' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Tous
+        </a>
+        <a href="{{ route('admin.subscriptions.index', ['filter' => 'users']) }}" 
+           class="px-4 py-2 rounded-lg transition {{ $filter === 'users' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Utilisateurs
+        </a>
+        <a href="{{ route('admin.subscriptions.index', ['filter' => 'entreprises']) }}" 
+           class="px-4 py-2 rounded-lg transition {{ $filter === 'entreprises' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Entreprises
+        </a>
+        <a href="{{ route('admin.subscriptions.index', ['filter' => 'stripe']) }}" 
+           class="px-4 py-2 rounded-lg transition {{ $filter === 'stripe' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Stripe
+        </a>
+        <a href="{{ route('admin.subscriptions.index', ['filter' => 'manual']) }}" 
+           class="px-4 py-2 rounded-lg transition {{ $filter === 'manual' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Manuels
+        </a>
+    </div>
+
+    <!-- Abonnements utilisateurs Stripe -->
+    @if($userSubscriptions->count() > 0)
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">👤 Abonnements utilisateurs (Stripe)</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Utilisateur</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Statut</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Prix Stripe</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date création</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach($userSubscriptions as $subscription)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                        {{ $subscription->user->name ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $subscription->user->email ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {{ $subscription->stripe_status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : '' }}
+                                        {{ $subscription->stripe_status === 'trialing' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' : '' }}
+                                        {{ $subscription->stripe_status === 'past_due' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : '' }}">
+                                        {{ ucfirst($subscription->stripe_status) }}
+                                    </span>
+                                    @if($subscription->ends_at)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                            Jusqu'au {{ $subscription->ends_at->format('d/m/Y') }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $subscription->created_at->format('d/m/Y H:i') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                        @csrf
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                            Annuler
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- Abonnements entreprises Stripe -->
+    @if($entrepriseSubscriptions->count() > 0)
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">🏢 Abonnements entreprises (Stripe)</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Entreprise</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Statut</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Prix Stripe</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date création</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach($entrepriseSubscriptions as $subscription)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                        {{ $subscription->entreprise->nom ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $subscription->entreprise->email ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                                        @if($subscription->type === 'site_web')
+                                            Site Web Vitrine
+                                        @elseif($subscription->type === 'multi_personnes')
+                                            Multi-Personnes
+                                        @else
+                                            {{ $subscription->type }}
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {{ $subscription->stripe_status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : '' }}
+                                        {{ $subscription->stripe_status === 'trialing' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' : '' }}
+                                        {{ $subscription->stripe_status === 'past_due' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400' : '' }}">
+                                        {{ ucfirst($subscription->stripe_status) }}
+                                    </span>
+                                    @if($subscription->ends_at)
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                            Jusqu'au {{ $subscription->ends_at->format('d/m/Y') }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $subscription->created_at->format('d/m/Y H:i') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                        @csrf
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                            Annuler
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- Abonnements manuels utilisateurs -->
+    @if($manualUserSubscriptions->count() > 0)
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">👤 Abonnements utilisateurs (Manuels)</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Utilisateur</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actif jusqu'au</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach($manualUserSubscriptions as $user)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                        {{ $user->name }}
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $user->email }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                                    {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $user->abonnement_manuel_notes ?? '-' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- Abonnements manuels entreprises -->
+    @if($manualEntrepriseSubscriptions->count() > 0)
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">🏢 Abonnements entreprises (Manuels)</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Entreprise</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actif jusqu'au</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Notes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        @foreach($manualEntrepriseSubscriptions as $subscription)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                        {{ $subscription->entreprise->nom ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        {{ $subscription->entreprise->email ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                                        @if($subscription->type === 'site_web')
+                                            Site Web Vitrine
+                                        @elseif($subscription->type === 'multi_personnes')
+                                            Multi-Personnes
+                                        @else
+                                            {{ $subscription->type }}
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                                    {{ $subscription->actif_jusqu->format('d/m/Y') }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $subscription->notes_manuel ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                        @csrf
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                            Annuler
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    @if($userSubscriptions->count() === 0 && $entrepriseSubscriptions->count() === 0 && $manualUserSubscriptions->count() === 0 && $manualEntrepriseSubscriptions->count() === 0)
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700 p-6 text-center">
+            <p class="text-slate-600 dark:text-slate-400">Aucun abonnement actif pour le moment.</p>
+        </div>
+    @endif
+</div>
+@endsection

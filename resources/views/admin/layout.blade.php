@@ -141,6 +141,24 @@
                     <span class="text-lg">⚙️</span>
                     <span class="font-medium">Paramètres</span>
                 </a>
+
+                <!-- Prix Stripe -->
+                <a href="{{ route('admin.stripe-prices.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.stripe-prices.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">💳</span>
+                    <span class="font-medium">Prix Stripe</span>
+                </a>
+
+                <!-- Prix personnalisés -->
+                <a href="{{ route('admin.custom-prices.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.custom-prices.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">💎</span>
+                    <span class="font-medium">Prix personnalisés</span>
+                </a>
+
+                <!-- Abonnements -->
+                <a href="{{ route('admin.subscriptions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.subscriptions.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">💳</span>
+                    <span class="font-medium">Abonnements</span>
+                </a>
             </nav>
 
             <!-- Footer -->

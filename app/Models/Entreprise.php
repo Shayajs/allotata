@@ -216,6 +216,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs prix personnalisés
+     */
+    public function customPrices()
+    {
+        return $this->hasMany(CustomPrice::class);
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string
@@ -393,7 +401,7 @@ class Entreprise extends Model
     public function aAdministrateur(User $user): bool
     {
         // Le propriétaire (user_id) est toujours administrateur
-        if ($this->user_id === $user->id) {
+        if ((int)$this->user_id === (int)$user->id) {
             return true;
         }
 
@@ -407,7 +415,16 @@ class Entreprise extends Model
      */
     public function peutEtreGereePar(User $user): bool
     {
-        return $this->user_id === $user->id || $this->aAdministrateur($user);
+        // Comparaison stricte avec conversion de type pour éviter les problèmes de type
+        $estProprietaire = (int)$this->user_id === (int)$user->id;
+        
+        // Si c'est le propriétaire, retourner true directement
+        if ($estProprietaire) {
+            return true;
+        }
+        
+        // Sinon, vérifier si l'utilisateur est administrateur membre
+        return $this->aAdministrateur($user);
     }
 
     /**

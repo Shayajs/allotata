@@ -6,16 +6,26 @@ use App\Models\Entreprise;
 use App\Models\EntrepriseSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Stripe\BillingPortal\Session as BillingPortalSession;
 
 class EntrepriseSubscriptionController extends Controller
 {
     /**
      * Afficher les options d'abonnement pour une entreprise
      */
-    public function index(Entreprise $entreprise)
+    public function index($slug)
     {
         $user = Auth::user();
+        
+        // Récupérer l'entreprise par slug explicitement
+        $entreprise = Entreprise::where('slug', $slug)->first();
+        
+        if (!$entreprise) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Entreprise non trouvée.');
+        }
         
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {
@@ -29,14 +39,106 @@ class EntrepriseSubscriptionController extends Controller
     }
 
     /**
-     * Créer une session de checkout Stripe pour un abonnement d'entreprise
+     * Retourner le contenu de la vue d'abonnement pour une modale
      */
-    public function checkout(Request $request, Entreprise $entreprise)
+    public function modal($slug)
     {
         $user = Auth::user();
         
+        // Vérifier que l'utilisateur est authentifié
+        if (!$user) {
+            if (request()->expectsJson() || request()->wantsJson()) {
+                return response()->json(['error' => 'Non authentifié.'], 401);
+            }
+            abort(401, 'Non authentifié.');
+        }
+        
+        // Récupérer l'entreprise par slug
+        $entreprise = Entreprise::where('slug', $slug)->first();
+        
+        if (!$entreprise) {
+            if (request()->expectsJson() || request()->wantsJson()) {
+                return response()->json(['error' => 'Entreprise non trouvée.'], 404);
+            }
+            abort(404, 'Entreprise non trouvée.');
+        }
+        
+        // Vérifier que l'utilisateur peut gérer cette entreprise
+        // Vérifier d'abord si l'utilisateur est propriétaire (comparaison avec conversion de type)
+        $estProprietaire = (int)$entreprise->user_id === (int)$user->id;
+        
+        // Sinon, vérifier avec la méthode peutEtreGereePar (pour les administrateurs membres)
+        $peutGerer = $estProprietaire || $entreprise->peutEtreGereePar($user);
+        
+        // Ou si l'utilisateur est admin global
+        $estAdmin = $user->is_admin ?? false;
+        
+        if (!$peutGerer && !$estAdmin) {
+            Log::warning('Tentative d\'accès non autorisée à la modale d\'abonnement', [
+                'user_id' => $user->id,
+                'user_id_type' => gettype($user->id),
+                'entreprise_id' => $entreprise->id,
+                'entreprise_user_id' => $entreprise->user_id,
+                'entreprise_user_id_type' => gettype($entreprise->user_id),
+                'entreprise_slug' => $slug,
+                'est_proprietaire' => $estProprietaire,
+                'peut_gerer' => $entreprise->peutEtreGereePar($user),
+                'est_admin' => $estAdmin,
+            ]);
+            if (request()->expectsJson() || request()->wantsJson()) {
+                return response()->json(['error' => 'Vous n\'avez pas accès à cette entreprise.'], 403);
+            }
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        // Retourner la vue d'abonnement
+        return view('entreprise.dashboard.tabs.abonnements', [
+            'entreprise' => $entreprise,
+        ]);
+    }
+
+    /**
+     * Créer une session de checkout Stripe pour un abonnement d'entreprise
+     */
+    public function checkout(Request $request, $slug)
+    {
+        $user = Auth::user();
+        
+        // Récupérer l'entreprise par slug explicitement
+        $entreprise = Entreprise::where('slug', $slug)->first();
+        
+        if (!$entreprise) {
+            Log::error('Entreprise non trouvée pour le checkout', [
+                'slug' => $slug,
+                'user_id' => $user->id,
+            ]);
+            return back()->withErrors(['error' => 'Entreprise non trouvée.']);
+        }
+        
+        // Log pour déboguer
+        Log::info('Vérification accès checkout abonnement entreprise', [
+            'user_id' => $user->id,
+            'user_id_type' => gettype($user->id),
+            'entreprise_id' => $entreprise->id,
+            'entreprise_user_id' => $entreprise->user_id,
+            'entreprise_user_id_type' => gettype($entreprise->user_id),
+            'slug' => $slug,
+            'est_proprietaire' => (int)$entreprise->user_id === (int)$user->id,
+            'peut_gerer' => $entreprise->peutEtreGereePar($user),
+        ]);
+        
         // Vérifier que l'utilisateur peut gérer cette entreprise
         if (!$entreprise->peutEtreGereePar($user)) {
+            Log::warning('Tentative d\'accès non autorisée au checkout d\'abonnement d\'entreprise', [
+                'user_id' => $user->id,
+                'user_id_type' => gettype($user->id),
+                'entreprise_id' => $entreprise->id,
+                'entreprise_user_id' => $entreprise->user_id,
+                'entreprise_user_id_type' => gettype($entreprise->user_id),
+                'slug' => $slug,
+                'est_proprietaire' => (int)$entreprise->user_id === (int)$user->id,
+                'peut_gerer' => $entreprise->peutEtreGereePar($user),
+            ]);
             return back()->withErrors(['error' => 'Vous n\'avez pas accès à cette entreprise.']);
         }
 
@@ -57,28 +159,42 @@ class EntrepriseSubscriptionController extends Controller
             ]);
         }
 
-        // Récupérer l'ID du prix Stripe depuis la configuration
+        // Vérifier s'il y a un prix personnalisé pour cette entreprise
+        $customPrice = \App\Models\CustomPrice::getForEntreprise($entreprise, $type);
+        
+        // Récupérer l'ID du prix Stripe (personnalisé ou par défaut)
         $priceId = null;
+        $priceLabel = '';
         if ($type === 'site_web') {
-            $priceId = config('services.stripe.price_id_site_web'); // 2€/mois
+            $priceLabel = 'Site Web Vitrine';
+            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id_site_web'); // 2€/mois
         } elseif ($type === 'multi_personnes') {
-            $priceId = config('services.stripe.price_id_multi_personnes'); // 20€/mois
+            $priceLabel = 'Gestion Multi-Personnes';
+            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id_multi_personnes'); // 20€/mois
         }
 
         if (empty($priceId)) {
+            Log::error('Prix Stripe non configuré pour l\'abonnement d\'entreprise', [
+                'type' => $type,
+                'entreprise_id' => $entreprise->id,
+            ]);
             return back()->withErrors([
-                'error' => 'La configuration Stripe est incomplète. Veuillez contacter l\'administrateur.'
+                'error' => "Le prix Stripe pour \"{$priceLabel}\" n'est pas encore configuré. Veuillez contacter l'administrateur pour créer ce prix depuis la page de gestion des prix Stripe."
             ]);
         }
 
         // Utiliser le compte Stripe du propriétaire de l'entreprise
         // Créer l'abonnement via le user (propriétaire)
+        // Cashier créera automatiquement le compte Stripe si nécessaire
+        $subscriptionName = 'entreprise_' . $type . '_' . $entreprise->id;
+        
         $metadata = [
             'entreprise_id' => $entreprise->id,
             'type' => $type,
+            'name' => $subscriptionName, // Important : Cashier utilise metadata['name'] pour déterminer le type d'abonnement
         ];
 
-        return $user->newSubscription('entreprise_' . $type . '_' . $entreprise->id, $priceId)
+        return $user->newSubscription($subscriptionName, $priceId)
             ->checkout([
                 'success_url' => route('entreprise.subscriptions.success', ['slug' => $entreprise->slug, 'type' => $type]),
                 'cancel_url' => route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']),
@@ -99,31 +215,37 @@ class EntrepriseSubscriptionController extends Controller
                 ->with('error', 'Accès refusé.');
         }
 
-        // Attendre un peu pour que le webhook Stripe soit traité
+        // VÉRIFICATION DIRECTE SUR STRIPE (méthode de sécurité)
+        Log::info('Vérification directe Stripe après checkout entreprise', [
+            'user_id' => $user->id,
+            'entreprise_id' => $entreprise->id,
+            'type' => $type,
+            'stripe_id' => $user->stripe_id,
+        ]);
+
+        // Attendre un peu pour que Stripe traite le paiement
         sleep(2);
 
-        // Récupérer l'abonnement Stripe du user
-        $subscriptionName = 'entreprise_' . $type . '_' . $entreprise->id;
-        $subscription = $user->subscription($subscriptionName);
+        // Synchroniser TOUS les abonnements depuis Stripe (utilisateur + entreprises)
+        $syncResult = \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+        
+        Log::info('Résultat synchronisation Stripe entreprise', [
+            'user_id' => $user->id,
+            'entreprise_id' => $entreprise->id,
+            'type' => $type,
+            'sync_result' => $syncResult,
+        ]);
 
-        if ($subscription && $subscription->valid()) {
-            // Créer ou mettre à jour l'abonnement dans la table entreprise_subscriptions
-            EntrepriseSubscription::updateOrCreate(
-                [
-                    'entreprise_id' => $entreprise->id,
-                    'type' => $type,
-                ],
-                [
-                    'name' => $subscriptionName,
-                    'stripe_id' => $subscription->stripe_id,
-                    'stripe_status' => $subscription->stripe_status,
-                    'stripe_price' => $subscription->stripe_price,
-                    'est_manuel' => false,
-                    'trial_ends_at' => $subscription->trial_ends_at,
-                    'ends_at' => $subscription->ends_at,
-                ]
-            );
+        // Recharger l'entreprise pour avoir les dernières données
+        $entreprise->refresh();
 
+        // Vérifier si l'abonnement existe maintenant
+        $subscription = EntrepriseSubscription::where('entreprise_id', $entreprise->id)
+            ->where('type', $type)
+            ->where('est_manuel', false)
+            ->first();
+
+        if ($subscription && $subscription->estActif()) {
             return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])
                 ->with('success', 'Votre abonnement a été activé avec succès !');
         }
@@ -133,38 +255,43 @@ class EntrepriseSubscriptionController extends Controller
     }
 
     /**
-     * Annuler un abonnement d'entreprise
+     * Rediriger vers le portail client Stripe pour gérer l'abonnement d'entreprise
+     * Le portail client Stripe permet de gérer l'annulation, la reprise, 
+     * la mise à jour de la méthode de paiement, etc.
      */
-    public function cancel(Request $request, Entreprise $entreprise, $type)
+    public function cancel(Request $request, $slug, $type)
     {
         $user = Auth::user();
+        
+        // Récupérer l'entreprise par slug explicitement
+        $entreprise = Entreprise::where('slug', $slug)->first();
+        
+        if (!$entreprise) {
+            return back()->withErrors(['error' => 'Entreprise non trouvée.']);
+        }
         
         if (!$entreprise->peutEtreGereePar($user)) {
             return back()->withErrors(['error' => 'Accès refusé.']);
         }
 
-        $abonnement = $entreprise->abonnements()->where('type', $type)->first();
-
-        if (!$abonnement) {
-            return back()->withErrors(['error' => 'Abonnement introuvable.']);
+        if (!$user->stripe_id) {
+            return back()->withErrors(['error' => 'Aucun compte Stripe associé.']);
         }
 
-        // Si c'est un abonnement Stripe, l'annuler via Stripe
-        if ($abonnement->stripe_id && !$abonnement->est_manuel) {
-            $subscriptionName = 'entreprise_' . $type . '_' . $entreprise->id;
-            $subscription = $user->subscription($subscriptionName);
-            
-            if ($subscription) {
-                $subscription->cancel();
-            }
+        try {
+            // Créer une session de portail client Stripe
+            $session = BillingPortalSession::create([
+                'customer' => $user->stripe_id,
+                'return_url' => route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']),
+            ], [
+                'api_key' => config('services.stripe.secret'),
+            ]);
+
+            // Rediriger vers le portail client Stripe
+            return redirect($session->url);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création de la session du portail client Stripe: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe. Veuillez réessayer plus tard.']);
         }
-
-        // Marquer l'abonnement comme terminé
-        $abonnement->update([
-            'ends_at' => now(),
-        ]);
-
-        return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])
-            ->with('success', 'Votre abonnement a été annulé. Il restera actif jusqu\'à la fin de la période payée.');
     }
 }

@@ -42,17 +42,103 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Date de fin de l'abonnement *
+                                Type d'abonnement *
+                            </label>
+                            <select 
+                                name="type" 
+                                required
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                                <option value="">Sélectionner...</option>
+                                <option value="site_web">Site Web Vitrine</option>
+                                <option value="multi_personnes">Gestion Multi-Personnes</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Type de renouvellement *
+                                </label>
+                                <select 
+                                    name="type_renouvellement" 
+                                    required
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                    <option value="">Sélectionner...</option>
+                                    <option value="mensuel">Mensuel</option>
+                                    <option value="annuel">Annuel</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Jour de renouvellement *
+                                </label>
+                                <input 
+                                    type="number" 
+                                    name="jour_renouvellement" 
+                                    required
+                                    min="1"
+                                    max="31"
+                                    value="{{ date('d') }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Jour du mois où la facture sera générée (1-31).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Date de début *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    name="date_debut" 
+                                    required
+                                    value="{{ date('Y-m-d') }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Date de début de l'abonnement (première facture générée à cette date).
+                                </p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Date de fin *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    name="date_fin" 
+                                    required
+                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    L'abonnement sera actif jusqu'à cette date incluse.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Montant de l'abonnement (€) *
                             </label>
                             <input 
-                                type="date" 
-                                name="date_fin" 
+                                type="number" 
+                                name="montant" 
+                                step="0.01"
+                                min="0.01"
                                 required
-                                min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                placeholder="2.00"
                                 class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             >
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                L'abonnement sera actif jusqu'à cette date incluse.
+                                Montant qui sera facturé à chaque renouvellement.
                             </p>
                         </div>
 

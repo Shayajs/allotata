@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Paramètres - Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -741,15 +742,15 @@
                                                                         </a>
                                                                     </p>
                                                                 </div>
-                                                                <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                <button onclick="openAbonnementModal('{{ $entreprise->slug }}', '{{ $entreprise->nom }}')" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
                                                                     Gérer l'abonnement
-                                                                </a>
+                                                                </button>
                                                             @else
                                                                 <div class="flex items-center gap-3">
                                                                     <span class="text-lg font-bold text-green-600 dark:text-green-400">2€/mois</span>
-                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                    <button onclick="openAbonnementModal('{{ $entreprise->slug }}', '{{ $entreprise->nom }}')" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
                                                                         S'abonner
-                                                                    </a>
+                                                                    </button>
                                                                 </div>
                                                             @endif
                                                         </div>
@@ -774,19 +775,19 @@
                                                             </p>
                                                             @if($aGestionMultiPersonnes)
                                                                 <div class="flex items-center gap-3">
-                                                                    <a href="{{ route('entreprise.membres.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                                                    <a href="{{ route('entreprise.membres.index', $entreprise->slug) }}" class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                                                                         Gérer les membres
                                                                     </a>
-                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                    <button onclick="openAbonnementModal('{{ $entreprise->slug }}', '{{ $entreprise->nom }}')" class="inline-block px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
                                                                         Gérer l'abonnement
-                                                                    </a>
+                                                                    </button>
                                                                 </div>
                                                             @else
                                                                 <div class="flex items-center gap-3">
                                                                     <span class="text-lg font-bold text-green-600 dark:text-green-400">20€/mois</span>
-                                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->id) }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                    <button onclick="openAbonnementModal('{{ $entreprise->slug }}', '{{ $entreprise->nom }}')" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
                                                                         S'abonner
-                                                                    </a>
+                                                                    </button>
                                                                 </div>
                                                             @endif
                                                         </div>
@@ -975,7 +976,27 @@
                                         Abonnement Premium
                                     </h3>
                                     <div class="flex items-baseline justify-center gap-2 mb-4">
-                                        <span class="text-5xl font-bold text-green-600 dark:text-green-400">15€</span>
+                                        @php
+                                            // Récupérer le prix actuel depuis Stripe
+                                            $currentPriceAmount = null;
+                                            try {
+                                                $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
+                                                $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
+                                                
+                                                if ($priceId) {
+                                                    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                                                    $price = \Stripe\Price::retrieve($priceId);
+                                                    $currentPriceAmount = $price->unit_amount / 100;
+                                                }
+                                            } catch (\Exception $e) {
+                                                // En cas d'erreur, on n'affiche rien
+                                            }
+                                        @endphp
+                                        @if($currentPriceAmount)
+                                            <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ number_format($currentPriceAmount, 2, ',', ' ') }}€</span>
+                                        @else
+                                            <span class="text-5xl font-bold text-green-600 dark:text-green-400">-</span>
+                                        @endif
                                         <span class="text-xl text-slate-600 dark:text-slate-400">/mois</span>
                                     </div>
                                     <p class="text-slate-600 dark:text-slate-400">
@@ -1010,19 +1031,23 @@
                                                         @endif
                                                     </div>
                                                     @if($stripeSubscription)
-                                                        <div>
-                                                            <p class="text-slate-600 dark:text-slate-400 mb-1">Prochain paiement</p>
-                                                            <p class="font-semibold text-slate-900 dark:text-white">
-                                                                {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end)->format('d/m/Y') }}
-                                                            </p>
-                                                        </div>
-                                                        <div>
-                                                            <p class="text-slate-600 dark:text-slate-400 mb-1">Période actuelle</p>
-                                                            <p class="font-semibold text-slate-900 dark:text-white">
-                                                                Du {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_start)->format('d/m/Y') }}
-                                                                au {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end)->format('d/m/Y') }}
-                                                            </p>
-                                                        </div>
+                                                        @if(isset($stripeSubscription->current_period_end))
+                                                            <div>
+                                                                <p class="text-slate-600 dark:text-slate-400 mb-1">Prochain paiement</p>
+                                                                <p class="font-semibold text-slate-900 dark:text-white">
+                                                                    {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end)->format('d/m/Y') }}
+                                                                </p>
+                                                            </div>
+                                                        @endif
+                                                        @if(isset($stripeSubscription->current_period_start) && isset($stripeSubscription->current_period_end))
+                                                            <div>
+                                                                <p class="text-slate-600 dark:text-slate-400 mb-1">Période actuelle</p>
+                                                                <p class="font-semibold text-slate-900 dark:text-white">
+                                                                    Du {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_start)->format('d/m/Y') }}
+                                                                    au {{ \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end)->format('d/m/Y') }}
+                                                                </p>
+                                                            </div>
+                                                        @endif
                                                     @endif
                                                 </div>
                                                 
@@ -1035,11 +1060,14 @@
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <form action="{{ route('subscription.cancel') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler votre abonnement ?');">
+                                                        <form action="{{ route('subscription.cancel') }}" method="POST">
                                                             @csrf
                                                             <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
-                                                                Annuler l'abonnement
+                                                                Gérer l'abonnement sur Stripe
                                                             </button>
+                                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                                                Vous serez redirigé vers le portail Stripe pour gérer votre abonnement.
+                                                            </p>
                                                         </form>
                                                     @endif
                                                 </div>
@@ -1080,7 +1108,11 @@
                                                     <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
                                                         <div>
                                                             <p class="font-semibold text-slate-900 dark:text-white">
-                                                                Facture du {{ \Carbon\Carbon::createFromTimestamp($invoice->created)->format('d/m/Y') }}
+                                                                @if(isset($invoice->created))
+                                                                    Facture du {{ \Carbon\Carbon::createFromTimestamp($invoice->created)->format('d/m/Y') }}
+                                                                @else
+                                                                    Facture
+                                                                @endif
                                                             </p>
                                                             <p class="text-sm text-slate-600 dark:text-slate-400">
                                                                 {{ number_format($invoice->amount_paid / 100, 2, ',', ' ') }} €
@@ -1127,7 +1159,11 @@
                                             <form action="{{ route('subscription.checkout') }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                                                    Souscrire à l'abonnement (15€/mois)
+                                                    @if($currentPriceAmount)
+                                                        Souscrire à l'abonnement ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
+                                                    @else
+                                                        Souscrire à l'abonnement
+                                                    @endif
                                                 </button>
                                             </form>
                                         @endif
@@ -1145,57 +1181,83 @@
                                             @php
                                                 $abonnementSiteWeb = $entreprise->abonnementSiteWeb();
                                                 $abonnementMultiPersonnes = $entreprise->abonnementMultiPersonnes();
+                                                $aSiteWebActif = $entreprise->aSiteWebActif();
+                                                $aGestionMultiPersonnes = $entreprise->aGestionMultiPersonnes();
                                             @endphp
                                             
-                                            <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
                                                 <div class="flex items-start justify-between mb-4">
                                                     <div>
                                                         <h4 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $entreprise->nom }}</h4>
                                                         <p class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->type_activite }}</p>
                                                     </div>
-                                                    <a href="{{ route('entreprise.subscriptions.index', $entreprise->slug) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
-                                                        Gérer
+                                                    <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                        Voir détails
                                                     </a>
                                                 </div>
 
-                                                <div class="space-y-3">
-                                                    <!-- Site Web -->
-                                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                                        <div class="flex items-center gap-3">
-                                                            <span class="text-lg">🌐</span>
-                                                            <div>
-                                                                <p class="font-medium text-slate-900 dark:text-white">Site Web Vitrine</p>
-                                                                <p class="text-xs text-slate-600 dark:text-slate-400">2€/mois</p>
-                                                            </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <!-- Site Web Vitrine -->
+                                                    <div class="p-4 border border-slate-200 dark:border-slate-600 rounded-lg {{ $aSiteWebActif ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <h5 class="font-semibold text-slate-900 dark:text-white">🌐 Site Web Vitrine</h5>
+                                                            @if($aSiteWebActif)
+                                                                <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Actif</span>
+                                                            @endif
                                                         </div>
-                                                        @if($abonnementSiteWeb && $abonnementSiteWeb->estActif())
-                                                            <span class="px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
-                                                                Actif
-                                                            </span>
+                                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">2€/mois</p>
+                                                        
+                                                        @if($aSiteWebActif)
+                                                            @if($abonnementSiteWeb && !$abonnementSiteWeb->est_manuel)
+                                                                <form action="{{ route('entreprise.subscriptions.cancel', [$entreprise->slug, 'site_web']) }}" method="POST">
+                                                                    @csrf
+                                                                    <button type="submit" class="w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                        Gérer sur Stripe
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <p class="text-xs text-slate-500 dark:text-slate-400">Abonnement manuel</p>
+                                                            @endif
                                                         @else
-                                                            <span class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-400 rounded-full">
-                                                                Inactif
-                                                            </span>
+                                                            <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="type" value="site_web">
+                                                                <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                    S'abonner
+                                                                </button>
+                                                            </form>
                                                         @endif
                                                     </div>
 
-                                                    <!-- Multi-Personnes -->
-                                                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                                        <div class="flex items-center gap-3">
-                                                            <span class="text-lg">👥</span>
-                                                            <div>
-                                                                <p class="font-medium text-slate-900 dark:text-white">Gestion Multi-Personnes</p>
-                                                                <p class="text-xs text-slate-600 dark:text-slate-400">20€/mois</p>
-                                                            </div>
+                                                    <!-- Gestion Multi-Personnes -->
+                                                    <div class="p-4 border border-slate-200 dark:border-slate-600 rounded-lg {{ $aGestionMultiPersonnes ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <h5 class="font-semibold text-slate-900 dark:text-white">👥 Gestion Multi-Personnes</h5>
+                                                            @if($aGestionMultiPersonnes)
+                                                                <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Actif</span>
+                                                            @endif
                                                         </div>
-                                                        @if($abonnementMultiPersonnes && $abonnementMultiPersonnes->estActif())
-                                                            <span class="px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
-                                                                Actif
-                                                            </span>
+                                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">20€/mois</p>
+                                                        
+                                                        @if($aGestionMultiPersonnes)
+                                                            @if($abonnementMultiPersonnes && !$abonnementMultiPersonnes->est_manuel)
+                                                                <form action="{{ route('entreprise.subscriptions.cancel', [$entreprise->slug, 'multi_personnes']) }}" method="POST">
+                                                                    @csrf
+                                                                    <button type="submit" class="w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                                                                        Gérer sur Stripe
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <p class="text-xs text-slate-500 dark:text-slate-400">Abonnement manuel</p>
+                                                            @endif
                                                         @else
-                                                            <span class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-400 rounded-full">
-                                                                Inactif
-                                                            </span>
+                                                            <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="type" value="multi_personnes">
+                                                                <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
+                                                                    S'abonner
+                                                                </button>
+                                                            </form>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -1486,6 +1548,188 @@
                     });
                 });
             @endforeach
+        </script>
+
+        <!-- Modale de gestion d'abonnement entreprise -->
+        <div id="abonnement-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto p-4">
+            <div class="min-h-screen flex items-center justify-center py-8">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                        <h3 id="abonnement-modal-title" class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des abonnements</h3>
+                        <button onclick="closeAbonnementModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
+                            <svg class="w-6 h-6 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="abonnement-modal-content" class="flex-1 overflow-y-auto p-6">
+                        <div class="flex items-center justify-center py-12">
+                            <div class="text-center">
+                                <svg class="animate-spin h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <p class="text-slate-600 dark:text-slate-400">Chargement...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function openAbonnementModal(slug, nomEntreprise) {
+                const modal = document.getElementById('abonnement-modal');
+                const modalTitle = document.getElementById('abonnement-modal-title');
+                const modalContent = document.getElementById('abonnement-modal-content');
+                
+                modalTitle.textContent = `Abonnements - ${nomEntreprise}`;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // Afficher le loader
+                modalContent.innerHTML = `
+                    <div class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <svg class="animate-spin h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-slate-600 dark:text-slate-400">Chargement...</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Charger le contenu via AJAX
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                fetch(`/m/${slug}/abonnements/modal`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    credentials: 'same-origin',
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 403) {
+                            throw new Error('Vous n\'avez pas accès à cette entreprise.');
+                        } else if (response.status === 401) {
+                            throw new Error('Vous devez être connecté pour accéder à cette fonctionnalité.');
+                        } else {
+                            throw new Error(`Erreur ${response.status} lors du chargement`);
+                        }
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    modalContent.innerHTML = html;
+                    initModalForms(slug);
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    modalContent.innerHTML = `
+                        <div class="flex items-center justify-center py-12">
+                            <div class="text-center">
+                                <svg class="w-12 h-12 text-red-600 dark:text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-red-600 dark:text-red-400 mb-2 font-semibold">Erreur</p>
+                                <p class="text-slate-600 dark:text-slate-400 mb-4">${error.message || 'Erreur lors du chargement'}</p>
+                                <button onclick="closeAbonnementModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
+                                    Fermer
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            function initModalForms(slug) {
+                const modalContent = document.getElementById('abonnement-modal-content');
+                const forms = modalContent.querySelectorAll('form');
+                
+                forms.forEach(form => {
+                    // Si c'est un formulaire de checkout Stripe, laisser le comportement par défaut (redirection)
+                    if (form.action.includes('checkout')) {
+                        return;
+                    }
+                    
+                    // Pour les formulaires d'annulation, gérer via AJAX puis recharger le contenu
+                    if (form.action.includes('cancel')) {
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            if (confirm('Êtes-vous sûr de vouloir annuler cet abonnement ?')) {
+                                fetch(form.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || form.querySelector('input[name="_token"]')?.value,
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    body: new FormData(form),
+                                })
+                                .then(response => {
+                                    if (response.redirected) {
+                                        // Si redirection, recharger la page complète
+                                        window.location.reload();
+                                    } else {
+                                        // Recharger le contenu de la modale
+                                        return fetch(`/m/${slug}/abonnements/modal`, {
+                                            method: 'GET',
+                                            headers: {
+                                                'X-Requested-With': 'XMLHttpRequest',
+                                                'Accept': 'text/html',
+                                            },
+                                        });
+                                    }
+                                })
+                                .then(response => {
+                                    if (response && response.ok) {
+                                        return response.text();
+                                    }
+                                })
+                                .then(html => {
+                                    if (html) {
+                                        modalContent.innerHTML = html;
+                                        // Réinitialiser les gestionnaires d'événements pour les nouveaux formulaires
+                                        initModalForms(slug);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Erreur:', error);
+                                    alert('Une erreur est survenue. La page va être rechargée.');
+                                    window.location.reload();
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            
+            function closeAbonnementModal() {
+                const modal = document.getElementById('abonnement-modal');
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+            
+            // Fermer la modale en cliquant sur le fond
+            document.getElementById('abonnement-modal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAbonnementModal();
+                }
+            });
+            
+            // Fermer avec Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('abonnement-modal');
+                    if (!modal.classList.contains('hidden')) {
+                        closeAbonnementModal();
+                    }
+                }
+            });
         </script>
     </body>
 </html>

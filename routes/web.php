@@ -66,7 +66,7 @@ Route::get('/test-image', function() {
 // Webhook Stripe (doit être en dehors du middleware auth et sans CSRF)
 Route::post(
     '/stripe/webhook',
-    '\Laravel\Cashier\Http\Controllers\WebhookController@handleWebhook'
+    [\App\Http\Controllers\StripeWebhookController::class, 'handleWebhook']
 )->name('cashier.webhook');
 
 // ⚠️ PAGE TEMPORAIRE - ADMINISTRATION (À SUPPRIMER EN PRODUCTION)
@@ -199,6 +199,7 @@ Route::middleware('auth')->group(function () {
     
     // Abonnements d'entreprise
     Route::get('/m/{slug}/abonnements', [EntrepriseSubscriptionController::class, 'index'])->name('entreprise.subscriptions.index');
+    Route::get('/m/{slug}/abonnements/modal', [EntrepriseSubscriptionController::class, 'modal'])->name('entreprise.subscriptions.modal');
     Route::post('/m/{slug}/abonnements/checkout', [EntrepriseSubscriptionController::class, 'checkout'])->name('entreprise.subscriptions.checkout');
     Route::get('/m/{slug}/abonnements/success/{type}', [EntrepriseSubscriptionController::class, 'success'])->name('entreprise.subscriptions.success');
     Route::post('/m/{slug}/abonnements/{type}/cancel', [EntrepriseSubscriptionController::class, 'cancel'])->name('entreprise.subscriptions.cancel');
@@ -311,6 +312,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/users/{user}/subscription/manual', [AdminController::class, 'toggleManualSubscription'])->name('users.subscription.toggle-manual');
     Route::post('/users/{user}/subscription/cancel-stripe', [AdminController::class, 'cancelStripeSubscription'])->name('users.subscription.cancel-stripe');
     
+    // Gestion des abonnements entreprises
+    Route::get('/entreprises/{entreprise}/subscription', [AdminController::class, 'showEntrepriseSubscription'])->name('entreprises.subscription.show');
+    Route::post('/entreprises/{entreprise}/activate-subscription', [AdminController::class, 'activateEntrepriseSubscription'])->name('entreprises.activate-subscription');
+    
     // Gestion des contacts
     Route::get('/contacts', [ContactController::class, 'index'])->name('contacts.index');
     Route::get('/contacts/{contact}', [ContactController::class, 'show'])->name('contacts.show');
@@ -354,6 +359,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Codes promo
     Route::resource('promo-codes', \App\Http\Controllers\Admin\PromoCodeController::class);
+    
+    // Gestion des prix Stripe
+    Route::get('/stripe-prices', [AdminController::class, 'stripePrices'])->name('stripe-prices.index');
+    Route::post('/stripe-prices/create', [AdminController::class, 'createStripePrice'])->name('stripe-prices.create');
+    Route::post('/stripe-prices/{type}/update', [AdminController::class, 'updateStripePrice'])->name('stripe-prices.update');
+    Route::post('/stripe-prices/{type}/create-missing', [AdminController::class, 'createMissingPrice'])->name('stripe-prices.create-missing');
+    
+    // Gestion des prix personnalisés
+    Route::get('/custom-prices', [AdminController::class, 'customPrices'])->name('custom-prices.index');
+    Route::post('/custom-prices/create', [AdminController::class, 'createCustomPrice'])->name('custom-prices.create');
+    Route::post('/custom-prices/{customPrice}/toggle', [AdminController::class, 'toggleCustomPrice'])->name('custom-prices.toggle');
+    Route::delete('/custom-prices/{customPrice}', [AdminController::class, 'deleteCustomPrice'])->name('custom-prices.delete');
+    
+    // Gestion des abonnements
+    Route::get('/subscriptions', [AdminController::class, 'subscriptions'])->name('subscriptions.index');
+    Route::post('/subscriptions/user/{subscription}/cancel', [AdminController::class, 'cancelUserSubscription'])->name('subscriptions.user.cancel');
+    Route::post('/subscriptions/entreprise/{subscription}/cancel', [AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
 });
 
 // Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)

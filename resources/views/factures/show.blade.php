@@ -18,7 +18,7 @@
                         Allo Tata
                     </a>
                     <div class="flex items-center gap-4">
-                        <a href="{{ isset($isGerant) && $isGerant ? route('factures.entreprise', $facture->entreprise->slug) : route('factures.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
+                        <a href="{{ isset($isGerant) && $isGerant && $facture->entreprise ? route('factures.entreprise', $facture->entreprise->slug) : route('factures.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
                             ← Retour
                         </a>
                     </div>
@@ -32,7 +32,7 @@
                 <!-- En-tête -->
                 <div class="flex items-start justify-between mb-8 pb-8 border-b border-slate-200 dark:border-slate-700">
                     <div class="flex items-start gap-4">
-                        @if($facture->entreprise->logo)
+                        @if($facture->entreprise && $facture->entreprise->logo)
                             <img 
                                 src="{{ asset('media/' . $facture->entreprise->logo) }}" 
                                 alt="Logo {{ $facture->entreprise->nom }}"
@@ -42,6 +42,9 @@
                         <div>
                             <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">FACTURE</h1>
                             <p class="text-sm text-slate-600 dark:text-slate-400">Numéro : <span class="font-semibold">{{ $facture->numero_facture }}</span></p>
+                            @if($facture->type_facture === 'abonnement_manuel')
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">💳 Facture d'abonnement</p>
+                            @endif
                         </div>
                     </div>
                     <div class="text-right">
@@ -59,17 +62,22 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">Facturé par</h3>
                         <div class="space-y-1">
-                            <p class="font-semibold text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</p>
-                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->type_activite }}</p>
-                            @if($facture->entreprise->siren)
-                                <p class="text-sm text-slate-600 dark:text-slate-400">SIREN : {{ $facture->entreprise->siren }}</p>
-                            @endif
-                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->email }}</p>
-                            @if($facture->entreprise->telephone)
-                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->telephone }}</p>
-                            @endif
-                            @if($facture->entreprise->ville)
-                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->ville }}</p>
+                            @if($facture->entreprise)
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->type_activite }}</p>
+                                @if($facture->entreprise->siren)
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">SIREN : {{ $facture->entreprise->siren }}</p>
+                                @endif
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->email }}</p>
+                                @if($facture->entreprise->telephone)
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->telephone }}</p>
+                                @endif
+                                @if($facture->entreprise->ville)
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->ville }}</p>
+                                @endif
+                            @else
+                                <p class="font-semibold text-slate-900 dark:text-white">Allo Tata</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Service d'abonnement</p>
                             @endif
                         </div>
                     </div>
@@ -82,8 +90,30 @@
                     </div>
                 </div>
 
-                <!-- Détails de la réservation (facture simple) -->
-                @if($facture->reservation && !$facture->estGroupee())
+                <!-- Détails de l'abonnement ou de la réservation -->
+                @if($facture->type_facture === 'abonnement_manuel')
+                    <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Détails de l'abonnement</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-slate-600 dark:text-slate-400">Type</p>
+                                <p class="font-medium text-slate-900 dark:text-white">
+                                    @if($facture->entrepriseSubscription)
+                                        {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
+                                    @else
+                                        Abonnement Premium
+                                    @endif
+                                </p>
+                            </div>
+                            @if($facture->notes)
+                                <div class="col-span-2">
+                                    <p class="text-slate-600 dark:text-slate-400">Période</p>
+                                    <p class="font-medium text-slate-900 dark:text-white">{{ $facture->notes }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @elseif($facture->reservation && !$facture->estGroupee())
                     <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Détails de la réservation</h3>
                         <div class="grid grid-cols-2 gap-4 text-sm">

@@ -110,7 +110,7 @@
                                         @if($subscription && $subscription->valid() && !$subscription->onGracePeriod())
                                             <p class="text-xs text-green-700 dark:text-green-500">
                                                 Stripe (actif)
-                                                @if($subscription->asStripeSubscription())
+                                                @if($subscription->asStripeSubscription() && isset($subscription->asStripeSubscription()->current_period_end))
                                                     - Jusqu'au {{ \Carbon\Carbon::createFromTimestamp($subscription->asStripeSubscription()->current_period_end)->format('d/m/Y') }}
                                                 @endif
                                             </p>

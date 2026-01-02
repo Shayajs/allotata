@@ -31,8 +31,37 @@ class FactureController extends Controller
             }
         }
         
+        // Générer automatiquement les factures d'abonnement manuel si nécessaire
+        if ($user->abonnement_manuel && $user->abonnement_manuel_type_renouvellement && $user->abonnement_manuel_jour_renouvellement) {
+            try {
+                // Vérifier si une facture doit être générée aujourd'hui
+                $jourActuel = now()->day;
+                if ($jourActuel == $user->abonnement_manuel_jour_renouvellement) {
+                    // Vérifier si une facture n'existe pas déjà pour ce mois/année
+                    $periodeDebut = now()->copy()->startOfMonth();
+                    $periodeFin = now()->copy()->endOfMonth();
+                    
+                    if ($user->abonnement_manuel_type_renouvellement === 'annuel') {
+                        $periodeDebut = now()->copy()->startOfYear();
+                        $periodeFin = now()->copy()->endOfYear();
+                    }
+
+                    $factureExistante = Facture::where('user_id', $user->id)
+                        ->where('type_facture', 'abonnement_manuel')
+                        ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
+                        ->first();
+
+                    if (!$factureExistante) {
+                        Facture::generateFromManualSubscription($user);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de la génération automatique de facture d'abonnement manuel pour l'utilisateur #{$user->id}: " . $e->getMessage());
+            }
+        }
+
         $query = $user->factures()
-            ->with(['entreprise', 'reservation']);
+            ->with(['entreprise', 'reservation', 'entrepriseSubscription']);
 
         // Recherche
         if ($request->filled('search')) {

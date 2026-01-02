@@ -125,8 +125,26 @@
                                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->numero_facture }}</div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</div>
-                                            <div class="text-sm text-slate-500 dark:text-slate-400">{{ $facture->entreprise->type_activite }}</div>
+                                            @if($facture->type_facture === 'abonnement_manuel')
+                                                <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                                    💳 Abonnement
+                                                    @if($facture->entrepriseSubscription)
+                                                        - {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Multi-Personnes' }}
+                                                    @else
+                                                        Premium
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                    {{ $facture->notes ?? 'Facture d\'abonnement' }}
+                                                </div>
+                                            @else
+                                                @if($facture->entreprise)
+                                                    <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</div>
+                                                    <div class="text-sm text-slate-500 dark:text-slate-400">{{ $facture->entreprise->type_activite }}</div>
+                                                @else
+                                                    <div class="text-sm text-slate-500 dark:text-slate-400">N/A</div>
+                                                @endif
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-slate-900 dark:text-white">{{ $facture->date_facture->format('d/m/Y') }}</div>

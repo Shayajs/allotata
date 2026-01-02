@@ -29,6 +29,10 @@ class User extends Authenticatable
         'abonnement_manuel',
         'abonnement_manuel_actif_jusqu',
         'abonnement_manuel_notes',
+        'abonnement_manuel_type_renouvellement',
+        'abonnement_manuel_jour_renouvellement',
+        'abonnement_manuel_date_debut',
+        'abonnement_manuel_montant',
         'notifications_erreurs_actives',
         'telephone',
         'bio',
@@ -64,6 +68,8 @@ class User extends Authenticatable
             'trial_ends_at' => 'datetime',
             'abonnement_manuel' => 'boolean',
             'abonnement_manuel_actif_jusqu' => 'date',
+            'abonnement_manuel_date_debut' => 'date',
+            'abonnement_manuel_montant' => 'decimal:2',
             'notifications_erreurs_actives' => 'boolean',
             'date_naissance' => 'date',
         ];
@@ -75,6 +81,14 @@ class User extends Authenticatable
     public function entreprises()
     {
         return $this->hasMany(Entreprise::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs prix personnalisés
+     */
+    public function customPrices()
+    {
+        return $this->hasMany(CustomPrice::class);
     }
 
     /**

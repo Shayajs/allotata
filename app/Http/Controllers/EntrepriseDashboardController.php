@@ -31,6 +31,20 @@ class EntrepriseDashboardController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
+        // VÉRIFICATION DIRECTE SUR STRIPE avant d'afficher le dashboard
+        // On synchronise toujours depuis Stripe pour être sûr que les données sont à jour
+        // Surtout important pour l'onglet abonnements
+        if ($user->stripe_id) {
+            try {
+                \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+                // Recharger l'entreprise pour avoir les dernières données
+                $entreprise->refresh();
+            } catch (\Exception $e) {
+                // En cas d'erreur, on continue quand même (ne pas bloquer l'affichage)
+                \Log::warning('Erreur lors de la synchronisation Stripe dans le dashboard entreprise: ' . $e->getMessage());
+            }
+        }
+
         // Charger les autres entreprises de l'utilisateur (pour le switch)
         $autresEntreprises = Entreprise::where('user_id', $user->id)
             ->where('id', '!=', $entreprise->id)

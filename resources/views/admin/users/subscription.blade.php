@@ -53,7 +53,7 @@
                             <div class="space-y-2">
                                 <p class="text-sm text-green-600 dark:text-green-400">
                                     ✓ Actif
-                                    @if($subscription->asStripeSubscription())
+                                    @if($subscription->asStripeSubscription() && isset($subscription->asStripeSubscription()->current_period_end))
                                         (jusqu'au {{ \Carbon\Carbon::createFromTimestamp($subscription->asStripeSubscription()->current_period_end)->format('d/m/Y') }})
                                     @endif
                                 </p>
@@ -81,6 +81,16 @@
                             <p class="text-sm text-green-600 dark:text-green-400">
                                 ✓ Actif jusqu'au {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}
                             </p>
+                            @if($user->abonnement_manuel_type_renouvellement)
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Renouvellement {{ $user->abonnement_manuel_type_renouvellement === 'mensuel' ? 'mensuel' : 'annuel' }} le {{ $user->abonnement_manuel_jour_renouvellement }} de chaque {{ $user->abonnement_manuel_type_renouvellement === 'mensuel' ? 'mois' : 'année' }}
+                                </p>
+                                @if($user->abonnement_manuel_montant)
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                                        Montant : {{ number_format($user->abonnement_manuel_montant, 2, ',', ' ') }}€
+                                    </p>
+                                @endif
+                            @endif
                             @if($user->abonnement_manuel_notes)
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                     Note : {{ $user->abonnement_manuel_notes }}
@@ -147,20 +157,92 @@
                     @csrf
                     <input type="hidden" name="activer" value="1">
                     <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Type de renouvellement *
+                                </label>
+                                <select 
+                                    name="type_renouvellement" 
+                                    required
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                    <option value="">Sélectionner...</option>
+                                    <option value="mensuel" {{ $user->abonnement_manuel_type_renouvellement === 'mensuel' ? 'selected' : '' }}>Mensuel</option>
+                                    <option value="annuel" {{ $user->abonnement_manuel_type_renouvellement === 'annuel' ? 'selected' : '' }}>Annuel</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Jour de renouvellement *
+                                </label>
+                                <input 
+                                    type="number" 
+                                    name="jour_renouvellement" 
+                                    required
+                                    min="1"
+                                    max="31"
+                                    value="{{ $user->abonnement_manuel_jour_renouvellement ?? date('d') }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Jour du mois où la facture sera générée (1-31).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Date de début *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    name="date_debut" 
+                                    required
+                                    value="{{ $user->abonnement_manuel_date_debut ? $user->abonnement_manuel_date_debut->format('Y-m-d') : date('Y-m-d') }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Date de début de l'abonnement (première facture générée à cette date).
+                                </p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Date de fin *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    name="date_fin" 
+                                    required
+                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                    value="{{ $user->abonnement_manuel_actif_jusqu ? $user->abonnement_manuel_actif_jusqu->format('Y-m-d') : '' }}"
+                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    L'abonnement sera actif jusqu'à cette date incluse.
+                                </p>
+                            </div>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Date de fin de l'abonnement *
+                                Montant de l'abonnement (€) *
                             </label>
                             <input 
-                                type="date" 
-                                name="date_fin" 
+                                type="number" 
+                                name="montant" 
+                                step="0.01"
+                                min="0.01"
                                 required
-                                min="{{ date('Y-m-d', strtotime('+1 day')) }}"
-                                value="{{ $user->abonnement_manuel_actif_jusqu ? $user->abonnement_manuel_actif_jusqu->format('Y-m-d') : '' }}"
+                                value="{{ $user->abonnement_manuel_montant ?? '' }}"
+                                placeholder="15.00"
                                 class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             >
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                L'abonnement sera actif jusqu'à cette date incluse.
+                                Montant qui sera facturé à chaque renouvellement.
                             </p>
                         </div>
 

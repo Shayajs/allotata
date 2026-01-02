@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Subscription;
+use Stripe\BillingPortal\Session as BillingPortalSession;
+use Stripe\Stripe;
+use Stripe\Price;
 
 class SubscriptionController extends Controller
 {
@@ -21,11 +25,38 @@ class SubscriptionController extends Controller
                 ->with('error', 'Vous devez être gérant pour gérer un abonnement.');
         }
 
+        // VÉRIFICATION DIRECTE SUR STRIPE avant d'afficher la page
+        // On synchronise toujours depuis Stripe pour être sûr que les données sont à jour
+        \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+        
+        // Recharger l'utilisateur pour avoir les dernières données
+        $user->refresh();
+        
         $subscription = $user->subscription('default');
+
+        // Récupérer le prix actuel depuis Stripe pour l'affichage
+        $currentPrice = null;
+        $currentPriceAmount = null;
+        try {
+            // Vérifier s'il y a un prix personnalisé
+            $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
+            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
+            
+            if ($priceId) {
+                Stripe::setApiKey(config('services.stripe.secret'));
+                $price = Price::retrieve($priceId);
+                $currentPrice = $price;
+                $currentPriceAmount = $price->unit_amount / 100; // Convertir de centimes en euros
+            }
+        } catch (\Exception $e) {
+            Log::warning('Impossible de récupérer le prix Stripe pour l\'affichage: ' . $e->getMessage());
+        }
 
         return view('subscription.index', [
             'user' => $user,
             'subscription' => $subscription,
+            'currentPrice' => $currentPrice,
+            'currentPriceAmount' => $currentPriceAmount,
         ]);
     }
 
@@ -56,13 +87,16 @@ class SubscriptionController extends Controller
             }
         }
 
-        // Récupérer l'ID du prix Stripe depuis la configuration
-        $priceId = config('services.stripe.price_id');
+        // Vérifier s'il y a un prix personnalisé pour cet utilisateur
+        $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
+        
+        // Utiliser le prix personnalisé s'il existe, sinon le prix par défaut
+        $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
         
         // Vérifier que le price_id est bien configuré
         if (empty($priceId)) {
             return back()->withErrors([
-                'error' => 'La configuration Stripe est incomplète. Veuillez contacter l\'administrateur. Le STRIPE_PRICE_ID doit être configuré dans le fichier .env'
+                'error' => 'Le prix Stripe pour l\'abonnement utilisateur n\'est pas encore configuré. Veuillez contacter l\'administrateur pour créer ce prix depuis la page de gestion des prix Stripe.'
             ]);
         }
         
@@ -120,66 +154,31 @@ class SubscriptionController extends Controller
     {
         $user = Auth::user();
         
-        // Attendre un peu pour que le webhook Stripe soit traité
-        // Si l'abonnement n'existe pas encore, on essaie de synchroniser
-        $subscription = $user->subscription('default');
+        // VÉRIFICATION DIRECTE SUR STRIPE (méthode de sécurité)
+        // On va directement interroger Stripe pour vérifier le statut de l'abonnement
+        // indépendamment des webhooks ou du Stripe CLI
         
-        // Si pas d'abonnement trouvé, on essaie de synchroniser depuis Stripe
-        if (!$subscription || !$subscription->valid()) {
-            // Attendre 2 secondes pour laisser le temps au webhook
-            sleep(2);
-            
-            // Recharger l'utilisateur depuis la base de données
-            $user->refresh();
-            
-            // Vérifier à nouveau
-            $subscription = $user->subscription('default');
-            
-            // Si toujours pas d'abonnement, on essaie de synchroniser manuellement
-            if (!$subscription || !$subscription->valid()) {
-                try {
-                    // Synchroniser les abonnements depuis Stripe
-                    if ($user->stripe_id) {
-                        // Récupérer les abonnements depuis Stripe
-                        $stripeCustomer = $user->asStripeCustomer();
-                        if ($stripeCustomer) {
-                            $stripeSubscriptions = \Stripe\Subscription::all([
-                                'customer' => $user->stripe_id,
-                                'status' => 'active',
-                                'limit' => 1,
-                            ], ['api_key' => config('services.stripe.secret')]);
-                            
-                            // Si on trouve un abonnement actif, on le synchronise
-                            if (!empty($stripeSubscriptions->data)) {
-                                $stripeSubscription = $stripeSubscriptions->data[0];
-                                
-                                // Créer ou mettre à jour l'abonnement dans la base de données
-                                $subscription = $user->subscriptions()->updateOrCreate(
-                                    [
-                                        'stripe_id' => $stripeSubscription->id,
-                                    ],
-                                    [
-                                        'name' => 'default',
-                                        'stripe_status' => $stripeSubscription->status,
-                                        'stripe_price' => $stripeSubscription->items->data[0]->price->id,
-                                        'quantity' => $stripeSubscription->items->data[0]->quantity ?? 1,
-                                        'trial_ends_at' => $stripeSubscription->trial_end ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->trial_end) : null,
-                                        'ends_at' => $stripeSubscription->cancel_at ? \Carbon\Carbon::createFromTimestamp($stripeSubscription->cancel_at) : null,
-                                    ]
-                                );
-                            }
-                        }
-                    }
-                    
-                    // Recharger à nouveau
-                    $user->refresh();
-                    $subscription = $user->subscription('default');
-                } catch (\Exception $e) {
-                    // En cas d'erreur, on continue quand même
-                    \Log::error('Erreur lors de la synchronisation Stripe: ' . $e->getMessage());
-                }
-            }
-        }
+        Log::info('Vérification directe Stripe après checkout', [
+            'user_id' => $user->id,
+            'stripe_id' => $user->stripe_id,
+        ]);
+
+        // Attendre un peu pour que Stripe traite le paiement
+        sleep(2);
+        
+        // Synchroniser TOUS les abonnements depuis Stripe (utilisateur + entreprises)
+        $syncResult = \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+        
+        Log::info('Résultat synchronisation Stripe', [
+            'user_id' => $user->id,
+            'sync_result' => $syncResult,
+        ]);
+
+        // Recharger l'utilisateur depuis la base de données
+        $user->refresh();
+        
+        // Vérifier l'abonnement utilisateur
+        $subscription = $user->subscription('default');
         
         // Désactiver l'abonnement manuel si un abonnement Stripe est actif
         if ($subscription && $subscription->valid()) {
@@ -193,7 +192,7 @@ class SubscriptionController extends Controller
                 ->with('success', 'Votre abonnement a été activé avec succès !');
         }
         
-        // Si toujours pas d'abonnement, afficher un message d'attente
+        // Si toujours pas d'abonnement après synchronisation, afficher un message d'attente
         return view('subscription.success', [
             'subscription' => null,
             'pending' => true,
@@ -201,20 +200,33 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Annuler l'abonnement
+     * Rediriger vers le portail client Stripe pour gérer l'abonnement
+     * Le portail client Stripe permet de gérer l'annulation, la reprise, 
+     * la mise à jour de la méthode de paiement, etc.
      */
     public function cancel()
     {
         $user = Auth::user();
-        $subscription = $user->subscription('default');
-
-        if ($subscription) {
-            $subscription->cancel();
-            return redirect()->route('subscription.index')
-                ->with('success', 'Votre abonnement a été annulé. Il restera actif jusqu\'à la fin de la période payée.');
+        
+        if (!$user->stripe_id) {
+            return back()->withErrors(['error' => 'Aucun compte Stripe associé.']);
         }
 
-        return back()->withErrors(['error' => 'Aucun abonnement actif trouvé.']);
+        try {
+            // Créer une session de portail client Stripe
+            $session = BillingPortalSession::create([
+                'customer' => $user->stripe_id,
+                'return_url' => route('subscription.index'),
+            ], [
+                'api_key' => config('services.stripe.secret'),
+            ]);
+
+            // Rediriger vers le portail client Stripe
+            return redirect($session->url);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création de la session du portail client Stripe: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe. Veuillez réessayer plus tard.']);
+        }
     }
 
     /**
