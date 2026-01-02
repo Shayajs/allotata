@@ -56,26 +56,201 @@
                             Rechercher
                         </button>
                     </div>
+                    
+                    <!-- Bouton Plus de filtres -->
+                    <div class="mt-3 flex items-center gap-4">
+                        <button 
+                            type="button" 
+                            onclick="toggleAdvancedFilters()"
+                            class="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium flex items-center gap-1"
+                        >
+                            <svg id="filter-icon-open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                            <span id="filter-toggle-text">Plus de filtres</span>
+                        </button>
+                        
+                        @if(request()->hasAny(['ville_filter', 'rayon']))
+                            <a href="{{ route('search', ['q' => $query]) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
+                                ✕ Réinitialiser les filtres
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Filtres avancés (masqués par défaut) -->
+                    <div id="advanced-filters" class="hidden mt-4 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Recherche par ville -->
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    📍 Ville
+                                </label>
+                                <input 
+                                    type="text" 
+                                    name="ville_filter" 
+                                    id="ville-filter-input"
+                                    value="{{ request('ville_filter') }}"
+                                    placeholder="Rechercher une ville..."
+                                    autocomplete="off"
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                <input type="hidden" name="ville_lat" id="ville-lat" value="{{ request('ville_lat') }}">
+                                <input type="hidden" name="ville_lng" id="ville-lng" value="{{ request('ville_lng') }}">
+                                <div id="ville-filter-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto"></div>
+                            </div>
+
+                            <!-- Rayon de recherche -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    🎯 Rayon de recherche
+                                </label>
+                                <select 
+                                    name="rayon" 
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                    <option value="">Toute la France</option>
+                                    <option value="5" {{ request('rayon') == '5' ? 'selected' : '' }}>5 km</option>
+                                    <option value="10" {{ request('rayon') == '10' ? 'selected' : '' }}>10 km</option>
+                                    <option value="25" {{ request('rayon') == '25' ? 'selected' : '' }}>25 km</option>
+                                    <option value="50" {{ request('rayon') == '50' ? 'selected' : '' }}>50 km</option>
+                                    <option value="100" {{ request('rayon') == '100' ? 'selected' : '' }}>100 km</option>
+                                </select>
+                            </div>
+
+                            <!-- Type d'activité (si disponible) -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    🏢 Type d'activité
+                                </label>
+                                <select 
+                                    name="type_activite" 
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                    <option value="">Tous les types</option>
+                                    @php
+                                        $typesActivite = \App\Models\Entreprise::where('est_verifiee', true)
+                                            ->whereNotNull('type_activite')
+                                            ->distinct()
+                                            ->pluck('type_activite')
+                                            ->sort();
+                                    @endphp
+                                    @foreach($typesActivite as $type)
+                                        <option value="{{ $type }}" {{ request('type_activite') == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex justify-end">
+                            <button 
+                                type="submit"
+                                class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all text-sm"
+                            >
+                                Appliquer les filtres
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Résultats en temps réel -->
                     <div id="autocomplete-results-results" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto">
                         <div id="autocomplete-list-results" class="p-2"></div>
                     </div>
                 </form>
+
+                <!-- Affichage des filtres actifs -->
+                @if(request()->hasAny(['ville_filter', 'rayon', 'type_activite']))
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">Filtres actifs :</span>
+                        @if(request('ville_filter'))
+                            <span class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1">
+                                📍 {{ request('ville_filter') }}
+                                @if(request('rayon'))
+                                    ({{ request('rayon') }} km)
+                                @endif
+                            </span>
+                        @endif
+                        @if(request('type_activite'))
+                            <span class="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">
+                                🏢 {{ request('type_activite') }}
+                            </span>
+                        @endif
+                    </div>
+                @endif
             </div>
 
-            <!-- Résultats -->
-            <div>
-                @if(!empty($query))
-                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                        Résultats pour "{{ $query }}"
-                    </h2>
-                    <p class="text-slate-600 dark:text-slate-400 mb-6">
-                        {{ $count }} résultat(s) trouvé(s)
-                    </p>
-                @endif
-
                 @if($count > 0)
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {{-- Toggle Vue Carte / Liste --}}
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            @if(!empty($query))
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+                                    Résultats pour "{{ $query }}"
+                                </h2>
+                                <p class="text-slate-600 dark:text-slate-400">
+                                    {{ $count }} résultat(s) trouvé(s)
+                                </p>
+                            @else
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+                                    Entreprises trouvées
+                                </h2>
+                                <p class="text-slate-600 dark:text-slate-400">
+                                    {{ $count }} résultat(s)
+                                </p>
+                            @endif
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                            <button 
+                                onclick="toggleSearchView('list')" 
+                                id="view-list-btn"
+                                class="px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                            >
+                                <span class="hidden sm:inline">📋 Liste</span>
+                                <span class="sm:hidden">📋</span>
+                            </button>
+                            <button 
+                                onclick="toggleSearchView('map')" 
+                                id="view-map-btn"
+                                class="px-3 py-1.5 text-sm font-medium rounded-md transition-all text-slate-600 dark:text-slate-300"
+                            >
+                                <span class="hidden sm:inline">🗺️ Carte</span>
+                                <span class="sm:hidden">🗺️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Vue Carte --}}
+                    @php
+                        $entreprisesWithGeo = $results->filter(fn($e) => $e->latitude && $e->longitude);
+                    @endphp
+                    
+                    <div id="map-view" class="hidden mb-6">
+                        @if($entreprisesWithGeo->count() > 0)
+                            @include('components.map-standalone', [
+                                'entreprises' => $results,
+                                'zoom' => 6,
+                                'height' => '500px',
+                                'enableClustering' => true,
+                            ])
+                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 text-center">
+                                {{ $entreprisesWithGeo->count() }} entreprise(s) sur la carte
+                                @if($entreprisesWithGeo->count() < $count)
+                                    • {{ $count - $entreprisesWithGeo->count() }} sans localisation
+                                @endif
+                            </p>
+                        @else
+                            <div class="p-8 bg-slate-100 dark:bg-slate-800 rounded-xl text-center">
+                                <svg class="w-12 h-12 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                                <p class="text-slate-600 dark:text-slate-400">
+                                    Aucune entreprise avec localisation disponible
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Vue Liste --}}
+                    <div id="list-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($results as $entreprise)
                             <a href="{{ route('public.entreprise', $entreprise->slug) }}" class="block p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-green-500 dark:hover:border-green-500 hover:shadow-lg transition-all">
                                 <div class="flex items-start gap-4 mb-3">
@@ -253,6 +428,130 @@
                     }
                 });
             })();
+
+            // Toggle filtres avancés
+            function toggleAdvancedFilters() {
+                const filters = document.getElementById('advanced-filters');
+                const toggleText = document.getElementById('filter-toggle-text');
+                
+                if (filters.classList.contains('hidden')) {
+                    filters.classList.remove('hidden');
+                    toggleText.textContent = 'Moins de filtres';
+                } else {
+                    filters.classList.add('hidden');
+                    toggleText.textContent = 'Plus de filtres';
+                }
+            }
+            window.toggleAdvancedFilters = toggleAdvancedFilters;
+
+            // Autocomplete pour la ville
+            (function() {
+                const villeInput = document.getElementById('ville-filter-input');
+                const villeResults = document.getElementById('ville-filter-results');
+                const villeLat = document.getElementById('ville-lat');
+                const villeLng = document.getElementById('ville-lng');
+                let villeTimeout;
+
+                if (!villeInput) return;
+
+                villeInput.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    clearTimeout(villeTimeout);
+
+                    if (query.length < 3) {
+                        villeResults.classList.add('hidden');
+                        return;
+                    }
+
+                    villeTimeout = setTimeout(async () => {
+                        try {
+                            const response = await fetch(`/api/address/cities?q=${encodeURIComponent(query)}&limit=5`);
+                            const data = await response.json();
+
+                            if (data.success && data.results.length > 0) {
+                                villeResults.innerHTML = data.results.map(city => `
+                                    <div class="city-result p-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                                         data-city="${city.city}"
+                                         data-lat="${city.latitude}"
+                                         data-lng="${city.longitude}"
+                                         data-label="${city.label}">
+                                        <div class="font-medium text-slate-900 dark:text-white">${city.city}</div>
+                                        <div class="text-sm text-slate-500 dark:text-slate-400">${city.context || city.postcode}</div>
+                                    </div>
+                                `).join('');
+                                villeResults.classList.remove('hidden');
+
+                                // Event listeners
+                                villeResults.querySelectorAll('.city-result').forEach(el => {
+                                    el.addEventListener('click', function() {
+                                        villeInput.value = this.dataset.city;
+                                        villeLat.value = this.dataset.lat;
+                                        villeLng.value = this.dataset.lng;
+                                        villeResults.classList.add('hidden');
+                                    });
+                                });
+                            } else {
+                                villeResults.innerHTML = '<div class="p-3 text-slate-500 text-sm">Aucune ville trouvée</div>';
+                                villeResults.classList.remove('hidden');
+                            }
+                        } catch (error) {
+                            console.error('City autocomplete error:', error);
+                        }
+                    }, 300);
+                });
+
+                // Fermer quand on clique ailleurs
+                document.addEventListener('click', function(e) {
+                    if (!villeInput.contains(e.target) && !villeResults.contains(e.target)) {
+                        villeResults.classList.add('hidden');
+                    }
+                });
+            })();
+
+            // Ouvrir les filtres si des filtres sont déjà appliqués
+            @if(request()->hasAny(['ville_filter', 'rayon', 'type_activite']))
+                document.getElementById('advanced-filters').classList.remove('hidden');
+                document.getElementById('filter-toggle-text').textContent = 'Moins de filtres';
+            @endif
+
+            // Toggle Vue Liste / Carte
+            function toggleSearchView(view) {
+                const listView = document.getElementById('list-view');
+                const mapView = document.getElementById('map-view');
+                const listBtn = document.getElementById('view-list-btn');
+                const mapBtn = document.getElementById('view-map-btn');
+                
+                if (!listView || !mapView) return;
+                
+                if (view === 'map') {
+                    listView.classList.add('hidden');
+                    mapView.classList.remove('hidden');
+                    
+                    // Style des boutons
+                    mapBtn.classList.add('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                    mapBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+                    listBtn.classList.remove('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                    listBtn.classList.add('text-slate-600', 'dark:text-slate-300');
+                    
+                    // Forcer le redimensionnement de la carte
+                    setTimeout(() => {
+                        const mapContainer = mapView.querySelector('.allo-tata-map');
+                        if (mapContainer && mapContainer._alloMap) {
+                            mapContainer._alloMap.invalidateSize();
+                        }
+                    }, 100);
+                } else {
+                    listView.classList.remove('hidden');
+                    mapView.classList.add('hidden');
+                    
+                    // Style des boutons
+                    listBtn.classList.add('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                    listBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+                    mapBtn.classList.remove('bg-white', 'dark:bg-slate-600', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+                    mapBtn.classList.add('text-slate-600', 'dark:text-slate-300');
+                }
+            }
+            window.toggleSearchView = toggleSearchView;
         </script>
     </body>
 </html>

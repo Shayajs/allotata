@@ -96,6 +96,14 @@
                     </div>
                 </div>
 
+                <!-- Mention CGU / CGV -->
+                <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                    En créant un compte, vous acceptez nos 
+                    <a href="{{ route('legal.cgu') }}" target="_blank" class="text-green-600 dark:text-green-400 hover:underline">Conditions Générales d'Utilisation</a> 
+                    et nos 
+                    <a href="{{ route('legal.cgv') }}" target="_blank" class="text-green-600 dark:text-green-400 hover:underline">Conditions Générales de Vente</a>.
+                </p>
+
                 <div>
                     <button 
                         type="submit" 

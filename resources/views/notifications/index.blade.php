@@ -14,10 +14,13 @@
         <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                        Allo Tata
-                    </a>
                     <div class="flex items-center gap-4">
+                        @include('components.mobile-nav', ['navType' => 'dashboard'])
+                        <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                            Allo Tata
+                        </a>
+                    </div>
+                    <div class="hidden md:flex items-center gap-4">
                         <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
                             Retour au dashboard
                         </a>
@@ -27,9 +30,9 @@
         </nav>
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="mb-8 flex items-center justify-between">
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                         📬 Notifications
                     </h1>
                     <p class="text-slate-600 dark:text-slate-400">
@@ -43,7 +46,7 @@
                 @if($nombreNonLues > 0)
                     <form action="{{ route('notifications.marquer-toutes-lues') }}" method="POST">
                         @csrf
-                        <button type="submit" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition text-sm font-medium">
+                        <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition text-sm font-medium">
                             Tout marquer comme lu
                         </button>
                     </form>
@@ -58,14 +61,14 @@
 
             <!-- Filtres -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
-                <form method="GET" action="{{ route('notifications.index') }}" class="flex flex-wrap gap-4">
-                    <div>
+                <form method="GET" action="{{ route('notifications.index') }}" class="flex flex-col sm:flex-row flex-wrap gap-4">
+                    <div class="flex-1 min-w-[150px]">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Type
                         </label>
                         <select 
                             name="type" 
-                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         >
                             <option value="">Tous les types</option>
                             <option value="reservation" {{ request('type') === 'reservation' ? 'selected' : '' }}>Réservations</option>
@@ -74,31 +77,29 @@
                             <option value="systeme" {{ request('type') === 'systeme' ? 'selected' : '' }}>Système</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-[150px]">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Statut
                         </label>
                         <select 
                             name="statut" 
-                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         >
                             <option value="">Toutes</option>
                             <option value="non_lue" {{ request('statut') === 'non_lue' ? 'selected' : '' }}>Non lues</option>
                             <option value="lue" {{ request('statut') === 'lue' ? 'selected' : '' }}>Lues</option>
                         </select>
                     </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                    <div class="flex items-end gap-2">
+                        <button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                             🔍 Filtrer
                         </button>
-                    </div>
-                    @if(request()->hasAny(['type', 'statut']))
-                        <div class="flex items-end">
+                        @if(request()->hasAny(['type', 'statut']))
                             <a href="{{ route('notifications.index') }}" class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition text-sm">
-                                Réinitialiser
+                                ✕
                             </a>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </form>
             </div>
 
@@ -106,73 +107,72 @@
             @if($notifications->count() > 0)
                 <div class="space-y-3">
                     @foreach($notifications as $notification)
-                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:border-green-500 dark:hover:border-green-500 transition-all {{ !$notification->est_lue ? 'ring-2 ring-green-500/20' : '' }}">
-                            <div class="flex items-start gap-4">
-                                <div class="flex-shrink-0">
-                                    @if($notification->type === 'reservation')
-                                        <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                            <span class="text-2xl">📅</span>
-                                        </div>
-                                    @elseif($notification->type === 'paiement')
-                                        <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                            <span class="text-2xl">💳</span>
-                                        </div>
-                                    @elseif($notification->type === 'rappel')
-                                        <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                                            <span class="text-2xl">⏰</span>
-                                        </div>
-                                    @else
-                                        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                                            <span class="text-2xl">📢</span>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                                                    {{ $notification->titre }}
-                                                </h3>
-                                                @if(!$notification->est_lue)
-                                                    <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
-                                                        Nouveau
-                                                    </span>
-                                                @endif
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 hover:border-green-500 dark:hover:border-green-500 transition-all {{ !$notification->est_lue ? 'ring-2 ring-green-500/20' : '' }}">
+                            <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+                                <div class="flex items-start gap-4 flex-1">
+                                    <div class="flex-shrink-0">
+                                        @if($notification->type === 'reservation')
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <span class="text-xl sm:text-2xl">📅</span>
                                             </div>
-                                            <p class="text-slate-600 dark:text-slate-400 mb-2 whitespace-pre-line">
-                                                {{ $notification->message }}
-                                            </p>
-                                            <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                                                <span>{{ $notification->created_at->format('d/m/Y à H:i') }}</span>
-                                                @if($notification->est_lue)
-                                                    <span>Lu le {{ $notification->lue_at->format('d/m/Y à H:i') }}</span>
-                                                @endif
+                                        @elseif($notification->type === 'paiement')
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                                <span class="text-xl sm:text-2xl">💳</span>
                                             </div>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            @if($notification->lien)
-                                                <a href="{{ $notification->lien }}" class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 rounded-lg transition">
-                                                    Voir →
-                                                </a>
-                                            @endif
+                                        @elseif($notification->type === 'rappel')
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                                                <span class="text-xl sm:text-2xl">⏰</span>
+                                            </div>
+                                        @else
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                                <span class="text-xl sm:text-2xl">📢</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                                            <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
+                                                {{ $notification->titre }}
+                                            </h3>
                                             @if(!$notification->est_lue)
-                                                <form action="{{ route('notifications.marquer-lue', $notification->id) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    <button type="submit" class="px-3 py-1 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition">
-                                                        Marquer lu
-                                                    </button>
-                                                </form>
+                                                <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                                    Nouveau
+                                                </span>
                                             @endif
-                                            <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" onsubmit="return confirm('Supprimer cette notification ?');" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-400 rounded-lg transition">
-                                                    Supprimer
-                                                </button>
-                                            </form>
+                                        </div>
+                                        <p class="text-slate-600 dark:text-slate-400 mb-2 text-sm sm:text-base whitespace-pre-line">
+                                            {{ $notification->message }}
+                                        </p>
+                                        <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-500 dark:text-slate-400">
+                                            <span>{{ $notification->created_at->format('d/m/Y à H:i') }}</span>
+                                            @if($notification->est_lue)
+                                                <span class="hidden sm:inline">Lu le {{ $notification->lue_at->format('d/m/Y à H:i') }}</span>
+                                            @endif
                                         </div>
                                     </div>
+                                </div>
+                                <!-- Actions - empilées sur mobile -->
+                                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-700">
+                                    @if($notification->lien)
+                                        <a href="{{ $notification->lien }}" class="flex-1 sm:flex-none text-center px-3 py-2 text-sm bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 rounded-lg transition">
+                                            Voir →
+                                        </a>
+                                    @endif
+                                    @if(!$notification->est_lue)
+                                        <form action="{{ route('notifications.marquer-lue', $notification->id) }}" method="POST" class="flex-1 sm:flex-none">
+                                            @csrf
+                                            <button type="submit" class="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition">
+                                                ✓ Lu
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" onsubmit="return confirm('Supprimer cette notification ?');" class="flex-1 sm:flex-none">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-full px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-400 rounded-lg transition">
+                                            🗑️
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>

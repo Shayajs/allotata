@@ -698,6 +698,12 @@
                             @case('features')
                                 <x-site-web.blocks.features :block="$block" :entreprise="$entreprise" :editMode="true" />
                                 @break
+                            @case('map')
+                                <x-site-web.blocks.map :block="$block" :entreprise="$entreprise" :editMode="true" />
+                                @break
+                            @case('columns')
+                                <x-site-web.blocks.columns :block="$block" :entreprise="$entreprise" :editMode="true" />
+                                @break
                         @endswitch
                     </div>
                 @endforeach
@@ -813,6 +819,14 @@
                 <div class="block-item" data-block-type="iframe">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     <span>Iframe</span>
+                </div>
+                <div class="block-item" data-block-type="map">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Carte</span>
+                </div>
+                <div class="block-item" data-block-type="columns">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                    <span>Colonnes</span>
                 </div>
             </div>
         </div>
@@ -1318,6 +1332,145 @@
                     `;
                     break;
                     
+                case 'map':
+                    html = `
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Titre</label>
+                            <input type="text" value="${escapeHtml(c.title || 'Nous trouver')}" onchange="updateBlockContent('${block.id}', 'title', this.value)" class="sidebar-input">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Sous-titre</label>
+                            <input type="text" value="${escapeHtml(c.subtitle || '')}" onchange="updateBlockContent('${block.id}', 'subtitle', this.value)" class="sidebar-input" placeholder="Optionnel">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Hauteur de la carte</label>
+                            <select onchange="updateBlockSetting('${block.id}', 'height', this.value)" class="sidebar-select">
+                                <option value="300px" ${s.height === '300px' ? 'selected' : ''}>Petite (300px)</option>
+                                <option value="400px" ${s.height === '400px' || !s.height ? 'selected' : ''}>Moyenne (400px)</option>
+                                <option value="500px" ${s.height === '500px' ? 'selected' : ''}>Grande (500px)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" ${c.showAddress !== false ? 'checked' : ''} onchange="updateBlockContent('${block.id}', 'showAddress', this.checked)" class="rounded bg-slate-700 border-slate-600">
+                                <span class="text-sm">Afficher l'adresse</span>
+                            </label>
+                        </div>
+                        <div class="mt-4 p-3 bg-slate-700 rounded-lg">
+                            <p class="text-xs text-slate-400">💡 La carte affiche automatiquement votre localisation si vous avez configuré une adresse avec coordonnées GPS dans les paramètres de votre entreprise.</p>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'iframe':
+                    html = `
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Titre (optionnel)</label>
+                            <input type="text" value="${escapeHtml(c.title || '')}" onchange="updateBlockContent('${block.id}', 'title', this.value)" class="sidebar-input" placeholder="Ex: Notre vidéo de présentation">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Description (optionnelle)</label>
+                            <input type="text" value="${escapeHtml(c.description || '')}" onchange="updateBlockContent('${block.id}', 'description', this.value)" class="sidebar-input" placeholder="Ex: Découvrez notre équipe en vidéo">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">URL de l'intégration *</label>
+                            <input type="url" value="${escapeHtml(c.src || '')}" onchange="updateBlockContent('${block.id}', 'src', this.value)" class="sidebar-input" placeholder="https://...">
+                        </div>
+                        <div class="mb-4 p-3 bg-slate-700 rounded-lg">
+                            <p class="text-xs text-slate-300 font-medium mb-2">📋 Exemples d'intégrations compatibles :</p>
+                            <ul class="text-xs text-slate-400 space-y-1">
+                                <li>• <span class="text-red-400">YouTube</span> - Vidéos (embed)</li>
+                                <li>• <span class="text-blue-400">Google Maps</span> - Cartes (embed)</li>
+                                <li>• <span class="text-green-400">Spotify</span> - Playlists</li>
+                                <li>• <span class="text-cyan-400">Calendly</span> - Réservation</li>
+                                <li>• <span class="text-amber-400">Typeform</span> - Formulaires</li>
+                            </ul>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Hauteur</label>
+                            <select onchange="updateBlockSetting('${block.id}', 'height', this.value)" class="sidebar-select">
+                                <option value="300" ${s.height === '300' ? 'selected' : ''}>Petite (300px)</option>
+                                <option value="400" ${s.height === '400' || !s.height ? 'selected' : ''}>Moyenne (400px)</option>
+                                <option value="500" ${s.height === '500' ? 'selected' : ''}>Grande (500px)</option>
+                                <option value="600" ${s.height === '600' ? 'selected' : ''}>Très grande (600px)</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Style d'affichage</label>
+                            <select onchange="updateBlockSetting('${block.id}', 'style', this.value)" class="sidebar-select">
+                                <option value="card" ${s.style === 'card' || !s.style ? 'selected' : ''}>Carte avec badge</option>
+                                <option value="minimal" ${s.style === 'minimal' ? 'selected' : ''}>Minimal (sans badge)</option>
+                                <option value="full" ${s.style === 'full' ? 'selected' : ''}>Pleine largeur</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" ${s.rounded !== false ? 'checked' : ''} onchange="updateBlockSetting('${block.id}', 'rounded', this.checked)" class="rounded bg-slate-700 border-slate-600">
+                                <span class="text-sm">Coins arrondis</span>
+                            </label>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'columns':
+                    const leftC = c.left || {};
+                    const rightC = c.right || {};
+                    html = `
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Titre de la section (optionnel)</label>
+                            <input type="text" value="${escapeHtml(c.title || '')}" onchange="updateBlockContent('${block.id}', 'title', this.value)" class="sidebar-input" placeholder="Ex: Nos avantages">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Disposition</label>
+                            <select onchange="updateBlockSetting('${block.id}', 'layout', this.value)" class="sidebar-select">
+                                <option value="50-50" ${s.layout === '50-50' || !s.layout ? 'selected' : ''}>50% / 50%</option>
+                                <option value="60-40" ${s.layout === '60-40' ? 'selected' : ''}>60% / 40%</option>
+                                <option value="40-60" ${s.layout === '40-60' ? 'selected' : ''}>40% / 60%</option>
+                                <option value="70-30" ${s.layout === '70-30' ? 'selected' : ''}>70% / 30%</option>
+                                <option value="30-70" ${s.layout === '30-70' ? 'selected' : ''}>30% / 70%</option>
+                            </select>
+                        </div>
+                        
+                        <div class="border-t border-slate-600 pt-4 mt-4">
+                            <p class="text-sm font-medium mb-3 text-green-400">📄 Colonne gauche</p>
+                            <div class="mb-3">
+                                <input type="text" value="${escapeHtml(leftC.title || '')}" onchange="updateColumnsContent('${block.id}', 'left', 'title', this.value)" class="sidebar-input" placeholder="Titre gauche">
+                            </div>
+                            <div class="mb-3">
+                                <textarea onchange="updateColumnsContent('${block.id}', 'left', 'text', this.value)" class="sidebar-input" rows="3" placeholder="Texte gauche...">${escapeHtml(leftC.text || '')}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-600 pt-4 mt-4">
+                            <p class="text-sm font-medium mb-3 text-orange-400">📄 Colonne droite</p>
+                            <div class="mb-3">
+                                <input type="text" value="${escapeHtml(rightC.title || '')}" onchange="updateColumnsContent('${block.id}', 'right', 'title', this.value)" class="sidebar-input" placeholder="Titre droite">
+                            </div>
+                            <div class="mb-3">
+                                <textarea onchange="updateColumnsContent('${block.id}', 'right', 'text', this.value)" class="sidebar-input" rows="3" placeholder="Texte droite...">${escapeHtml(rightC.text || '')}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-600 pt-4 mt-4">
+                            <p class="text-sm font-medium mb-3">⚙️ Séparateur</p>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" ${s.separator !== false ? 'checked' : ''} onchange="updateBlockSetting('${block.id}', 'separator', this.checked)" class="rounded bg-slate-700 border-slate-600">
+                                    <span class="text-sm">Afficher le séparateur vertical</span>
+                                </label>
+                            </div>
+                            <div class="mt-3">
+                                <select onchange="updateBlockSetting('${block.id}', 'separatorStyle', this.value)" class="sidebar-select">
+                                    <option value="line" ${s.separatorStyle === 'line' || !s.separatorStyle ? 'selected' : ''}>Ligne fine</option>
+                                    <option value="dashed" ${s.separatorStyle === 'dashed' ? 'selected' : ''}>Pointillés</option>
+                                    <option value="gradient" ${s.separatorStyle === 'gradient' ? 'selected' : ''}>Gradient épais</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
                 default:
                     html = `<p class="text-sm text-slate-400">Modifiez ce bloc directement sur le site ou supprimez-le pour en ajouter un autre.</p>`;
             }
@@ -1465,17 +1618,19 @@
                 text: { html: '<p>Votre texte ici...</p>' },
                 image: { src: null, alt: 'Image', caption: '' },
                 gallery: { images: [], columns: 3 },
-                contact: { title: 'Contactez-nous', showEmail: true, showPhone: true, showAddress: true, showMap: false },
+                contact: { title: 'Contactez-nous', showEmail: true, showPhone: true, showAddress: true, showMap: true },
                 video: { url: '', type: 'youtube' },
                 services: { title: 'Nos Services', items: [] },
                 testimonials: { title: 'Ce que disent nos clients', items: [] },
                 cta: { title: 'Prêt à commencer ?', subtitle: 'Contactez-nous', buttonText: 'Contact', buttonLink: '#contact' },
                 divider: { style: 'line' },
-                iframe: { src: '', height: 400 },
+                iframe: { src: '', title: '', description: '' },
                 faq: { title: 'Questions fréquentes', items: [] },
                 team: { title: 'Notre équipe', members: [] },
                 stats: { items: [{ value: '100+', label: 'Clients' }] },
-                features: { title: 'Pourquoi nous choisir ?', items: [] }
+                features: { title: 'Pourquoi nous choisir ?', items: [] },
+                map: { title: 'Nous trouver', subtitle: '', showAddress: true },
+                columns: { title: '', left: { title: '', text: '' }, right: { title: '', text: '' } }
             };
             return defaults[type] || {};
         }
@@ -1486,7 +1641,10 @@
                 hero: { height: 'large', alignment: 'center' },
                 text: { alignment: 'center' },
                 cta: { style: 'gradient' },
-                gallery: { gap: 'medium', rounded: true }
+                gallery: { gap: 'medium', rounded: true },
+                map: { height: '400px' },
+                iframe: { height: '400', style: 'card', rounded: true },
+                columns: { layout: '50-50', separator: true, separatorStyle: 'line', gap: 'medium' }
             };
             return defaults[type] || {};
         }
@@ -1666,6 +1824,20 @@
                 refreshBlockVisual(blockId);
             }
         }
+        
+        // Mettre à jour le contenu d'une colonne (pour le bloc columns)
+        function updateColumnsContent(blockId, side, field, value) {
+            const block = editorState.content.blocks.find(b => b.id === blockId);
+            if (block) {
+                if (!block.content[side]) {
+                    block.content[side] = {};
+                }
+                block.content[side][field] = value;
+                scheduleAutoSave();
+                refreshBlockVisual(blockId);
+            }
+        }
+        window.updateColumnsContent = updateColumnsContent;
         
         // Mettre à jour une couleur du thème
         function updateThemeColor(key, value) {

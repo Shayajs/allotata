@@ -8,9 +8,12 @@
     $showEmail = $content['showEmail'] ?? true;
     $showPhone = $content['showPhone'] ?? true;
     $showAddress = $content['showAddress'] ?? true;
-    $showMap = $content['showMap'] ?? false;
+    $showMap = $content['showMap'] ?? true; // Activé par défaut maintenant
     
     $layout = $settings['layout'] ?? 'centered';
+    
+    // Afficher la carte uniquement si on a des coordonnées
+    $hasCoordinates = $entreprise->latitude && $entreprise->longitude;
 @endphp
 
 <section class="py-16 md:py-24 px-4" style="background: var(--site-background);" id="contact">
@@ -26,7 +29,7 @@
             N'hésitez pas à nous contacter pour toute question ou demande de rendez-vous.
         </p>
         
-        <div class="grid grid-cols-1 {{ $showMap ? 'md:grid-cols-2 gap-8' : '' }}">
+        <div class="grid grid-cols-1 {{ ($showMap && $hasCoordinates) ? 'md:grid-cols-2 gap-8' : '' }}">
             {{-- Informations de contact --}}
             <div class="space-y-6">
                 @if($showEmail && $entreprise->email)
@@ -62,7 +65,7 @@
                     </a>
                 @endif
                 
-                @if($showAddress && $entreprise->ville)
+                @if($showAddress && ($entreprise->ville || $entreprise->formatted_address))
                     <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-100 dark:bg-slate-800">
                         <div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
                             <svg class="w-6 h-6" style="color: var(--site-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +75,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Localisation</p>
-                            <p class="font-semibold" style="color: var(--site-text);">{{ $entreprise->ville }}</p>
+                            <p class="font-semibold" style="color: var(--site-text);">{{ $entreprise->formatted_address }}</p>
                             @if($entreprise->estMobile())
                                 <p class="text-sm text-slate-500 dark:text-slate-400">
                                     Se déplace dans un rayon de {{ $entreprise->rayon_deplacement }} km
@@ -95,18 +98,20 @@
                 </div>
             </div>
             
-            {{-- Carte (optionnel) --}}
-            @if($showMap && $entreprise->ville)
-                <div class="rounded-xl overflow-hidden shadow-lg h-[400px] bg-slate-200 dark:bg-slate-700">
-                    <iframe 
-                        src="https://maps.google.com/maps?q={{ urlencode($entreprise->ville) }}&output=embed"
-                        class="w-full h-full"
-                        frameborder="0"
-                        allowfullscreen
-                        loading="lazy"
-                    ></iframe>
+            {{-- Carte interactive --}}
+            @if($showMap && $hasCoordinates)
+                <div class="rounded-xl overflow-hidden shadow-lg">
+                    @include('components.map-standalone', [
+                        'entreprises' => collect([$entreprise]),
+                        'center' => ['lat' => (float) $entreprise->latitude, 'lng' => (float) $entreprise->longitude],
+                        'zoom' => 14,
+                        'height' => '400px',
+                        'single' => true,
+                        'enableClustering' => false,
+                    ])
                 </div>
             @endif
         </div>
     </div>
 </section>
+

@@ -94,6 +94,13 @@ Route::prefix('temp-admin')->name('temp-admin.')->group(function () {
 Route::get('/search', [SearchController::class, 'search'])->name('search');
 Route::get('/api/search/autocomplete', [SearchController::class, 'autocomplete'])->name('search.autocomplete');
 
+// API Adresse (autocomplétion et géocodage)
+Route::prefix('api/address')->name('api.address.')->group(function () {
+    Route::get('/search', [\App\Http\Controllers\Api\AddressController::class, 'search'])->name('search');
+    Route::get('/cities', [\App\Http\Controllers\Api\AddressController::class, 'searchCities'])->name('cities');
+    Route::get('/geocode', [\App\Http\Controllers\Api\AddressController::class, 'geocode'])->name('geocode');
+});
+
 // Inscription (Signup)
 Route::get('/signup', [AuthController::class, 'showSignup'])->name('signup');
 Route::post('/signup', [AuthController::class, 'register'])->name('register');

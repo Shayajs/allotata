@@ -40,6 +40,11 @@ class Entreprise extends Model
         'mots_cles',
         'logo',
         'ville',
+        'adresse_rue',
+        'code_postal',
+        'latitude',
+        'longitude',
+        'afficher_adresse_complete',
         'rayon_deplacement',
         'options_supplementaires', // Pour stocker du JSON (langues, options...)
         'afficher_nom_gerant',
@@ -536,5 +541,90 @@ class Entreprise extends Model
 
         $remaining = now()->diffInDays($this->deleted_at->addDays(30), false);
         return max(0, (int)$remaining);
+    }
+
+    /**
+     * Scope pour rechercher des entreprises dans un rayon donné
+     * Utilise la formule Haversine pour calculer la distance
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param float $latitude Latitude du point de recherche
+     * @param float $longitude Longitude du point de recherche
+     * @param float $radius Rayon en kilomètres
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithinRadius($query, float $latitude, float $longitude, float $radius = 10)
+    {
+        // Formule Haversine pour calculer la distance en km
+        $haversine = "(
+            6371 * acos(
+                cos(radians(?)) 
+                * cos(radians(latitude)) 
+                * cos(radians(longitude) - radians(?)) 
+                + sin(radians(?)) 
+                * sin(radians(latitude))
+            )
+        )";
+
+        return $query
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->selectRaw("*, {$haversine} AS distance", [$latitude, $longitude, $latitude])
+            ->whereRaw("{$haversine} <= ?", [$latitude, $longitude, $latitude, $radius])
+            ->orderBy('distance');
+    }
+
+    /**
+     * Scope pour rechercher des entreprises par code postal
+     */
+    public function scopeByPostcode($query, string $postcode)
+    {
+        return $query->where('code_postal', 'like', $postcode . '%');
+    }
+
+    /**
+     * Scope pour rechercher des entreprises par ville
+     */
+    public function scopeByCity($query, string $city)
+    {
+        return $query->where('ville', 'like', '%' . $city . '%');
+    }
+
+    /**
+     * Retourne l'adresse formatée selon les préférences de l'entreprise
+     */
+    public function getFormattedAddressAttribute(): string
+    {
+        if ($this->afficher_adresse_complete && $this->adresse_rue) {
+            $parts = array_filter([
+                $this->adresse_rue,
+                $this->code_postal,
+                $this->ville,
+            ]);
+            return implode(', ', $parts);
+        }
+
+        return $this->ville ?? '';
+    }
+
+    /**
+     * Retourne l'adresse complète (pour l'admin/propriétaire)
+     */
+    public function getFullAddressAttribute(): string
+    {
+        $parts = array_filter([
+            $this->adresse_rue,
+            $this->code_postal,
+            $this->ville,
+        ]);
+        return implode(', ', $parts);
+    }
+
+    /**
+     * Vérifie si les coordonnées GPS sont disponibles
+     */
+    public function hasCoordinates(): bool
+    {
+        return !is_null($this->latitude) && !is_null($this->longitude);
     }
 }

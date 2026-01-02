@@ -157,6 +157,12 @@
                         @case('features')
                             <x-site-web.blocks.features :block="$block" :entreprise="$entreprise" />
                             @break
+                        @case('map')
+                            <x-site-web.blocks.map :block="$block" :entreprise="$entreprise" />
+                            @break
+                        @case('columns')
+                            <x-site-web.blocks.columns :block="$block" :entreprise="$entreprise" />
+                            @break
                     @endswitch
                 </div>
             @endforeach

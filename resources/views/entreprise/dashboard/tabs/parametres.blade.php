@@ -193,33 +193,147 @@
                 >
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <!-- Recherche d'adresse avec autocomplete -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Ville
+                        🔍 Rechercher une adresse
                     </label>
-                    <input 
-                        type="text" 
-                        name="ville" 
-                        value="{{ old('ville', $entreprise->ville) }}"
-                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="address-search"
+                            placeholder="Commencez à taper votre adresse..."
+                            autocomplete="off"
+                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                        <div id="address-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto"></div>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Recherchez votre adresse pour remplir automatiquement les champs ci-dessous
+                    </p>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Rayon de déplacement (km)
-                    </label>
-                    <input 
-                        type="number" 
-                        name="rayon_deplacement" 
-                        value="{{ old('rayon_deplacement', $entreprise->rayon_deplacement) }}"
-                        min="0"
-                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Adresse (rue et numéro)
+                        </label>
+                        <input 
+                            type="text" 
+                            name="adresse_rue" 
+                            id="adresse_rue"
+                            value="{{ old('adresse_rue', $entreprise->adresse_rue) }}"
+                            placeholder="123 rue de la Paix"
+                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Code postal
+                        </label>
+                        <input 
+                            type="text" 
+                            name="code_postal" 
+                            id="code_postal"
+                            value="{{ old('code_postal', $entreprise->code_postal) }}"
+                            placeholder="75001"
+                            maxlength="5"
+                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                    </div>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Ville *
+                        </label>
+                        <input 
+                            type="text" 
+                            name="ville" 
+                            id="ville"
+                            value="{{ old('ville', $entreprise->ville) }}"
+                            required
+                            placeholder="Paris"
+                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Rayon de déplacement (km)
+                        </label>
+                        <input 
+                            type="number" 
+                            name="rayon_deplacement" 
+                            value="{{ old('rayon_deplacement', $entreprise->rayon_deplacement) }}"
+                            min="0"
+                            placeholder="10"
+                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                    </div>
+                </div>
+
+                <!-- Champs cachés pour les coordonnées GPS -->
+                <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', $entreprise->latitude) }}">
+                <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', $entreprise->longitude) }}">
+
+                <!-- Toggle affichage adresse complète -->
+                <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
+                    <input 
+                        type="checkbox" 
+                        name="afficher_adresse_complete" 
+                        value="1"
+                        {{ old('afficher_adresse_complete', $entreprise->afficher_adresse_complete) ? 'checked' : '' }}
+                        class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                    >
+                    <div>
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">
+                            📍 Afficher l'adresse complète publiquement
+                        </span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Si activé, votre adresse complète (rue, numéro) sera visible. Sinon, seule la ville sera affichée.
+                        </p>
+                    </div>
+                </label>
+
+                @if($entreprise->latitude && $entreprise->longitude)
+                    <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <p class="text-sm text-green-800 dark:text-green-400">
+                            ✅ Coordonnées GPS enregistrées. Votre entreprise apparaîtra dans les recherches par proximité.
+                        </p>
+                    </div>
+                @else
+                    <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-400">
+                            ⚠️ Recherchez votre adresse ci-dessus pour activer les recherches par proximité.
+                        </p>
+                    </div>
+                @endif
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const addressAutocomplete = new AddressAutocomplete({
+                    onSelect: function(data) {
+                        // Remplir les champs
+                        document.getElementById('adresse_rue').value = (data.housenumber || '') + ' ' + (data.street || data.name || '');
+                        document.getElementById('code_postal').value = data.postcode || '';
+                        document.getElementById('ville').value = data.city || '';
+                        document.getElementById('latitude').value = data.latitude || '';
+                        document.getElementById('longitude').value = data.longitude || '';
+                        
+                        // Vider le champ de recherche
+                        document.getElementById('address-search').value = data.label || '';
+                    }
+                });
+
+                addressAutocomplete.init('address-search', 'address-results', 'address');
+            });
+        </script>
 
         <!-- Options -->
         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">

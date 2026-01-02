@@ -154,6 +154,11 @@ class SettingsController extends Controller
             'description' => ['nullable', 'string'],
             'mots_cles' => ['nullable', 'string', 'max:500'],
             'ville' => ['nullable', 'string', 'max:255'],
+            'adresse_rue' => ['nullable', 'string', 'max:255'],
+            'code_postal' => ['nullable', 'string', 'max:10'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'afficher_adresse_complete' => ['nullable'],
             'rayon_deplacement' => ['nullable', 'integer', 'min:0'],
             'siren' => ['nullable', 'string', 'max:9', 'regex:/^[0-9]{0,9}$/'],
             'status_juridique' => ['nullable', 'string', 'in:en_cours,auto_entrepreneur,sarl,eurl,sas'],
@@ -191,6 +196,15 @@ class SettingsController extends Controller
         $validated['afficher_nom_gerant'] = $request->has('afficher_nom_gerant') && $request->input('afficher_nom_gerant') == '1';
         $validated['prix_negociables'] = $request->has('prix_negociables') && $request->input('prix_negociables') == '1';
         $validated['rdv_uniquement_messagerie'] = $request->has('rdv_uniquement_messagerie') && $request->input('rdv_uniquement_messagerie') == '1';
+        $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
+
+        // Gérer les valeurs vides pour latitude/longitude
+        if (empty($validated['latitude'])) {
+            $validated['latitude'] = null;
+        }
+        if (empty($validated['longitude'])) {
+            $validated['longitude'] = null;
+        }
 
         $entreprise->update($validated);
 

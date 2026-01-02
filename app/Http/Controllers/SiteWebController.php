@@ -500,7 +500,7 @@ class SiteWebController extends Controller
         $validated = $request->validate([
             'block' => ['required', 'array'],
             'block.id' => ['required', 'string'],
-            'block.type' => ['required', 'string', 'in:hero,text,image,gallery,contact,video,services,testimonials,cta,divider,iframe,faq,team,stats,features'],
+            'block.type' => ['required', 'string', 'in:hero,text,image,gallery,contact,video,services,testimonials,cta,divider,iframe,faq,team,stats,features,map,columns'],
             'block.content' => ['required', 'array'],
             'block.settings' => ['nullable', 'array'],
             'block.animation' => ['nullable', 'string'],

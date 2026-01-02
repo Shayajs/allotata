@@ -59,6 +59,18 @@
                                     • {{ $entreprise->ville }}
                                 @endif
                             </p>
+                            @auth
+                                @if(auth()->user()->id === $entreprise->user_id)
+                                    <a href="{{ route('entreprise.dashboard', $entreprise->slug) }}" 
+                                       class="inline-flex items-center gap-1 mt-2 text-sm text-green-300 hover:text-green-200 font-medium transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        Gérer mon entreprise →
+                                    </a>
+                                @endif
+                            @endauth
                         </div>
                     </div>
                 </div>
@@ -118,6 +130,18 @@
                                     • {{ $entreprise->ville }}
                                 @endif
                             </p>
+                            @auth
+                                @if(auth()->user()->id === $entreprise->user_id)
+                                    <a href="{{ route('entreprise.dashboard', $entreprise->slug) }}" 
+                                       class="inline-flex items-center gap-1 mt-2 text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        Gérer mon entreprise →
+                                    </a>
+                                @endif
+                            @endauth
                         </div>
                     </div>
                     <button 
@@ -273,9 +297,9 @@
                             <p class="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Mots-clés :</p>
                             <div class="flex flex-wrap gap-1.5 sm:gap-2">
                                 @foreach(explode(', ', $entreprise->mots_cles) as $motCle)
-                                    <span class="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
+                                    <a href="{{ route('search', ['q' => trim($motCle)]) }}" class="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors cursor-pointer">
                                         {{ trim($motCle) }}
-                                    </span>
+                                    </a>
                                 @endforeach
                             </div>
                         </div>
@@ -458,7 +482,8 @@
                             💬 Contacter
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                        <a href="{{ route('login') }}" class="block w-full bg-slate-400 hover:bg-slate-500 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                            🔒 Connectez-vous pour contacter
                         </a>
                     @endauth
                 </div>
@@ -483,6 +508,30 @@
                                 Accéder à {{ parse_url($entreprise->site_web_externe, PHP_URL_HOST) ?? $entreprise->site_web_externe }}
                             </a>
                         @endif
+                    </div>
+                @endif
+
+                {{-- Carte de localisation --}}
+                @if($entreprise->latitude && $entreprise->longitude)
+                    <div class="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Localisation
+                        </h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            {{ $entreprise->formatted_address }}
+                        </p>
+                        @include('components.map-standalone', [
+                            'entreprises' => collect([$entreprise]),
+                            'center' => ['lat' => (float) $entreprise->latitude, 'lng' => (float) $entreprise->longitude],
+                            'zoom' => 14,
+                            'height' => '250px',
+                            'single' => true,
+                            'enableClustering' => false,
+                        ])
                     </div>
                 @endif
 

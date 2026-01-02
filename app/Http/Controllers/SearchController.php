@@ -15,6 +15,68 @@ class SearchController extends Controller
     {
         $query = $request->input('q', '');
         $query = trim($query);
+        
+        // Récupérer les filtres avancés
+        $villeFilter = $request->input('ville_filter');
+        $villeLat = $request->input('ville_lat');
+        $villeLng = $request->input('ville_lng');
+        $rayon = $request->input('rayon');
+        $typeActivite = $request->input('type_activite');
+
+        // Construire la requête de base
+        $entrepriseQuery = Entreprise::query()
+            ->with(['user', 'typesServices', 'avis']);
+
+        // Appliquer la recherche par proximité si coordonnées fournies
+        if ($villeLat && $villeLng && $rayon) {
+            $lat = (float) $villeLat;
+            $lng = (float) $villeLng;
+            $radius = (float) $rayon;
+
+            // Formule Haversine pour calculer la distance
+            $haversine = "(
+                6371 * acos(
+                    cos(radians({$lat})) 
+                    * cos(radians(latitude)) 
+                    * cos(radians(longitude) - radians({$lng})) 
+                    + sin(radians({$lat})) 
+                    * sin(radians(latitude))
+                )
+            )";
+
+            $entrepriseQuery->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->selectRaw("entreprises.*, {$haversine} AS distance")
+                ->whereRaw("{$haversine} <= ?", [$radius]);
+        } elseif ($villeFilter) {
+            // Recherche par nom de ville si pas de coordonnées
+            $entrepriseQuery->where('ville', 'LIKE', "%{$villeFilter}%");
+        }
+
+        // Filtrer par type d'activité
+        if ($typeActivite) {
+            $entrepriseQuery->where('type_activite', $typeActivite);
+        }
+
+        // Si pas de recherche texte mais des filtres sont appliqués
+        if (empty($query) && ($villeFilter || $typeActivite)) {
+            $allResults = $entrepriseQuery
+                ->get()
+                ->filter(function($entreprise) {
+                    return $entreprise->aAbonnementActif();
+                });
+
+            // Trier par distance si recherche par proximité
+            if ($villeLat && $villeLng && $rayon) {
+                $allResults = $allResults->sortBy('distance');
+            }
+
+            return view('search.results', [
+                'results' => $allResults->values(),
+                'query' => $query,
+                'count' => $allResults->count()
+            ]);
+        }
 
         if (empty($query)) {
             return view('search.results', [
@@ -39,8 +101,7 @@ class SearchController extends Controller
         }
 
         // Recherche approfondie dans tous les champs disponibles
-        $allResults = Entreprise::query()
-            ->with(['user', 'typesServices', 'avis'])
+        $allResults = $entrepriseQuery
             ->where(function($q) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $q->where(function($subQ) use ($keyword) {
@@ -62,6 +123,10 @@ class SearchController extends Controller
                             ->orWhere('status_juridique', 'LIKE', "%{$keyword}%")
                             // Recherche dans le SIREN
                             ->orWhere('siren', 'LIKE', "%{$keyword}%")
+                            // Recherche dans le code postal
+                            ->orWhere('code_postal', 'LIKE', "%{$keyword}%")
+                            // Recherche dans l'adresse
+                            ->orWhere('adresse_rue', 'LIKE', "%{$keyword}%")
                             // Recherche dans les types de services (via relation)
                             ->orWhereHas('typesServices', function($typeQ) use ($keyword) {
                                 $typeQ->where('nom', 'LIKE', "%{$keyword}%")
@@ -167,14 +232,24 @@ class SearchController extends Controller
                     }
                 }
 
+                // Bonus si l'entreprise a des coordonnées GPS (meilleure qualité de données)
+                if ($entreprise->hasCoordinates()) {
+                    $score += 5;
+                }
+
                 $entreprise->relevance_score = $score;
                 return $entreprise;
-            })
-            ->sortByDesc('relevance_score')
-            ->values();
+            });
+
+        // Trier par distance si recherche par proximité, sinon par pertinence
+        if ($villeLat && $villeLng && $rayon) {
+            $allResults = $allResults->sortBy('distance');
+        } else {
+            $allResults = $allResults->sortByDesc('relevance_score');
+        }
 
         return view('search.results', [
-            'results' => $allResults,
+            'results' => $allResults->values(),
             'query' => $query,
             'count' => $allResults->count()
         ]);

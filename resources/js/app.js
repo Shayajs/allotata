@@ -1,4 +1,5 @@
 import './bootstrap';
+import './address-autocomplete';
 
 // ========================================
 // Gestion du thème clair/foncé avec cookies
@@ -40,7 +41,7 @@ function applyTheme() {
 function toggleTheme() {
     const html = document.documentElement;
     html.classList.toggle('dark');
-    
+
     // Sauvegarder la préférence dans un cookie
     const theme = html.classList.contains('dark') ? 'dark' : 'light';
     setCookie('theme', theme);
@@ -51,17 +52,17 @@ window.toggleTheme = toggleTheme;
 window.applyTheme = applyTheme;
 
 // Attacher les événements aux boutons de thème après le chargement du DOM
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Sélectionner tous les boutons de thème (par classe ou par id)
     const themeButtons = document.querySelectorAll('.theme-toggle-btn, #theme-toggle');
-    
-    themeButtons.forEach(function(button) {
+
+    themeButtons.forEach(function (button) {
         button.addEventListener('click', toggleTheme);
     });
 });
 
 // Écouter les changements de préférence système (pour le mode auto)
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
     // Ne réagir que si aucune préférence n'est sauvegardée (mode auto)
     if (!getCookie('theme')) {
         if (e.matches) {
