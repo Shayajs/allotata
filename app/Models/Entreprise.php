@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasEssaisGratuits;
 
 class Entreprise extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasEssaisGratuits;
 
     /**
      * Obtenir le nom de la clé de route (pour le route model binding)
@@ -358,11 +359,17 @@ class Entreprise extends Model
      */
     public function aSiteWebActif(): bool
     {
+        // Vérifier l'abonnement payant
         $subscription = $this->abonnements()
             ->where('type', 'site_web')
             ->first();
 
-        return $subscription && $subscription->estActif();
+        if ($subscription && $subscription->estActif()) {
+            return true;
+        }
+
+        // Vérifier l'essai gratuit
+        return $this->aAccesViaEssai('site_web');
     }
 
     /**
@@ -370,11 +377,17 @@ class Entreprise extends Model
      */
     public function aGestionMultiPersonnes(): bool
     {
+        // Vérifier l'abonnement payant
         $subscription = $this->abonnements()
             ->where('type', 'multi_personnes')
             ->first();
 
-        return $subscription && $subscription->estActif();
+        if ($subscription && $subscription->estActif()) {
+            return true;
+        }
+
+        // Vérifier l'essai gratuit
+        return $this->aAccesViaEssai('multi_personnes');
     }
 
     /**

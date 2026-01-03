@@ -217,10 +217,28 @@ class StripeWebhookController extends CashierController
                             'ends_at_actuel' => $subscription->ends_at ? $subscription->ends_at->format('Y-m-d H:i:s') : 'NULL',
                         ]);
                         
+                        if ($status === 'canceled') {
+                            // Si le statut est annulé, on doit avoir une date de fin
+                            Log::info('Abonnement annulé détecté (status=canceled)', [
+                                'subscription_id' => $subscriptionId,
+                            ]);
+                            
+                            $endsAt = null;
+                            if (isset($data['ended_at']) && $data['ended_at']) {
+                                $endsAt = \Carbon\Carbon::createFromTimestamp($data['ended_at']);
+                            } else {
+                                $endsAt = now();
+                            }
+                            
+                            if (!$subscription->ends_at || !$subscription->ends_at->equalTo($endsAt)) {
+                                $subscription->ends_at = $endsAt;
+                                $subscription->save();
+                            }
+                        }
                         // Forcer la mise à jour de ends_at si cancel_at_period_end est true
                         // Le handler parent de Cashier utilise currentPeriodEnd() qui peut échouer,
                         // donc on force la mise à jour avec les données du webhook
-                        if ($cancelAtPeriodEnd) {
+                        elseif ($cancelAtPeriodEnd) {
                             Log::info('Abonnement annulé détecté, mise à jour de ends_at', [
                                 'subscription_id' => $subscriptionId,
                             ]);
@@ -271,8 +289,8 @@ class StripeWebhookController extends CashierController
                         }
                         // Si cancel_at_period_end est false mais qu'il y avait une date d'annulation, la supprimer
                         elseif (!$cancelAtPeriodEnd && $subscription->ends_at) {
-                            // Vérifier si l'abonnement est vraiment actif (pas en période de grâce)
-                            if ($subscription->stripe_status === 'active' && !$subscription->onGracePeriod()) {
+                            // Vérifier si l'abonnement est vraiment actif (pas en période de grâce, pas canceled)
+                            if ($subscription->stripe_status === 'active' && $status !== 'canceled') {
                                 $subscription->ends_at = null;
                                 $subscription->save();
                                 
@@ -362,13 +380,62 @@ class StripeWebhookController extends CashierController
      */
     protected function handleCustomerSubscriptionDeleted(array $payload)
     {
+        $subscriptionId = $payload['data']['object']['id'] ?? null;
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        
         Log::info('Abonnement supprimé', [
-            'subscription_id' => $payload['data']['object']['id'] ?? null,
-            'customer_id' => $payload['data']['object']['customer'] ?? null,
+            'subscription_id' => $subscriptionId,
+            'customer_id' => $customerId,
         ]);
         
         // Appeler le handler parent (cette méthode existe dans Cashier)
-        return parent::handleCustomerSubscriptionDeleted($payload);
+        $response = parent::handleCustomerSubscriptionDeleted($payload);
+        
+        // ⚠️ S'assurer que l'abonnement est bien marqué comme annulé/supprimé
+        if ($subscriptionId) {
+            try {
+                // 1. Mettre à jour dans la table subscriptions (Cashier)
+                $subscription = \Laravel\Cashier\Subscription::where('stripe_id', $subscriptionId)->first();
+                
+                if ($subscription) {
+                    // Marquer l'abonnement comme définitivement annulé
+                    $subscription->update([
+                        'stripe_status' => 'canceled',
+                        'ends_at' => now(), // L'abonnement a pris fin maintenant
+                    ]);
+                    
+                    Log::info('Abonnement Cashier marqué comme annulé', [
+                        'subscription_id' => $subscriptionId,
+                        'subscription_type' => $subscription->type ?? $subscription->name ?? 'default',
+                    ]);
+                }
+                
+                // 2. Mettre à jour dans entreprise_subscriptions si c'est un abonnement entreprise
+                $entrepriseSubscription = \App\Models\EntrepriseSubscription::where('stripe_id', $subscriptionId)->first();
+                
+                if ($entrepriseSubscription) {
+                    $entrepriseSubscription->update([
+                        'stripe_status' => 'canceled',
+                        'ends_at' => now(),
+                    ]);
+                    
+                    Log::info('Abonnement entreprise marqué comme annulé', [
+                        'entreprise_subscription_id' => $entrepriseSubscription->id,
+                        'entreprise_id' => $entrepriseSubscription->entreprise_id,
+                        'type' => $entrepriseSubscription->type,
+                    ]);
+                }
+                
+            } catch (\Exception $e) {
+                Log::error('Erreur lors du marquage de l\'abonnement comme supprimé', [
+                    'subscription_id' => $subscriptionId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
+        
+        return $response;
     }
 
     /**

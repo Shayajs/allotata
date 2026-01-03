@@ -16,48 +16,13 @@ class SubscriptionController extends Controller
     /**
      * Afficher la page d'abonnement
      */
+    /**
+     * Afficher la page d'abonnement (Redirection vers les paramètres)
+     */
     public function index()
     {
-        $user = Auth::user();
-        
-        if (!$user->est_gerant) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Vous devez être gérant pour gérer un abonnement.');
-        }
-
-        // VÉRIFICATION DIRECTE SUR STRIPE avant d'afficher la page
-        // On synchronise toujours depuis Stripe pour être sûr que les données sont à jour
-        \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
-        
-        // Recharger l'utilisateur pour avoir les dernières données
-        $user->refresh();
-        
-        $subscription = $user->subscription('default');
-
-        // Récupérer le prix actuel depuis Stripe pour l'affichage
-        $currentPrice = null;
-        $currentPriceAmount = null;
-        try {
-            // Vérifier s'il y a un prix personnalisé
-            $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
-            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
-            
-            if ($priceId) {
-                Stripe::setApiKey(config('services.stripe.secret'));
-                $price = Price::retrieve($priceId);
-                $currentPrice = $price;
-                $currentPriceAmount = $price->unit_amount / 100; // Convertir de centimes en euros
-            }
-        } catch (\Exception $e) {
-            Log::warning('Impossible de récupérer le prix Stripe pour l\'affichage: ' . $e->getMessage());
-        }
-
-        return view('subscription.index', [
-            'user' => $user,
-            'subscription' => $subscription,
-            'currentPrice' => $currentPrice,
-            'currentPriceAmount' => $currentPriceAmount,
-        ]);
+        // Rediriger vers l'onglet abonnement de la page paramètres
+        return redirect()->route('settings.index', ['tab' => 'subscription']);
     }
 
     /**
@@ -103,7 +68,7 @@ class SubscriptionController extends Controller
         return $user->newSubscription('default', $priceId)
             ->checkout([
                 'success_url' => route('subscription.success'),
-                'cancel_url' => route('subscription.index'),
+                'cancel_url' => route('settings.index', ['tab' => 'subscription']),
             ]);
     }
 
@@ -155,15 +120,11 @@ class SubscriptionController extends Controller
         $user = Auth::user();
         
         // VÉRIFICATION DIRECTE SUR STRIPE (méthode de sécurité)
-        // On va directement interroger Stripe pour vérifier le statut de l'abonnement
-        // indépendamment des webhooks ou du Stripe CLI
-        
         Log::info('Vérification directe Stripe après checkout', [
             'user_id' => $user->id,
             'stripe_id' => $user->stripe_id,
         ]);
 
-        // Attendre un peu pour que Stripe traite le paiement
         sleep(2);
         
         // Synchroniser TOUS les abonnements depuis Stripe (utilisateur + entreprises)
@@ -174,13 +135,9 @@ class SubscriptionController extends Controller
             'sync_result' => $syncResult,
         ]);
 
-        // Recharger l'utilisateur depuis la base de données
         $user->refresh();
-        
-        // Vérifier l'abonnement utilisateur
         $subscription = $user->subscription('default');
         
-        // Désactiver l'abonnement manuel si un abonnement Stripe est actif
         if ($subscription && $subscription->valid()) {
             $user->update([
                 'abonnement_manuel' => false,
@@ -188,21 +145,17 @@ class SubscriptionController extends Controller
                 'abonnement_manuel_notes' => null,
             ]);
             
-            return redirect()->route('subscription.index')
+            return redirect()->route('settings.index', ['tab' => 'subscription'])
                 ->with('success', 'Votre abonnement a été activé avec succès !');
         }
         
-        // Si toujours pas d'abonnement après synchronisation, afficher un message d'attente
-        return view('subscription.success', [
-            'subscription' => null,
-            'pending' => true,
-        ]);
+        // Si toujours pas d'abonnement après synchronisation, on redirige quand même vers settings avec un message
+        return redirect()->route('settings.index', ['tab' => 'subscription'])
+            ->with('info', 'Votre paiement est en cours de validation. Votre abonnement sera actif dans quelques instants.');
     }
 
     /**
      * Rediriger vers le portail client Stripe pour gérer l'abonnement
-     * Le portail client Stripe permet de gérer l'annulation, la reprise, 
-     * la mise à jour de la méthode de paiement, etc.
      */
     public function cancel()
     {
@@ -213,15 +166,13 @@ class SubscriptionController extends Controller
         }
 
         try {
-            // Créer une session de portail client Stripe
             $session = BillingPortalSession::create([
                 'customer' => $user->stripe_id,
-                'return_url' => route('subscription.index'),
+                'return_url' => route('settings.index', ['tab' => 'subscription']),
             ], [
                 'api_key' => config('services.stripe.secret'),
             ]);
 
-            // Rediriger vers le portail client Stripe
             return redirect($session->url);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la création de la session du portail client Stripe: ' . $e->getMessage());
@@ -240,14 +191,13 @@ class SubscriptionController extends Controller
         if ($subscription && $subscription->onGracePeriod()) {
             $subscription->resume();
             
-            // Désactiver l'abonnement manuel si l'abonnement Stripe est réactivé
             $user->update([
                 'abonnement_manuel' => false,
                 'abonnement_manuel_actif_jusqu' => null,
                 'abonnement_manuel_notes' => null,
             ]);
             
-            return redirect()->route('subscription.index')
+            return redirect()->route('settings.index', ['tab' => 'subscription'])
                 ->with('success', 'Votre abonnement a été réactivé.');
         }
 

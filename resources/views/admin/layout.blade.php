@@ -159,6 +159,18 @@
                     <span class="text-lg">💳</span>
                     <span class="font-medium">Abonnements</span>
                 </a>
+
+                <!-- Essais gratuits -->
+                <a href="{{ route('admin.essais-gratuits.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.essais-gratuits.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">🎁</span>
+                    <span class="font-medium">Essais gratuits</span>
+                    @php
+                        $essaisActifs = \App\Models\EssaiGratuit::actifs()->count();
+                    @endphp
+                    @if($essaisActifs > 0)
+                        <span class="ml-auto px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">{{ $essaisActifs }}</span>
+                    @endif
+                </a>
             </nav>
 
 

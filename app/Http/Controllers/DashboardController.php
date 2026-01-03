@@ -132,6 +132,27 @@ class DashboardController extends Controller
             })
             ->filter(); // Filtrer les nulls si l'entreprise n'existe plus
 
+        // Récupérer les informations d'abonnement Stripe
+        $subscription = $user->subscription('default');
+        $stripeSubscription = null;
+        $invoices = collect([]);
+        
+        if ($subscription && $subscription->valid() && $user->stripe_id) {
+            try {
+                $stripeSubscription = $subscription->asStripeSubscription();
+                
+                // Récupérer les factures Stripe
+                $stripeInvoices = \Stripe\Invoice::all([
+                    'customer' => $user->stripe_id,
+                    'limit' => 12,
+                ], ['api_key' => config('services.stripe.secret')]);
+                
+                $invoices = collect($stripeInvoices->data);
+            } catch (\Exception $e) {
+                // En cas d'erreur, on continue sans les données Stripe
+            }
+        }
+
         return view('dashboard.index', [
             'user' => $user,
             'entreprises' => $entreprises,
@@ -139,6 +160,9 @@ class DashboardController extends Controller
             'reservations' => $reservations,
             'stats' => $stats,
             'reservationsEnAttente' => $reservationsEnAttente,
+            'subscription' => $subscription,
+            'stripeSubscription' => $stripeSubscription,
+            'invoices' => $invoices,
         ]);
     }
 

@@ -77,7 +77,16 @@
 
                 <!-- Statut de l'abonnement -->
                 @php
-                    $hasActiveSubscription = $user->aAbonnementActif();
+                    $essaiPremium = $user->essaiActif('premium');
+                    $peutEssayerPremium = $user->peutDemarrerEssai('premium');
+                    
+                    // Vérifier les sources d'abonnement séparément
+                    $hasStripeSubscription = $subscription && $subscription->valid();
+                    $hasManualSubscription = $user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && ($user->abonnement_manuel_actif_jusqu->isFuture() || $user->abonnement_manuel_actif_jusqu->isToday());
+                    $hasTrialSubscription = $essaiPremium && $essaiPremium->estEnCours();
+                    
+                    // Abonnement actif si l'une des sources est valide
+                    $hasActiveSubscription = $hasStripeSubscription || $hasManualSubscription || $hasTrialSubscription;
                 @endphp
 
                 @if($hasActiveSubscription)
@@ -86,14 +95,48 @@
                             <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <h3 class="text-xl font-bold text-green-800 dark:text-green-400">
-                                Abonnement actif
-                            </h3>
+                            @if($hasTrialSubscription)
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400">
+                                        🎁 Essai gratuit actif
+                                    </h3>
+                                    <span class="inline-block px-3 py-1 text-sm bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 rounded-full mt-1">
+                                        {{ $essaiPremium->joursRestants() }} jour(s) restant(s)
+                                    </span>
+                                </div>
+                            @else
+                                <h3 class="text-xl font-bold text-green-800 dark:text-green-400">
+                                    Abonnement actif
+                                </h3>
+                            @endif
                         </div>
                         
-                        @if($subscription && $subscription->valid())
+                        @if($hasTrialSubscription)
+                            <div class="mb-4 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
+                                <p class="text-sm text-orange-800 dark:text-orange-400 mb-3">
+                                    <strong>Votre essai expire le {{ $essaiPremium->date_fin->format('d/m/Y à H:i') }}</strong><br>
+                                    Abonnez-vous maintenant pour continuer à profiter de toutes les fonctionnalités !
+                                </p>
+                                @php
+                                    $priceId = config('services.stripe.price_id');
+                                @endphp
+                                @if(!empty($priceId))
+                                    <form action="{{ route('subscription.checkout') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                            @if($currentPriceAmount)
+                                                S'abonner maintenant ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
+                                            @else
+                                                S'abonner maintenant
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @elseif($hasStripeSubscription)
                             <div class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                                 <p><strong>Type :</strong> Abonnement Stripe</p>
+                                <p><strong>Statut Stripe :</strong> {{ $subscription->stripe_status }}</p>
                                 @if($subscription->onGracePeriod())
                                     <p><strong>Statut :</strong> <span class="text-yellow-600 dark:text-yellow-400">Annulé - Actif jusqu'au {{ $subscription->ends_at->format('d/m/Y') }}</span></p>
                                     <form action="{{ route('subscription.resume') }}" method="POST" class="mt-4">
@@ -104,8 +147,16 @@
                                     </form>
                                 @else
                                     <p><strong>Statut :</strong> <span class="text-green-600 dark:text-green-400">Actif</span></p>
-                                    @if($subscription->asStripeSubscription() && isset($subscription->asStripeSubscription()->current_period_end))
-                                        <p><strong>Prochain paiement :</strong> {{ \Carbon\Carbon::createFromTimestamp($subscription->asStripeSubscription()->current_period_end)->format('d/m/Y') }}</p>
+                                    @php
+                                        $stripeSubData = null;
+                                        try {
+                                            $stripeSubData = $subscription->asStripeSubscription();
+                                        } catch (\Exception $e) {
+                                            // L'abonnement n'existe plus sur Stripe
+                                        }
+                                    @endphp
+                                    @if($stripeSubData && isset($stripeSubData->current_period_end))
+                                        <p><strong>Prochain paiement :</strong> {{ \Carbon\Carbon::createFromTimestamp($stripeSubData->current_period_end)->format('d/m/Y') }}</p>
                                     @endif
                                     <form action="{{ route('subscription.cancel') }}" method="POST" class="mt-4">
                                         @csrf
@@ -118,7 +169,7 @@
                                     </form>
                                 @endif
                             </div>
-                        @elseif($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu)
+                        @elseif($hasManualSubscription)
                             <div class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                                 <p><strong>Type :</strong> Abonnement manuel (géré par l'administrateur)</p>
                                 <p><strong>Actif jusqu'au :</strong> {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}</p>
@@ -136,24 +187,44 @@
                         @php
                             $priceId = config('services.stripe.price_id');
                         @endphp
-                        @if(empty($priceId))
-                            <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                <p class="text-red-800 dark:text-red-400 text-sm">
-                                    ⚠️ <strong>Configuration incomplète :</strong> Le STRIPE_PRICE_ID n'est pas configuré. Veuillez contacter l'administrateur pour activer les abonnements Stripe.
+                        
+                        <div class="space-y-4">
+                            @if($peutEssayerPremium)
+                                <form action="{{ route('essai-gratuit.utilisateur') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                                        <span class="text-lg">🎁</span>
+                                        Essayer gratuitement pendant 7 jours
+                                    </button>
+                                </form>
+                                <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+                                    Sans engagement • Sans carte bancaire
                                 </p>
-                            </div>
-                        @else
-                            <form action="{{ route('subscription.checkout') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                                    @if($currentPriceAmount)
-                                        Souscrire à l'abonnement ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
-                                    @else
-                                        Souscrire à l'abonnement
-                                    @endif
-                                </button>
-                            </form>
-                        @endif
+                                <div class="relative flex items-center justify-center py-2">
+                                    <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
+                                    <span class="relative px-4 bg-yellow-50 dark:bg-yellow-900/20 text-xs text-slate-500 dark:text-slate-400">ou</span>
+                                </div>
+                            @endif
+                            
+                            @if(empty($priceId))
+                                <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <p class="text-red-800 dark:text-red-400 text-sm">
+                                        ⚠️ <strong>Configuration incomplète :</strong> Le STRIPE_PRICE_ID n'est pas configuré. Veuillez contacter l'administrateur pour activer les abonnements Stripe.
+                                    </p>
+                                </div>
+                            @else
+                                <form action="{{ route('subscription.checkout') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                        @if($currentPriceAmount)
+                                            Souscrire à l'abonnement ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
+                                        @else
+                                            Souscrire à l'abonnement
+                                        @endif
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 @endif
 

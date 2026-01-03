@@ -2,12 +2,29 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-slate-900 dark:text-white">💳 Gestion des abonnements</h1>
-        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Consultez et gérez tous les abonnements actifs (utilisateurs et entreprises).
-        </p>
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">💳 Gestion des abonnements</h1>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Consultez et gérez tous les abonnements actifs (utilisateurs et entreprises).
+            </p>
+        </div>
+        <form action="{{ route('admin.subscriptions.sync') }}" method="POST" id="sync-form">
+            @csrf
+            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition" id="sync-btn">
+                <svg class="w-5 h-5" id="sync-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span id="sync-text">Synchroniser depuis Stripe</span>
+            </button>
+        </form>
     </div>
+
+    @if(session('sync_success'))
+        <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p class="text-sm text-blue-800 dark:text-blue-400">🔄 {{ session('sync_success') }}</p>
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -100,16 +117,24 @@
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
+                                    <form action="{{ route('admin.subscriptions.user.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-3">
-                                            Annuler
+                                        <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">
+                                            🔄 Sync
                                         </button>
                                     </form>
+                                    @if($subscription->stripe_status === 'active' || $subscription->stripe_status === 'trialing')
+                                        <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
+                                            @csrf
+                                            <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-2">
+                                                Annuler
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
                                        target="_blank" 
-                                       class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium inline-flex items-center">
-                                        Voir Stripe
+                                       class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 text-xs font-medium inline-flex items-center">
+                                        Stripe
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
@@ -189,16 +214,24 @@
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
+                                    <form action="{{ route('admin.subscriptions.entreprise.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-3">
-                                            Annuler
+                                        <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">
+                                            🔄 Sync
                                         </button>
                                     </form>
+                                    @if($subscription->stripe_status === 'active' || $subscription->stripe_status === 'trialing')
+                                        <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
+                                            @csrf
+                                            <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-2">
+                                                Annuler
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
                                        target="_blank" 
-                                       class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium inline-flex items-center">
-                                        Voir Stripe
+                                       class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 text-xs font-medium inline-flex items-center">
+                                        Stripe
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>

@@ -225,6 +225,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/m/{slug}/abonnements/success/{type}', [EntrepriseSubscriptionController::class, 'success'])->name('entreprise.subscriptions.success');
     Route::post('/m/{slug}/abonnements/{type}/cancel', [EntrepriseSubscriptionController::class, 'cancel'])->name('entreprise.subscriptions.cancel');
     
+    // Essais gratuits
+    Route::post('/essai-gratuit/utilisateur', [\App\Http\Controllers\EssaiGratuitController::class, 'demarrerEssaiUtilisateur'])->name('essai-gratuit.utilisateur');
+    Route::post('/m/{entreprise}/essai-gratuit', [\App\Http\Controllers\EssaiGratuitController::class, 'demarrerEssaiEntreprise'])->name('essai-gratuit.entreprise');
+    Route::post('/essai-gratuit/{essai}/annuler', [\App\Http\Controllers\EssaiGratuitController::class, 'annulerEssai'])->name('essai-gratuit.annuler');
+    Route::post('/essai-gratuit/{essai}/feedback', [\App\Http\Controllers\EssaiGratuitController::class, 'feedback'])->name('essai-gratuit.feedback');
+    
     // Gestion des membres d'entreprise
     Route::get('/m/{slug}/membres', [EntrepriseMembreController::class, 'index'])->name('entreprise.membres.index');
     Route::post('/m/{slug}/membres', [EntrepriseMembreController::class, 'store'])->name('entreprise.membres.store');
@@ -395,8 +401,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Gestion des abonnements
     Route::get('/subscriptions', [AdminController::class, 'subscriptions'])->name('subscriptions.index');
+    Route::post('/subscriptions/sync', [AdminController::class, 'syncSubscriptions'])->name('subscriptions.sync');
+    Route::post('/subscriptions/user/{subscription}/sync', [AdminController::class, 'syncUserSubscription'])->name('subscriptions.user.sync');
     Route::post('/subscriptions/user/{subscription}/cancel', [AdminController::class, 'cancelUserSubscription'])->name('subscriptions.user.cancel');
+    Route::post('/subscriptions/entreprise/{subscription}/sync', [AdminController::class, 'syncEntrepriseSubscription'])->name('subscriptions.entreprise.sync');
     Route::post('/subscriptions/entreprise/{subscription}/cancel', [AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
+    
+    // Gestion des essais gratuits
+    Route::get('/essais-gratuits', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'index'])->name('essais-gratuits.index');
+    Route::post('/essais-gratuits/accorder', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'accorder'])->name('essais-gratuits.accorder');
+    Route::post('/essais-gratuits/{essai}/revoquer', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'revoquer'])->name('essais-gratuits.revoquer');
+    Route::post('/essais-gratuits/{essai}/prolonger', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'prolonger'])->name('essais-gratuits.prolonger');
+    Route::get('/essais-gratuits/export', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'export'])->name('essais-gratuits.export');
+    Route::get('/essais-gratuits/stats', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'statsApi'])->name('essais-gratuits.stats');
 });
 
 // Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)
@@ -557,3 +574,7 @@ Route::get('/diagnostic-auth', function () {
 })->middleware('auth');
 
 
+
+
+// Route de debug temporaire
+require __DIR__ . '/debug_temp.php';

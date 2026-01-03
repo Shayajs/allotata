@@ -142,6 +142,19 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Vous n\'avez pas accès à cette entreprise.']);
         }
 
+        // ⚠️ VÉRIFICATION CRITIQUE : L'utilisateur doit avoir un abonnement Premium actif
+        // Les abonnements entreprise (site_web, multi_personnes) sont des add-ons au Premium
+        if (!$user->aAbonnementActif()) {
+            Log::warning('Tentative d\'achat d\'abonnement entreprise sans abonnement Premium', [
+                'user_id' => $user->id,
+                'entreprise_id' => $entreprise->id,
+                'type_demande' => $request->input('type'),
+            ]);
+            return back()->withErrors([
+                'error' => 'Vous devez d\'abord avoir un abonnement Premium actif pour souscrire aux options d\'entreprise. Rendez-vous sur la page d\'abonnement pour vous abonner.'
+            ]);
+        }
+
         $type = $request->input('type'); // 'site_web' ou 'multi_personnes'
         
         if (!in_array($type, ['site_web', 'multi_personnes'])) {

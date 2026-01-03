@@ -1453,6 +1453,187 @@ class AdminController extends Controller
     }
 
     /**
+     * Synchroniser tous les abonnements depuis Stripe
+     */
+    public function syncSubscriptions()
+    {
+        try {
+            // Exécuter la commande Artisan de synchronisation
+            $exitCode = \Artisan::call('stripe:sync-subscriptions', ['--from-stripe' => true]);
+            $output = \Artisan::output();
+            
+            Log::info('Synchronisation Stripe lancée depuis l\'admin', [
+                'exit_code' => $exitCode,
+                'output_length' => strlen($output),
+            ]);
+            
+            if ($exitCode === 0) {
+                return back()->with('sync_success', 'Synchronisation terminée avec succès ! Tous les abonnements Stripe ont été mis à jour.');
+            } else {
+                return back()->withErrors(['error' => 'La synchronisation a rencontré des erreurs. Consultez les logs pour plus de détails.']);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la synchronisation Stripe depuis l\'admin', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return back()->withErrors(['error' => 'Erreur lors de la synchronisation: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Synchroniser un abonnement utilisateur individuel depuis Stripe
+     */
+    public function syncUserSubscription(Subscription $subscription)
+    {
+        if (!$subscription->stripe_id) {
+            return back()->withErrors(['error' => 'Cet abonnement n\'a pas d\'ID Stripe.']);
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            
+            // Récupérer l'abonnement depuis Stripe
+            $stripeSubscription = \Stripe\Subscription::retrieve($subscription->stripe_id);
+            
+            // Calculer ends_at
+            $endsAt = null;
+            if ($stripeSubscription->status === 'canceled' && $stripeSubscription->ended_at) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->ended_at);
+            } elseif ($stripeSubscription->cancel_at_period_end && $stripeSubscription->current_period_end) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end);
+            } elseif ($stripeSubscription->cancel_at) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->cancel_at);
+            }
+            
+            $oldStatus = $subscription->stripe_status;
+            $newStatus = $stripeSubscription->status;
+            
+            // Mettre à jour l'abonnement local
+            $subscription->update([
+                'stripe_status' => $newStatus,
+                'stripe_price' => $stripeSubscription->items->data[0]->price->id ?? $subscription->stripe_price,
+                'ends_at' => $endsAt,
+            ]);
+            
+            Log::info('Abonnement utilisateur synchronisé depuis Stripe', [
+                'subscription_id' => $subscription->id,
+                'stripe_id' => $subscription->stripe_id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+            
+            if ($oldStatus !== $newStatus) {
+                return back()->with('success', "Abonnement synchronisé : statut mis à jour de \"{$oldStatus}\" vers \"{$newStatus}\".");
+            } else {
+                return back()->with('success', 'Abonnement synchronisé : déjà à jour.');
+            }
+            
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            // L'abonnement n'existe plus sur Stripe
+            $subscription->update([
+                'stripe_status' => 'canceled',
+                'ends_at' => now(),
+            ]);
+            
+            return back()->with('success', 'Abonnement synchronisé : n\'existe plus sur Stripe, marqué comme annulé.');
+            
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la synchronisation de l\'abonnement utilisateur', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Erreur lors de la synchronisation: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Synchroniser un abonnement entreprise individuel depuis Stripe
+     */
+    public function syncEntrepriseSubscription(EntrepriseSubscription $subscription)
+    {
+        if (!$subscription->stripe_id) {
+            return back()->withErrors(['error' => 'Cet abonnement n\'a pas d\'ID Stripe.']);
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            
+            // Récupérer l'abonnement depuis Stripe
+            $stripeSubscription = \Stripe\Subscription::retrieve($subscription->stripe_id);
+            
+            // Calculer ends_at
+            $endsAt = null;
+            if ($stripeSubscription->status === 'canceled' && $stripeSubscription->ended_at) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->ended_at);
+            } elseif ($stripeSubscription->cancel_at_period_end && $stripeSubscription->current_period_end) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->current_period_end);
+            } elseif ($stripeSubscription->cancel_at) {
+                $endsAt = \Carbon\Carbon::createFromTimestamp($stripeSubscription->cancel_at);
+            }
+            
+            $oldStatus = $subscription->stripe_status;
+            $newStatus = $stripeSubscription->status;
+            
+            // Mettre à jour l'abonnement local
+            $subscription->update([
+                'stripe_status' => $newStatus,
+                'stripe_price' => $stripeSubscription->items->data[0]->price->id ?? $subscription->stripe_price,
+                'ends_at' => $endsAt,
+            ]);
+            
+            // Mettre à jour aussi dans la table subscriptions de Cashier si existe
+            $cashierSubscription = Subscription::where('stripe_id', $subscription->stripe_id)->first();
+            if ($cashierSubscription) {
+                $cashierSubscription->update([
+                    'stripe_status' => $newStatus,
+                    'ends_at' => $endsAt,
+                ]);
+            }
+            
+            Log::info('Abonnement entreprise synchronisé depuis Stripe', [
+                'subscription_id' => $subscription->id,
+                'stripe_id' => $subscription->stripe_id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+            
+            if ($oldStatus !== $newStatus) {
+                return back()->with('success', "Abonnement synchronisé : statut mis à jour de \"{$oldStatus}\" vers \"{$newStatus}\".");
+            } else {
+                return back()->with('success', 'Abonnement synchronisé : déjà à jour.');
+            }
+            
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            // L'abonnement n'existe plus sur Stripe
+            $subscription->update([
+                'stripe_status' => 'canceled',
+                'ends_at' => now(),
+            ]);
+            
+            // Mettre à jour aussi dans Cashier
+            $cashierSubscription = Subscription::where('stripe_id', $subscription->stripe_id)->first();
+            if ($cashierSubscription) {
+                $cashierSubscription->update([
+                    'stripe_status' => 'canceled',
+                    'ends_at' => now(),
+                ]);
+            }
+            
+            return back()->with('success', 'Abonnement synchronisé : n\'existe plus sur Stripe, marqué comme annulé.');
+            
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la synchronisation de l\'abonnement entreprise', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Erreur lors de la synchronisation: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Annuler un abonnement utilisateur depuis l'admin
      */
     public function cancelUserSubscription(Subscription $subscription)
