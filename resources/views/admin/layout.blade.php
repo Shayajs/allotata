@@ -15,7 +15,7 @@
     @stack('styles')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
-    @include('components.mobile-nav', ['navType' => 'admin'])
+    @include('components.mobile-nav', ['navType' => 'admin', 'id' => 'admin_mobile_nav', 'hideButton' => true])
 
     <div class="min-h-screen flex">
         <!-- Sidebar (PC) -->
@@ -185,7 +185,11 @@
             <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-
+                        <button onclick="toggleBurgerMenu('admin_mobile_nav')" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Menu">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                         <div>
                             <h1 class="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white truncate">@yield('header', 'Administration')</h1>
                             @hasSection('subheader')
