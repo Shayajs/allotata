@@ -1,390 +1,367 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $entreprise->nom }} - Admin</title>
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @include('partials.theme-script')
-    </head>
-    <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
-        @include('admin.partials.nav')
+@extends('admin.layout')
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ $entreprise->nom }}</h1>
-                    <p class="text-slate-600 dark:text-slate-400">{{ $entreprise->type_activite }}</p>
-                    @if($entreprise->est_verifiee)
-                        <span class="inline-block mt-2 px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800">
-                            ✓ Entreprise vérifiée
-                        </span>
-                    @elseif($entreprise->aDesRefus())
-                        <span class="inline-block mt-2 px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800">
-                            ✗ Refusée
-                        </span>
+@section('title', $entreprise->nom . ' - Administration')
+@section('header', 'Détails de l\'Entreprise')
+@section('subheader', $entreprise->nom . ' (' . $entreprise->type_activite . ')')
+
+@section('content')
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ $entreprise->nom }}</h1>
+        <div class="flex flex-wrap gap-2">
+            @if($entreprise->est_verifiee)
+                <span class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800 font-medium">
+                    ✓ Entreprise vérifiée
+                </span>
+            @elseif($entreprise->aDesRefus())
+                <span class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800 font-medium">
+                    ✗ Refusée
+                </span>
+            @else
+                <span class="px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800 font-medium">
+                    ⏳ En attente de vérification
+                </span>
+            @endif
+        </div>
+    </div>
+    <a href="{{ route('admin.entreprises.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+        ← Retour à la liste
+    </a>
+</div>
+
+<!-- Panneau de vérification -->
+<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 mb-8">
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600">🔍</span>
+        Processus de vérification
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Vérification du nom -->
+        <div class="p-6 border-2 rounded-2xl transition-all {{ $entreprise->nom_valide === true ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : ($entreprise->nom_valide === false ? 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50') }}">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 dark:text-white">Nom commercial</h3>
+                @if($entreprise->nom_valide === true)
+                    <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-green-500 text-white rounded-lg">Validé</span>
+                @elseif($entreprise->nom_valide === false)
+                    <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-red-500 text-white rounded-lg">Refusé</span>
+                @else
+                    <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-yellow-500 text-white rounded-lg">À vérifier</span>
+                @endif
+            </div>
+            
+            <p class="text-lg font-bold text-slate-900 dark:text-white mb-4">{{ $entreprise->nom }}</p>
+            
+            @if($entreprise->nom_valide !== true)
+                <div class="flex gap-2">
+                    <form action="{{ route('admin.entreprises.validate-nom', $entreprise) }}" method="POST" class="flex-1">
+                        @csrf
+                        <button type="submit" class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
+                            Valider
+                        </button>
+                    </form>
+                    <button 
+                        onclick="document.getElementById('modal-refus-nom').classList.remove('hidden')"
+                        class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95"
+                    >
+                        Refuser
+                    </button>
+                </div>
+            @endif
+            
+            @if($entreprise->nom_valide === false && $entreprise->nom_refus_raison)
+                <div class="mt-4 p-3 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-red-100 dark:border-red-900/30">
+                    <p class="text-xs text-red-600 dark:text-red-400"><strong>Motif :</strong> {{ $entreprise->nom_refus_raison }}</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Vérification du SIREN -->
+        @if($entreprise->siren)
+            <div class="p-6 border-2 rounded-2xl transition-all {{ $entreprise->siren_valide === true ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' : ($entreprise->siren_valide === false ? 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10' : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50') }}">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-900 dark:text-white">SIREN / SIRET</h3>
+                    @if($entreprise->siren_valide === true)
+                        <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-green-500 text-white rounded-lg">Validé</span>
+                    @elseif($entreprise->siren_valide === false)
+                        <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-red-500 text-white rounded-lg">Refusé</span>
                     @else
-                        <span class="inline-block mt-2 px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800">
-                            ⏳ En attente de vérification
-                        </span>
+                        <span class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-yellow-500 text-white rounded-lg">À vérifier</span>
                     @endif
                 </div>
-                <div class="flex items-center gap-4">
-                    <a href="{{ route('admin.entreprises.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
-                        ← Retour
-                    </a>
-                </div>
-            </div>
-
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    @foreach($errors->all() as $error)
-                        <p class="text-red-800 dark:text-red-400">{{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p class="text-red-800 dark:text-red-400">{{ session('error') }}</p>
-                </div>
-            @endif
-
-            <!-- Panneau de vérification -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
-                <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">🔍 Vérification de l'entreprise</h2>
                 
-                <div class="space-y-4">
-                    <!-- Vérification du nom -->
-                    <div class="p-4 border rounded-lg {{ $entreprise->nom_valide === true ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' : ($entreprise->nom_valide === false ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50') }}">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-semibold text-slate-900 dark:text-white">Nom de l'entreprise</h3>
-                                @if($entreprise->nom_valide === true)
-                                    <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">✓ Validé</span>
-                                @elseif($entreprise->nom_valide === false)
-                                    <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">✗ Refusé</span>
-                                @else
-                                    <span class="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded">⏳ En attente</span>
-                                @endif
-                            </div>
-                            <div class="flex items-center gap-2">
-                                @if($entreprise->nom_valide !== true)
-                                    <form action="{{ route('admin.entreprises.validate-nom', $entreprise) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
-                                            ✓ Valider
-                                        </button>
-                                    </form>
-                                    <button 
-                                        onclick="document.getElementById('modal-refus-nom').classList.remove('hidden')"
-                                        class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
-                                    >
-                                        ✗ Refuser
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-2"><strong>Nom :</strong> {{ $entreprise->nom }}</p>
-                        @if($entreprise->nom_valide === false && $entreprise->nom_refus_raison)
-                            <p class="text-sm text-red-600 dark:text-red-400 mt-2"><strong>Raison du refus :</strong> {{ $entreprise->nom_refus_raison }}</p>
-                        @endif
-                    </div>
-
-                    <!-- Vérification du SIREN -->
-                    @if($entreprise->siren)
-                        <div class="p-4 border rounded-lg {{ $entreprise->siren_valide === true ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' : ($entreprise->siren_valide === false ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50') }}">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="font-semibold text-slate-900 dark:text-white">SIREN</h3>
-                                    @if($entreprise->siren_valide === true)
-                                        <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">✓ Validé</span>
-                                    @elseif($entreprise->siren_valide === false)
-                                        <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">✗ Refusé</span>
-                                    @else
-                                        <span class="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded">⏳ En attente</span>
-                                    @endif
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    @if($entreprise->siren_valide !== true)
-                                        <form action="{{ route('admin.entreprises.validate-siren', $entreprise) }}" method="POST" class="inline">
-                                            @csrf
-                                            <button type="submit" class="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
-                                                ✓ Vérifier
-                                            </button>
-                                        </form>
-                                    @endif
-                                    @if($entreprise->siren_valide !== false)
-                                        <button 
-                                            onclick="document.getElementById('modal-refus-siren').classList.remove('hidden')"
-                                            class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
-                                        >
-                                            ✗ Refuser
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-2"><strong>SIREN :</strong> {{ $entreprise->siren }}</p>
-                            @if($entreprise->siren_valide === false && $entreprise->siren_refus_raison)
-                                <p class="text-sm text-red-600 dark:text-red-400 mt-2"><strong>Raison du refus :</strong> {{ $entreprise->siren_refus_raison }}</p>
-                            @endif
-                        </div>
-                    @endif
-
-                    <!-- Actions globales -->
-                    <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                        <h3 class="font-semibold text-slate-900 dark:text-white mb-3">Actions globales</h3>
-                        <div class="flex flex-wrap gap-3">
-                            @if($entreprise->tousElementsValides() && !$entreprise->est_verifiee)
-                                <form action="{{ route('admin.entreprises.validate', $entreprise) }}" method="POST" onsubmit="return confirm('Valider cette entreprise ? Tous les éléments sont validés.');">
-                                    @csrf
-                                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
-                                        ✓ Valider l'entreprise
-                                    </button>
-                                </form>
-                            @endif
-                            
-                            @if(!$entreprise->tousElementsValides() || $entreprise->aDesRefus())
-                                <button 
-                                    onclick="document.getElementById('modal-refus-global').classList.remove('hidden')"
-                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
-                                >
-                                    ✗ Refuser l'entreprise
-                                </button>
-                            @endif
-
-                            <form action="{{ route('admin.entreprises.renvoyer', $entreprise) }}" method="POST" onsubmit="return confirm('Renvoyer cette entreprise pour correction ? Tous les statuts de vérification seront réinitialisés.');">
-                                @csrf
-                                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
-                                    🔄 Renvoyer pour correction
-                                </button>
-                            </form>
-                        </div>
-                        @if($entreprise->raison_refus_globale)
-                            <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-                                <p class="text-sm text-red-800 dark:text-red-400"><strong>Raison du refus global :</strong> {{ $entreprise->raison_refus_globale }}</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Informations</h2>
-                        <dl class="space-y-3">
-                            <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Email</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $entreprise->email }}</dd>
-                            </div>
-                            @if($entreprise->telephone)
-                                <div>
-                                    <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Téléphone</dt>
-                                    <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $entreprise->telephone }}</dd>
-                                </div>
-                            @endif
-                            @if($entreprise->ville)
-                                <div>
-                                    <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Ville</dt>
-                                    <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $entreprise->ville }}</dd>
-                                </div>
-                            @endif
-                            @if($entreprise->description)
-                                <div>
-                                    <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Description</dt>
-                                    <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $entreprise->description }}</dd>
-                                </div>
-                            @endif
-                            <div>
-                                <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Statut juridique</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-white">{{ $entreprise->status_juridique }}</dd>
-                            </div>
-                        </dl>
-                    </div>
-
-                    @if($entreprise->reservations->count() > 0)
-                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Réservations ({{ $entreprise->reservations->count() }})</h2>
-                            <div class="space-y-3">
-                                @foreach($entreprise->reservations->take(10) as $reservation)
-                                    <div class="p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <p class="font-medium text-slate-900 dark:text-white">{{ $reservation->user->name }}</p>
-                                                <p class="text-sm text-slate-600 dark:text-slate-400">
-                                                    {{ $reservation->date_reservation->format('d/m/Y à H:i') }} - {{ number_format($reservation->prix, 2, ',', ' ') }} €
-                                                </p>
-                                            </div>
-                                            <a href="{{ route('admin.reservations.show', $reservation) }}" class="text-sm text-green-600 hover:text-green-700 dark:text-green-400">
-                                                Voir →
-                                            </a>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <div>
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Gérant</h2>
-                        <div class="space-y-2">
-                            <p class="text-sm font-medium text-slate-900 dark:text-white">{{ $entreprise->user->name }}</p>
-                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->user->email }}</p>
-                            <a href="{{ route('admin.users.show', $entreprise->user) }}" class="text-sm text-green-600 hover:text-green-700 dark:text-green-400">
-                                Voir le profil →
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Statut</h2>
-                        <div class="space-y-2">
-                            @if($entreprise->est_verifiee)
-                                <span class="inline-block px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Vérifiée</span>
-                            @else
-                                <span class="inline-block px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded">En attente de vérification</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    @if($entreprise->siren_verifie)
-                        <div class="bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm border border-green-200 dark:border-green-800 p-6 mt-6">
-                            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">Facturation</h2>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                                Cette entreprise peut générer des factures automatiquement pour les réservations payées.
-                            </p>
-                            <a href="{{ route('factures.entreprise', $entreprise->slug) }}" class="text-sm text-green-600 hover:text-green-700 dark:text-green-400 font-medium">
-                                Voir les factures →
-                            </a>
-                        </div>
-                    @endif
-
-                    <!-- Options d'entreprise -->
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800 p-6 mt-6">
-                        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">⚡ Options d'entreprise</h2>
-                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                            Gérez les abonnements et options de cette entreprise.
-                        </p>
-                        <a href="{{ route('admin.entreprises.options', $entreprise) }}" class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
-                            Gérer les options
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal refus nom -->
-        <div id="modal-refus-nom" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Refuser le nom</h3>
-                <form action="{{ route('admin.entreprises.reject-nom', $entreprise) }}" method="POST">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Raison du refus *
-                        </label>
-                        <textarea 
-                            name="raison" 
-                            rows="4"
-                            required
-                            placeholder="Expliquez pourquoi le nom est refusé..."
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        ></textarea>
-                    </div>
-                    <div class="flex gap-3">
-                        <button type="submit" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
+                <p class="text-lg font-mono font-bold text-slate-900 dark:text-white mb-4">{{ $entreprise->siren }}</p>
+                
+                @if($entreprise->siren_valide !== true)
+                    <div class="flex gap-2">
+                        <form action="{{ route('admin.entreprises.validate-siren', $entreprise) }}" method="POST" class="flex-1">
+                            @csrf
+                            <button type="submit" class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
+                                Valider
+                            </button>
+                        </form>
+                        <button 
+                            onclick="document.getElementById('modal-refus-siren').classList.remove('hidden')"
+                            class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95"
+                        >
                             Refuser
                         </button>
-                        <button 
-                            type="button"
-                            onclick="document.getElementById('modal-refus-nom').classList.add('hidden')"
-                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                        >
-                            Annuler
-                        </button>
                     </div>
-                </form>
+                @endif
+
+                @if($entreprise->siren_valide === false && $entreprise->siren_refus_raison)
+                    <div class="mt-4 p-3 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-red-100 dark:border-red-900/30">
+                        <p class="text-xs text-red-600 dark:text-red-400"><strong>Motif :</strong> {{ $entreprise->siren_refus_raison }}</p>
+                    </div>
+                @endif
+            </div>
+        @endif
+    </div>
+
+    <!-- Actions globales -->
+    <div class="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700 flex flex-wrap gap-4">
+        @if($entreprise->tousElementsValides() && !$entreprise->est_verifiee)
+            <form action="{{ route('admin.entreprises.validate', $entreprise) }}" method="POST" onsubmit="return confirm('Valider cette entreprise ? Elle sera immédiatement visible.');">
+                @csrf
+                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 dark:shadow-none transition-all hover:scale-105 active:scale-95">
+                    🚀 Activer l'entreprise
+                </button>
+            </form>
+        @endif
+        
+        @if(!$entreprise->tousElementsValides() || $entreprise->aDesRefus())
+            <button 
+                onclick="document.getElementById('modal-refus-global').classList.remove('hidden')"
+                class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-200 dark:shadow-none"
+            >
+                🛑 Refuser l'entreprise
+            </button>
+        @endif
+
+        <form action="{{ route('admin.entreprises.renvoyer', $entreprise) }}" method="POST" onsubmit="return confirm('Renvoyer cette entreprise pour correction ? Le gérant recevra une notification.');">
+            @csrf
+            <button type="submit" class="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95">
+                🔄 Renvoyer pour modification
+            </button>
+        </form>
+    </div>
+    
+    @if($entreprise->raison_refus_globale)
+        <div class="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
+            <p class="text-sm text-red-800 dark:text-red-400 font-medium"><strong>⚠️ Refus Global :</strong> {{ $entreprise->raison_refus_globale }}</p>
+        </div>
+    @endif
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 space-y-8">
+        <!-- Informations détaillées -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Informations Générales</h2>
+            </div>
+            <div class="p-6">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div>
+                        <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Email professionnel</dt>
+                        <dd class="text-slate-900 dark:text-white font-medium">{{ $entreprise->email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Téléphone</dt>
+                        <dd class="text-slate-900 dark:text-white font-medium">{{ $entreprise->telephone ?? 'Non renseigné' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Ville</dt>
+                        <dd class="text-slate-900 dark:text-white font-medium font-bold">{{ $entreprise->ville ?? 'Non renseignée' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Statut Juridique</dt>
+                        <dd class="text-slate-900 dark:text-white font-medium">{{ $entreprise->status_juridique ?? 'Non renseigné' }}</dd>
+                    </div>
+                    <div class="md:col-span-2">
+                        <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Description</dt>
+                        <dd class="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 italic">
+                            {{ $entreprise->description ?? 'Aucune description fournie.' }}
+                        </dd>
+                    </div>
+                </dl>
             </div>
         </div>
 
-        <!-- Modal refus SIREN -->
-        <div id="modal-refus-siren" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Refuser le SIREN</h3>
-                <form action="{{ route('admin.entreprises.reject-siren', $entreprise) }}" method="POST">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Raison du refus *
-                        </label>
-                        <textarea 
-                            name="raison" 
-                            rows="4"
-                            required
-                            placeholder="Expliquez pourquoi le SIREN est refusé..."
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        ></textarea>
-                    </div>
-                    <div class="flex gap-3">
-                        <button type="submit" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
-                            Refuser
-                        </button>
-                        <button 
-                            type="button"
-                            onclick="document.getElementById('modal-refus-siren').classList.add('hidden')"
-                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                        >
-                            Annuler
-                        </button>
-                    </div>
-                </form>
+        <!-- Réservations -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Dernières Réservations</h2>
+                <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-xs font-bold rounded-full">Total : {{ $entreprise->reservations->count() }}</span>
+            </div>
+            <div class="p-0 overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Client</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Prix</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                        @foreach($entreprise->reservations->sortByDesc('date_reservation')->take(8) as $reservation)
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ $reservation->user->name }}</td>
+                                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
+                                <td class="px-6 py-4 font-bold text-green-600">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="{{ route('admin.reservations.show', $reservation) }}" class="text-xs font-bold text-slate-400 hover:text-green-600 uppercase tracking-widest transition-colors">Détails →</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div class="space-y-8">
+        <!-- Gérant -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col items-center text-center">
+            <x-avatar :user="$entreprise->user" size="2xl" />
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white mt-4">{{ $entreprise->user->name }}</h2>
+            <p class="text-sm text-slate-500 mb-6">Gérant d'entreprise</p>
+            <div class="w-full flex flex-col gap-2">
+                <a href="{{ route('admin.users.show', $entreprise->user) }}" class="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white text-sm font-bold rounded-xl hover:scale-105 transition-transform active:scale-95">
+                    Consulter le gérant
+                </a>
+                <a href="mailto:{{ $entreprise->user->email }}" class="px-6 py-3 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    Envoyer un email
+                </a>
             </div>
         </div>
 
-        <!-- Modal refus global -->
-        <div id="modal-refus-global" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Refuser l'entreprise</h3>
-                <form action="{{ route('admin.entreprises.reject', $entreprise) }}" method="POST">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Raison du refus *
-                        </label>
-                        <textarea 
-                            name="raison" 
-                            rows="4"
-                            required
-                            placeholder="Expliquez pourquoi l'entreprise est refusée..."
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        ></textarea>
-                    </div>
-                    <div class="flex gap-3">
-                        <button type="submit" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
-                            Refuser l'entreprise
-                        </button>
-                        <button 
-                            type="button"
-                            onclick="document.getElementById('modal-refus-global').classList.add('hidden')"
-                            class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                        >
-                            Annuler
-                        </button>
-                    </div>
-                </form>
+        <!-- Options Panel -->
+        <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-indigo-100 dark:shadow-none relative overflow-hidden group">
+            <div class="absolute right-[-20px] top-[-20px] opacity-10 rotate-12 transition-transform group-hover:scale-110">
+                <span class="text-9xl">⚡</span>
             </div>
+            <h2 class="text-xl font-bold mb-2">Options & Forfait</h2>
+            <p class="text-sm opacity-80 mb-6">Gérez les plafonds de réservations et l'accès aux outils marketing de cette entreprise.</p>
+            <a href="{{ route('admin.entreprises.options', $entreprise) }}" class="inline-block px-6 py-3 bg-white text-indigo-600 text-sm font-bold rounded-xl hover:scale-105 transition-transform active:scale-95">
+                Gérer les limites
+            </a>
         </div>
-    </body>
-</html>
+
+        @if($entreprise->siren_verifie)
+            <!-- Billing -->
+            <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-6">
+                <h2 class="text-lg font-bold text-emerald-900 dark:text-white mb-2 flex items-center gap-2">
+                    <span>🧾</span> Facturation
+                </h2>
+                <p class="text-sm text-emerald-800/80 dark:text-emerald-400/80 mb-6">
+                    Cette entreprise génère des factures automatiquement pour ses clients.
+                </p>
+                <a href="{{ route('factures.entreprise', $entreprise->slug) }}" class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold hover:gap-3 transition-all">
+                    Voir les rapports <span class="text-xl">→</span>
+                </a>
+            </div>
+        @endif
+    </div>
+</div>
+
+{{-- Modals remain the same but with better styling --}}
+<div id="modal-refus-nom" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Refuser le nom</h3>
+        <p class="text-sm text-slate-500 mb-6">Précisez au gérant pourquoi le nom ne peut pas être accepté en l'état.</p>
+        <form action="{{ route('admin.entreprises.reject-nom', $entreprise) }}" method="POST">
+            @csrf
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Raison du refus</label>
+                <textarea 
+                    name="raison" 
+                    rows="4"
+                    required
+                    placeholder="Ex: Le nom contient des caractères interdits ou est déjà pris..."
+                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder:text-slate-400"
+                ></textarea>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none transition-all hover:scale-[1.02]">
+                    Confirmer le refus
+                </button>
+                <button 
+                    type="button"
+                    onclick="this.closest('#modal-refus-nom').classList.add('hidden')"
+                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                    Fermer la fenêtre
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-refus-siren" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Refuser le SIREN</h3>
+        <p class="text-sm text-slate-500 mb-6">Le numéro SIREN/SIRET semble invalide ou ne correspond pas au nom de l'entreprise.</p>
+        <form action="{{ route('admin.entreprises.reject-siren', $entreprise) }}" method="POST">
+            @csrf
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Justification</label>
+                <textarea 
+                    name="raison" 
+                    rows="4"
+                    required
+                    placeholder="Ex: Numéro non trouvé sur l'INSEE..."
+                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                ></textarea>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
+                    Confirmer le refus
+                </button>
+                <button 
+                    type="button"
+                    onclick="this.closest('#modal-refus-siren').classList.add('hidden')"
+                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 font-bold rounded-2xl"
+                >
+                    Annuler
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-refus-global" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2 capitalize">Refus définitif</h3>
+        <p class="text-sm text-slate-500 mb-6">Cette action refusera l'intégralité du dossier. Soyez précis dans votre explication.</p>
+        <form action="{{ route('admin.entreprises.reject', $entreprise) }}" method="POST">
+            @csrf
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Raison globale</label>
+                <textarea 
+                    name="raison" 
+                    rows="4"
+                    required
+                    placeholder="Expliquez ici l'ensemble du problème..."
+                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                ></textarea>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
+                    Confirmer le refus global
+                </button>
+                <button 
+                    type="button"
+                    onclick="this.closest('#modal-refus-global').classList.add('hidden')"
+                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 font-bold rounded-2xl"
+                >
+                    Annuler
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
 
