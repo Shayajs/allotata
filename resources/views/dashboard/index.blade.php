@@ -138,6 +138,19 @@
                             @endif
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes entreprises</span>
                         </button>
+
+                        <!-- Mes Abonnements -->
+                        <button 
+                            onclick="showTab('abonnements')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'abonnements' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="abonnements"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Mes abonnements</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes abonnements</span>
+                        </button>
                         @endif
 
                         <!-- Réservations -->
@@ -230,6 +243,11 @@
                         <!-- Onglet Entreprises -->
                         <div id="tab-entreprises" class="tab-content {{ $activeTab !== 'entreprises' ? 'hidden' : '' }}">
                             @include('dashboard.tabs.entreprises')
+                        </div>
+
+                        <!-- Onglet Abonnements -->
+                        <div id="tab-abonnements" class="tab-content {{ $activeTab !== 'abonnements' ? 'hidden' : '' }}">
+                            @include('dashboard.tabs.abonnements')
                         </div>
 
                         <!-- Onglet Réservations -->

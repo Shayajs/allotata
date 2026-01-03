@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Allo Tata - Plateforme de gestion pour entrepreneuses</title>
+        <title>Allo Tata - Plateforme de gestion pour entrepreneurs</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -350,10 +350,10 @@
             <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-green-600 to-orange-500">
                 <div class="max-w-4xl mx-auto text-center">
                     <h2 class="text-4xl sm:text-5xl font-bold text-white mb-6">
-                        Prête à transformer votre activité ?
+                        Prêt à transformer votre activité ?
                     </h2>
                     <p class="text-xl text-white/90 mb-10">
-                        Rejoignez des centaines d'entrepreneuses qui font confiance à Allo Tata pour gérer leur entreprise.
+                        Rejoignez des centaines d'entrepreneurs qui font confiance à Allo Tata pour gérer leur entreprise.
                     </p>
                     @if (Route::has('signup'))
                         <a href="{{ route('signup') }}" class="inline-block px-8 py-4 bg-white text-green-600 font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all transform hover:-translate-y-1 hover:scale-105">
