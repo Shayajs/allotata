@@ -36,7 +36,7 @@
         <header class="mb-8">
             <div class="flex items-center gap-4">
                 @if($entreprise->logo)
-                    <img src="{{ asset('media/' . $entreprise->logo) }}" alt="{{ $entreprise->nom }}" class="w-16 h-16 rounded-xl object-cover shadow-md">
+                    <img src="/media/{{ $entreprise->logo }}" alt="{{ $entreprise->nom }}" class="w-16 h-16 rounded-xl object-cover shadow-md">
                 @endif
                 <div>
                     <h1 class="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
@@ -390,7 +390,7 @@
             // Données PHP
             const jours = @json($jours);
             const horaires = @json($horaires);
-            const reservationsUrl = '{{ route("public.agenda.reservations", $entreprise->slug) }}';
+            const reservationsUrl = '{{ route("public.agenda.reservations", $entreprise->slug, false) }}';
             
             // État du calendrier
             let currentWeekOffset = 0;

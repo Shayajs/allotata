@@ -11,15 +11,40 @@
     @include('partials.theme-script')
     @stack('styles')
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200" :class="{ 'overflow-hidden': sidebarOpen }" x-data="{ sidebarOpen: false }">
     <div class="min-h-screen flex">
+        <!-- Sidebar Backdrop (Mobile) -->
+        <div 
+            class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity duration-300 opacity-0 pointer-events-none"
+            :class="sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+            x-show="sidebarOpen"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="sidebarOpen = false"
+            x-cloak
+        ></div>
+
         <!-- Sidebar -->
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 fixed h-full overflow-y-auto z-30" style="scrollbar-width: thin;">
+        <aside 
+            class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 fixed h-full overflow-y-auto z-50 transition-transform duration-300 -translate-x-full lg:translate-x-0"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            x-cloak
+            style="scrollbar-width: thin;"
+        >
             <!-- Logo -->
-            <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <a href="{{ route('admin.index') }}" class="text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                     🛡️ Allo Tata Admin
                 </a>
+                <button @click="sidebarOpen = false" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Navigation -->
@@ -172,35 +197,42 @@
                     @endif
                 </a>
             </nav>
-
-
         </aside>
 
         <!-- Main content -->
-        <main class="flex-1 flex flex-col min-w-0" style="margin-left: 16rem;">
+        <main class="flex-1 flex flex-col min-w-0 lg:ml-64">
             <!-- Top bar -->
-            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-8 py-4 sticky top-0 z-20">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">@yield('header', 'Administration')</h1>
-                        @hasSection('subheader')
-                            <p class="text-slate-600 dark:text-slate-400">@yield('subheader')</p>
-                        @endif
-                    </div>
+            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
+                <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <!-- Recherche globale -->
-                        <form action="{{ route('admin.search') }}" method="GET" class="relative">
+                        <button x-show="!sidebarOpen" @click="sidebarOpen = true" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <div>
+                            <h1 class="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white truncate">@yield('header', 'Administration')</h1>
+                            @hasSection('subheader')
+                                <p class="text-xs lg:text-sm text-slate-600 dark:text-slate-400 truncate hidden sm:block">@yield('subheader')</p>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 lg:gap-4">
+                        <!-- Recherche globale (cachée sur mobile petit, à voir) -->
+                        <form action="{{ route('admin.search') }}" method="GET" class="relative hidden md:block">
                             <input 
                                 type="text" 
                                 name="q" 
                                 placeholder="Rechercher..."
                                 value="{{ request('q') }}"
-                                class="w-64 px-4 py-2 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                                class="w-48 lg:w-64 px-4 py-2 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
                             >
                             <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </form>
+
                         <!-- Dark mode toggle -->
                         <button 
                             id="theme-toggle"
@@ -209,17 +241,18 @@
                             <span class="dark:hidden">🌙</span>
                             <span class="hidden dark:inline">☀️</span>
                         </button>
+
                         <!-- Admin info & Actions -->
-                        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-700 pl-4">
-                            <div class="flex items-center gap-3">
-                                <div class="text-right hidden sm:block">
+                        <div class="flex items-center gap-2 lg:gap-4 border-l border-slate-200 dark:border-slate-700 pl-2 lg:pl-4">
+                            <div class="flex items-center gap-2 lg:gap-3">
+                                <div class="text-right hidden xl:block">
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">{{ auth()->user()->name }}</div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400">Administrateur</div>
                                 </div>
-                                <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex-shrink-0">
                                     @if(auth()->user()->photo_profil)
                                         <img 
-                                            src="{{ asset('media/' . auth()->user()->photo_profil) }}" 
+                                            src="/media/{{ auth()->user()->photo_profil }}" 
                                             alt="{{ auth()->user()->name }}" 
                                             class="w-full h-full object-cover"
                                         >
@@ -230,7 +263,7 @@
                             </div>
                             
                             <!-- Actions -->
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1 lg:gap-2">
                                 <a href="{{ route('dashboard') }}" class="p-2 text-slate-500 hover:text-green-600 dark:text-slate-400 dark:hover:text-green-400 transition" title="Mon compte client">
                                     <span class="sr-only">Mon compte</span>
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,7 +286,7 @@
             </header>
 
             <!-- Page content -->
-            <div class="p-8">
+            <div class="p-4 lg:p-8">
                 @if(session('success'))
                     <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                         <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
@@ -268,13 +301,14 @@
 
                 @yield('content')
             </div>
-
-
         </main>
     </div>
 
     @include('partials.cookie-banner')
 
     @stack('scripts')
+    
+    <!-- Alpine.js for Sidebar Toggle -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </body>
 </html>

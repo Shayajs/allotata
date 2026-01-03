@@ -5,27 +5,27 @@
 @section('subheader', $entreprise->nom . ' (' . $entreprise->type_activite . ')')
 
 @section('content')
-<div class="mb-8 flex items-center justify-between">
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
     <div>
-        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ $entreprise->nom }}</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2 truncate">{{ $entreprise->nom }}</h1>
         <div class="flex flex-wrap gap-2">
             @if($entreprise->est_verifiee)
-                <span class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800 font-medium">
-                    ✓ Entreprise vérifiée
+                <span class="px-3 py-1 text-xs lg:text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800 font-medium">
+                    ✓ <span class="hidden lg:inline">Entreprise</span> vérifiée
                 </span>
             @elseif($entreprise->aDesRefus())
-                <span class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800 font-medium">
+                <span class="px-3 py-1 text-xs lg:text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800 font-medium">
                     ✗ Refusée
                 </span>
             @else
-                <span class="px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800 font-medium">
-                    ⏳ En attente de vérification
+                <span class="px-3 py-1 text-xs lg:text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800 font-medium">
+                    ⏳ <span class="hidden lg:inline">En attente de vérification</span><span class="lg:hidden">En attente</span>
                 </span>
             @endif
         </div>
     </div>
-    <a href="{{ route('admin.entreprises.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">
-        ← Retour à la liste
+    <a href="{{ route('admin.entreprises.index') }}" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 transition-all shadow-sm text-sm">
+        ← <span class="ml-2">Retour</span> <span class="hidden md:inline ml-1">à la liste</span>
     </a>
 </div>
 

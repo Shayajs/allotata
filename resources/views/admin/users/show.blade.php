@@ -5,23 +5,23 @@
 @section('subheader', 'Consultation et modification des informations de ' . $user->name)
 
 @section('content')
-<div class="mb-8 flex items-center justify-between">
-    <div class="flex items-center gap-6">
-        <x-avatar :user="$user" size="2xl" />
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="flex items-center gap-4 lg:gap-6">
+        <x-avatar :user="$user" class="w-16 h-16 md:w-24 md:h-24" />
         <div>
-            <div class="flex items-center gap-3 mb-1">
-                <h1 class="text-4xl font-extrabold text-slate-900 dark:text-white">{{ $user->name }}</h1>
+            <div class="flex flex-wrap items-center gap-2 lg:gap-3 mb-1">
+                <h1 class="text-2xl lg:text-4xl font-extrabold text-slate-900 dark:text-white truncate">{{ $user->name }}</h1>
                 @if($user->is_admin)
                     <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-red-200">Admin</span>
                 @endif
             </div>
-            <p class="text-slate-500 font-medium flex items-center gap-2">
-                <span class="text-lg">✉️</span> {{ $user->email }}
+            <p class="text-sm lg:text-base text-slate-500 font-medium flex items-center gap-2">
+                <span class="text-lg">✉️</span> <span class="truncate">{{ $user->email }}</span>
             </p>
         </div>
     </div>
-    <a href="{{ route('admin.users.index') }}" class="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-        ← Liste des utilisateurs
+    <a href="{{ route('admin.users.index') }}" class="inline-flex items-center justify-center px-4 md:px-6 py-2 md:py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl md:rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-sm">
+        ← <span class="ml-2">Retour</span> <span class="hidden md:inline ml-1">à la liste</span>
     </a>
 </div>
 

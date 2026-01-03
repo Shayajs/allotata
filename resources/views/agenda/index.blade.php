@@ -520,7 +520,7 @@
         <script>
             // Données PHP
             const horaires = @json($horaires);
-            const reservationsUrl = '{{ route("agenda.reservations", $entreprise->slug) }}';
+            const reservationsUrl = '{{ route("agenda.reservations", $entreprise->slug, false) }}';
             
             // État du calendrier
             let currentWeekOffset = 0;
