@@ -9,42 +9,22 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @include('partials.theme-script')
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     @stack('styles')
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200" :class="{ 'overflow-hidden': sidebarOpen }" x-data="{ sidebarOpen: false }">
-    <div class="min-h-screen flex">
-        <!-- Sidebar Backdrop (Mobile) -->
-        <div 
-            class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity duration-300 opacity-0 pointer-events-none"
-            :class="sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
-            x-show="sidebarOpen"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-300"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            @click="sidebarOpen = false"
-            x-cloak
-        ></div>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+    @include('components.mobile-nav', ['navType' => 'admin'])
 
-        <!-- Sidebar -->
-        <aside 
-            class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 fixed h-full overflow-y-auto z-50 transition-transform duration-300 -translate-x-full lg:translate-x-0"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-            x-cloak
-            style="scrollbar-width: thin;"
-        >
+    <div class="min-h-screen flex">
+        <!-- Sidebar (PC) -->
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
-            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700">
                 <a href="{{ route('admin.index') }}" class="text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                     🛡️ Allo Tata Admin
                 </a>
-                <button @click="sidebarOpen = false" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
             </div>
 
             <!-- Navigation -->
@@ -200,16 +180,12 @@
         </aside>
 
         <!-- Main content -->
-        <main class="flex-1 flex flex-col min-w-0 lg:ml-64">
+        <main class="flex-1 flex flex-col min-w-0">
             <!-- Top bar -->
             <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <button x-show="!sidebarOpen" @click="sidebarOpen = true" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
+
                         <div>
                             <h1 class="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white truncate">@yield('header', 'Administration')</h1>
                             @hasSection('subheader')
@@ -308,7 +284,6 @@
 
     @stack('scripts')
     
-    <!-- Alpine.js for Sidebar Toggle -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 </body>
 </html>
