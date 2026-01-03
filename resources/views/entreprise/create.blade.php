@@ -206,18 +206,70 @@
                         Localisation
                     </h2>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Recherche d'adresse avec autocomplete -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            🔍 Rechercher une adresse
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="address-search"
+                                placeholder="Commencez à taper votre adresse..."
+                                autocomplete="off"
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                            <div id="address-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto"></div>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Recherchez votre adresse pour remplir automatiquement les champs ci-dessous
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label for="ville" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Ville
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Adresse (rue et numéro)
                             </label>
                             <input 
                                 type="text" 
-                                id="ville" 
+                                name="adresse_rue" 
+                                id="adresse_rue"
+                                value="{{ old('adresse_rue') }}"
+                                placeholder="123 rue de la Paix"
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Code postal
+                            </label>
+                            <input 
+                                type="text" 
+                                name="code_postal" 
+                                id="code_postal"
+                                value="{{ old('code_postal') }}"
+                                placeholder="75001"
+                                maxlength="5"
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Ville <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="text" 
                                 name="ville" 
+                                id="ville"
                                 value="{{ old('ville') }}"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                required
                                 placeholder="Paris"
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             >
                             @error('ville')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -225,16 +277,16 @@
                         </div>
 
                         <div>
-                            <label for="rayon_deplacement" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                 Rayon de déplacement (km)
                             </label>
                             <input 
                                 type="number" 
-                                id="rayon_deplacement" 
                                 name="rayon_deplacement" 
+                                id="rayon_deplacement"
                                 value="{{ old('rayon_deplacement', 0) }}"
                                 min="0"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                 placeholder="0 = fixe, >0 = mobile"
                             >
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -242,10 +294,52 @@
                             </p>
                             @error('rayon_deplacement')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
+
+                    <!-- Toggle affichage adresse complète -->
+                    <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition mb-4">
+                        <input 
+                            type="checkbox" 
+                            name="afficher_adresse_complete" 
+                            value="1"
+                            {{ old('afficher_adresse_complete') ? 'checked' : '' }}
+                            class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                        >
+                        <div>
+                            <span class="text-sm font-medium text-slate-900 dark:text-white">
+                                📍 Afficher l'adresse complète publiquement
+                            </span>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                Si activé, votre adresse complète (rue, numéro) sera visible. Sinon, seule la ville sera affichée.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Champs cachés pour les coordonnées GPS -->
+                    <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
+                    <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const addressAutocomplete = new AddressAutocomplete({
+                            onSelect: function(data) {
+                                // Remplir les champs
+                                document.getElementById('adresse_rue').value = (data.housenumber || '') + ' ' + (data.street || data.name || '');
+                                document.getElementById('code_postal').value = data.postcode || '';
+                                document.getElementById('ville').value = data.city || '';
+                                document.getElementById('latitude').value = data.latitude || '';
+                                document.getElementById('longitude').value = data.longitude || '';
+                                
+                                // Vider le champ de recherche
+                                document.getElementById('address-search').value = data.label || '';
+                            }
+                        });
+
+                        addressAutocomplete.init('address-search', 'address-results', 'address');
+                    });
+                </script>
 
                 <!-- Section Informations légales -->
                 <div>
