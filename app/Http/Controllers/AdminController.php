@@ -518,9 +518,7 @@ class AdminController extends Controller
      */
     public function showSubscription(User $user)
     {
-        $user->load('entreprises');
-        
-        return view('admin.users.subscription', compact('user'));
+        return redirect()->route('admin.users.show', ['user' => $user, 'tab' => 'subscription']);
     }
 
     /**
