@@ -340,4 +340,94 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe. Veuillez réessayer plus tard.']);
         }
     }
+    /**
+     * Annuler l'abonnement à la fin de la période (Grace Period)
+     * Utilise la même logique que l'admin mais sans couper l'accès immédiatement
+     */
+    public function cancelSubscription(Request $request, $slug, $type)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        if (!$entreprise->peutEtreGereePar($user)) {
+             return back()->withErrors(['error' => 'Accès refusé.']);
+        }
+
+        $entrepriseSubLocal = \App\Models\EntrepriseSubscription::where('entreprise_id', $entreprise->id)
+            ->where('type', $type)
+            ->first();
+
+        if ($entrepriseSubLocal && $entrepriseSubLocal->stripe_id) {
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                $stripeSubscription = \Stripe\Subscription::retrieve($entrepriseSubLocal->stripe_id);
+                
+                // Annuler à la fin de la période (Non-violent)
+                $stripeSubscription = \Stripe\Subscription::update($entrepriseSubLocal->stripe_id, [
+                    'cancel_at_period_end' => true,
+                ]);
+
+                // Récupérer la date de fin (current_period_end est le plus fiable pour une fin de période)
+                $timestamp = $stripeSubscription->current_period_end ?? $stripeSubscription->cancel_at;
+                
+                if (!$timestamp) {
+                    $timestamp = time() + (30 * 24 * 60 * 60); // Fallback à +30 jours si vraiment rien n'est trouvé
+                }
+                
+                $dateFin = \Carbon\Carbon::createFromTimestamp($timestamp);
+                
+                $entrepriseSubLocal->update([
+                    'ends_at' => $dateFin,
+                    'stripe_status' => $stripeSubscription->status,
+                ]);
+
+                return back()->with('success', "L'abonnement a été configuré pour s'arrêter à la fin de la période facturée (le " . $dateFin->format('d/m/Y') . ").");
+            } catch (\Exception $e) {
+                return back()->with('error', "Erreur Stripe : " . $e->getMessage());
+            }
+        }
+
+        return back()->with('error', "Aucun abonnement Stripe actif trouvé.");
+    }
+
+    /**
+     * Réactiver un abonnement annulé (en Grace Period)
+     */
+    public function resumeSubscription(Request $request, $slug, $type)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        if (!$entreprise->peutEtreGereePar($user)) {
+             return back()->withErrors(['error' => 'Accès refusé.']);
+        }
+
+        $entrepriseSubLocal = \App\Models\EntrepriseSubscription::where('entreprise_id', $entreprise->id)
+            ->where('type', $type)
+            ->first();
+
+        if ($entrepriseSubLocal && $entrepriseSubLocal->stripe_id) {
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                $stripeSubscription = \Stripe\Subscription::retrieve($entrepriseSubLocal->stripe_id);
+                
+                // Retirer l'annulation programmée
+                $stripeSubscription = \Stripe\Subscription::update($entrepriseSubLocal->stripe_id, [
+                    'cancel_at_period_end' => false,
+                ]);
+
+                // Mettre à jour l'abonnement local
+                $entrepriseSubLocal->update([
+                    'ends_at' => null,
+                    'stripe_status' => $stripeSubscription->status,
+                ]);
+
+                return back()->with('success', "L'abonnement a été réactivé avec succès. Le renouvellement automatique est rétabli.");
+            } catch (\Exception $e) {
+                return back()->with('error', "Erreur Stripe : " . $e->getMessage());
+            }
+        }
+
+        return back()->with('error', "Impossible de réactiver cet abonnement.");
+    }
 }

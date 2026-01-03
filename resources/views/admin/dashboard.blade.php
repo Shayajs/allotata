@@ -148,9 +148,7 @@
             @foreach($derniersUtilisateurs as $user)
                 <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center">
-                            <span class="text-sm">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                        </div>
+                        <x-avatar :user="$user" size="md" />
                         <div>
                             <p class="font-medium text-slate-900 dark:text-white">{{ $user->name }}</p>
                             <p class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</p>

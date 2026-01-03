@@ -224,6 +224,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/m/{slug}/abonnements/checkout', [EntrepriseSubscriptionController::class, 'checkout'])->name('entreprise.subscriptions.checkout');
     Route::get('/m/{slug}/abonnements/success/{type}', [EntrepriseSubscriptionController::class, 'success'])->name('entreprise.subscriptions.success');
     Route::post('/m/{slug}/abonnements/{type}/cancel', [EntrepriseSubscriptionController::class, 'cancel'])->name('entreprise.subscriptions.cancel');
+    Route::post('/m/{slug}/abonnements/{type}/cancel-direct', [EntrepriseSubscriptionController::class, 'cancelSubscription'])->name('entreprise.subscriptions.cancel-direct');
+    Route::post('/m/{slug}/abonnements/{type}/resume', [EntrepriseSubscriptionController::class, 'resumeSubscription'])->name('entreprise.subscriptions.resume');
     
     // Essais gratuits
     Route::post('/essai-gratuit/utilisateur', [\App\Http\Controllers\EssaiGratuitController::class, 'demarrerEssaiUtilisateur'])->name('essai-gratuit.utilisateur');
@@ -278,6 +280,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/abonnement/success', [SubscriptionController::class, 'success'])->name('subscription.success');
         Route::post('/abonnement/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
         Route::post('/abonnement/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+        Route::post('/abonnement/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
         Route::get('/abonnement/facture/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         Route::get('/abonnement/invoice/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         

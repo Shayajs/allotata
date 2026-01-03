@@ -155,9 +155,9 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Rediriger vers le portail client Stripe pour gérer l'abonnement
+     * Rediriger vers le portail client Stripe pour gérer le mode de paiement, etc.
      */
-    public function cancel()
+    public function manage()
     {
         $user = Auth::user();
         
@@ -166,18 +166,47 @@ class SubscriptionController extends Controller
         }
 
         try {
-            $session = BillingPortalSession::create([
-                'customer' => $user->stripe_id,
-                'return_url' => route('settings.index', ['tab' => 'subscription']),
-            ], [
-                'api_key' => config('services.stripe.secret'),
-            ]);
-
-            return redirect($session->url);
+            return $user->redirectToBillingPortal(route('settings.index', ['tab' => 'subscription']));
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la création de la session du portail client Stripe: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe. Veuillez réessayer plus tard.']);
+            Log::error('Erreur lors de l\'accès au portail Stripe: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe.']);
         }
+    }
+
+    /**
+     * Annuler l'abonnement à la fin de la période (Grace Period)
+     */
+    public function cancel()
+    {
+        $user = Auth::user();
+        $subscription = $user->subscription('default');
+
+        if ($subscription && $subscription->active()) {
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                
+                // Communication directe avec Stripe pour annuler à la fin de la période
+                $stripeSub = \Stripe\Subscription::update($subscription->stripe_id, [
+                    'cancel_at_period_end' => true,
+                ]);
+
+                // Mise à jour immédiate de l'enregistrement Cashier pour le feedback visuel
+                $timestamp = $stripeSub->current_period_end ?? $stripeSub->cancel_at;
+                $dateFin = $timestamp ? \Carbon\Carbon::createFromTimestamp($timestamp) : now()->addMonth();
+                
+                $subscription->update([
+                    'ends_at' => $dateFin,
+                    'stripe_status' => $stripeSub->status,
+                ]);
+                
+                return back()->with('success', "Votre abonnement Premium s'arrêtera le " . $dateFin->format('d/m/Y') . ". Vous gardez tous vos accès jusque là.");
+            } catch (\Exception $e) {
+                Log::error('Erreur annulation Premium direct: ' . $e->getMessage());
+                return back()->with('error', "Erreur Stripe : " . $e->getMessage());
+            }
+        }
+
+        return back()->with('error', "Aucun abonnement actif trouvé.");
     }
 
     /**
@@ -189,18 +218,34 @@ class SubscriptionController extends Controller
         $subscription = $user->subscription('default');
 
         if ($subscription && $subscription->onGracePeriod()) {
-            $subscription->resume();
-            
-            $user->update([
-                'abonnement_manuel' => false,
-                'abonnement_manuel_actif_jusqu' => null,
-                'abonnement_manuel_notes' => null,
-            ]);
-            
-            return redirect()->route('settings.index', ['tab' => 'subscription'])
-                ->with('success', 'Votre abonnement a été réactivé.');
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                
+                // Retirer l'annulation programmée sur Stripe
+                $stripeSub = \Stripe\Subscription::update($subscription->stripe_id, [
+                    'cancel_at_period_end' => false,
+                ]);
+
+                // Mise à jour immédiate en local
+                $subscription->update([
+                    'ends_at' => null,
+                    'stripe_status' => $stripeSub->status,
+                ]);
+
+                // Nettoyer les infos d'abonnement manuel
+                $user->update([
+                    'abonnement_manuel' => false,
+                    'abonnement_manuel_actif_jusqu' => null,
+                    'abonnement_manuel_notes' => null,
+                ]);
+                
+                return back()->with('success', "Votre abonnement Premium a été réactivé avec succès !");
+            } catch (\Exception $e) {
+                Log::error('Erreur réactivation Premium direct: ' . $e->getMessage());
+                return back()->with('error', "Erreur Stripe : " . $e->getMessage());
+            }
         }
 
-        return back()->withErrors(['error' => 'Impossible de reprendre l\'abonnement.']);
+        return back()->with('error', "Impossible de reprendre cet abonnement.");
     }
 }

@@ -91,7 +91,10 @@
                             @forelse($users as $user)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->name }}</div>
+                                        <div class="flex items-center gap-3">
+                                            <x-avatar :user="$user" size="sm" />
+                                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->name }}</div>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</div>

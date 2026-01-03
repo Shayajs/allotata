@@ -93,24 +93,38 @@
                         @endif
                     </div>
                     
-                    <div class="flex gap-3 mt-4">
+                    <div class="space-y-4 mt-6">
                         @if($subscription->onGracePeriod())
-                            <form action="{{ route('subscription.resume') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
-                                    Reprendre l'abonnement
-                                </button>
-                            </form>
-                        @else
-                            <form action="{{ route('subscription.cancel') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
-                                    Gérer l'abonnement sur Stripe
-                                </button>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                    Vous serez redirigé vers le portail Stripe pour gérer votre abonnement.
+                            <div class="flex flex-col gap-3">
+                                <form action="{{ route('subscription.resume') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-sm transition-all transform hover:scale-[1.01]">
+                                        🚀 Réactiver mon abonnement Premium
+                                    </button>
+                                </form>
+                                <p class="text-sm text-center text-yellow-600 dark:text-yellow-400 font-medium italic">
+                                    Votre accès Premium restera valide jusqu'au {{ $subscription->ends_at->format('d/m/Y') }}
                                 </p>
-                            </form>
+                            </div>
+                        @else
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <form action="{{ route('subscription.cancel') }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment annuler votre abonnement Premium ? Vous garderez vos accès jusqu\'au prochain renouvellement.');">
+                                    @csrf
+                                    <button type="submit" class="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-semibold rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+                                        🛑 Annuler l'abonnement
+                                    </button>
+                                </form>
+
+                                <form action="{{ route('subscription.manage') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                                        💳 Gérer le paiement
+                                    </button>
+                                </form>
+                            </div>
+                            <p class="text-xs text-center text-slate-500 dark:text-slate-400 italic">
+                                L'annulation prend effet à la fin de la période facturée. Vous ne serez plus débité.
+                            </p>
                         @endif
                     </div>
                 </div>
@@ -251,6 +265,25 @@
                             
                             @if($aSiteWebActif)
                                 @if($abonnementSiteWeb && !$abonnementSiteWeb->est_manuel)
+                                    @if($abonnementSiteWeb->ends_at && $abonnementSiteWeb->ends_at->isFuture())
+                                        <form action="{{ route('entreprise.subscriptions.resume', [$entreprise->slug, 'site_web']) }}" method="POST" class="mb-2">
+                                            @csrf
+                                            <button type="submit" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                                Réactiver l'abonnement
+                                            </button>
+                                        </form>
+                                        <div class="text-xs text-center text-yellow-600 dark:text-yellow-400 mb-2">
+                                            Fin de l'accès le {{ $abonnementSiteWeb->ends_at->format('d/m/Y') }}
+                                        </div>
+                                    @else
+                                        <form action="{{ route('entreprise.subscriptions.cancel-direct', [$entreprise->slug, 'site_web']) }}" method="POST" class="mb-2" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ? L\'accès restera valide jusqu\'à la fin de la période payée.');">
+                                            @csrf
+                                            <button type="submit" class="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30 font-semibold rounded-lg transition text-sm">
+                                                Annuler l'abonnement
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <form action="{{ route('entreprise.subscriptions.cancel', [$entreprise->slug, 'site_web']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
@@ -283,6 +316,25 @@
                             
                             @if($aGestionMultiPersonnes)
                                 @if($abonnementMultiPersonnes && !$abonnementMultiPersonnes->est_manuel)
+                                    @if($abonnementMultiPersonnes->ends_at && $abonnementMultiPersonnes->ends_at->isFuture())
+                                        <form action="{{ route('entreprise.subscriptions.resume', [$entreprise->slug, 'multi_personnes']) }}" method="POST" class="mb-2">
+                                            @csrf
+                                            <button type="submit" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                                Réactiver l'abonnement
+                                            </button>
+                                        </form>
+                                        <div class="text-xs text-center text-yellow-600 dark:text-yellow-400 mb-2">
+                                            Fin de l'accès le {{ $abonnementMultiPersonnes->ends_at->format('d/m/Y') }}
+                                        </div>
+                                    @else
+                                        <form action="{{ route('entreprise.subscriptions.cancel-direct', [$entreprise->slug, 'multi_personnes']) }}" method="POST" class="mb-2" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ? L\'accès restera valide jusqu\'à la fin de la période payée.');">
+                                            @csrf
+                                            <button type="submit" class="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30 font-semibold rounded-lg transition text-sm">
+                                                Annuler l'abonnement
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <form action="{{ route('entreprise.subscriptions.cancel', [$entreprise->slug, 'multi_personnes']) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-full px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">

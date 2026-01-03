@@ -14,9 +14,12 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">{{ $user->name }}</h1>
-                    <p class="text-slate-600 dark:text-slate-400">{{ $user->email }}</p>
+                <div class="flex items-center gap-4">
+                    <x-avatar :user="$user" size="2xl" />
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ $user->name }}</h1>
+                        <p class="text-slate-600 dark:text-slate-400">{{ $user->email }}</p>
+                    </div>
                 </div>
                 <a href="{{ route('admin.users.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
                     ← Retour
