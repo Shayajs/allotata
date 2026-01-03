@@ -64,8 +64,27 @@ class StripeSubscriptionSyncService
 
                 // Déterminer si c'est un abonnement utilisateur (default) ou entreprise
                 // Les abonnements utilisateurs ont généralement le type 'default'
-                // On peut aussi vérifier via les metadata ou le nom du produit
-                $isUserSubscription = true; // Par défaut, on assume que c'est un abonnement utilisateur
+                
+                // FILTRE : Si c'est un abonnement entreprise, ON L'IGNORE dans la sync utilisateur
+                $isEntrepriseSubscription = false;
+
+                // 1. Vérification par metadata (le plus fiable)
+                if (isset($stripeSubscription->metadata['type']) && in_array($stripeSubscription->metadata['type'], ['site_web', 'multi_personnes'])) {
+                    $isEntrepriseSubscription = true;
+                }
+                // 2. Vérification par metadata 'entreprise_id'
+                elseif (isset($stripeSubscription->metadata['entreprise_id'])) {
+                    $isEntrepriseSubscription = true;
+                }
+                // 3. Vérification par Price ID
+                elseif ($priceId === config('services.stripe.price_id_site_web') || $priceId === config('services.stripe.price_id_multi_personnes')) {
+                    $isEntrepriseSubscription = true;
+                }
+
+                // Si c'est un abonnement entreprise, on passe au suivant (il sera traité par syncEntrepriseSubscriptions)
+                if ($isEntrepriseSubscription) {
+                    continue;
+                }
 
                 // Créer ou mettre à jour l'abonnement dans la base de données
                 $subscription = Subscription::updateOrCreate(
@@ -154,16 +173,21 @@ class StripeSubscriptionSyncService
                 $subscriptionType = null;
                 $subscriptionName = null;
 
-                // Vérifier les metadata
-                if (isset($stripeSubscription->metadata['type'])) {
-                    $subscriptionType = $stripeSubscription->metadata['type'];
-                } elseif (isset($stripeSubscription->metadata['name'])) {
-                    $name = $stripeSubscription->metadata['name'];
-                    if (str_contains($name, 'Site Web') || str_contains($name, 'site_web')) {
-                        $subscriptionType = 'site_web';
-                    } elseif (str_contains($name, 'Multi-Personnes') || str_contains($name, 'multi_personnes')) {
-                        $subscriptionType = 'multi_personnes';
-                    }
+                // DÉTECTION DU TYPE (Robuste)
+                // On cherche 'site_web' ou 'multi_personnes' dans les clés 'type' ou 'name' des métadonnées
+                // car parfois elles peuvent contenir des préfixes (ex: entreprise_site_web_4) qui bloquent la comparaison stricte
+                
+                $metaType = $stripeSubscription->metadata['type'] ?? null;
+                $metaName = $stripeSubscription->metadata['name'] ?? null;
+                
+                if ($metaType && (str_contains($metaType, 'site_web') || $metaType === 'site_web')) {
+                    $subscriptionType = 'site_web';
+                } elseif ($metaType && (str_contains($metaType, 'multi_personnes') || $metaType === 'multi_personnes')) {
+                    $subscriptionType = 'multi_personnes';
+                } elseif ($metaName && (str_contains($metaName, 'site_web') || str_contains($metaName, 'Site Web'))) {
+                     $subscriptionType = 'site_web';
+                } elseif ($metaName && (str_contains($metaName, 'multi_personnes') || str_contains($metaName, 'Multi-Personnes'))) {
+                     $subscriptionType = 'multi_personnes';
                 }
 
                 // Si on n'a pas trouvé le type, essayer de le déduire du price_id
@@ -182,6 +206,41 @@ class StripeSubscriptionSyncService
                 // Si on n'a toujours pas le type, on ne synchronise pas cet abonnement
                 if (!$subscriptionType || !in_array($subscriptionType, ['site_web', 'multi_personnes'])) {
                     continue;
+                }
+
+                // VÉRIFICATION D'APPARTENANCE
+                $isTargetEntreprise = false;
+                $hasEntrepriseIdInfo = false;
+
+                // 1. Vérification par DESCRIPTION (Priorité haute, méthode infaillible "User Request")
+                // On cherche le tag [ENTREPRISE_ID:123]
+                if (isset($stripeSubscription->description) && preg_match('/\[ENTREPRISE_ID:(\d+)\]/', $stripeSubscription->description, $matches)) {
+                    $hasEntrepriseIdInfo = true;
+                    if ((string)$matches[1] === (string)$entreprise->id) {
+                        $isTargetEntreprise = true;
+                    }
+                }
+                // 2. Vérification par METADATA (Si pas trouvé dans description)
+                elseif (isset($stripeSubscription->metadata['entreprise_id'])) {
+                    $hasEntrepriseIdInfo = true;
+                    if ((string)$stripeSubscription->metadata['entreprise_id'] === (string)$entreprise->id) {
+                        $isTargetEntreprise = true;
+                    }
+                }
+
+                // LOGIQUE DE DÉCISION
+                if ($hasEntrepriseIdInfo) {
+                    // Si on a l'info explicite et que ce n'est pas la bonne entreprise, on ignore cet abonnement
+                    if (!$isTargetEntreprise) {
+                        continue;
+                    }
+                } else {
+                    // Si aucune info explicite (anciens abonnements sans metadata ni description)
+                    // On ne peut prendre le risque que si l'utilisateur n'a qu'une seule entreprise.
+                    if ($user->entreprises()->count() > 1) {
+                        // Risque trop élevé d'erreur d'attribution pour les comptes multi-entreprises
+                        continue; 
+                    }
                 }
 
                 // Créer ou mettre à jour l'abonnement dans la base de données

@@ -11,6 +11,43 @@
     $style = $settings['style'] ?? 'card'; // card, full, minimal
     $rounded = $settings['rounded'] ?? true;
     
+    // ========================================
+    // CONVERSION AUTOMATIQUE DES URLS
+    // ========================================
+    
+    // YouTube: watch?v=xxx -> embed/xxx
+    if (preg_match('/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/', $src, $matches)) {
+        $src = 'https://www.youtube.com/embed/' . $matches[1];
+    }
+    // YouTube: youtu.be/xxx -> embed/xxx  
+    elseif (preg_match('/youtu\.be\/([a-zA-Z0-9_-]+)/', $src, $matches)) {
+        $src = 'https://www.youtube.com/embed/' . $matches[1];
+    }
+    // Vimeo: vimeo.com/xxx -> player.vimeo.com/video/xxx
+    elseif (preg_match('/vimeo\.com\/(\d+)/', $src, $matches)) {
+        $src = 'https://player.vimeo.com/video/' . $matches[1];
+    }
+    // Spotify Playlist: open.spotify.com/playlist/xxx -> open.spotify.com/embed/playlist/xxx
+    elseif (preg_match('/open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/', $src, $matches) && !str_contains($src, '/embed/')) {
+        $src = 'https://open.spotify.com/embed/playlist/' . $matches[1];
+    }
+    // Spotify Track: open.spotify.com/track/xxx -> open.spotify.com/embed/track/xxx
+    elseif (preg_match('/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/', $src, $matches) && !str_contains($src, '/embed/')) {
+        $src = 'https://open.spotify.com/embed/track/' . $matches[1];
+    }
+    // Spotify Album: open.spotify.com/album/xxx -> open.spotify.com/embed/album/xxx
+    elseif (preg_match('/open\.spotify\.com\/album\/([a-zA-Z0-9]+)/', $src, $matches) && !str_contains($src, '/embed/')) {
+        $src = 'https://open.spotify.com/embed/album/' . $matches[1];
+    }
+    // Calendly: Si pas déjà en format embed, ajouter ?embed=true
+    elseif (str_contains($src, 'calendly.com') && !str_contains($src, 'embed=true')) {
+        $src .= (str_contains($src, '?') ? '&' : '?') . 'embed=true';
+    }
+    
+    // ========================================
+    // DÉTECTION DU TYPE D'INTÉGRATION
+    // ========================================
+    
     // Détecter le type d'intégration pour affichage
     $type = 'custom';
     if (str_contains($src, 'youtube.com') || str_contains($src, 'youtu.be')) {

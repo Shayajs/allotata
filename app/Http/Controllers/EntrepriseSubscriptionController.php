@@ -189,16 +189,23 @@ class EntrepriseSubscriptionController extends Controller
         $subscriptionName = 'entreprise_' . $type . '_' . $entreprise->id;
         
         $metadata = [
-            'entreprise_id' => $entreprise->id,
-            'type' => $type,
-            'name' => $subscriptionName, // Important : Cashier utilise metadata['name'] pour déterminer le type d'abonnement
+            'entreprise_id' => (string) $entreprise->id,
+            // On ne met PAS 'name' ni 'type' ici car Cashier les gère ou cela crée des conflits de fusion (array_merge_recursive)
+            // Seule l'entreprise_id est notre donnée custom critique.
         ];
+
+        // IDENTIFICATION ROBUSTE : On met l'ID dans la description visible
+        $description = "Abonnement " . ($type == 'site_web' ? 'Site Web' : 'Multi-Perso') . " [ENTREPRISE_ID:{$entreprise->id}]";
 
         return $user->newSubscription($subscriptionName, $priceId)
             ->checkout([
-                'success_url' => route('entreprise.subscriptions.success', ['slug' => $entreprise->slug, 'type' => $type]),
+                'success_url' => route('entreprise.subscriptions.success', ['slug' => $entreprise->slug, 'type' => $type]) . '?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']),
-                'metadata' => $metadata,
+                'metadata' => ['entreprise_id' => (string) $entreprise->id], // Pour la session
+                'subscription_data' => [
+                    'description' => $description,
+                    'metadata' => ['entreprise_id' => (string) $entreprise->id] // On retente metadata simple ici, mais la description est notre filet de sécurité
+                ],
             ]);
     }
 
@@ -215,12 +222,11 @@ class EntrepriseSubscriptionController extends Controller
                 ->with('error', 'Accès refusé.');
         }
 
-        // VÉRIFICATION DIRECTE SUR STRIPE (méthode de sécurité)
-        Log::info('Vérification directe Stripe après checkout entreprise', [
+        // VÉRIFICATION 1 : DIRECTE SUR STRIPE (SYNC GLOBAL)
+        Log::info('Vérification Stripe entreprise (Global Sync)', [
             'user_id' => $user->id,
             'entreprise_id' => $entreprise->id,
             'type' => $type,
-            'stripe_id' => $user->stripe_id,
         ]);
 
         // Attendre un peu pour que Stripe traite le paiement
@@ -229,21 +235,48 @@ class EntrepriseSubscriptionController extends Controller
         // Synchroniser TOUS les abonnements depuis Stripe (utilisateur + entreprises)
         $syncResult = \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
         
-        Log::info('Résultat synchronisation Stripe entreprise', [
-            'user_id' => $user->id,
-            'entreprise_id' => $entreprise->id,
-            'type' => $type,
-            'sync_result' => $syncResult,
-        ]);
-
         // Recharger l'entreprise pour avoir les dernières données
         $entreprise->refresh();
 
-        // Vérifier si l'abonnement existe maintenant
+        // Vérifier si l'abonnement existe maintenant via le sync global
         $subscription = EntrepriseSubscription::where('entreprise_id', $entreprise->id)
             ->where('type', $type)
             ->where('est_manuel', false)
             ->first();
+
+        // VÉRIFICATION 2 : CHECKOUT SESSION (FALLBACK ROBUSTE)
+        // Si le sync global a échoué (ex: délai API, pagination), on vérifie précisément cette session
+        if ((!$subscription || !$subscription->estActif()) && $request->has('session_id')) {
+            $sessionId = $request->get('session_id');
+            Log::info('Vérification Stripe entreprise (Fallback Session)', ['session_id' => $sessionId]);
+
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                $session = \Stripe\Checkout\Session::retrieve($sessionId);
+                
+                if ($session && $session->subscription) {
+                    $subscriptionId = $session->subscription;
+                    
+                    Log::info('Session trouvée, tentative de sync précis', ['subscription_id' => $subscriptionId]);
+                    
+                    // Sync précis de cet abonnement
+                    \App\Services\StripeSubscriptionSyncService::syncSubscriptionByStripeId($subscriptionId);
+                    
+                    // Re-vérification après sync précis
+                    $originalSubscription = \App\Models\EntrepriseSubscription::where('stripe_id', $subscriptionId)->first();
+                    
+                    // Si on ne le trouve pas via stripe_id, on re-cherche par type pour être sûr
+                    if (!$subscription || !$subscription->estActif()) {
+                        $subscription = EntrepriseSubscription::where('entreprise_id', $entreprise->id)
+                            ->where('type', $type)
+                            ->where('est_manuel', false)
+                            ->first();
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Erreur lors du fallback Stripe Session', ['error' => $e->getMessage()]);
+            }
+        }
 
         if ($subscription && $subscription->estActif()) {
             return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])

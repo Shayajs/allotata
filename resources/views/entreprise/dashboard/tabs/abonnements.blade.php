@@ -52,7 +52,7 @@
                                     Gérer le site
                                 </a>
                             @else
-                                <a href="{{ route('settings.index', ['tab' => 'entreprise']) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                <a href="{{ route('site-web.show', ['slug' => $entreprise->slug]) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                                     Configurer le site
                                 </a>
                             @endif

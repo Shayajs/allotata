@@ -555,3 +555,5 @@ Route::get('/diagnostic-auth', function () {
 
     return response()->json($diagnostic, 200);
 })->middleware('auth');
+
+

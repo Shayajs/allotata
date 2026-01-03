@@ -31,14 +31,39 @@ class EntrepriseDashboardController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
+        // Onglet actif (par défaut: accueil)
+        $activeTab = $request->get('tab', 'accueil');
+
         // VÉRIFICATION DIRECTE SUR STRIPE avant d'afficher le dashboard
         // On synchronise toujours depuis Stripe pour être sûr que les données sont à jour
-        // Surtout important pour l'onglet abonnements
         if ($user->stripe_id) {
             try {
-                \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
-                // Recharger l'entreprise pour avoir les dernières données
-                $entreprise->refresh();
+                // Si on est sur l'onglet abonnements, on force la synchro immédiate
+                if ($activeTab === 'abonnements') {
+                    \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+                    
+                    // Si on a un session_id dans l'URL (retour de paiement sans passer par success), on tente un sync précis
+                    if ($request->has('session_id')) {
+                        try {
+                            $sessionId = $request->get('session_id');
+                            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                            $session = \Stripe\Checkout\Session::retrieve($sessionId);
+                            if ($session && $session->subscription) {
+                                \App\Services\StripeSubscriptionSyncService::syncSubscriptionByStripeId($session->subscription);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning('Erreur sync session précise dashboard: ' . $e->getMessage());
+                        }
+                    }
+                    
+                    $entreprise->refresh();
+                } else {
+                    // Sinon on utilise un cache de 10 minutes pour ne pas spammer Stripe
+                    \Illuminate\Support\Facades\Cache::remember('stripe_sync_' . $user->id, 600, function () use ($user) {
+                        \App\Services\StripeSubscriptionSyncService::syncAllUserSubscriptions($user);
+                        return true;
+                    });
+                }
             } catch (\Exception $e) {
                 // En cas d'erreur, on continue quand même (ne pas bloquer l'affichage)
                 \Log::warning('Erreur lors de la synchronisation Stripe dans le dashboard entreprise: ' . $e->getMessage());
@@ -151,7 +176,7 @@ class EntrepriseDashboardController extends Controller
         }
 
         // Onglet actif (par défaut: accueil)
-        $activeTab = $request->get('tab', 'accueil');
+
 
         return view('entreprise.dashboard.index', [
             'user' => $user,

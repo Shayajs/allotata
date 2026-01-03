@@ -89,18 +89,31 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                    @if($subscription->stripe_price === config('services.stripe.price_id'))
+                                        <span class="text-sm text-slate-900 dark:text-white font-medium">15.00 €</span>
+                                        <span class="text-xs text-slate-500">/mois</span>
+                                    @else
+                                        <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                    <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
                                         @csrf
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-3">
                                             Annuler
                                         </button>
                                     </form>
+                                    <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
+                                       target="_blank" 
+                                       class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium inline-flex items-center">
+                                        Voir Stripe
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach
@@ -162,18 +175,34 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                    @if($subscription->stripe_price === config('services.stripe.price_id_site_web'))
+                                        <span class="text-sm text-slate-900 dark:text-white font-medium">2.00 €</span>
+                                        <span class="text-xs text-slate-500">/mois</span>
+                                    @elseif($subscription->stripe_price === config('services.stripe.price_id_multi_personnes'))
+                                        <span class="text-sm text-slate-900 dark:text-white font-medium">20.00 €</span>
+                                        <span class="text-xs text-slate-500">/mois</span>
+                                    @else
+                                        <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
                                         @csrf
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-3">
                                             Annuler
                                         </button>
                                     </form>
+                                    <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
+                                       target="_blank" 
+                                       class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium inline-flex items-center">
+                                        Voir Stripe
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach
