@@ -380,11 +380,19 @@
                                 <td class="px-8 py-5 text-right font-bold {{ $record->type === 'income' ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $record->type === 'income' ? '+' : '-' }} {{ number_format($record->amount, 2, ',', ' ') }} €
                                 </td>
-                                <td class="px-8 py-5 text-right">
+                                <td class="px-8 py-5 text-right flex items-center justify-end gap-1">
+                                    <button 
+                                        type="button" 
+                                        onclick="openEditModal({{ $record->id }}, '{{ $record->type }}', '{{ $record->date_record->format('Y-m-d') }}', {{ $record->amount }}, '{{ addslashes($record->category ?? '') }}', '{{ addslashes($record->description ?? '') }}')"
+                                        class="text-blue-400 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                        title="Modifier"
+                                    >
+                                        ✏️
+                                    </button>
                                     <form action="{{ route('entreprise.finances.destroy', [$selectedEntreprise->slug, $record->id]) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmer la suppression ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
                                             🗑️
                                         </button>
                                     </form>
@@ -454,6 +462,61 @@
                 </button>
                 <button type="submit" class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-all">
                     Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Edit Record -->
+<div id="modal-edit-record" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" aria-labelledby="modal-edit-title" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('modal-edit-record').classList.add('hidden')"></div>
+    
+    <!-- Modal Content -->
+    <div class="relative z-10 w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <h3 class="text-lg font-bold text-white">Modifier la transaction</h3>
+        </div>
+        
+        <form id="edit-record-form" method="POST" class="px-6 py-6 space-y-4">
+            @csrf
+            @method('PUT')
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
+                    <select name="type" id="edit-type" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500">
+                        <option value="income">Recette (Entrée)</option>
+                        <option value="expense">Dépense (Sortie)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                    <input type="date" name="date_record" id="edit-date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Montant (€)</label>
+                <input type="number" step="0.01" name="amount" id="edit-amount" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-2xl font-bold focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Catégorie</label>
+                <input type="text" name="category" id="edit-category" placeholder="Ex: Vente matériel, Loyer, Maintenance..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Optionnel)</label>
+                <textarea name="description" id="edit-description" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div class="flex items-center gap-3 pt-4">
+                <button type="button" onclick="document.getElementById('modal-edit-record').classList.add('hidden')" class="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition">
+                    Annuler
+                </button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all">
+                    Mettre à jour
                 </button>
             </div>
         </form>
@@ -541,5 +604,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     });
 });
+
+// Fonction pour ouvrir la modale d'édition
+function openEditModal(id, type, date, amount, category, description) {
+    const form = document.getElementById('edit-record-form');
+    form.action = '{{ url("/m/" . ($selectedEntreprise->slug ?? "") . "/finances") }}/' + id;
+    
+    document.getElementById('edit-type').value = type;
+    document.getElementById('edit-date').value = date;
+    document.getElementById('edit-amount').value = amount;
+    document.getElementById('edit-category').value = category;
+    document.getElementById('edit-description').value = description;
+    
+    document.getElementById('modal-edit-record').classList.remove('hidden');
+}
 </script>
 @endsection
