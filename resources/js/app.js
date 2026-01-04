@@ -72,3 +72,15 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
         }
     }
 });
+
+// ========================================
+// Désinscription forcée des Service Workers (Fix Network Error)
+// ========================================
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (let registration of registrations) {
+            console.log('Unregistering Service Worker:', registration);
+            registration.unregister();
+        }
+    });
+}

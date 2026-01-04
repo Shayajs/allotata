@@ -388,8 +388,7 @@
                         </div>
 
 
-                        <!-- Modal Services -->
-                        @include('entreprise.dashboard.tabs.services-modal-content')
+
 
                         
                         <!-- Onglet Paramètres -->
@@ -465,6 +464,9 @@
                 showTab(tab);
             }
         </script>
+
+        <!-- Modal Services (Déplacé ici pour éviter les problèmes de z-index/transform) -->
+        @include('entreprise.dashboard.tabs.services-modal-content')
 
         @include('partials.footer')
         @include('partials.cookie-banner')

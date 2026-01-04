@@ -210,12 +210,20 @@ class SiteWebController extends Controller
             'theme_exists' => $request->has('content.theme'),
         ]);
 
-        $validated = $request->validate([
-            'content' => ['required', 'array'],
-            'content.theme' => ['required', 'array'],
-            'content.blocks' => ['required', 'array'],
-            'is_auto_save' => ['boolean'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'content' => ['required', 'array'],
+                'content.theme' => ['required', 'array'],
+                'content.blocks' => ['required', 'array'],
+                'is_auto_save' => ['boolean'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Illuminate\Support\Facades\Log::error('SiteWebController::saveContent VALIDATION ERROR', [
+                'errors' => $e->errors(),
+                'slug' => $slug
+            ]);
+            throw $e;
+        }
 
         $content = $validated['content'];
         
