@@ -11,6 +11,9 @@
     @include('partials.theme-script')
     <style>
         [x-cloak] { display: none !important; }
+        /* Force browser controls (scrollbars, dates, etc.) to match the theme */
+        html.dark { color-scheme: dark; }
+        html { color-scheme: light; }
     </style>
     @stack('styles')
 </head>
@@ -302,14 +305,20 @@
             <!-- Page content -->
             <div class="p-4 lg:p-8">
                 @if(session('success'))
-                    <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
+                    <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-700/50 rounded-lg shadow-sm">
+                        <p class="text-green-800 dark:text-green-300 font-medium flex items-center gap-2">
+                            <span class="text-xl">✅</span>
+                            {{ session('success') }}
+                        </p>
                     </div>
                 @endif
 
                 @if(session('error'))
-                    <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p class="text-red-800 dark:text-red-400">{{ session('error') }}</p>
+                    <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700/50 rounded-lg shadow-sm">
+                        <p class="text-red-800 dark:text-red-300 font-medium flex items-center gap-2">
+                            <span class="text-xl">⚠️</span>
+                            {{ session('error') }}
+                        </p>
                     </div>
                 @endif
 

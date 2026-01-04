@@ -417,12 +417,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/custom-prices/{customPrice}', [AdminController::class, 'deleteCustomPrice'])->name('custom-prices.delete');
     
     // Gestion des abonnements
-    Route::get('/subscriptions', [AdminController::class, 'subscriptions'])->name('subscriptions.index');
-    Route::post('/subscriptions/sync', [AdminController::class, 'syncSubscriptions'])->name('subscriptions.sync');
-    Route::post('/subscriptions/user/{subscription}/sync', [AdminController::class, 'syncUserSubscription'])->name('subscriptions.user.sync');
-    Route::post('/subscriptions/user/{subscription}/cancel', [AdminController::class, 'cancelUserSubscription'])->name('subscriptions.user.cancel');
-    Route::post('/subscriptions/entreprise/{subscription}/sync', [AdminController::class, 'syncEntrepriseSubscription'])->name('subscriptions.entreprise.sync');
-    Route::post('/subscriptions/entreprise/{subscription}/cancel', [AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
+    Route::get('/subscriptions', [\App\Http\Controllers\AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/subscriptions/sync', [\App\Http\Controllers\AdminSubscriptionController::class, 'syncAll'])->name('subscriptions.sync');
+    Route::post('/subscriptions/force-manual', [\App\Http\Controllers\AdminSubscriptionController::class, 'forceManual'])->name('subscriptions.force_manual');
+    Route::post('/subscriptions/stop-manual/{id}', [\App\Http\Controllers\AdminSubscriptionController::class, 'stopManual'])->name('subscriptions.stop_manual');
+    Route::post('/subscriptions/update-manual/{id}', [\App\Http\Controllers\AdminSubscriptionController::class, 'updateManual'])->name('subscriptions.update_manual');
+    
+    // Legacy / Specific Sync Actions (Redirigés ou gérés par le nouveau controller si implémentés, sinon garder AdminController pour l'instant pour la rétrocompatibilité des actions spécifiques utilisateur/entreprise si je ne les ai pas toutes migrées)
+    // J'ai implémenté forceManual, mais pas syncUserSubscription ni cancel... 
+    // Attends, mon AdminSubscriptionController n'est pas complet ! Il manque les méthodes sync/cancel individuelles !
+    // Je dois les ajouter au controller avant de changer les routes, OU rediriger vers AdminController pour celles-là.
+    // MAIS AdminController utilse l'ancienne logique ? Non, il appelle StripeSubscriptionSyncService qui est à jour.
+    // Donc je peux garder AdminController pour les actions sync/cancel individuelles si je ne les ai pas copiées.
+    
+    Route::post('/subscriptions/user/{subscription}/sync', [\App\Http\Controllers\AdminController::class, 'syncUserSubscription'])->name('subscriptions.user.sync');
+    Route::post('/subscriptions/user/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelUserSubscription'])->name('subscriptions.user.cancel');
+    Route::post('/subscriptions/entreprise/{subscription}/sync', [\App\Http\Controllers\AdminController::class, 'syncEntrepriseSubscription'])->name('subscriptions.entreprise.sync');
+    Route::post('/subscriptions/entreprise/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
     
     // Gestion des essais gratuits
     Route::get('/essais-gratuits', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'index'])->name('essais-gratuits.index');

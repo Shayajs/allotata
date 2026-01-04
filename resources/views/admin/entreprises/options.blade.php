@@ -54,7 +54,7 @@
                         </div>
                         <h3 class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-2">Site Web Vitrine</h3>
                         <p class="text-slate-500 dark:text-slate-400 text-xs lg:text-sm mb-6">Plateforme dédiée pour présenter l'activité de l'entreprise avec URL personnalisée.</p>
-                        <div class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-8">2.00€ <span class="text-sm text-slate-400 font-normal">/ mois</span></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-8">{{ $subscriptionPrices['site_web']['formatted'] }} <span class="text-sm text-slate-400 font-normal">/ mois</span></div>
 
                         @if($abonnementSiteWeb)
                             <div class="bg-white dark:bg-slate-900 p-4 lg:p-6 rounded-2xl border border-slate-100 dark:border-slate-700 mb-6">
@@ -126,7 +126,7 @@
                         </div>
                         <h3 class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-2">Multi-Personnes</h3>
                         <p class="text-slate-500 dark:text-slate-400 text-xs lg:text-sm mb-6">Permet d'ajouter des collaborateurs et de gérer des agendas multiples.</p>
-                        <div class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-8">20.00€ <span class="text-sm text-slate-400 font-normal">/ mois</span></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-8">{{ $subscriptionPrices['multi_personnes']['formatted'] }} <span class="text-sm text-slate-400 font-normal">/ mois</span></div>
 
                         @if($abonnementMultiPersonnes)
                             <div class="bg-white dark:bg-slate-900 p-4 lg:p-6 rounded-2xl border border-slate-100 dark:border-slate-700 mb-6">

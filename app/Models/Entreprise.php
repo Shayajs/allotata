@@ -388,23 +388,7 @@ class Entreprise extends Model
      */
     public function aSiteWebActif(): bool
     {
-        // 1. Vérifier si le GÉRANT a un abonnement global actif (Manuel ou Stripe)
-        // L'abonnement PRO/Premium du gérant inclut le site web
-        if ($this->user && $this->user->aAbonnementActif()) {
-            return true;
-        }
-
-        // 2. Vérifier l'abonnement spécifique 'site_web' de l'entreprise
-        $subscription = $this->abonnements()
-            ->where('type', 'site_web')
-            ->first();
-
-        if ($subscription && $subscription->estActif()) {
-            return true;
-        }
-
-        // 3. Vérifier l'essai gratuit
-        return $this->aAccesViaEssai('site_web');
+        return \App\Services\SubscriptionService::checkSubscriptionStatus($this, 'site_web');
     }
 
     /**
@@ -412,17 +396,7 @@ class Entreprise extends Model
      */
     public function aGestionMultiPersonnes(): bool
     {
-        // Vérifier l'abonnement payant
-        $subscription = $this->abonnements()
-            ->where('type', 'multi_personnes')
-            ->first();
-
-        if ($subscription && $subscription->estActif()) {
-            return true;
-        }
-
-        // Vérifier l'essai gratuit
-        return $this->aAccesViaEssai('multi_personnes');
+        return \App\Services\SubscriptionService::checkSubscriptionStatus($this, 'multi_personnes');
     }
 
     /**

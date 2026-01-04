@@ -235,107 +235,154 @@
 
 @push('scripts')
 <script>
-    // Configuration couleurs selon le thème
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#e2e8f0' : '#1e293b';
-    const gridColor = isDark ? '#334155' : '#e2e8f0';
+    // Configuration dynamique des couleurs
+    function getThemeColors() {
+        const isDark = document.documentElement.classList.contains('dark');
+        return {
+            text: isDark ? '#e2e8f0' : '#1e293b',
+            grid: isDark ? '#334155' : '#e2e8f0',
+            inscriptionsBg: isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+            reservationsBg: isDark ? 'rgba(168, 85, 247, 0.6)' : 'rgba(168, 85, 247, 0.7)'
+        };
+    }
 
-    // Graphique des inscriptions
-    const inscriptionsCtx = document.getElementById('inscriptionsChart').getContext('2d');
-    new Chart(inscriptionsCtx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($chartData['inscriptions']['labels']) !!},
-            datasets: [{
-                label: 'Inscriptions',
-                data: {!! json_encode($chartData['inscriptions']['data']) !!},
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
+    let inscriptionsChart = null;
+    let reservationsChart = null;
+    let ticketsChart = null;
+
+    // Données (injectées par Blade)
+    const inscriptionsData = {
+        labels: {!! json_encode($chartData['inscriptions']['labels']) !!},
+        data: {!! json_encode($chartData['inscriptions']['data']) !!}
+    };
+    
+    const reservationsData = {
+        labels: {!! json_encode($chartData['reservations']['labels']) !!},
+        data: {!! json_encode($chartData['reservations']['data']) !!}
+    };
+
+    const ticketsData = {!! json_encode($chartData['tickets']) !!};
+
+    function initCharts() {
+        const colors = getThemeColors();
+
+        // 1. Inscriptions
+        const inscriptionsCtx = document.getElementById('inscriptionsChart').getContext('2d');
+        if (inscriptionsChart) inscriptionsChart.destroy();
+        
+        inscriptionsChart = new Chart(inscriptionsCtx, {
+            type: 'line',
+            data: {
+                labels: inscriptionsData.labels,
+                datasets: [{
+                    label: 'Inscriptions',
+                    data: inscriptionsData.data,
+                    borderColor: '#22c55e',
+                    backgroundColor: colors.inscriptionsBg,
+                    tension: 0.4,
+                    fill: true
+                }]
             },
-            scales: {
-                x: { 
-                    grid: { color: gridColor },
-                    ticks: { color: textColor, maxRotation: 45, minRotation: 45 }
-                },
-                y: { 
-                    grid: { color: gridColor },
-                    ticks: { color: textColor },
-                    beginAtZero: true
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { 
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, maxRotation: 45, minRotation: 45 }
+                    },
+                    y: { 
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text },
+                        beginAtZero: true
+                    }
                 }
             }
-        }
+        });
+
+        // 2. Réservations
+        const reservationsCtx = document.getElementById('reservationsChart').getContext('2d');
+        if (reservationsChart) reservationsChart.destroy();
+
+        reservationsChart = new Chart(reservationsCtx, {
+            type: 'bar',
+            data: {
+                labels: reservationsData.labels,
+                datasets: [{
+                    label: 'Réservations',
+                    data: reservationsData.data,
+                    backgroundColor: colors.reservationsBg,
+                    borderColor: '#a855f7',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { 
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, maxRotation: 45, minRotation: 45 }
+                    },
+                    y: { 
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 3. Tickets
+        const ticketsCtx = document.getElementById('ticketsChart').getContext('2d');
+        if (ticketsChart) ticketsChart.destroy();
+
+        ticketsChart = new Chart(ticketsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ouverts', 'En cours', 'Résolus', 'Fermés'],
+                datasets: [{
+                    data: ticketsData,
+                    backgroundColor: [
+                        'rgba(249, 115, 22, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(148, 163, 184, 0.8)'
+                    ],
+                    borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: colors.text }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialisation
+    initCharts();
+
+    // Observer les changements de thème
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === "class") {
+                initCharts();
+            }
+        });
     });
 
-    // Graphique des réservations
-    const reservationsCtx = document.getElementById('reservationsChart').getContext('2d');
-    new Chart(reservationsCtx, {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($chartData['reservations']['labels']) !!},
-            datasets: [{
-                label: 'Réservations',
-                data: {!! json_encode($chartData['reservations']['data']) !!},
-                backgroundColor: 'rgba(168, 85, 247, 0.7)',
-                borderColor: '#a855f7',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: { 
-                    grid: { color: gridColor },
-                    ticks: { color: textColor, maxRotation: 45, minRotation: 45 }
-                },
-                y: { 
-                    grid: { color: gridColor },
-                    ticks: { color: textColor },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-
-    // Graphique des tickets
-    const ticketsCtx = document.getElementById('ticketsChart').getContext('2d');
-    new Chart(ticketsCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Ouverts', 'En cours', 'Résolus', 'Fermés'],
-            datasets: [{
-                data: {!! json_encode($chartData['tickets']) !!},
-                backgroundColor: [
-                    'rgba(249, 115, 22, 0.8)',
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(148, 163, 184, 0.8)'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: textColor }
-                }
-            }
-        }
+    observer.observe(document.documentElement, {
+        attributes: true, 
+        attributeFilter: ['class']
     });
 </script>
 @endpush

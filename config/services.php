@@ -44,8 +44,21 @@ return [
             'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
         ],
         'price_id' => env('STRIPE_PRICE_ID'), // ID du prix d'abonnement mensuel utilisateur (15€)
-        'price_id_site_web' => env('STRIPE_PRICE_ID_SITE_WEB'), // ID du prix site web vitrine (2€/mois)
-        'price_id_multi_personnes' => env('STRIPE_PRICE_ID_MULTI_PERSONNES'), // ID du prix gestion multi-personnes (20€/mois)
+        'price_id_site_web' => env('STRIPE_PRICE_ID_SITE_WEB'), // ID du prix site web vitrine (Actuel)
+        'price_id_multi_personnes' => env('STRIPE_PRICE_ID_MULTI_PERSONNES'), // ID du prix gestion multi-personnes (Actuel)
+        
+        // Listes des prix acceptés (Nouveaux + Anciens) pour le Grandfathering
+        'allowed_prices' => [
+            'site_web' => [
+                env('STRIPE_PRICE_ID_SITE_WEB'),
+                // Ajouter ici les anciens ID si nécessaire via ENV ou en dur
+                // 'price_ancien_id_web_2eur', 
+            ],
+            'multi_personnes' => [
+                env('STRIPE_PRICE_ID_MULTI_PERSONNES'),
+                // 'price_ancien_id_multi_20eur',
+            ],
+        ],
     ],
 
 ];

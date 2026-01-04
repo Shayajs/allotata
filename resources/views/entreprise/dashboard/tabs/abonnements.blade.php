@@ -85,7 +85,7 @@
                                     @csrf
                                     <input type="hidden" name="type" value="site_web">
                                     <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
-                                        S'abonner maintenant (2€/mois)
+                                        S'abonner maintenant ({{ $subscriptionPrices['site_web']['formatted'] }}{{ $subscriptionPrices['site_web']['period'] }})
                                     </button>
                                 </form>
                             </div>
@@ -131,8 +131,8 @@
                                                         </ul>
                                                     </div>
                                                     <div class="text-right">
-                                                        <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">2€</div>
-                                                        <div class="text-sm text-slate-600 dark:text-slate-400">/mois</div>
+                                                        <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{{ $subscriptionPrices['site_web']['formatted'] }}</div>
+                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['site_web']['period'] }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">
@@ -211,7 +211,7 @@
                                     @csrf
                                     <input type="hidden" name="type" value="multi_personnes">
                                     <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
-                                        S'abonner maintenant (20€/mois)
+                                        S'abonner maintenant ({{ $subscriptionPrices['multi_personnes']['formatted'] }}{{ $subscriptionPrices['multi_personnes']['period'] }})
                                     </button>
                                 </form>
                             </div>
@@ -251,8 +251,8 @@
                                                         </ul>
                                                     </div>
                                                     <div class="text-right">
-                                                        <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">20€</div>
-                                                        <div class="text-sm text-slate-600 dark:text-slate-400">/mois</div>
+                                                        <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{{ $subscriptionPrices['multi_personnes']['formatted'] }}</div>
+                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['multi_personnes']['period'] }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">

@@ -169,28 +169,7 @@ class User extends Authenticatable
      */
     public function aAbonnementActif(): bool
     {
-        // Vérifier l'abonnement manuel
-        if ($this->abonnement_manuel && $this->abonnement_manuel_actif_jusqu) {
-            return $this->abonnement_manuel_actif_jusqu->isFuture() || $this->abonnement_manuel_actif_jusqu->isToday();
-        }
-
-        // Vérifier l'abonnement Stripe
-        $subscription = $this->subscription('default');
-        
-        if ($subscription) {
-            // RÈGLE STRICTE : Si annulé, ON COUPE TOUT. Pas de grace period, pas de fin de mois.
-            if ($subscription->stripe_status === 'canceled') {
-                return false;
-            }
-            
-            // Sinon on vérifie la validité normale (actif, trialing, past_due...)
-            if ($subscription->valid()) {
-                return true;
-            }
-        }
-
-        // Vérifier l'essai gratuit premium
-        return $this->aAccesViaEssai('premium');
+        return \App\Services\SubscriptionService::checkSubscriptionStatus($this);
     }
 
     /**

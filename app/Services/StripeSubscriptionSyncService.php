@@ -77,7 +77,10 @@ class StripeSubscriptionSyncService
                     $isEntrepriseSubscription = true;
                 }
                 // 3. Vérification par Price ID
-                elseif ($priceId === config('services.stripe.price_id_site_web') || $priceId === config('services.stripe.price_id_multi_personnes')) {
+                elseif (
+                    in_array($priceId, config('services.stripe.allowed_prices.site_web', [config('services.stripe.price_id_site_web')])) || 
+                    in_array($priceId, config('services.stripe.allowed_prices.multi_personnes', [config('services.stripe.price_id_multi_personnes')]))
+                ) {
                     $isEntrepriseSubscription = true;
                 }
 
@@ -192,13 +195,19 @@ class StripeSubscriptionSyncService
 
                 // Si on n'a pas trouvé le type, essayer de le déduire du price_id
                 if (!$subscriptionType) {
-                    // Vérifier si le price_id correspond à un prix d'entreprise
-                    $siteWebPriceId = config('services.stripe.price_id_site_web');
-                    $multiPersonnesPriceId = config('services.stripe.price_id_multi_personnes');
+                    // Vérifier si le price_id correspond à un prix d'entreprise (support Multi-Prix / Grandfathering)
+                    // On récupère les listes de prix acceptés depuis la config
                     
-                    if ($priceId === $siteWebPriceId) {
+                    $allowedSiteWeb = config('services.stripe.allowed_prices.site_web', [config('services.stripe.price_id_site_web')]);
+                    $allowedMulti = config('services.stripe.allowed_prices.multi_personnes', [config('services.stripe.price_id_multi_personnes')]);
+                    
+                    // Sécurité : s'assurer que c'est des tableaux
+                    if (!is_array($allowedSiteWeb)) $allowedSiteWeb = [$allowedSiteWeb];
+                    if (!is_array($allowedMulti)) $allowedMulti = [$allowedMulti];
+
+                    if (in_array($priceId, $allowedSiteWeb)) {
                         $subscriptionType = 'site_web';
-                    } elseif ($priceId === $multiPersonnesPriceId) {
+                    } elseif (in_array($priceId, $allowedMulti)) {
                         $subscriptionType = 'multi_personnes';
                     }
                 }

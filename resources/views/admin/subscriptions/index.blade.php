@@ -123,14 +123,11 @@
                                             🔄 Sync
                                         </button>
                                     </form>
-                                    @if($subscription->stripe_status === 'active' || $subscription->stripe_status === 'trialing')
-                                        <form action="{{ route('admin.subscriptions.user.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
-                                            @csrf
-                                            <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-2">
-                                                Annuler
-                                            </button>
-                                        </form>
-                                    @endif
+                                    
+                                    <span class="text-slate-400 cursor-not-allowed text-xs font-medium mr-2" title="Géré par Stripe">
+                                        🔒 Stripe
+                                    </span>
+
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
                                        target="_blank" 
                                        class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 text-xs font-medium inline-flex items-center">
@@ -220,14 +217,11 @@
                                             🔄 Sync
                                         </button>
                                     </form>
-                                    @if($subscription->stripe_status === 'active' || $subscription->stripe_status === 'trialing')
-                                        <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');" class="inline-block">
-                                            @csrf
-                                            <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs font-medium mr-2">
-                                                Annuler
-                                            </button>
-                                        </form>
-                                    @endif
+                                    
+                                    <span class="text-slate-400 cursor-not-allowed text-xs font-medium mr-2" title="Géré par Stripe">
+                                        🔒 Stripe
+                                    </span>
+
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
                                        target="_blank" 
                                        class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 text-xs font-medium inline-flex items-center">
@@ -256,6 +250,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Utilisateur</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actif jusqu'au</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Notes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
@@ -274,6 +269,14 @@
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                                     {{ $user->abonnement_manuel_notes ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <form action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Arrêter l\'abonnement manuel ?');">
+                                        @csrf
+                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
+                                            Arrêter
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach
@@ -321,18 +324,24 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                                    {{ $subscription->actif_jusqu->format('d/m/Y') }}
+                                    @if($subscription->actif_jusqu)
+                                        {{ $subscription->actif_jusqu->format('d/m/Y') }}
+                                    @else
+                                        -
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                                     {{ $subscription->notes_manuel ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <form action="{{ route('admin.subscriptions.entreprise.cancel', $subscription) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cet abonnement ? L\'annulation sera immédiate.');">
+                                    <form action="{{ route('admin.subscriptions.stop_manual', $subscription->id) }}" method="POST" onsubmit="return confirm('Arrêter cet abonnement manuel ?');" class="inline-block">
                                         @csrf
                                         <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
-                                            Annuler
+                                            Arrêter
                                         </button>
                                     </form>
+                                    
+                                    <!-- Bouton Modale Edit (à implémenter si besoin) -->
                                 </td>
                             </tr>
                         @endforeach
@@ -347,5 +356,51 @@
             <p class="text-slate-600 dark:text-slate-400">Aucun abonnement actif pour le moment.</p>
         </div>
     @endif
+
+    <!-- Section Ajout Manuel -->
+    <div class="mt-8 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">✨ Forcer un abonnement manuel (Entreprise)</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Utilisez cette section pour offrir ou prolonger manuellement un abonnement à une entreprise, indépendamment de Stripe.
+            <strong class="text-red-600 dark:text-red-400">Attention : L'abonnement manuel est PRIORITAIRE sur Stripe.</strong>
+        </p>
+        
+        <form action="{{ route('admin.subscriptions.force_manual') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            @csrf
+            
+            <div>
+                <label for="entreprise_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Entreprise</label>
+                <input type="number" name="entreprise_id" id="entreprise_id" required placeholder="Ex: 42"
+                       class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+            
+            <div>
+                <label for="type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type d'abonnement</label>
+                <select name="type" id="type" required
+                        class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="site_web">Site Web Vitrine</option>
+                    <option value="multi_personnes">Gestion Multi-Personnes</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="date_fin" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Date de fin</label>
+                <input type="date" name="date_fin" id="date_fin" required value="{{ now()->addYear()->format('Y-m-d') }}"
+                       class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+            
+            <div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm">
+                    Activer Abonnement
+                </button>
+            </div>
+            
+            <div class="md:col-span-4 mt-2">
+                <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes (Raison du geste commercial)</label>
+                <input type="text" name="notes" id="notes" placeholder="Ex: Geste commercial suite au bug..." 
+                       class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

@@ -757,11 +757,52 @@ class AdminController extends Controller
         // Charger tous les membres (actifs et inactifs) pour l'admin
         $membres = $entreprise->tousMembres()->with('user')->get();
 
+        // Récupérer les prix dynamiques depuis Stripe (cache 1h)
+        $subscriptionPrices = \Illuminate\Support\Facades\Cache::remember('stripe_subscription_prices', 3600, function () {
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                
+                $prices = [];
+                $configs = [
+                    'site_web' => config('services.stripe.price_id_site_web'),
+                    'multi_personnes' => config('services.stripe.price_id_multi_personnes')
+                ];
+
+                foreach ($configs as $key => $id) {
+                    if ($id) {
+                        try {
+                            $p = \Stripe\Price::retrieve($id);
+                            $amount = $p->unit_amount / 100;
+                            // Formatage simple
+                            $prices[$key] = [
+                                'formatted' => number_format($amount, 2, '.', '') . '€'
+                            ];
+                        } catch (\Exception $e) {
+                            $prices[$key] = $key === 'site_web' 
+                                ? ['formatted' => '2.00€']
+                                : ['formatted' => '20.00€'];
+                        }
+                    } else {
+                        $prices[$key] = $key === 'site_web' 
+                            ? ['formatted' => '2.00€']
+                            : ['formatted' => '20.00€'];
+                    }
+                }
+                return $prices;
+            } catch (\Exception $e) {
+                return [
+                    'site_web' => ['formatted' => '2.00€'],
+                    'multi_personnes' => ['formatted' => '20.00€']
+                ];
+            }
+        });
+
         return view('admin.entreprises.options', [
             'entreprise' => $entreprise,
             'abonnementSiteWeb' => $abonnementSiteWeb,
             'abonnementMultiPersonnes' => $abonnementMultiPersonnes,
             'membres' => $membres,
+            'subscriptionPrices' => $subscriptionPrices,
         ]);
     }
 
@@ -954,17 +995,17 @@ class AdminController extends Controller
         $prices = [
             'default' => [
                 'id' => config('services.stripe.price_id'),
-                'label' => 'Abonnement utilisateur (15€/mois)',
+                'label' => 'Abonnement utilisateur',
                 'type' => 'default',
             ],
             'site_web' => [
                 'id' => config('services.stripe.price_id_site_web'),
-                'label' => 'Site Web Vitrine (2€/mois)',
+                'label' => 'Site Web Vitrine',
                 'type' => 'site_web',
             ],
             'multi_personnes' => [
                 'id' => config('services.stripe.price_id_multi_personnes'),
-                'label' => 'Gestion Multi-Personnes (20€/mois)',
+                'label' => 'Gestion Multi-Personnes',
                 'type' => 'multi_personnes',
             ],
         ];
@@ -1064,6 +1105,9 @@ class AdminController extends Controller
                 config(["services.stripe.price_id_{$validated['type']}" => $price->id]);
             }
 
+            // Vider le cache des prix affichés sur le dashboard
+            \Illuminate\Support\Facades\Cache::forget('stripe_subscription_prices');
+
             return back()->with('success', "Prix créé avec succès ! ID: {$price->id}. Le fichier .env a été mis à jour.");
 
         } catch (\Exception $e) {
@@ -1150,6 +1194,9 @@ class AdminController extends Controller
             } else {
                 config(["services.stripe.price_id_{$type}" => $price->id]);
             }
+
+            // Vider le cache des prix affichés sur le dashboard
+            \Illuminate\Support\Facades\Cache::forget('stripe_subscription_prices');
 
             // Vider le cache de configuration pour que les changements soient pris en compte immédiatement
             \Artisan::call('config:clear');
@@ -1253,6 +1300,9 @@ class AdminController extends Controller
             } else {
                 config(["services.stripe.price_id_{$type}" => $price->id]);
             }
+
+            // Vider le cache des prix affichés sur le dashboard
+            \Illuminate\Support\Facades\Cache::forget('stripe_subscription_prices');
 
             return back()->with('success', "Prix créé avec succès ! ID: {$price->id}. Le fichier .env a été mis à jour.");
 
