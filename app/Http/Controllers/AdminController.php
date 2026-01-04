@@ -742,9 +742,17 @@ class AdminController extends Controller
             return back()->with('error', 'L\'abonnement Stripe est déjà annulé.');
         }
 
-        $subscription->cancel();
-        
-        return back()->with('success', 'L\'abonnement Stripe a été annulé. Il restera actif jusqu\'à la fin de la période payée.');
+        try {
+            $subscription->cancel();
+            return back()->with('success', 'L\'abonnement Stripe a été annulé. Il restera actif jusqu\'à la fin de la période payée.');
+        } catch (\Exception $e) {
+            // Si l'abonnement n'existe plus chez Stripe, on force un status d'erreur local (ou on le marque comme annulé localement)
+            if (str_contains($e->getMessage(), 'No such subscription')) {
+                 $subscription->update(['stripe_status' => 'canceled']);
+                 return back()->with('success', "Abonnement inexistant chez Stripe. Marqué comme annulé localement.");
+            }
+            return back()->with('error', 'Erreur lors de l\'annulation Stripe: ' . $e->getMessage());
+        }
     }
 
     /**
