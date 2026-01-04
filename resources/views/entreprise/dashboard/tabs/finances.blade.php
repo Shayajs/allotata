@@ -387,7 +387,7 @@
         </div>
     </div>
 </div>
-</div>
+
 
 <!-- Modal Ajout Record -->
 <div id="modal-add-record" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true">
