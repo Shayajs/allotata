@@ -73,7 +73,7 @@
                     </div>
 
                     @if($user->abonnement_manuel_type_renouvellement)
-                        <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl text-[10px] lg:text-xs space-y-2">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] lg:text-xs space-y-2">
                             <div class="flex justify-between">
                                 <span class="text-slate-400 uppercase font-bold text-[9px]">Cycle :</span>
                                 <span class="font-bold text-slate-900 dark:text-white">{{ $user->abonnement_manuel_type_renouvellement === 'mensuel' ? 'Mensuel' : 'Annuel' }}</span>
@@ -225,7 +225,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 pt-2">
                     <button 
                         type="submit" 
-                        class="flex-[2] px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2"
+                        class="flex-[2] px-8 py-4 bg-slate-900 dark:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-indigo-500"
                         @if($hasActiveStripeSubscription) disabled @endif
                     >
                         <span>{{ $user->abonnement_manuel ? 'Enregistrer les modifications' : 'Activer l\'accès manuel' }}</span>
