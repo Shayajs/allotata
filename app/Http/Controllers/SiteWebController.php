@@ -201,6 +201,14 @@ class SiteWebController extends Controller
         if (!$entreprise) {
             return response()->json(['error' => 'Site introuvable ou accès non autorisé'], 404);
         }
+        
+        // DEBUG: Loguer le contenu brut AVANT validation
+        \Illuminate\Support\Facades\Log::info('SiteWebController::saveContent START', [
+            'slug' => $slug,
+            'request_all_keys' => array_keys($request->all()),
+            'content_type' => gettype($request->input('content')),
+            'theme_exists' => $request->has('content.theme'),
+        ]);
 
         $validated = $request->validate([
             'content' => ['required', 'array'],
@@ -210,6 +218,7 @@ class SiteWebController extends Controller
         ]);
 
         $content = $validated['content'];
+        
         $content['lastSaved'] = now()->toIso8601String();
         $content['version'] = ($entreprise->contenu_site_web['version'] ?? 0) + 1;
 
