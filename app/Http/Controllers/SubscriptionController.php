@@ -65,11 +65,31 @@ class SubscriptionController extends Controller
             ]);
         }
         
-        return $user->newSubscription('default', $priceId)
-            ->checkout([
-                'success_url' => route('subscription.success'),
-                'cancel_url' => route('settings.index', ['tab' => 'subscription']),
-            ]);
+        try {
+            return $user->newSubscription('default', $priceId)
+                ->checkout([
+                    'success_url' => route('subscription.success'),
+                    'cancel_url' => route('settings.index', ['tab' => 'subscription']),
+                ]);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            // Si le client n'existe pas chez Stripe (ex: changement d'environnement), on le reset
+            if (str_contains($e->getMessage(), 'No such customer')) {
+                Log::warning("Client Stripe introuvable pour le user {$user->id}. Reset du stripe_id et tentative de création d'un nouveau client.");
+                
+                // On efface le stripe_id invalide
+                $user->stripe_id = null;
+                $user->save();
+                
+                // On laisse Cashier recréer le customer lors du prochain appel à newSubscription()
+                // On relance la même commande
+                return $user->newSubscription('default', $priceId)
+                    ->checkout([
+                        'success_url' => route('subscription.success'),
+                        'cancel_url' => route('settings.index', ['tab' => 'subscription']),
+                    ]);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -86,6 +106,14 @@ class SubscriptionController extends Controller
         try {
             $invoices = $user->invoices();
             return response()->json($invoices);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+             if (str_contains($e->getMessage(), 'No such customer')) {
+                // Client invalide, on le reset
+                $user->stripe_id = null;
+                $user->save();
+                return response()->json(['error' => 'Compte client Stripe invalide. Veuillez vous réabonner pour en créer un nouveau.'], 400); // 400 Bad Request
+             }
+             return response()->json(['error' => 'Erreur Stripe impossible de récupérer les factures'], 500);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Impossible de récupérer les factures'], 500);
         }
@@ -168,6 +196,13 @@ class SubscriptionController extends Controller
         try {
             return $user->redirectToBillingPortal(route('settings.index', ['tab' => 'subscription']));
         } catch (\Exception $e) {
+             if (str_contains($e->getMessage(), 'No such customer')) {
+                // Client invalide, on le reset
+                $user->stripe_id = null;
+                $user->save();
+                return back()->withErrors(['error' => 'Votre identifiant client Stripe n\'est plus valide (changement d\'environnement ?). Veuillez souscrire un nouvel abonnement.']);
+             }
+
             Log::error('Erreur lors de l\'accès au portail Stripe: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Impossible d\'accéder au portail de gestion Stripe.']);
         }
