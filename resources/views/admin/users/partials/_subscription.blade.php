@@ -41,7 +41,7 @@
                             <p class="text-[10px] font-bold text-red-800 dark:text-red-500 uppercase tracking-wider mb-2">⚠️ Erreur Orphelin</p>
                             <p class="text-xs text-red-700 dark:text-red-400 mb-3">L'abonnement existe en local mais pas sur Stripe (Supprimé ? Changement de clés ?).</p>
                             
-                            <form action="{{ route('subscriptions.user.purge', ['user' => $user->id, 'id' => $subscription->id]) }}" method="POST" onsubmit="return confirm('Forcer la suppression ?');">
+                            <form action="{{ route('admin.subscriptions.user.purge', ['user' => $user->id, 'id' => $subscription->id]) }}" method="POST" onsubmit="return confirm('Forcer la suppression ?');">
                                 @csrf
                                 <button type="submit" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-all">
                                     Nettoyer la BDD
