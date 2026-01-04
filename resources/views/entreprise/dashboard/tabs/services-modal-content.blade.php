@@ -117,7 +117,7 @@
                 </div>
                 
                 <!-- Colonne droite : Gestion des images -->
-                <div class="lg:col-span-1 border-l border-slate-200 dark:border-slate-700 pl-6 pr-6 pt-6 overflow-y-auto max-h-[80vh]">
+                <div class="lg:col-span-1 border-l border-slate-200 dark:border-slate-700 p-8 overflow-y-auto max-h-[80vh]">
                     <div class="sticky top-0 bg-white dark:bg-slate-800 pb-4 mb-4 border-b border-slate-200 dark:border-slate-700 z-10">
                         <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Images du service</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Cliquez sur une image pour la définir comme couverture</p>
