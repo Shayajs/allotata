@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/m/{slug}/finances', [\App\Http\Controllers\EntrepriseFinanceController::class, 'store'])->name('entreprise.finances.store');
     Route::put('/m/{slug}/finances/{finance}', [\App\Http\Controllers\EntrepriseFinanceController::class, 'update'])->name('entreprise.finances.update');
     Route::delete('/m/{slug}/finances/{finance}', [\App\Http\Controllers\EntrepriseFinanceController::class, 'destroy'])->name('entreprise.finances.destroy');
+    Route::post('/m/{slug}/fiscal-settings', [\App\Http\Controllers\EntrepriseFinanceController::class, 'saveFiscalSettings'])->name('entreprise.fiscal-settings.save');
     
     // Gestion de l'agenda (pour les gérants)
     Route::get('/m/{slug}/agenda', [AgendaController::class, 'index'])->name('agenda.index');

@@ -121,54 +121,88 @@
                 </svg>
                 Dashboard Admin
             </a>
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Gestion</p>
+            </div>
+            
             <a href="{{ route('admin.users.index') }}" class="{{ str_starts_with($currentRoute, 'admin.users.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
+                <span class="inline mr-3">👥</span>
                 Utilisateurs
             </a>
             <a href="{{ route('admin.entreprises.index') }}" class="{{ str_starts_with($currentRoute, 'admin.entreprises.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                </svg>
+                <span class="inline mr-3">🏢</span>
                 Entreprises
             </a>
             <a href="{{ route('admin.reservations.index') }}" class="{{ str_starts_with($currentRoute, 'admin.reservations.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
+                <span class="inline mr-3">📅</span>
                 Réservations
             </a>
+            <a href="{{ route('admin.finances.index') }}" class="{{ str_starts_with($currentRoute, 'admin.finances.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">💰</span>
+                Mes Finances
+            </a>
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Support</p>
+            </div>
+            
             <a href="{{ route('admin.tickets.index') }}" class="{{ str_starts_with($currentRoute, 'admin.tickets.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 11-1.896.632L9.333 5H7v14h2.333l1.498-4.493a1 1 0 111.896.632l-1.498 4.493a1 1 0 01-.948.684H7a2 2 0 01-2-2V5z"></path>
-                </svg>
+                <span class="inline mr-3">🎫</span>
                 Tickets
             </a>
             <a href="{{ route('admin.contacts.index') }}" class="{{ str_starts_with($currentRoute, 'admin.contacts.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
+                <span class="inline mr-3">📬</span>
                 Contacts
             </a>
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Contenu</p>
+            </div>
+            
             <a href="{{ route('admin.faqs.index') }}" class="{{ str_starts_with($currentRoute, 'admin.faqs.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <span class="inline mr-3">❓</span>
                 FAQs
             </a>
             <a href="{{ route('admin.announcements.index') }}" class="{{ str_starts_with($currentRoute, 'admin.announcements.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-                </svg>
+                <span class="inline mr-3">📣</span>
                 Annonces
             </a>
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Système</p>
+            </div>
+            
             <a href="{{ route('admin.errors.index') }}" class="{{ str_starts_with($currentRoute, 'admin.errors.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
-                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+                <span class="inline mr-3">⚠️</span>
                 Erreurs
             </a>
+            <a href="{{ route('admin.settings.index') }}" class="{{ str_starts_with($currentRoute, 'admin.settings.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">⚙️</span>
+                Paramètres
+            </a>
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Facturation</p>
+            </div>
+            
+            <a href="{{ route('admin.stripe-prices.index') }}" class="{{ str_starts_with($currentRoute, 'admin.stripe-prices.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">💳</span>
+                Prix Stripe
+            </a>
+            <a href="{{ route('admin.custom-prices.index') }}" class="{{ str_starts_with($currentRoute, 'admin.custom-prices.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">💎</span>
+                Prix personnalisés
+            </a>
+            <a href="{{ route('admin.subscriptions.index') }}" class="{{ str_starts_with($currentRoute, 'admin.subscriptions.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">🔄</span>
+                Abonnements
+            </a>
+            <a href="{{ route('admin.essais-gratuits.index') }}" class="{{ str_starts_with($currentRoute, 'admin.essais-gratuits.') ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <span class="inline mr-3">🎁</span>
+                Essais gratuits
+            </a>
+            
             <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
                 <a href="{{ route('dashboard') }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                     <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

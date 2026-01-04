@@ -61,6 +61,17 @@ class Entreprise extends Model
         'contenu_site_web',
         'phrase_accroche',
         'site_web_externe',
+        // Paramètres fiscaux pour le calcul de l'impôt
+        'fiscal_situation_familiale',
+        'fiscal_nombre_enfants',
+        'fiscal_enfants_garde_alternee',
+        'fiscal_parent_isole',
+        'fiscal_prelevement_liberatoire',
+        'fiscal_revenu_fiscal_reference',
+        'fiscal_revenus_autres_foyer',
+        'fiscal_invalidite_contribuable',
+        'fiscal_invalidite_conjoint',
+        'fiscal_ancien_combattant',
     ];
 
     /**
@@ -81,6 +92,16 @@ class Entreprise extends Model
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web
+            // Casts pour les paramètres fiscaux
+            'fiscal_nombre_enfants' => 'integer',
+            'fiscal_enfants_garde_alternee' => 'integer',
+            'fiscal_parent_isole' => 'boolean',
+            'fiscal_prelevement_liberatoire' => 'boolean',
+            'fiscal_revenu_fiscal_reference' => 'decimal:2',
+            'fiscal_revenus_autres_foyer' => 'decimal:2',
+            'fiscal_invalidite_contribuable' => 'boolean',
+            'fiscal_invalidite_conjoint' => 'boolean',
+            'fiscal_ancien_combattant' => 'boolean',
         ];
     }
 

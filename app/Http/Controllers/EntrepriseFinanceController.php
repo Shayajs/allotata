@@ -123,6 +123,51 @@ class EntrepriseFinanceController extends Controller
     }
 
     /**
+     * Sauvegarder les paramètres fiscaux (AJAX)
+     */
+    public function saveFiscalSettings(Request $request, $slug)
+    {
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar(Auth::user()) && !Auth::user()->is_admin) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $validated = $request->validate([
+            'fiscal_situation_familiale' => 'nullable|in:celibataire,marie,pacse,veuf,divorce',
+            'fiscal_nombre_enfants' => 'nullable|integer|min:0|max:20',
+            'fiscal_enfants_garde_alternee' => 'nullable|integer|min:0|max:20',
+            'fiscal_parent_isole' => 'nullable|boolean',
+            'fiscal_prelevement_liberatoire' => 'nullable|boolean',
+            'fiscal_revenu_fiscal_reference' => 'nullable|numeric|min:0',
+            'fiscal_revenus_autres_foyer' => 'nullable|numeric|min:0',
+            'fiscal_invalidite_contribuable' => 'nullable|boolean',
+            'fiscal_invalidite_conjoint' => 'nullable|boolean',
+            'fiscal_ancien_combattant' => 'nullable|boolean',
+        ]);
+
+        $entreprise->update($validated);
+
+        // Recalculer les charges avec le nouveau service fiscal
+        $fiscalService = app(\App\Services\FiscalCalculatorService::class);
+        
+        // Obtenir le CA de la période actuelle
+        $finances = $entreprise->finances()
+            ->whereMonth('date_record', now()->month)
+            ->whereYear('date_record', now()->year)
+            ->get();
+        
+        $totalIncome = $finances->where('type', 'income')->sum('amount');
+        $calcul = $fiscalService->calculerTout($entreprise->fresh(), $totalIncome);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Paramètres fiscaux enregistrés',
+            'calcul' => $calcul,
+        ]);
+    }
+
+    /**
      * Calcul des charges estimées (URSSAF + Impôts)
      */
     public function calculateEstimatedCharges(Entreprise $entreprise, $totalIncome)
