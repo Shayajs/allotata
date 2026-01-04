@@ -1,4 +1,7 @@
-<div>
+<div style="background: red; color: white; padding: 20px; font-size: 24px; font-weight: bold; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+    🚨 VUE SERVICES CHARGÉE - {{ $typesServices ? $typesServices->count() : 0 }} SERVICES TROUVÉS 🚨
+</div>
+<div style="margin-top: 80px;">
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Services</h2>
 
     @if(session('success'))
