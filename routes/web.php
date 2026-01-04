@@ -162,6 +162,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
     Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
     Route::patch('/dashboard/reservation/{reservation}/modify', [DashboardController::class, 'modify'])->name('dashboard.reservation.modify');
+    Route::post('/stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('stop-impersonating');
     
     // Création d'entreprise
     Route::get('/entreprise/create', [EntrepriseController::class, 'create'])->name('entreprise.create');
@@ -314,6 +315,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');
     Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
     Route::post('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
     
     // Gestion des entreprises
     Route::get('/entreprises', [AdminController::class, 'entreprises'])->name('entreprises.index');

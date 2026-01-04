@@ -93,18 +93,33 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <div class="flex items-center justify-between">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden group">
+        <div class="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-emerald-600/10 rounded-bl-full -mr-8 -mt-8 pointer-events-none transition-transform group-hover:scale-110"></div>
+        
+        <div class="flex items-center justify-between relative z-10">
             <div>
-                <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Abonnements actifs</p>
-                <p class="text-3xl font-bold text-green-600">{{ number_format($stats['abonnements_actifs']) }}</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">MRR (Revenu Récurrent)</p>
+                <p class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">
+                    {{ number_format($stats['mrr'], 0, ',', ' ') }} €
+                </p>
             </div>
-            <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <span class="text-xl">💳</span>
+            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center text-white transform group-hover:rotate-12 transition-transform">
+                <span class="text-xl">💎</span>
             </div>
         </div>
-        <div class="mt-4">
-            <span class="text-xs text-slate-600 dark:text-slate-400">{{ $stats['abonnements_manuels'] }} manuels • {{ $stats['abonnements_stripe'] }} Stripe</span>
+        <div class="mt-4 flex flex-col gap-2 relative z-10">
+             <div class="flex justify-between items-end text-xs">
+                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $stats['abonnements_actifs'] }} abonnés actifs</span>
+                <span class="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/40 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+                    {{ number_format($stats['total_entreprises'] > 0 ? ($stats['abonnements_actifs'] / $stats['total_entreprises']) * 100 : 0, 1) }}% conv.
+                </span>
+             </div>
+             <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-1.5 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" style="width: {{ $stats['total_entreprises'] > 0 ? ($stats['abonnements_actifs'] / $stats['total_entreprises']) * 100 : 0 }}%"></div>
+             </div>
+             <p class="text-[10px] text-slate-400 leading-tight">
+                {{ $stats['abonnements_stripe'] }} Stripe • {{ $stats['abonnements_manuels'] }} Manuels
+             </p>
         </div>
     </div>
 </div>
@@ -138,35 +153,61 @@
         </div>
     </div>
 
-    <!-- Dernières inscriptions -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">👤 Derniers utilisateurs inscrits</h2>
-            <a href="{{ route('admin.users.index') }}" class="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300">Voir tous →</a>
+    <!-- Flux d'activité (War Room) -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden lg:col-span-2 flex flex-col h-full">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                Activité en Direct
+            </h2>
+            <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded border border-slate-300 dark:border-slate-600">LIVE FEED</span>
         </div>
-        <div class="space-y-3">
-            @foreach($derniersUtilisateurs as $user)
-                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <x-avatar :user="$user" size="md" />
-                        <div>
-                            <p class="font-medium text-slate-900 dark:text-white">{{ $user->name }}</p>
-                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</p>
+        
+        <div class="flex-1 overflow-y-auto p-0 min-h-[300px] max-h-[500px]">
+            <div class="divide-y divide-slate-100 dark:divide-slate-700">
+                @foreach($activityFeed as $activity)
+                    <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group relative border-l-4 {{ $activity['type'] == 'reservation' ? 'border-blue-500' : ($activity['type'] == 'finance' ? 'border-yellow-500' : 'border-green-500') }}">
+                        <div class="flex gap-4">
+                            <!-- Icone -->
+                            <div class="flex-shrink-0 mt-0.5">
+                                <span class="flex items-center justify-center w-10 h-10 rounded-xl {{ 'bg-'.$activity['color'].'-100 dark:bg-'.$activity['color'].'-900/30 text-'.$activity['color'].'-600 dark:text-'.$activity['color'].'-400' }} border {{ 'border-'.$activity['color'].'-200 dark:border-'.$activity['color'].'-800' }} shadow-sm">
+                                    {{ $activity['icon'] }}
+                                </span>
+                            </div>
+                            
+                            <!-- Contenu -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate pr-4">
+                                        {{ $activity['text'] }}
+                                    </p>
+                                    <span class="text-xs font-medium text-slate-400 flex-shrink-0 whitespace-nowrap bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                        {{ $activity['time']->diffForHumans(null, true, true) }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between mt-1">
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                                        {{ $activity['time']->translatedFormat('d F H:i') }}
+                                    </p>
+                                    @if($activity['subtext'])
+                                        <span class="inline-block px-2 py-0.5 rounded text-xs font-bold {{ 'bg-'.$activity['color'].'-50 dark:bg-'.$activity['color'].'-900/20 text-'.$activity['color'].'-700 dark:text-'.$activity['color'].'-300' }}">
+                                            {{ $activity['subtext'] }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <div class="flex gap-1">
-                            @if($user->est_client)
-                                <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Client</span>
-                            @endif
-                            @if($user->est_gerant)
-                                <span class="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 rounded">Gérant</span>
-                            @endif
-                        </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ $user->created_at->diffForHumans() }}</p>
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
+        </div>
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 text-center">
+            <a href="{{ route('admin.index') }}" class="text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 uppercase tracking-wider transition-colors">
+                Voir tout l'historique
+            </a>
         </div>
     </div>
 </div>

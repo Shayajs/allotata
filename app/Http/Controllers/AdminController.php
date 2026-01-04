@@ -65,8 +65,49 @@ class AdminController extends Controller
         $derniersUtilisateurs = User::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
+            
+        // --- Feed d'activité (War Room) ---
+        $reservations = Reservation::with('entreprise')->latest()->take(8)->get()->map(function($r) {
+            return [
+                'type' => 'reservation',
+                'icon' => '📅',
+                'color' => 'blue',
+                'time' => $r->created_at,
+                'text' => "Nouvelle réservation chez " . ($r->entreprise->nom ?? 'Une entreprise'),
+                'subtext' => "Client : " . ($r->user->name ?? 'Invité')
+            ];
+        });
+        
+        $users = User::latest()->take(5)->get()->map(function($u) {
+            return [
+                'type' => 'user',
+                'icon' => '👤',
+                'color' => 'green',
+                'time' => $u->created_at,
+                'text' => "Inscription : " . $u->name,
+                'subtext' => $u->email
+            ];
+        });
+        
+        $finances = EntrepriseFinance::with('entreprise')->where('type', 'income')->latest()->take(8)->get()->map(function($f) {
+            return [
+                'type' => 'finance',
+                'icon' => '💰',
+                'color' => 'yellow',
+                'time' => $f->created_at,
+                'text' => "Encaissement " . ($f->entreprise->nom ?? 'Inconnu'),
+                'subtext' => "+ " . number_format($f->amount, 2) . '€'
+            ];
+        });
 
-        return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs'));
+        $activityFeed = $reservations->concat($users)->concat($finances)->sortByDesc('time')->take(12);
+
+        // --- Estimation MRR (Business Intelligence) ---
+        // On assume un panier moyen de 29.99€ si on ne peut pas récupérer le prix exact
+        $prixMoyenAbo = 29.99; 
+        $stats['mrr'] = $stats['abonnements_actifs'] * $prixMoyenAbo;
+
+        return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs', 'activityFeed'));
     }
 
     /**
@@ -1747,5 +1788,50 @@ class AdminController extends Controller
             Log::error('Erreur lors de l\'annulation de l\'abonnement entreprise: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Erreur lors de l\'annulation: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Se connecter en tant qu'un autre utilisateur (Impersonation)
+     */
+    public function impersonate($userId)
+    {
+        $user = User::findOrFail($userId);
+        $originalAdminId = auth()->id();
+
+        // Sécurité : Empêcher de s'impersonate soi-même
+        if ($user->id === $originalAdminId) {
+            return redirect()->back()->with('error', 'Inutile de vous connecter en tant que vous-même.');
+        }
+        
+        // Stocker l'ID de l'admin original en session
+        session(['original_admin_id' => $originalAdminId]);
+        session(['impersonated_at' => now()]);
+        
+        // Déconnecter l'admin et connecter l'utilisateur cible sans mot de passe
+        \Illuminate\Support\Facades\Auth::login($user);
+        
+        return redirect()->route('dashboard')->with('flash.banner', "Mode Super-User activé : Vous voyez le site en tant que {$user->name}");
+    }
+
+    /**
+     * Arrêter l'impersonation et revenir au compte admin
+     */
+    public function stopImpersonating()
+    {
+        // Vérifier si une session d'impersonation est active
+        if (!session()->has('original_admin_id')) {
+            return redirect()->route('dashboard');
+        }
+
+        $adminId = session('original_admin_id');
+        
+        // Reconnecter l'admin original
+        \Illuminate\Support\Facades\Auth::loginUsingId($adminId);
+        
+        // Nettoyer la session
+        session()->forget('original_admin_id');
+        session()->forget('impersonated_at');
+        
+        return redirect()->route('admin.users.index')->with('success', 'Mode Super-User désactivé. Retour au panneau administrateur.');
     }
 }

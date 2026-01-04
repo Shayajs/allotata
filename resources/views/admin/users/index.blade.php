@@ -107,9 +107,19 @@
                             {{ $user->created_at->format('d/m/Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('admin.users.show', $user) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                                Voir
-                            </a>
+                            <div class="flex items-center justify-end gap-3">
+                                @if(auth()->id() !== $user->id)
+                                    <form action="{{ route('admin.users.impersonate', $user) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-1" title="Se connecter en tant que {{ $user->name }}">
+                                            🕵️ Connecter
+                                        </button>
+                                    </form>
+                                @endif
+                                <a href="{{ route('admin.users.show', $user) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-semibold">
+                                    Voir
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 @empty

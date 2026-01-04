@@ -198,10 +198,10 @@
                 <table class="w-full text-left">
                     <thead class="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                         <tr>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Client</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Prix</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Action</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Client</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Prix</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -227,7 +227,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col items-center text-center">
             <x-avatar :user="$entreprise->user" size="2xl" />
             <h2 class="text-xl font-bold text-slate-900 dark:text-white mt-4">{{ $entreprise->user->name }}</h2>
-            <p class="text-sm text-slate-500 mb-6">Gérant d'entreprise</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Gérant d'entreprise</p>
             <div class="w-full flex flex-col gap-2">
                 <a href="{{ route('admin.users.show', $entreprise->user) }}" class="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white text-sm font-bold rounded-xl hover:scale-105 transition-transform active:scale-95">
                     Consulter le gérant
@@ -271,7 +271,7 @@
 <div id="modal-refus-nom" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
     <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
         <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Refuser le nom</h3>
-        <p class="text-sm text-slate-500 mb-6">Précisez au gérant pourquoi le nom ne peut pas être accepté en l'état.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Précisez au gérant pourquoi le nom ne peut pas être accepté en l'état.</p>
         <form action="{{ route('admin.entreprises.reject-nom', $entreprise) }}" method="POST">
             @csrf
             <div class="mb-6">
@@ -303,7 +303,7 @@
 <div id="modal-refus-siren" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
     <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
         <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Refuser le SIREN</h3>
-        <p class="text-sm text-slate-500 mb-6">Le numéro SIREN/SIRET semble invalide ou ne correspond pas au nom de l'entreprise.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Le numéro SIREN/SIRET semble invalide ou ne correspond pas au nom de l'entreprise.</p>
         <form action="{{ route('admin.entreprises.reject-siren', $entreprise) }}" method="POST">
             @csrf
             <div class="mb-6">
@@ -323,7 +323,7 @@
                 <button 
                     type="button"
                     onclick="this.closest('#modal-refus-siren').classList.add('hidden')"
-                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 font-bold rounded-2xl"
+                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                 >
                     Annuler
                 </button>
@@ -335,7 +335,7 @@
 <div id="modal-refus-global" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 text-left">
     <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-200">
         <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2 capitalize">Refus définitif</h3>
-        <p class="text-sm text-slate-500 mb-6">Cette action refusera l'intégralité du dossier. Soyez précis dans votre explication.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Cette action refusera l'intégralité du dossier. Soyez précis dans votre explication.</p>
         <form action="{{ route('admin.entreprises.reject', $entreprise) }}" method="POST">
             @csrf
             <div class="mb-6">
@@ -355,7 +355,7 @@
                 <button 
                     type="button"
                     onclick="this.closest('#modal-refus-global').classList.add('hidden')"
-                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 font-bold rounded-2xl"
+                    class="w-full px-6 py-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                 >
                     Annuler
                 </button>
