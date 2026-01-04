@@ -310,6 +310,7 @@
         </div>
     </div>
 </div>
+</div>
 
 <script>
     // Calculateur URSSAF
