@@ -153,6 +153,10 @@
                     <span class="font-medium">Paramètres</span>
                 </a>
 
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Facturation</p>
+                </div>
+
                 <!-- Prix Stripe -->
                 <a href="{{ route('admin.stripe-prices.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.stripe-prices.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
                     <span class="text-lg">💳</span>
