@@ -116,7 +116,7 @@
                     <select name="type" required class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
                         <option value="">Sélectionner un type</option>
                         <option value="default">Abonnement utilisateur (15€/mois)</option>
-                        <option value="site_web">Site Web Vitrine (2€/mois)</option>
+                        <option value="site_web">Site Web Vitrine (5€/mois)</option>
                         <option value="multi_personnes">Gestion Multi-Personnes (20€/mois)</option>
                     </select>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -346,7 +346,7 @@
 <script>
     const defaultAmounts = {
         'default': 15.00,
-        'site_web': 2.00,
+        'site_web': 5.00,
         'multi_personnes': 20.00
     };
 

@@ -771,7 +771,7 @@
                                                                 </button>
                                                             @else
                                                                 <div class="flex items-center gap-3">
-                                                                    <span class="text-lg font-bold text-green-600 dark:text-green-400">2€/mois</span>
+                                                                    <span class="text-lg font-bold text-green-600 dark:text-green-400">5€/mois</span>
                                                                     <button onclick="openAbonnementModal('{{ $entreprise->slug }}', '{{ $entreprise->nom }}')" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
                                                                         S'abonner
                                                                     </button>

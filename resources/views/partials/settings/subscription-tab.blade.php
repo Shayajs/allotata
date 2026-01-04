@@ -277,7 +277,7 @@
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Actif</span>
                                 @endif
                             </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">2€/mois</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">5€/mois</p>
                             
                             @if($aSiteWebActif)
                                 @if($abonnementSiteWeb && !$abonnementSiteWeb->est_manuel)
