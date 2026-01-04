@@ -18,22 +18,19 @@ class SiteWebController extends Controller
      */
     public function show(Request $request, $slug)
     {
-        $user = Auth::user();
-        
         // Chercher d'abord par slug_web
         $entreprise = Entreprise::where('slug_web', $slug)->first();
-        
-        // Si pas trouvé et que l'utilisateur est connecté, chercher par slug (pour permettre au propriétaire d'accéder)
-        if (!$entreprise && $user) {
-            $entreprise = Entreprise::where('slug', $slug)
-                ->where('user_id', $user->id)
-                ->first();
+
+        // Si pas trouvé par slug_web, chercher par slug classique
+        if (!$entreprise) {
+            $entreprise = Entreprise::where('slug', $slug)->first();
         }
         
         if (!$entreprise) {
             abort(404, 'Site web introuvable. Vérifiez que le slug est correct.');
         }
 
+        $user = Auth::user();
         $isOwner = $user && $entreprise->user_id === $user->id;
 
         // Si ce n'est pas le propriétaire, vérifier les conditions strictes
@@ -48,8 +45,12 @@ class SiteWebController extends Controller
                 abort(404, 'Site web non disponible.');
             }
             
-            // Les visiteurs doivent accéder via slug_web, pas slug
-            if (empty($entreprise->slug_web) || $entreprise->slug_web !== $slug) {
+            // Les visiteurs doivent accéder via le bon slug (slug_web si défini, sinon slug)
+            $expectedSlug = $entreprise->slug_web ?? $entreprise->slug;
+            
+            if ($slug !== $expectedSlug) {
+                // Si le slug utilisé n'est pas celui attendu, on redirige ou 404
+                // Ici 404 pour sécurité
                 abort(404, 'Site web introuvable.');
             }
         } else {
