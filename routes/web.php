@@ -288,6 +288,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/abonnement/success', [SubscriptionController::class, 'success'])->name('subscription.success');
         Route::post('/abonnement/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
         Route::post('/abonnement/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+        Route::post('/abonnement/purge/{id}', [SubscriptionController::class, 'purge'])->name('subscription.purge');
         Route::post('/abonnement/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
         Route::get('/abonnement/facture/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         Route::get('/abonnement/invoice/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');

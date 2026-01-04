@@ -382,6 +382,13 @@ class EntrepriseSubscriptionController extends Controller
                 ]);
 
                 return back()->with('success', "L'abonnement a été configuré pour s'arrêter à la fin de la période facturée (le " . $dateFin->format('d/m/Y') . ").");
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                 if (str_contains($e->getMessage(), 'No such subscription')) {
+                     // L'abonnement n'existe plus chez Stripe, on force un status d'erreur local
+                     $entrepriseSubLocal->update(['stripe_status' => 'error_orphan']);
+                     return back()->with('error', "Impossible d'annuler : l'abonnement n'existe plus chez Stripe. Veuillez contacter le support pour nettoyer la base de données.");
+                 }
+                 return back()->with('error', "Erreur Stripe : " . $e->getMessage());
             } catch (\Exception $e) {
                 return back()->with('error', "Erreur Stripe : " . $e->getMessage());
             }
@@ -423,6 +430,12 @@ class EntrepriseSubscriptionController extends Controller
                 ]);
 
                 return back()->with('success', "L'abonnement a été réactivé avec succès. Le renouvellement automatique est rétabli.");
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                 if (str_contains($e->getMessage(), 'No such subscription')) {
+                     $entrepriseSubLocal->update(['stripe_status' => 'error_orphan']);
+                     return back()->with('error', "Impossible de reprendre : l'abonnement n'existe plus chez Stripe.");
+                 }
+                 return back()->with('error', "Erreur Stripe : " . $e->getMessage());
             } catch (\Exception $e) {
                 return back()->with('error', "Erreur Stripe : " . $e->getMessage());
             }

@@ -248,4 +248,54 @@ class SubscriptionController extends Controller
 
         return back()->with('error', "Impossible de reprendre cet abonnement.");
     }
+
+    /**
+     * Nettoyer un abonnement orphelin (supprimé côté Stripe mais bloqué en local)
+     */
+    public function purge(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        // Chercher dans les abonnements utilisateur
+        $sub = \Laravel\Cashier\Subscription::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$sub) {
+             return back()->with('error', "Abonnement introuvable.");
+        }
+
+        // On vérifie que c'est bien une erreur ou un orphelin
+        // Sécurité : on ne laisse pas supprimer un abonnement actif 'normal' sans vérification
+        // Mais ici l'utilisateur clique sur "Force Delete".
+        
+        try {
+            // Tentative de vérification ultime
+            if ($sub->stripe_id) {
+                try {
+                    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                    \Stripe\Subscription::retrieve($sub->stripe_id);
+                    // Si on arrive ici, il existe encore !
+                    return back()->with('error', "Cet abonnement existe encore chez Stripe. Veuillez l'annuler normalement.");
+                } catch (\Stripe\Exception\InvalidRequestException $e) {
+                     // C'est bon, il n'existe plus, on peut purger
+                }
+            }
+            
+            // Suppression
+            $sub->delete();
+            
+            // Nettoyage user
+            $user->update([
+                'abonnement_manuel' => false,
+                'abonnement_manuel_actif_jusqu' => null,
+                'abonnement_manuel_notes' => null,
+            ]);
+
+            return back()->with('success', "Abonnement nettoyé de la base de données.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', "Erreur lors du nettoyage : " . $e->getMessage());
+        }
+    }
 }

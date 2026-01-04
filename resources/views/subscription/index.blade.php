@@ -151,8 +151,12 @@
                                         $stripeSubData = null;
                                         try {
                                             $stripeSubData = $subscription->asStripeSubscription();
-                                        } catch (\Exception $e) {
+                                        } catch (\Stripe\Exception\InvalidRequestException $e) {
                                             // L'abonnement n'existe plus sur Stripe
+                                            $stripeSubData = null;
+                                            $error_stripe_not_found = true;
+                                        } catch (\Exception $e) {
+                                            $stripeSubData = null;
                                         }
                                     @endphp
                                     @if($stripeSubData && isset($stripeSubData->current_period_end))
@@ -167,6 +171,21 @@
                                             Vous serez redirigé vers le portail Stripe pour gérer votre abonnement (annulation, reprise, méthode de paiement, factures).
                                         </p>
                                     </form>
+                                @endif
+                                
+                                @if($subscription->stripe_status === 'error_orphan' || (isset($stripeSubData) && $stripeSubData === null) || isset($error_stripe_not_found))
+                                     <div class="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                        <h4 class="font-bold text-red-800 dark:text-red-400 mb-2">⚠️ Problème de synchronisation</h4>
+                                        <p class="text-sm text-red-700 dark:text-red-300 mb-4">
+                                            Cet abonnement semble avoir été supprimé directement chez Stripe mais existe encore sur votre compte.
+                                        </p>
+                                        <form action="{{ route('subscription.purge', $subscription->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet abonnement fantôme de la base de données ?');">
+                                            @csrf
+                                            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">
+                                                Nettoyer la base de données (Force Delete)
+                                            </button>
+                                        </form>
+                                    </div>
                                 @endif
                             </div>
                         @elseif($hasManualSubscription)

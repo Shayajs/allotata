@@ -36,11 +36,16 @@ class StripeSubscriptionSyncService
             try {
                 $stripeCustomer = Customer::retrieve($user->stripe_id);
             } catch (\Exception $e) {
+                // Si l'utilisateur n'existe plus chez Stripe, on force un nettoyage local ou on log juste
+                // Ici on log en warning et on arrête car sans customer valide on ne peut rien sync
                 Log::warning('Impossible de récupérer le customer Stripe', [
                     'user_id' => $user->id,
                     'stripe_id' => $user->stripe_id,
                     'error' => $e->getMessage(),
                 ]);
+                
+                // Si l'erreur est "No such customer", on pourrait vouloir nullifier le stripe_id du user ?
+                // Pour l'instant on se contente de ne pas crasher.
                 return ['synced' => false, 'subscriptions' => []];
             }
 
@@ -336,7 +341,35 @@ class StripeSubscriptionSyncService
         try {
             Stripe::setApiKey(config('services.stripe.secret'));
 
-            $stripeSubscription = StripeSubscription::retrieve($stripeSubscriptionId);
+            try {
+                $stripeSubscription = StripeSubscription::retrieve($stripeSubscriptionId);
+            } catch (\Stripe\Exception\InvalidRequestException $e) {
+                // Gestion spécifique pour "No such subscription"
+                // Cela arrive si l'abonnement a été supprimé definitivement chez Stripe mais existe encore en local
+                if (str_contains($e->getMessage(), 'No such subscription')) {
+                    Log::warning('Abonnement introuvable chez Stripe (Orphelin détecté)', [
+                        'stripe_subscription_id' => $stripeSubscriptionId,
+                    ]);
+
+                    // On marque l'abonnement local comme "orphelin" si on le trouve
+                    // Recherche dans User Subscriptions
+                    $localUserSub = Subscription::where('stripe_id', $stripeSubscriptionId)->first();
+                    if ($localUserSub) {
+                        $localUserSub->update(['stripe_status' => 'error_orphan']);
+                    }
+
+                    // Recherche dans Entreprise Subscriptions
+                    $localEntSub = EntrepriseSubscription::where('stripe_id', $stripeSubscriptionId)->first();
+                    if ($localEntSub) {
+                        $localEntSub->update(['stripe_status' => 'error_orphan']);
+                    }
+
+                    return ['synced' => false, 'error' => 'not_found_on_stripe'];
+                }
+
+                throw $e; // Relancer les autres erreurs
+            }
+
             $customerId = $stripeSubscription->customer;
 
             // Trouver l'utilisateur par customer_id
