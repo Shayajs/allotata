@@ -231,6 +231,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs enregistrements financiers (recettes/dépenses)
+     */
+    public function finances()
+    {
+        return $this->hasMany(EntrepriseFinance::class)->orderBy('date_record', 'desc');
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string

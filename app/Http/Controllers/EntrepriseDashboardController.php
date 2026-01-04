@@ -175,6 +175,33 @@ class EntrepriseDashboardController extends Controller
                 ->get();
         }
 
+        // ===== Données pour l'onglet Finances =====
+        $finances = collect([]);
+        $financeStats = [
+            'totalIncome' => 0,
+            'totalExpense' => 0,
+            'chargesEstimées' => ['total' => 0, 'urssaf' => 0, 'impot' => 0, 'taux_combine' => 0],
+            'selectedMonth' => $request->get('finance_month', now()->month),
+            'selectedYear' => $request->get('finance_year', now()->year),
+        ];
+
+        if ($activeTab === 'finances' || $activeTab === 'outils') {
+            $financeController = app(\App\Http\Controllers\EntrepriseFinanceController::class);
+            
+            $query = $entreprise->finances();
+            if ($request->filled('finance_month') && $request->filled('finance_year')) {
+                $query->whereMonth('date_record', $request->finance_month)
+                      ->whereYear('date_record', $request->finance_year);
+            } else {
+                $query->whereMonth('date_record', $financeStats['selectedMonth'])
+                      ->whereYear('date_record', $financeStats['selectedYear']);
+            }
+            $finances = $query->get();
+            $financeStats['totalIncome'] = $finances->where('type', 'income')->sum('amount');
+            $financeStats['totalExpense'] = $finances->where('type', 'expense')->sum('amount');
+            $financeStats['chargesEstimées'] = $financeController->calculateEstimatedCharges($entreprise, $financeStats['totalIncome']);
+        }
+
         // Onglet actif (par défaut: accueil)
 
 
@@ -199,6 +226,9 @@ class EntrepriseDashboardController extends Controller
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
             'membresAvecStats' => $membresAvecStats,
             'invitationsEnCours' => $invitationsEnCours,
+            // Finances
+            'finances' => $finances,
+            'financeStats' => $financeStats,
         ]);
     }
 

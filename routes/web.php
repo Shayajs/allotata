@@ -170,6 +170,12 @@ Route::middleware('auth')->group(function () {
     // Dashboard entreprise (centralisé)
     Route::get('/m/{slug}', [EntrepriseDashboardController::class, 'index'])->name('entreprise.dashboard');
     
+    // Finances d'entreprise
+    Route::get('/m/{slug}/finances', [\App\Http\Controllers\EntrepriseFinanceController::class, 'index'])->name('entreprise.finances.index');
+    Route::post('/m/{slug}/finances', [\App\Http\Controllers\EntrepriseFinanceController::class, 'store'])->name('entreprise.finances.store');
+    Route::put('/m/{slug}/finances/{finance}', [\App\Http\Controllers\EntrepriseFinanceController::class, 'update'])->name('entreprise.finances.update');
+    Route::delete('/m/{slug}/finances/{finance}', [\App\Http\Controllers\EntrepriseFinanceController::class, 'destroy'])->name('entreprise.finances.destroy');
+    
     // Gestion de l'agenda (pour les gérants)
     Route::get('/m/{slug}/agenda', [AgendaController::class, 'index'])->name('agenda.index');
     Route::get('/m/{slug}/agenda/service', [AgendaController::class, 'index'])->name('agenda.service.index');
@@ -299,6 +305,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/errors/{id}/read', [\App\Http\Controllers\ErrorLogController::class, 'markAsRead'])->name('errors.mark-read');
     Route::post('/errors/mark-all-read', [\App\Http\Controllers\ErrorLogController::class, 'markAllAsRead'])->name('errors.mark-all-read');
     Route::get('/', [AdminController::class, 'index'])->name('index');
+    
+    // Gestion des finances globales
+    Route::get('/finances', [AdminController::class, 'finances'])->name('finances.index');
     
     // Gestion des utilisateurs
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');

@@ -2,7 +2,68 @@
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Outils administratifs</h2>
     <p class="text-slate-600 dark:text-slate-400 mb-8">Des outils pratiques pour gérer votre micro-entreprise au quotidien.</p>
 
+    @php
+        $reservations = \App\Models\Reservation::where('entreprise_id', $entreprise->id)
+            ->where('est_paye', true)
+            ->get();
+        
+        $caMoisActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isCurrentMonth())->sum('prix');
+        $caMoisPrecedent = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isLastMonth())->sum('prix');
+        $caTrimestreActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->quarter === now()->quarter && $r->date_reservation->year === now()->year)->sum('prix');
+        $caAnneeActuelle = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->year === now()->year)->sum('prix');
+    @endphp
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Pilotage des recettes (NOUVEAU) -->
+        <div class="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl border border-indigo-500 shadow-xl p-8 text-white relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <span class="text-8xl">💰</span>
+            </div>
+            
+            <div class="relative z-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider mb-4">
+                            Nouveau
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2">Pilotage de vos recettes</h2>
+                        <p class="text-indigo-100 text-lg max-w-xl">
+                            Gérez vos entrées et sorties d'argent en temps réel. Calculez vos charges URSSAF et impôts automatiquement pour ne plus avoir de surprises.
+                        </p>
+                    </div>
+                    <div>
+                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'finances']) }}" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                            <span>Accéder à ma comptabilité</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Revenus du mois</p>
+                        <p class="text-2xl font-bold">{{ number_format($caMoisActuel ?? 0, 2, ',', ' ') }} €</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Charges estimées</p>
+                        @php
+                            /**
+                             * Calcul des charges estimées (URSSAF + Impôts)
+                             */
+                            $charges = app(\App\Http\Controllers\EntrepriseFinanceController::class)->calculateEstimatedCharges($entreprise, $caMoisActuel ?? 0);
+                        @endphp
+                        <p class="text-2xl font-bold">{{ number_format($charges['total'], 2, ',', ' ') }} €</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Reste à vivre (Net)</p>
+                        <p class="text-2xl font-bold">{{ number_format(($caMoisActuel ?? 0) - $charges['total'], 2, ',', ' ') }} €</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Calculateur URSSAF -->
         <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
@@ -213,50 +274,7 @@
                 </div>
             </div>
             
-            @php
-                $reservations = \App\Models\Reservation::where('entreprise_id', $entreprise->id)
-                    ->where('est_paye', true)
-                    ->get();
-                
-                $caMoisActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isCurrentMonth())->sum('prix');
-                $caMoisPrecedent = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isLastMonth())->sum('prix');
-                $caTrimestreActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->quarter === now()->quarter && $r->date_reservation->year === now()->year)->sum('prix');
-                $caAnneeActuelle = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->year === now()->year)->sum('prix');
-            @endphp
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl text-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase mb-1">Ce mois</p>
-                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($caMoisActuel, 0, ',', ' ') }} €</p>
-                    <p class="text-xs text-slate-500">{{ now()->translatedFormat('F') }}</p>
-                </div>
-                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl text-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase mb-1">Mois précédent</p>
-                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($caMoisPrecedent, 0, ',', ' ') }} €</p>
-                    <p class="text-xs text-slate-500">{{ now()->subMonth()->translatedFormat('F') }}</p>
-                </div>
-                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl text-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase mb-1">Ce trimestre</p>
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($caTrimestreActuel, 0, ',', ' ') }} €</p>
-                    <p class="text-xs text-slate-500">T{{ now()->quarter }} {{ now()->year }}</p>
-                </div>
-                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl text-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase mb-1">Cette année</p>
-                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($caAnneeActuelle, 0, ',', ' ') }} €</p>
-                    <p class="text-xs text-slate-500">{{ now()->year }}</p>
-                </div>
-            </div>
-            
-            <div class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-                <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                    <span class="font-semibold">💡 Rappel :</span> Le plafond de CA pour une micro-entreprise de services est de <strong>77 700 €/an</strong> (2024).
-                    Vous êtes à <strong>{{ number_format(($caAnneeActuelle / 77700) * 100, 1) }}%</strong> du plafond.
-                </p>
-            </div>
-        </div>
-
-        <!-- Liens utiles -->
-        <div class="bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-2xl border border-cyan-200 dark:border-cyan-800 p-6 lg:col-span-2">
+        <!-- Liens utiles -->        <div class="bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-2xl border border-cyan-200 dark:border-cyan-800 p-6 lg:col-span-2">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-cyan-500 flex items-center justify-center text-white text-2xl">
                     🔗

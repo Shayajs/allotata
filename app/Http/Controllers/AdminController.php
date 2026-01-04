@@ -17,6 +17,7 @@ use Stripe\Product;
 
 use App\Models\Ticket;
 use App\Models\Contact;
+use App\Models\EntrepriseFinance;
 
 class AdminController extends Controller
 {
@@ -66,6 +67,34 @@ class AdminController extends Controller
             ->get();
 
         return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs'));
+    }
+
+    /**
+     * Voir les finances de toutes les entreprises
+     */
+    public function finances(Request $request)
+    {
+        $query = EntrepriseFinance::with('entreprise');
+
+        // Filtres
+        if ($request->filled('month')) {
+            $query->whereMonth('date_record', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('date_record', $request->year);
+        }
+
+        $finances = $query->orderBy('date_record', 'desc')->paginate(50);
+
+        // Stats globales
+        $totalIncome = EntrepriseFinance::where('type', 'income')->sum('amount');
+        $totalExpense = EntrepriseFinance::where('type', 'expense')->sum('amount');
+
+        return view('admin.finances.index', [
+            'finances' => $finances,
+            'totalIncome' => $totalIncome,
+            'totalExpense' => $totalExpense,
+        ]);
     }
 
     /**

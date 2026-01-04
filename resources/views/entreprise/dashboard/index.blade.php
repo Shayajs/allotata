@@ -255,6 +255,19 @@
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Factures</span>
                         </button>
 
+                        <!-- Recettes (NOUVEAU) -->
+                        <button 
+                            onclick="showTab('finances')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'finances' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="finances"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="hidden xl:inline text-green-600 dark:text-green-400 font-bold italic">Recettes</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Recettes</span>
+                        </button>
+
                         <!-- Outils -->
                         <button 
                             onclick="showTab('outils')"
@@ -348,6 +361,11 @@
                         <!-- Onglet Factures -->
                         <div id="tab-factures" class="tab-content {{ $activeTab !== 'factures' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.factures')
+                        </div>
+
+                        <!-- Onglet Finances (Recettes) -->
+                        <div id="tab-finances" class="tab-content {{ $activeTab !== 'finances' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.finances')
                         </div>
 
                         <!-- Onglet Outils -->
