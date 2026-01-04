@@ -9,7 +9,7 @@
     <div class="fixed inset-0 z-10 overflow-y-auto">
         <div class="flex min-h-screen items-center justify-center p-4 text-center">
             <!-- Contenu de la modal -->
-            <div class="relative w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 text-left shadow-xl transition-all border border-slate-200 dark:border-slate-700 mx-auto" onclick="event.stopPropagation()">
+            <div class="relative w-full max-w-5xl transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 text-left shadow-xl transition-all border border-slate-200 dark:border-slate-700 mx-auto" onclick="event.stopPropagation()">
             <div class="grid grid-cols-1 lg:grid-cols-2">
                 <!-- Colonne gauche : Formulaire -->
                 <div class="p-8">
