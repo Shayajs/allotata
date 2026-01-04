@@ -604,12 +604,12 @@ class AdminController extends Controller
 
         if ($request->has('activer')) {
             $validated = $request->validate([
-                'date_fin' => 'required|date|after:today',
+                'date_fin' => 'required|date|after_or_equal:today',
                 'notes' => 'nullable|string|max:500',
                 'type_renouvellement' => 'required|in:mensuel,annuel',
-                'jour_renouvellement' => 'required|integer|min:1|max:31',
+                'jour_renouvellement' => 'required|numeric|min:1|max:31',
                 'date_debut' => 'required|date|before_or_equal:date_fin',
-                'montant' => 'required|numeric|min:0.01',
+                'montant' => 'required|numeric|min:0',
             ]);
 
             // Calculer la date de fin basée sur le renouvellement si nécessaire
