@@ -42,7 +42,7 @@
             </button>
         </div>
 
-        @if($typesServices->count() > 0)
+        @if($typesServices && $typesServices->count() > 0)
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($typesServices as $service)
                     <div class="p-5 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg transition-shadow {{ $service->est_actif ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-700/50 opacity-75' }}">
@@ -112,6 +112,7 @@
         @endif
     </div>
 </div>
+
 
 <!-- Modal pour ajouter/modifier un service -->
 <div id="modal-service" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
