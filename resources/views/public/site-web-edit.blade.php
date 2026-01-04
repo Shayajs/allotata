@@ -1867,7 +1867,24 @@
             const preset = presets[name];
             if (!preset) return;
             
-            editorState.content.theme = { ...editorState.content.theme, ...preset };
+            // Deep merge pour ne pas perdre les autres propriétés (boutons, autres couleurs...)
+            // On fusionne les couleurs et les polices, au lieu de remplacer tout l'objet
+            if (preset.colors) {
+                editorState.content.theme.colors = { 
+                    ...(editorState.content.theme.colors || {}), 
+                    ...preset.colors 
+                };
+            }
+            
+            if (preset.fonts) {
+                editorState.content.theme.fonts = { 
+                    ...(editorState.content.theme.fonts || {}), 
+                    ...preset.fonts 
+                };
+            }
+            
+            // On peut fusionner d'autres propriétés si nécessaire
+            // editorState.content.theme = { ...editorState.content.theme, ...preset }; // Trop destructif
             
             // Appliquer les couleurs
             Object.entries(preset.colors).forEach(([k, v]) => {
