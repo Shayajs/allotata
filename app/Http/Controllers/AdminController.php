@@ -22,6 +22,45 @@ use App\Models\EntrepriseFinance;
 class AdminController extends Controller
 {
     /**
+     * Purger un abonnement orphelin pour un utilisateur (Admin)
+     */
+    public function purgeSubscription(Request $request, User $user, $id)
+    {
+        $sub = \Laravel\Cashier\Subscription::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$sub) {
+             return back()->with('error', "Abonnement introuvable.");
+        }
+
+        try {
+            // Tentative de vérification ultime avec l'API Stripe
+            if ($sub->stripe_id) {
+                try {
+                    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                    \Stripe\Subscription::retrieve($sub->stripe_id);
+                    // Si on arrive ici, il existe encore !
+                    return back()->with('error', "Cet abonnement existe encore chez Stripe. Veuillez l'annuler normalement ou vérifier l'environnement.");
+                } catch (\Stripe\Exception\InvalidRequestException $e) {
+                     // C'est bon, il n'existe plus, on peut purger
+                }
+            }
+            
+            // Suppression
+            $sub->delete();
+            
+            // Nettoyage user si nécessaire (flags manuels, etc - ici on ne touche pas au manuel admin sauf si lié)
+            // On peut reset les flags abonnement_manuel si c'était un conflit avec Stripe mais le code admin gère les deux séparément.
+            
+            return back()->with('success', "Abonnement nettoyé de la base de données.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', "Erreur lors du nettoyage : " . $e->getMessage());
+        }
+    }
+
+    /**
      * Afficher le dashboard administrateur
      */
     public function index()

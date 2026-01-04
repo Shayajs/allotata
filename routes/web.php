@@ -433,6 +433,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     Route::post('/subscriptions/user/{subscription}/sync', [\App\Http\Controllers\AdminController::class, 'syncUserSubscription'])->name('subscriptions.user.sync');
     Route::post('/subscriptions/user/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelUserSubscription'])->name('subscriptions.user.cancel');
+    Route::post('/subscriptions/user/{user}/purge/{id}', [\App\Http\Controllers\AdminController::class, 'purgeSubscription'])->name('subscriptions.user.purge');
     Route::post('/subscriptions/entreprise/{subscription}/sync', [\App\Http\Controllers\AdminController::class, 'syncEntrepriseSubscription'])->name('subscriptions.entreprise.sync');
     Route::post('/subscriptions/entreprise/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
     

@@ -72,6 +72,21 @@
                                 // Ignorer l'erreur si l'abonnement n'existe plus chez Stripe
                             }
                         @endphp
+                        
+                        @if(!$stripeSubscription && $subscription->valid())
+                             <div class="col-span-1 md:col-span-2 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                <h4 class="font-bold text-red-800 dark:text-red-400 mb-2">⚠️ Problème de synchronisation</h4>
+                                <p class="text-sm text-red-700 dark:text-red-300 mb-4">
+                                    Votre abonnement semble avoir été supprimé de la plateforme de paiement mais est toujours affiché comme actif ici.
+                                </p>
+                                <form action="{{ route('subscription.purge', $subscription->id) }}" method="POST" onsubmit="return confirm('Nettoyer la base de données ?');">
+                                    @csrf
+                                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">
+                                        Corriger le problème (Supprimer l'abonnement fantôme)
+                                    </button>
+                                </form>
+                            </div>
+                        @else
                         @if($stripeSubscription)
                             @if(isset($stripeSubscription->current_period_end))
                                 <div>
