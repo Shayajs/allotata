@@ -43,7 +43,7 @@
                         <div class="relative w-40 h-40 mx-auto mb-6 overflow-hidden rounded-full">
                             @if(!empty($member['photo']))
                                 <img 
-                                    src="{{ str_starts_with($member['photo'], 'http') ? $member['photo'] : route('storage.serve', ['path' => $member['photo']]) }}"
+                                    src="{{ str_starts_with($member['photo'], 'http') ? $member['photo'] : asset('storage/' . $member['photo']) }}"
                                     alt="{{ $member['name'] }}"
                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                 >

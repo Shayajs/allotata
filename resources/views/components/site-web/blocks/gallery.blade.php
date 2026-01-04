@@ -52,7 +52,7 @@
                     <div class="group relative aspect-square overflow-hidden {{ $roundedClass }} bg-slate-200 dark:bg-slate-700 cursor-pointer"
                          onclick="openLightbox({{ $index }})">
                         <img 
-                            src="{{ str_starts_with($image['src'], 'http') ? $image['src'] : route('storage.serve', ['path' => $image['src']]) }}" 
+                            src="{{ str_starts_with($image['src'], 'http') ? $image['src'] : asset('storage/' . $image['src']) }}" 
                             alt="{{ $image['alt'] ?? 'Image' }}"
                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             loading="lazy"
@@ -103,7 +103,7 @@
             </div>
             
             <script>
-                const galleryImages = @json(collect($images)->map(fn($img) => str_starts_with($img['src'], 'http') ? $img['src'] : route('storage.serve', ['path' => $img['src']])));
+                const galleryImages = @json(collect($images)->map(fn($img) => str_starts_with($img['src'], 'http') ? $img['src'] : asset('storage/' . $img['src'])));
                 let currentImageIndex = 0;
                 
                 function openLightbox(index) {

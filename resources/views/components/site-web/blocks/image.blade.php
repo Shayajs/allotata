@@ -25,7 +25,7 @@
         @if($src)
             <div class="overflow-hidden {{ $roundedClass }} {{ $shadowClass }}">
                 <img 
-                    src="{{ str_starts_with($src, 'http') ? $src : route('storage.serve', ['path' => $src]) }}" 
+                    src="{{ str_starts_with($src, 'http') ? $src : asset('storage/' . $src) }}" 
                     alt="{{ $alt }}"
                     class="w-full h-auto transition-transform duration-500 hover:scale-105"
                     loading="lazy"

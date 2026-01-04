@@ -19,7 +19,10 @@
         default => 'text-center items-center'
     };
     
-    $bgImage = $content['backgroundImage'] ?? $entreprise->image_fond ?? null;
+    // Utiliser l'image de fond de l'entreprise par défaut pour que ça reste dynamique
+    // Si l'utilisateur veut une image spécifique, on pourrait ajouter une option "Override" plus tard
+    $bgImage = $entreprise->image_fond;
+    
     $hasOverlay = $content['overlay'] ?? true;
     
     // Utiliser les valeurs de l'entreprise par défaut
@@ -31,7 +34,7 @@
 
 <section class="{{ $heightClass }} relative flex flex-col justify-center {{ $alignClass }} p-8 md:p-16 overflow-hidden"
     @if($bgImage)
-        style="background-image: url('{{ route('storage.serve', ['path' => $bgImage]) }}'); background-size: cover; background-position: center;"
+        style="background-image: url('{{ str_starts_with($bgImage, 'http') ? $bgImage : asset('storage/' . $bgImage) }}'); background-size: cover; background-position: center;"
     @else
         style="background: linear-gradient(135deg, var(--site-primary), var(--site-secondary));"
     @endif

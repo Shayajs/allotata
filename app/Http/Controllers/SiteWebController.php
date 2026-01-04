@@ -271,7 +271,7 @@ class SiteWebController extends Controller
 
             return response()->json([
                 'success' => true,
-                'url' => route('storage.serve', ['path' => $path]),
+                'url' => asset('storage/' . $path),
                 'path' => $path,
             ]);
         } catch (\Exception $e) {
