@@ -85,7 +85,7 @@
                     @if(!$aSiteWebActif)
                         <div class="p-6 lg:p-8 border-t border-slate-100 dark:border-slate-700">
                             <h4 class="font-bold text-slate-900 dark:text-white mb-4 text-sm lg:text-base">Offrir un accès manuel</h4>
-                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4">
+                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4" onsubmit="return confirm('Activer cette option pour cette entreprise ?')">
                                 @csrf
                                 <input type="hidden" name="type" value="site_web">
                                 <div>
@@ -157,7 +157,7 @@
                     @if(!$aGestionMultiPersonnes)
                         <div class="p-6 lg:p-8 border-t border-slate-100 dark:border-slate-700">
                             <h4 class="font-bold text-slate-900 dark:text-white mb-4 text-sm lg:text-base">Offrir un accès manuel</h4>
-                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4">
+                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4" onsubmit="return confirm('Activer l\'option Multi-Personnes pour cette entreprise ?')">
                                 @csrf
                                 <input type="hidden" name="type" value="multi_personnes">
                                 <div>
