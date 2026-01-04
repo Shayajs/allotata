@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     
     @php
-        $theme = $entreprise->site_web_theme;
+        $theme = $entreprise->getSiteWebTheme();
         $blocks = $entreprise->getSiteWebBlocks();
     @endphp
     

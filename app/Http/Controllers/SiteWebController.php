@@ -225,10 +225,18 @@ class SiteWebController extends Controller
             throw $e;
         }
 
-        $content = $validated['content'];
+        // Utiliser directement l'input pour éviter tout filtrage potentiel par le validateur
+        $content = $request->input('content');
         
         $content['lastSaved'] = now()->toIso8601String();
         $content['version'] = ($entreprise->contenu_site_web['version'] ?? 0) + 1;
+
+        // Log the theme being saved
+        \Illuminate\Support\Facades\Log::info('SiteWebController::saveContent SAVING', [
+            'slug' => $slug,
+            'version' => $content['version'],
+            'theme_colors' => $content['theme']['colors'] ?? 'MISSING',
+        ]);
 
         // Créer une version de sauvegarde
         SiteWebVersion::createVersion($entreprise, $validated['is_auto_save'] ?? true);

@@ -22,7 +22,7 @@
     @vite(['resources/css/app.css'])
     
     @php
-        $theme = $entreprise->site_web_theme;
+        $theme = $entreprise->getSiteWebTheme();
     @endphp
     
     <style>
