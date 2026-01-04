@@ -7,9 +7,8 @@
         <title>{{ $entreprise->nom }} - Dashboard - Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-        <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.css' rel='stylesheet' />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js'></script>
+        <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
         @include('partials.theme-script')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
@@ -203,9 +202,9 @@
 
                         <!-- Services -->
                         <button 
-                            onclick="showTab('services')"
+                            onclick="showTab('mes-services')"
                             class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'services' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="services"
+                            data-tab="mes-services"
                         >
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
@@ -384,9 +383,14 @@
                         </div>
 
                         <!-- Onglet Services -->
-                        <div id="tab-services" class="tab-content {{ $activeTab !== 'services' ? 'hidden' : '' }}">
+                        <div id="tab-mes-services" class="tab-content {{ $activeTab !== 'services' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.services')
                         </div>
+
+
+                        <!-- Modal Services -->
+                        @include('entreprise.dashboard.tabs.services-modal-content')
+
                         
                         <!-- Onglet Paramètres -->
                         <div id="tab-parametres" class="tab-content {{ $activeTab !== 'parametres' ? 'hidden' : '' }}">
@@ -452,7 +456,11 @@
 
             // Afficher l'onglet depuis l'URL
             const urlParams = new URLSearchParams(window.location.search);
-            const tab = urlParams.get('tab') || '{{ $activeTab }}';
+            let tab = urlParams.get('tab') || '{{ $activeTab }}';
+            
+            // Correction pour l'onglet services
+            if (tab === 'services') tab = 'mes-services';
+            
             if (tab) {
                 showTab(tab);
             }
