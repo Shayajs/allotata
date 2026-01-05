@@ -186,7 +186,7 @@ class StripeWebhookController extends CashierController
         // Vérifier que la mise à jour a bien été effectuée
         if ($subscriptionId) {
             try {
-                $user = $this->getUserByStripeId($data['customer'] ?? null);
+                $user = \App\Models\User::where('stripe_id', $data['customer'] ?? null)->first();
                 if ($user) {
                     // Trouver l'abonnement par stripe_id (peu importe le type)
                     $subscription = \Laravel\Cashier\Subscription::where('stripe_id', $subscriptionId)->first();
