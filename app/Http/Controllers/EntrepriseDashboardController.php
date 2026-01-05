@@ -207,8 +207,8 @@ class EntrepriseDashboardController extends Controller
 
         // ===== Données pour l'onglet Abonnements (Prix dynamiques) =====
         $subscriptionPrices = [
-            'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€'],
-            'multi_personnes' => ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€']
+            'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois'],
+            'multi_personnes' => ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois']
         ];
 
         // On ne charge les prix Stripe que si nécessaire (onglet abonnements ou tout le temps si c'est pas lourd)

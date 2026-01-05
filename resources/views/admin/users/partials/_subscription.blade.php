@@ -20,9 +20,9 @@
             @if($subscription && $subscription->valid())
                 <div class="space-y-6">
                     <div class="flex flex-wrap items-center gap-2 lg:gap-3">
-                        <div class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">● Actif</div>
+                        <div class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">● Actif</div>
                         @if($subscription->onGracePeriod())
-                            <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Fin programmée</span>
+                            <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-bold uppercase tracking-wider">Fin programmée</span>
                         @endif
                     </div>
                     
@@ -58,7 +58,7 @@
                     @if(!$subscription->onGracePeriod())
                         <form action="{{ route('admin.users.subscription.cancel-stripe', $user) }}" method="POST" onsubmit="return confirm('Annuler l\'abonnement ? Il restera actif jusqu\'à la fin du mois déjà payé.');">
                             @csrf
-                            <button type="submit" class="w-full px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 text-[10px] lg:text-xs font-bold rounded-2xl transition-all border border-red-100 dark:bg-red-900/10 dark:border-red-900/30">
+                            <button type="submit" class="w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-[10px] lg:text-xs font-bold rounded-2xl transition-all border border-red-100 dark:border-red-900/30">
                                 Stopper le renouvellement
                             </button>
                         </form>
@@ -86,7 +86,7 @@
             @if($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu)
                 <div class="space-y-6">
                     <div class="flex items-center gap-3">
-                        <div class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-wider">● Actif</div>
+                        <div class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider">● Actif</div>
                     </div>
                     
                     <div>

@@ -50,7 +50,7 @@
 
 <div class="space-y-6">
     <!-- Site Web Vitrine -->
-    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6 {{ $aSiteWebActif ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6 {{ $aSiteWebActif ? 'bg-green-50 dark:bg-green-900/20' : '' }} {{ !$userHasPremium ? 'opacity-60 grayscale' : '' }}">
         <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
@@ -84,8 +84,8 @@
                                 <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="mt-2">
                                     @csrf
                                     <input type="hidden" name="type" value="site_web">
-                                    <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
-                                        S'abonner maintenant ({{ $subscriptionPrices['site_web']['formatted'] }}{{ $subscriptionPrices['site_web']['period'] }})
+                                    <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                        S'abonner maintenant ({{ $subscriptionPrices['site_web']['formatted'] }}{{ $subscriptionPrices['site_web']['period'] ?? '/mois' }})
                                     </button>
                                 </form>
                             </div>
@@ -132,7 +132,7 @@
                                                     </div>
                                                     <div class="text-right">
                                                         <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{{ $subscriptionPrices['site_web']['formatted'] }}</div>
-                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['site_web']['period'] }}</div>
+                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['site_web']['period'] ?? '/mois' }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">
@@ -140,7 +140,7 @@
                                                         <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
                                                             @csrf
                                                             <input type="hidden" name="type" value="site_web">
-                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                                                            <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                                 <span class="text-lg">🎁</span>
                                                                 Essayer gratuitement pendant 7 jours
                                                             </button>
@@ -156,7 +156,7 @@
                                                     <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" name="type" value="site_web">
-                                                        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                                        <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                             S'abonner à Site Web Vitrine
                                                         </button>
                                                     </form>
@@ -176,7 +176,7 @@
     </div>
 
     <!-- Gestion Multi-Personnes -->
-    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6 {{ $aGestionMultiPersonnes ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6 {{ $aGestionMultiPersonnes ? 'bg-green-50 dark:bg-green-900/20' : '' }} {{ !$userHasPremium ? 'opacity-60 grayscale' : '' }}">
         <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
@@ -210,8 +210,8 @@
                                 <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="mt-2">
                                     @csrf
                                     <input type="hidden" name="type" value="multi_personnes">
-                                    <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm">
-                                        S'abonner maintenant ({{ $subscriptionPrices['multi_personnes']['formatted'] }}{{ $subscriptionPrices['multi_personnes']['period'] }})
+                                    <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                        S'abonner maintenant ({{ $subscriptionPrices['multi_personnes']['formatted'] }}{{ $subscriptionPrices['multi_personnes']['period'] ?? '/mois' }})
                                     </button>
                                 </form>
                             </div>
@@ -252,7 +252,7 @@
                                                     </div>
                                                     <div class="text-right">
                                                         <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{{ $subscriptionPrices['multi_personnes']['formatted'] }}</div>
-                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['multi_personnes']['period'] }}</div>
+                                                        <div class="text-sm text-slate-600 dark:text-slate-400">{{ $subscriptionPrices['multi_personnes']['period'] ?? '/mois' }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">
@@ -260,7 +260,7 @@
                                                         <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
                                                             @csrf
                                                             <input type="hidden" name="type" value="multi_personnes">
-                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                                                            <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                                 <span class="text-lg">🎁</span>
                                                                 Essayer gratuitement pendant 7 jours
                                                             </button>
@@ -276,7 +276,7 @@
                                                     <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" name="type" value="multi_personnes">
-                                                        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                                        <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                             S'abonner à Gestion Multi-Personnes
                                                         </button>
                                                     </form>

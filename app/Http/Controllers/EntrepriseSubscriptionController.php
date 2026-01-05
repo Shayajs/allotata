@@ -91,9 +91,56 @@ class EntrepriseSubscriptionController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
+        // ===== Données pour l'onglet Abonnements (Prix dynamiques) =====
+        $subscriptionPrices = \Illuminate\Support\Facades\Cache::remember('stripe_subscription_prices', 3600, function () {
+            try {
+                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                
+                $prices = [];
+                $configs = [
+                    'site_web' => config('services.stripe.price_id_site_web'),
+                    'multi_personnes' => config('services.stripe.price_id_multi_personnes')
+                ];
+
+                foreach ($configs as $key => $id) {
+                    if ($id) {
+                        try {
+                            $p = \Stripe\Price::retrieve($id);
+                            $amount = $p->unit_amount / 100;
+                            $currencySymbol = strtoupper($p->currency) === 'EUR' ? '€' : strtoupper($p->currency);
+                            $prices[$key] = [
+                                'amount' => $amount,
+                                'currency' => strtoupper($p->currency),
+                                'formatted' => number_format($amount, 2, ',', ' ') . $currencySymbol,
+                                'period' => $p->recurring ? ($p->recurring->interval === 'month' ? '/mois' : '/' . $p->recurring->interval) : ''
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::warning("Impossible de récupérer le prix Stripe pour $key: " . $e->getMessage());
+                            // Fallback aux valeurs par défaut
+                            $prices[$key] = $key === 'site_web' 
+                                ? ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois']
+                                : ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois'];
+                        }
+                    } else {
+                         $prices[$key] = $key === 'site_web' 
+                                ? ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois']
+                                : ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois'];
+                    }
+                }
+                return $prices;
+            } catch (\Exception $e) {
+                \Log::error('Erreur cache prix Stripe: ' . $e->getMessage());
+                return [
+                    'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois'],
+                    'multi_personnes' => ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois']
+                ];
+            }
+        });
+
         // Retourner la vue d'abonnement
         return view('entreprise.dashboard.tabs.abonnements', [
             'entreprise' => $entreprise,
+            'subscriptionPrices' => $subscriptionPrices,
         ]);
     }
 

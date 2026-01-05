@@ -1931,4 +1931,99 @@ class AdminController extends Controller
         
         return redirect()->route('admin.users.index')->with('success', 'Mode Super-User désactivé. Retour au panneau administrateur.');
     }
+
+    /**
+     * Afficher la page de gestion des webhooks Stripe
+     */
+    public function stripeWebhooks(Request $request)
+    {
+        // Récupérer la configuration du webhook
+        $webhookSecret = config('services.stripe.webhook.secret');
+        $webhookUrl = route('cashier.webhook');
+        $webhookTolerance = config('services.stripe.webhook.tolerance', 300);
+        
+        // Vérifier si le secret est configuré
+        $webhookConfigured = !empty($webhookSecret);
+        
+        // Récupérer les transactions/webhooks avec pagination
+        $query = \App\Models\StripeTransaction::with('user')
+            ->orderBy('created_at', 'desc');
+        
+        // Filtres
+        if ($request->filled('event_type')) {
+            $query->where('event_type', $request->event_type);
+        }
+        
+        if ($request->filled('processed')) {
+            $query->where('processed', $request->processed === '1');
+        }
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('stripe_event_id', 'like', "%{$search}%")
+                  ->orWhere('stripe_customer_id', 'like', "%{$search}%")
+                  ->orWhere('stripe_subscription_id', 'like', "%{$search}%")
+                  ->orWhere('stripe_payment_intent_id', 'like', "%{$search}%")
+                  ->orWhere('event_type', 'like', "%{$search}%");
+            });
+        }
+        
+        $transactions = $query->paginate(50)->withQueryString();
+        
+        // Statistiques
+        $stats = [
+            'total' => \App\Models\StripeTransaction::count(),
+            'processed' => \App\Models\StripeTransaction::where('processed', true)->count(),
+            'pending' => \App\Models\StripeTransaction::where('processed', false)->count(),
+            'today' => \App\Models\StripeTransaction::whereDate('created_at', today())->count(),
+            'last_24h' => \App\Models\StripeTransaction::where('created_at', '>=', now()->subDay())->count(),
+        ];
+        
+        // Statistiques par type d'événement
+        $eventTypes = \App\Models\StripeTransaction::select('event_type', DB::raw('count(*) as count'))
+            ->groupBy('event_type')
+            ->orderBy('count', 'desc')
+            ->get();
+        
+        // Récupérer les derniers événements non traités
+        $recentPending = \App\Models\StripeTransaction::where('processed', false)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+        
+        return view('admin.stripe-webhooks', [
+            'webhookSecret' => $webhookSecret,
+            'webhookUrl' => $webhookUrl,
+            'webhookTolerance' => $webhookTolerance,
+            'webhookConfigured' => $webhookConfigured,
+            'transactions' => $transactions,
+            'stats' => $stats,
+            'eventTypes' => $eventTypes,
+            'recentPending' => $recentPending,
+        ]);
+    }
+
+    /**
+     * Afficher les détails d'une transaction webhook (API JSON)
+     */
+    public function stripeWebhookDetails(\App\Models\StripeTransaction $transaction)
+    {
+        return response()->json([
+            'id' => $transaction->id,
+            'event_type' => $transaction->event_type,
+            'stripe_event_id' => $transaction->stripe_event_id,
+            'stripe_customer_id' => $transaction->stripe_customer_id,
+            'stripe_subscription_id' => $transaction->stripe_subscription_id,
+            'stripe_payment_intent_id' => $transaction->stripe_payment_intent_id,
+            'amount' => $transaction->amount,
+            'currency' => $transaction->currency,
+            'status' => $transaction->status,
+            'processed' => $transaction->processed,
+            'processed_at' => $transaction->processed_at,
+            'metadata' => $transaction->metadata,
+            'raw_data' => $transaction->raw_data,
+            'created_at' => $transaction->created_at->toISOString(),
+        ]);
+    }
 }

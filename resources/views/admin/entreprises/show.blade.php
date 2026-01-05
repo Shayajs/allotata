@@ -180,7 +180,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <dt class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Description</dt>
-                        <dd class="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 italic">
+                        <dd class="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-700 italic">
                             {{ $entreprise->description ?? 'Aucune description fournie.' }}
                         </dd>
                     </div>
@@ -192,7 +192,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 flex justify-between items-center">
                 <h2 class="text-xl font-bold text-slate-900 dark:text-white">Dernières Réservations</h2>
-                <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-xs font-bold rounded-full">Total : {{ $entreprise->reservations->count() }}</span>
+                <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">Total : {{ $entreprise->reservations->count() }}</span>
             </div>
             <div class="p-0 overflow-x-auto">
                 <table class="w-full text-left">
@@ -209,7 +209,7 @@
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                                 <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ $reservation->user->name }}</td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
-                                <td class="px-6 py-4 font-bold text-green-600">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>
+                                <td class="px-6 py-4 font-bold text-green-600 dark:text-green-400">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>
                                 <td class="px-6 py-4 text-right">
                                     <a href="{{ route('admin.reservations.show', $reservation) }}" class="text-xs font-bold text-slate-400 hover:text-green-600 uppercase tracking-widest transition-colors">Détails →</a>
                                 </td>
@@ -245,7 +245,7 @@
             </div>
             <h2 class="text-xl font-bold mb-2">Options & Forfait</h2>
             <p class="text-sm opacity-80 mb-6">Gérez les plafonds de réservations et l'accès aux outils marketing de cette entreprise.</p>
-            <a href="{{ route('admin.entreprises.options', $entreprise) }}" class="inline-block px-6 py-3 bg-white text-indigo-600 text-sm font-bold rounded-xl hover:scale-105 transition-transform active:scale-95">
+            <a href="{{ route('admin.entreprises.options', $entreprise) }}" class="inline-block px-6 py-3 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-sm font-bold rounded-xl hover:scale-105 transition-transform active:scale-95">
                 Gérer les limites
             </a>
         </div>

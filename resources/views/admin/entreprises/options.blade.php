@@ -43,13 +43,13 @@
                 @endphp
                 
                 <div class="rounded-3xl border-2 transition-all overflow-hidden {{ $aSiteWebActif ? 'border-green-100 dark:border-green-900/30' : 'border-slate-100 dark:border-slate-700' }}">
-                    <div class="p-6 lg:p-8 {{ $aSiteWebActif ? 'bg-green-50/50 dark:bg-green-900/10' : 'bg-slate-50 dark:bg-slate-800/30' }}">
+                    <div class="p-6 lg:p-8 {{ $aSiteWebActif ? 'bg-green-50/50 dark:bg-green-900/10' : 'bg-white dark:bg-slate-800' }}">
                         <div class="flex items-center justify-between mb-6">
                             <span class="text-4xl">🌐</span>
                             @if($aSiteWebActif)
                                 <span class="px-2 py-1 text-[10px] uppercase font-bold bg-green-500 text-white rounded-lg">Option Active</span>
                             @else
-                                <span class="px-2 py-1 text-[10px] uppercase font-bold bg-slate-400 text-white rounded-lg">Option Inactive</span>
+                                <span class="px-2 py-1 text-[10px] uppercase font-bold bg-slate-400 dark:bg-slate-600 text-white rounded-lg">Option Inactive</span>
                             @endif
                         </div>
                         <h3 class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-2">Site Web Vitrine</h3>
@@ -73,7 +73,7 @@
                                 @if($abonnementSiteWeb->est_manuel)
                                     <form action="{{ route('admin.entreprises.options.desactiver', [$entreprise, 'site_web']) }}" method="POST" onsubmit="return confirm('Désactiver cette option ?');" class="mt-4">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-xl transition-all dark:bg-red-900/10 dark:border-red-900/30 border border-red-100">
+                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
                                             Révoquer l'accès manuel
                                         </button>
                                     </form>
@@ -115,13 +115,13 @@
 
                 <!-- Multi-Personnes -->
                 <div class="rounded-3xl border-2 transition-all overflow-hidden {{ $aGestionMultiPersonnes ? 'border-green-100 dark:border-green-900/30' : 'border-slate-100 dark:border-slate-700' }}">
-                    <div class="p-6 lg:p-8 {{ $aGestionMultiPersonnes ? 'bg-green-50/50 dark:bg-green-900/10' : 'bg-slate-50 dark:bg-slate-800/30' }}">
+                    <div class="p-6 lg:p-8 {{ $aGestionMultiPersonnes ? 'bg-green-50/50 dark:bg-green-900/10' : 'bg-white dark:bg-slate-800' }}">
                         <div class="flex items-center justify-between mb-6">
                             <span class="text-4xl">👥</span>
                             @if($aGestionMultiPersonnes)
                                 <span class="px-2 py-1 text-[10px] uppercase font-bold bg-green-500 text-white rounded-lg">Option Active</span>
                             @else
-                                <span class="px-2 py-1 text-[10px] uppercase font-bold bg-slate-400 text-white rounded-lg">Option Inactive</span>
+                                <span class="px-2 py-1 text-[10px] uppercase font-bold bg-slate-400 dark:bg-slate-600 text-white rounded-lg">Option Inactive</span>
                             @endif
                         </div>
                         <h3 class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white mb-2">Multi-Personnes</h3>
@@ -145,7 +145,7 @@
                                 @if($abonnementMultiPersonnes->est_manuel)
                                     <form action="{{ route('admin.entreprises.options.desactiver', [$entreprise, 'multi_personnes']) }}" method="POST" onsubmit="return confirm('Désactiver cette option ?');" class="mt-4">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold rounded-xl transition-all dark:bg-red-900/10 dark:border-red-900/30 border border-red-100">
+                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
                                             Révoquer l'accès manuel
                                         </button>
                                     </form>

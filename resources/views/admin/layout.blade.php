@@ -196,6 +196,12 @@
                     <span class="font-medium">Prix personnalisés</span>
                 </a>
 
+                <!-- Webhooks Stripe -->
+                <a href="{{ route('admin.stripe-webhooks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.stripe-webhooks.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">🔗</span>
+                    <span class="font-medium">Webhooks Stripe</span>
+                </a>
+
                 <!-- Abonnements -->
                 <a href="{{ route('admin.subscriptions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.subscriptions.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
                     <span class="text-lg">💳</span>

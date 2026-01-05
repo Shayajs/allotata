@@ -417,6 +417,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/custom-prices/{customPrice}/toggle', [AdminController::class, 'toggleCustomPrice'])->name('custom-prices.toggle');
     Route::delete('/custom-prices/{customPrice}', [AdminController::class, 'deleteCustomPrice'])->name('custom-prices.delete');
     
+    // Gestion des webhooks Stripe
+    Route::get('/stripe-webhooks', [AdminController::class, 'stripeWebhooks'])->name('stripe-webhooks.index');
+    Route::get('/stripe-webhooks/{transaction}/details', [AdminController::class, 'stripeWebhookDetails'])->name('stripe-webhooks.details');
+    
     // Gestion des abonnements
     Route::get('/subscriptions', [\App\Http\Controllers\AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::post('/subscriptions/sync', [\App\Http\Controllers\AdminSubscriptionController::class, 'syncAll'])->name('subscriptions.sync');
