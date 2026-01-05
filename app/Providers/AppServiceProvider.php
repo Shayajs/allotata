@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Reservation;
 use App\Observers\ReservationObserver;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
