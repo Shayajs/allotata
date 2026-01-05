@@ -136,30 +136,40 @@
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">
-                                                    @if($peutEssayerSiteWeb)
-                                                        <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
+                                                    @if($userHasPremium)
+                                                        @if($peutEssayerSiteWeb)
+                                                            <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="type" value="site_web">
+                                                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                                                                    <span class="text-lg">🎁</span>
+                                                                    Essayer gratuitement pendant 7 jours
+                                                                </button>
+                                                            </form>
+                                                            <div class="text-center text-xs text-slate-500 dark:text-slate-400">
+                                                                Sans engagement • Sans carte bancaire
+                                                            </div>
+                                                            <div class="relative flex items-center justify-center py-2">
+                                                                <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
+                                                                <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
+                                                            </div>
+                                                        @endif
+                                                        <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                             @csrf
                                                             <input type="hidden" name="type" value="site_web">
-                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
-                                                                <span class="text-lg">🎁</span>
-                                                                Essayer gratuitement pendant 7 jours
+                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                                                S'abonner à Site Web Vitrine
                                                             </button>
                                                         </form>
-                                                        <div class="text-center text-xs text-slate-500 dark:text-slate-400">
-                                                            Sans engagement • Sans carte bancaire
+                                                    @else
+                                                        <div class="w-full px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-semibold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                            Abonnement Premium requis
                                                         </div>
-                                                        <div class="relative flex items-center justify-center py-2">
-                                                            <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
-                                                            <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
-                                                        </div>
+                                                        <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+                                                            L'abonnement Premium est nécessaire pour activer cette option.
+                                                        </p>
                                                     @endif
-                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="type" value="site_web">
-                                                        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                                                            S'abonner à Site Web Vitrine
-                                                        </button>
-                                                    </form>
                                                     @if(auth()->user()->is_admin)
                                                         <div class="border-t border-slate-300 dark:border-slate-600 pt-3">
                                                             <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 text-center">Ou activer manuellement (admin) :</p>
@@ -256,30 +266,40 @@
                                                     </div>
                                                 </div>
                                                 <div class="mt-4 space-y-3">
-                                                    @if($peutEssayerMultiPersonnes)
-                                                        <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
+                                                    @if($userHasPremium)
+                                                        @if($peutEssayerMultiPersonnes)
+                                                            <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="type" value="multi_personnes">
+                                                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
+                                                                    <span class="text-lg">🎁</span>
+                                                                    Essayer gratuitement pendant 7 jours
+                                                                </button>
+                                                            </form>
+                                                            <div class="text-center text-xs text-slate-500 dark:text-slate-400">
+                                                                Sans engagement • Sans carte bancaire
+                                                            </div>
+                                                            <div class="relative flex items-center justify-center py-2">
+                                                                <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
+                                                                <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
+                                                            </div>
+                                                        @endif
+                                                        <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                             @csrf
                                                             <input type="hidden" name="type" value="multi_personnes">
-                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2">
-                                                                <span class="text-lg">🎁</span>
-                                                                Essayer gratuitement pendant 7 jours
+                                                            <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                                                S'abonner à Gestion Multi-Personnes
                                                             </button>
                                                         </form>
-                                                        <div class="text-center text-xs text-slate-500 dark:text-slate-400">
-                                                            Sans engagement • Sans carte bancaire
+                                                    @else
+                                                        <div class="w-full px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-semibold rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                                            Abonnement Premium requis
                                                         </div>
-                                                        <div class="relative flex items-center justify-center py-2">
-                                                            <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
-                                                            <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
-                                                        </div>
+                                                        <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+                                                            L'abonnement Premium est nécessaire pour activer cette option.
+                                                        </p>
                                                     @endif
-                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="type" value="multi_personnes">
-                                                        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                                                            S'abonner à Gestion Multi-Personnes
-                                                        </button>
-                                                    </form>
                                                     @if(auth()->user()->is_admin)
                                                         <div class="border-t border-slate-300 dark:border-slate-600 pt-3">
                                                             <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 text-center">Ou activer manuellement (admin) :</p>

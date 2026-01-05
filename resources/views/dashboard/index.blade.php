@@ -25,7 +25,7 @@
             </div>
             <form action="{{ route('stop-impersonating') }}" method="POST">
                 @csrf
-                <button type="submit" class="px-4 py-1.5 bg-white text-red-700 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-50 transition-colors uppercase tracking-wide flex items-center gap-2">
+                <button type="submit" class="px-4 py-1.5 bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-50 dark:hover:bg-slate-700 transition-colors uppercase tracking-wide flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>

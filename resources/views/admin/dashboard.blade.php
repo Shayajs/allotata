@@ -129,7 +129,7 @@
     <!-- Inscriptions par jour -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📈 Nouvelles inscriptions (30 derniers jours)</h2>
-        <div class="relative" style="height: 250px;">
+        <div class="relative h-[250px]">
             <canvas id="inscriptionsChart"></canvas>
         </div>
     </div>
@@ -137,7 +137,7 @@
     <!-- Réservations par jour -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📅 Réservations (30 derniers jours)</h2>
-        <div class="relative" style="height: 250px;">
+        <div class="relative h-[250px]">
             <canvas id="reservationsChart"></canvas>
         </div>
     </div>
@@ -148,7 +148,7 @@
     <!-- Répartition des tickets -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🎫 Tickets par statut</h2>
-        <div class="relative" style="height: 220px;">
+        <div class="relative h-[220px]">
             <canvas id="ticketsChart"></canvas>
         </div>
     </div>
