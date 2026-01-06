@@ -28,7 +28,9 @@ class AgendaController extends Controller
         }
 
         $horaires = $entreprise->horairesOuverture()
+            ->where('est_exceptionnel', false)
             ->orderBy('jour_semaine')
+            ->orderBy('ordre_plage')
             ->get();
 
         $typesServices = $entreprise->typesServices()
@@ -139,27 +141,41 @@ class AgendaController extends Controller
         $request->validate([
             'horaires' => 'required|array',
             'horaires.*.jour_semaine' => 'required|integer|min:0|max:6',
-            'horaires.*.heure_ouverture' => 'nullable|date_format:H:i',
-            'horaires.*.heure_fermeture' => 'nullable|date_format:H:i',
+            'horaires.*.plages' => 'sometimes|nullable|array',
+            'horaires.*.plages.*.heure_ouverture' => 'nullable|date_format:H:i',
+            'horaires.*.plages.*.heure_fermeture' => 'nullable|date_format:H:i',
         ]);
 
-        // Supprimer les anciens horaires
-        $entreprise->horairesOuverture()->delete();
+        // Supprimer les anciens horaires réguliers (pas les exceptionnels)
+        $entreprise->horairesOuverture()
+            ->where('est_exceptionnel', false)
+            ->delete();
 
         // Créer les nouveaux horaires
-        foreach ($request->horaires as $horaire) {
-            // Vérifier si le jour n'est pas marqué comme fermé
-            if (!isset($horaire['ferme']) && isset($horaire['heure_ouverture']) && isset($horaire['heure_fermeture']) && 
-                !empty($horaire['heure_ouverture']) && !empty($horaire['heure_fermeture'])) {
-                // Vérifier que l'heure de fermeture est après l'heure d'ouverture
-                if ($horaire['heure_ouverture'] < $horaire['heure_fermeture']) {
-                    HorairesOuverture::create([
-                        'entreprise_id' => $entreprise->id,
-                        'jour_semaine' => $horaire['jour_semaine'],
-                        'heure_ouverture' => $horaire['heure_ouverture'],
-                        'heure_fermeture' => $horaire['heure_fermeture'],
-                        'est_exceptionnel' => false,
-                    ]);
+        foreach ($request->horaires as $horaireJour) {
+            $jourSemaine = $horaireJour['jour_semaine'];
+            $plages = $horaireJour['plages'] ?? [];
+            
+            // Si le jour n'est pas marqué comme fermé et qu'il y a des plages
+            if (!empty($plages)) {
+                $ordrePlage = 0;
+                foreach ($plages as $plage) {
+                    // Vérifier que les heures sont définies et valides
+                    if (isset($plage['heure_ouverture']) && isset($plage['heure_fermeture']) && 
+                        !empty($plage['heure_ouverture']) && !empty($plage['heure_fermeture'])) {
+                        // Vérifier que l'heure de fermeture est après l'heure d'ouverture
+                        if ($plage['heure_ouverture'] < $plage['heure_fermeture']) {
+                            HorairesOuverture::create([
+                                'entreprise_id' => $entreprise->id,
+                                'jour_semaine' => $jourSemaine,
+                                'ordre_plage' => $ordrePlage,
+                                'heure_ouverture' => $plage['heure_ouverture'],
+                                'heure_fermeture' => $plage['heure_fermeture'],
+                                'est_exceptionnel' => false,
+                            ]);
+                            $ordrePlage++;
+                        }
+                    }
                 }
             }
         }

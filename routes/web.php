@@ -268,12 +268,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/factures/{id}', [FactureController::class, 'show'])->name('factures.show');
     Route::get('/factures/{id}/download', [FactureController::class, 'download'])->name('factures.download');
     Route::get('/m/{slug}/factures', [FactureController::class, 'indexEntreprise'])->name('factures.entreprise');
-    Route::get('/m/{slug}/factures/{id}', [FactureController::class, 'showEntreprise'])->name('factures.entreprise.show');
-    Route::get('/m/{slug}/factures/{id}/download', [FactureController::class, 'downloadEntreprise'])->name('factures.entreprise.download');
     Route::get('/m/{slug}/comptabilite', [FactureController::class, 'comptabilite'])->name('factures.comptabilite');
+    // Routes spécifiques AVANT la route {id} pour éviter les conflits
     Route::get('/m/{slug}/factures/create-groupee', [FactureController::class, 'createGroupee'])->name('factures.create-groupee');
     Route::get('/m/{slug}/factures/reservations', [FactureController::class, 'getReservationsPourFactureGroupee'])->name('factures.reservations');
     Route::post('/m/{slug}/factures/groupee', [FactureController::class, 'storeGroupee'])->name('factures.store-groupee');
+    // Routes avec {id} en dernier
+    Route::get('/m/{slug}/factures/{id}', [FactureController::class, 'showEntreprise'])->name('factures.entreprise.show');
+    Route::get('/m/{slug}/factures/{id}/download', [FactureController::class, 'downloadEntreprise'])->name('factures.entreprise.download');
     
     // Messagerie
     Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');

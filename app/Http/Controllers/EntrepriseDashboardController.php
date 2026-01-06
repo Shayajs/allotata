@@ -80,7 +80,11 @@ class EntrepriseDashboardController extends Controller
         $reservationsEnAttente = $this->getReservationsEnAttente($entreprise);
 
         // ===== Données pour l'onglet Agenda =====
-        $horaires = $entreprise->horairesOuverture()->orderBy('jour_semaine')->get();
+        $horaires = $entreprise->horairesOuverture()
+            ->where('est_exceptionnel', false)
+            ->orderBy('jour_semaine')
+            ->orderBy('ordre_plage')
+            ->get();
         $typesServices = $entreprise->typesServices()
             ->with(['images', 'imageCouverture'])
             ->orderBy('nom')

@@ -416,13 +416,17 @@
             const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
             
             // Horaires d'ouverture par jour de semaine
+            // Horaires par jour (tableau de plages pour chaque jour)
             const horairesParJour = {};
             horaires.forEach(h => {
                 if (!h.est_exceptionnel) {
-                    horairesParJour[h.jour_semaine] = {
+                    if (!horairesParJour[h.jour_semaine]) {
+                        horairesParJour[h.jour_semaine] = [];
+                    }
+                    horairesParJour[h.jour_semaine].push({
                         ouverture: h.heure_ouverture,
                         fermeture: h.heure_fermeture
-                    };
+                    });
                 }
             });
             
@@ -449,42 +453,105 @@
                 });
             }
             
-            // Générer les créneaux pour une journée
-            function generateSlots(date, jourSemaine) {
-                const horaire = horairesParJour[jourSemaine];
-                const slots = [];
-                
-                if (!horaire || !horaire.ouverture || !horaire.fermeture) {
-                    return slots; // Fermé
+            // Vérifier si un créneau horaire est dans une des plages horaires
+            function isTimeInPlages(timeStr, plages) {
+                if (!plages || plages.length === 0) {
+                    return false;
                 }
                 
-                const [startH, startM] = horaire.ouverture.split(':').map(Number);
-                const [endH, endM] = horaire.fermeture.split(':').map(Number);
+                const [h, m] = timeStr.split(':').map(Number);
+                const timeMinutes = h * 60 + m;
                 
-                let current = startH * 60 + startM;
-                const end = endH * 60 + endM;
+                return plages.some(plage => {
+                    if (!plage.ouverture || !plage.fermeture) {
+                        return false;
+                    }
+                    
+                    const [startH, startM] = plage.ouverture.split(':').map(Number);
+                    const [endH, endM] = plage.fermeture.split(':').map(Number);
+                    
+                    const startMinutes = startH * 60 + startM;
+                    const endMinutes = endH * 60 + endM;
+                    
+                    // Le créneau est dans la plage s'il commence dans la plage et se termine avant la fin
+                    // On vérifie si le début du créneau (timeMinutes) est >= startMinutes et < endMinutes
+                    return timeMinutes >= startMinutes && (timeMinutes + 30) <= endMinutes;
+                });
+            }
+            
+            // Générer les créneaux pour une journée (tous les créneaux sont affichés, grisés si hors plage)
+            function generateSlots(date, jourSemaine) {
+                const plages = horairesParJour[jourSemaine] || [];
+                const slots = [];
                 
-                while (current < end) {
-                    const h = Math.floor(current / 60);
-                    const m = current % 60;
-                    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                    
-                    const dateStr = formatDateISO(date);
-                    const now = new Date();
-                    const slotDate = new Date(dateStr + 'T' + timeStr + ':00');
-                    
-                    // Vérifier si le créneau est dans le passé (+ 1h de marge)
-                    const isPast = slotDate <= new Date(now.getTime() + 60 * 60 * 1000);
-                    const isReserved = isSlotReserved(dateStr, timeStr);
-                    
-                    slots.push({
-                        time: timeStr,
-                        available: !isPast && !isReserved,
-                        isPast,
-                        isReserved
-                    });
-                    
-                    current += 30; // Créneaux de 30 min
+                // Si aucune plage, on peut quand même générer des créneaux grisés ou retourner vide
+                // Pour l'instant, on génère quand même une plage standard pour l'affichage
+                const hasValidPlages = plages.length > 0 && plages.some(p => p.ouverture && p.fermeture);
+                
+                if (!hasValidPlages) {
+                    // Jour fermé : générer quand même quelques créneaux grisés pour l'affichage
+                    // De 8h à 20h par défaut
+                    for (let h = 8; h < 20; h++) {
+                        for (let m = 0; m < 60; m += 30) {
+                            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                            slots.push({
+                                time: timeStr,
+                                available: false,
+                                isPast: false,
+                                isReserved: false,
+                                isInPlage: false
+                            });
+                        }
+                    }
+                    return slots;
+                }
+                
+                // Trouver la plage horaire globale (min et max de toutes les plages)
+                let minHour = 23, maxHour = 0;
+                plages.forEach(plage => {
+                    if (plage.ouverture && plage.fermeture) {
+                        const [startH] = plage.ouverture.split(':').map(Number);
+                        const [endH] = plage.fermeture.split(':').map(Number);
+                        minHour = Math.min(minHour, startH);
+                        maxHour = Math.max(maxHour, endH);
+                    }
+                });
+                
+                // S'assurer d'avoir une plage d'affichage raisonnable (min 8h, max 20h)
+                minHour = Math.min(minHour, 8);
+                maxHour = Math.max(maxHour, 20);
+                
+                // Générer TOUS les créneaux de la journée (toutes les 30 minutes)
+                for (let h = minHour; h <= maxHour; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        // Ne pas générer après maxHour
+                        if (h === maxHour && m > 0) {
+                            break;
+                        }
+                        
+                        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        const dateStr = formatDateISO(date);
+                        const now = new Date();
+                        const slotDate = new Date(dateStr + 'T' + timeStr + ':00');
+                        
+                        // Vérifier si le créneau est dans une plage horaire valide
+                        const isInPlage = isTimeInPlages(timeStr, plages);
+                        
+                        // Vérifier si le créneau est dans le passé (+ 1h de marge)
+                        const isPast = slotDate <= new Date(now.getTime() + 60 * 60 * 1000);
+                        const isReserved = isSlotReserved(dateStr, timeStr);
+                        
+                        // Le créneau est disponible seulement s'il est dans une plage ET pas dans le passé ET pas réservé
+                        const available = isInPlage && !isPast && !isReserved;
+                        
+                        slots.push({
+                            time: timeStr,
+                            available: available,
+                            isPast: isPast,
+                            isReserved: isReserved,
+                            isInPlage: isInPlage
+                        });
+                    }
                 }
                 
                 return slots;
@@ -564,7 +631,11 @@
                                 slotEl.className += 'bg-amber-500 text-white shadow-md transform scale-105';
                             } else if (slot.available) {
                                 slotEl.className += 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 hover:scale-105 cursor-pointer';
+                            } else if (!slot.isInPlage) {
+                                // Créneau hors plage horaire : grisé mais visible
+                                slotEl.className += 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60';
                             } else {
+                                // Créneau dans le passé ou réservé
                                 slotEl.className += 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 cursor-not-allowed';
                             }
                             

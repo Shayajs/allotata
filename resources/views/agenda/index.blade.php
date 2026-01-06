@@ -140,46 +140,74 @@
                         @endphp
                         @for($i = 0; $i < 7; $i++)
                             @php
-                                $horaire = $horaires->firstWhere('jour_semaine', $i);
-                                $isFerme = !$horaire || ($horaire->heure_ouverture === null);
+                                $horairesJour = $horaires->where('jour_semaine', $i)->sortBy('ordre_plage');
+                                $isFerme = $horairesJour->isEmpty();
                             @endphp
-                            <div class="flex flex-wrap items-center gap-4 p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                <div class="w-28">
-                                    <span class="font-semibold text-slate-900 dark:text-white">{{ $jours[$i] }}</span>
-                                </div>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        name="horaires[{{ $i }}][ferme]" 
-                                        value="1"
-                                        class="horaire-ferme-checkbox w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500"
-                                        data-index="{{ $i }}"
-                                        {{ $isFerme ? 'checked' : '' }}
+                            <div class="jour-horaires p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors" data-jour="{{ $i }}">
+                                <div class="flex items-center gap-4 mb-3">
+                                    <div class="w-28">
+                                        <span class="font-semibold text-slate-900 dark:text-white">{{ $jours[$i] }}</span>
+                                    </div>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            name="horaires[{{ $i }}][ferme]" 
+                                            value="1"
+                                            class="horaire-ferme-checkbox w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500"
+                                            data-index="{{ $i }}"
+                                            {{ $isFerme ? 'checked' : '' }}
+                                        >
+                                        <span class="text-sm text-red-600 dark:text-red-400 font-medium">Fermé</span>
+                                    </label>
+                                    <input type="hidden" name="horaires[{{ $i }}][jour_semaine]" value="{{ $i }}">
+                                    @if($isFerme)
+                                        <input type="hidden" name="horaires[{{ $i }}][plages]" value="">
+                                    @endif
+                                    <button 
+                                        type="button" 
+                                        class="ml-auto px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors add-plage-btn"
+                                        data-jour="{{ $i }}"
+                                        style="{{ $isFerme ? 'display: none;' : '' }}"
                                     >
-                                    <span class="text-sm text-red-600 dark:text-red-400 font-medium">Fermé</span>
-                                </label>
-                                <input type="hidden" name="horaires[{{ $i }}][jour_semaine]" value="{{ $i }}">
-                                <div class="flex-1 grid grid-cols-2 gap-4 horaire-inputs" data-index="{{ $i }}" style="{{ $isFerme ? 'opacity: 0.5' : '' }}">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm text-slate-500 dark:text-slate-400">De</span>
-                                        <input 
-                                            type="time" 
-                                            name="horaires[{{ $i }}][heure_ouverture]" 
-                                            value="{{ $horaire && $horaire->heure_ouverture ? \Carbon\Carbon::parse($horaire->heure_ouverture)->format('H:i') : '' }}"
-                                            class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            {{ $isFerme ? 'disabled' : '' }}
-                                        >
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm text-slate-500 dark:text-slate-400">à</span>
-                                        <input 
-                                            type="time" 
-                                            name="horaires[{{ $i }}][heure_fermeture]" 
-                                            value="{{ $horaire && $horaire->heure_fermeture ? \Carbon\Carbon::parse($horaire->heure_fermeture)->format('H:i') : '' }}"
-                                            class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            {{ $isFerme ? 'disabled' : '' }}
-                                        >
-                                    </div>
+                                        + Ajouter une plage
+                                    </button>
+                                </div>
+                                <div class="plages-container" data-jour="{{ $i }}">
+                                    @if($isFerme)
+                                        <div class="text-sm text-slate-500 dark:text-slate-400 italic">Jour fermé</div>
+                                    @else
+                                        @foreach($horairesJour as $plage)
+                                            <div class="plage-item flex items-center gap-3 mb-2">
+                                                <div class="flex items-center gap-2 flex-1">
+                                                    <span class="text-sm text-slate-500 dark:text-slate-400">De</span>
+                                                    <input 
+                                                        type="time" 
+                                                        name="horaires[{{ $i }}][plages][{{ $loop->index }}][heure_ouverture]" 
+                                                        value="{{ $plage->heure_ouverture ? \Carbon\Carbon::parse($plage->heure_ouverture)->format('H:i') : '' }}"
+                                                        class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                        required
+                                                    >
+                                                    <span class="text-sm text-slate-500 dark:text-slate-400">à</span>
+                                                    <input 
+                                                        type="time" 
+                                                        name="horaires[{{ $i }}][plages][{{ $loop->index }}][heure_fermeture]" 
+                                                        value="{{ $plage->heure_fermeture ? \Carbon\Carbon::parse($plage->heure_fermeture)->format('H:i') : '' }}"
+                                                        class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                        required
+                                                    >
+                                                </div>
+                                                <button 
+                                                    type="button" 
+                                                    class="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors remove-plage-btn"
+                                                    title="Supprimer cette plage"
+                                                >
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
                         @endfor
@@ -537,14 +565,17 @@
             const joursSemaine = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
             const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
             
-            // Horaires par jour
+            // Horaires par jour (tableau de plages pour chaque jour)
             const horairesParJour = {};
             horaires.forEach(h => {
                 if (!h.est_exceptionnel) {
-                    horairesParJour[h.jour_semaine] = {
+                    if (!horairesParJour[h.jour_semaine]) {
+                        horairesParJour[h.jour_semaine] = [];
+                    }
+                    horairesParJour[h.jour_semaine].push({
                         ouverture: h.heure_ouverture,
                         fermeture: h.heure_fermeture
-                    };
+                    });
                 }
             });
             
@@ -633,7 +664,7 @@
                     date.setDate(startOfWeek.getDate() + i);
                     const dateStr = formatDateISO(date);
                     const jourSemaine = date.getDay();
-                    const horaire = horairesParJour[jourSemaine];
+                    const plagesJour = horairesParJour[jourSemaine] || [];
                     const dayReservations = getReservationsForDay(dateStr);
                     
                     weekReservations += dayReservations.length;
@@ -641,7 +672,7 @@
                     const dayColumn = document.createElement('div');
                     dayColumn.className = 'space-y-1 min-h-[150px]';
                     
-                    if (!horaire || !horaire.ouverture) {
+                    if (!plagesJour || plagesJour.length === 0 || !plagesJour.some(p => p.ouverture)) {
                         dayColumn.innerHTML = `
                             <div class="h-full min-h-[150px] flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700/50 border-2 border-dashed border-slate-200 dark:border-slate-600">
                                 <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Fermé</span>
@@ -746,22 +777,159 @@
                 renderCalendar();
             });
             
-            // Gestion des horaires
+            // Gestion des horaires - Checkbox fermé
             document.querySelectorAll('.horaire-ferme-checkbox').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    const index = this.dataset.index;
-                    const inputs = document.querySelector(`.horaire-inputs[data-index="${index}"]`);
-                    const timeInputs = inputs.querySelectorAll('input[type="time"]');
+                    const jourIndex = this.dataset.index;
+                    const jourContainer = document.querySelector(`.jour-horaires[data-jour="${jourIndex}"]`);
+                    const plagesContainer = jourContainer.querySelector('.plages-container');
+                    const addPlageBtn = jourContainer.querySelector('.add-plage-btn');
                     
                     if (this.checked) {
-                        inputs.style.opacity = '0.5';
-                        timeInputs.forEach(input => {
-                            input.disabled = true;
-                            input.value = '';
-                        });
+                        // Jour fermé : vider les plages et les cacher
+                        plagesContainer.innerHTML = '<div class="text-sm text-slate-500 dark:text-slate-400 italic">Jour fermé</div>';
+                        if (addPlageBtn) addPlageBtn.style.display = 'none';
                     } else {
-                        inputs.style.opacity = '1';
-                        timeInputs.forEach(input => input.disabled = false);
+                        // Jour ouvert : afficher le bouton d'ajout et ajouter une plage par défaut si vide
+                        if (addPlageBtn) addPlageBtn.style.display = 'block';
+                        if (plagesContainer.querySelectorAll('.plage-item').length === 0) {
+                            addPlage(jourIndex);
+                        }
+                    }
+                });
+            });
+            
+            // Ajouter une plage horaire
+            function addPlage(jourIndex) {
+                const plagesContainer = document.querySelector(`.plages-container[data-jour="${jourIndex}"]`);
+                if (!plagesContainer) return;
+                
+                // Compter les plages existantes pour l'index
+                const plageCount = plagesContainer.querySelectorAll('.plage-item').length;
+                const plageIndex = plageCount;
+                
+                // Supprimer le message "Jour fermé" s'il existe
+                const fermeMsg = plagesContainer.querySelector('.text-slate-500');
+                if (fermeMsg && fermeMsg.textContent.includes('fermé')) {
+                    fermeMsg.remove();
+                }
+                
+                const plageHtml = `
+                    <div class="plage-item flex items-center gap-3 mb-2">
+                        <div class="flex items-center gap-2 flex-1">
+                            <span class="text-sm text-slate-500 dark:text-slate-400">De</span>
+                            <input 
+                                type="time" 
+                                name="horaires[${jourIndex}][plages][${plageIndex}][heure_ouverture]" 
+                                class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                required
+                            >
+                            <span class="text-sm text-slate-500 dark:text-slate-400">à</span>
+                            <input 
+                                type="time" 
+                                name="horaires[${jourIndex}][plages][${plageIndex}][heure_fermeture]" 
+                                class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                required
+                            >
+                        </div>
+                        <button 
+                            type="button" 
+                            class="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors remove-plage-btn"
+                            title="Supprimer cette plage"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                plagesContainer.insertAdjacentHTML('beforeend', plageHtml);
+                
+                // Réindexer les inputs pour éviter les trous dans les indices
+                reindexPlages(jourIndex);
+            }
+            
+            // Supprimer une plage horaire
+            function removePlage(button) {
+                const plageItem = button.closest('.plage-item');
+                if (plageItem) {
+                    const jourContainer = plageItem.closest('.jour-horaires');
+                    const jourIndex = jourContainer.dataset.jour;
+                    plageItem.remove();
+                    reindexPlages(jourIndex);
+                    
+                    // Si plus de plages, afficher le message "Jour fermé"
+                    const plagesContainer = jourContainer.querySelector('.plages-container');
+                    if (plagesContainer.querySelectorAll('.plage-item').length === 0) {
+                        plagesContainer.innerHTML = '<div class="text-sm text-slate-500 dark:text-slate-400 italic">Jour fermé</div>';
+                        const checkbox = jourContainer.querySelector('.horaire-ferme-checkbox');
+                        if (checkbox) checkbox.checked = true;
+                    }
+                }
+            }
+            
+            // Réindexer les plages pour avoir des indices consécutifs (0, 1, 2, ...)
+            function reindexPlages(jourIndex) {
+                const plagesContainer = document.querySelector(`.plages-container[data-jour="${jourIndex}"]`);
+                if (!plagesContainer) return;
+                
+                const plages = plagesContainer.querySelectorAll('.plage-item');
+                plages.forEach((plage, index) => {
+                    const ouvertureInput = plage.querySelector('input[name*="[heure_ouverture]"]');
+                    const fermetureInput = plage.querySelector('input[name*="[heure_fermeture]"]');
+                    
+                    if (ouvertureInput) {
+                        ouvertureInput.name = `horaires[${jourIndex}][plages][${index}][heure_ouverture]`;
+                    }
+                    if (fermetureInput) {
+                        fermetureInput.name = `horaires[${jourIndex}][plages][${index}][heure_fermeture]`;
+                    }
+                });
+            }
+            
+            // Event listeners pour ajouter/supprimer des plages
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.add-plage-btn')) {
+                    const btn = e.target.closest('.add-plage-btn');
+                    const jourIndex = btn.dataset.jour;
+                    addPlage(jourIndex);
+                }
+                
+                if (e.target.closest('.remove-plage-btn')) {
+                    const btn = e.target.closest('.remove-plage-btn');
+                    removePlage(btn);
+                }
+            });
+            
+            // Initialiser : ajouter une plage pour les jours ouverts qui n'en ont pas
+            document.querySelectorAll('.jour-horaires').forEach(jourContainer => {
+                const checkbox = jourContainer.querySelector('.horaire-ferme-checkbox');
+                const plagesContainer = jourContainer.querySelector('.plages-container');
+                if (!checkbox.checked && plagesContainer.querySelectorAll('.plage-item').length === 0) {
+                    const jourIndex = jourContainer.dataset.jour;
+                    addPlage(jourIndex);
+                }
+            });
+            
+            // Avant la soumission du formulaire, s'assurer que tous les jours ont un champ plages
+            document.querySelector('form[action*="horaires.store"]')?.addEventListener('submit', function(e) {
+                document.querySelectorAll('.jour-horaires').forEach(jourContainer => {
+                    const jourIndex = jourContainer.dataset.jour;
+                    const checkbox = jourContainer.querySelector('.horaire-ferme-checkbox');
+                    const plagesContainer = jourContainer.querySelector('.plages-container');
+                    const hasPlagesInput = jourContainer.querySelector('input[name*="[plages]"]');
+                    
+                    // Si le jour est fermé et qu'il n'y a pas de champ plages, en ajouter un pour créer un tableau vide
+                    if (checkbox.checked && !hasPlagesInput) {
+                        // Créer un input avec un nom qui indique un tableau vide
+                        // Laravel interprétera cela comme un tableau vide []
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = `horaires[${jourIndex}][plages][]`;
+                        hiddenInput.value = '';
+                        hiddenInput.style.display = 'none';
+                        jourContainer.appendChild(hiddenInput);
                     }
                 });
             });

@@ -122,6 +122,7 @@ class PublicController extends Controller
 
         $horairesRaw = $entreprise->horairesOuverture()
             ->orderBy('jour_semaine')
+            ->orderBy('ordre_plage')
             ->get();
 
         // Formater les horaires pour le JSON (pour FullCalendar)
@@ -146,32 +147,24 @@ class PublicController extends Controller
             $dateString = $date->format('Y-m-d');
             
             // Vérifier d'abord s'il y a un jour exceptionnel pour cette date (prioritaire)
-            $horaireExceptionnel = $horairesRaw->first(function($h) use ($dateString) {
+            $horairesExceptionnels = $horairesRaw->filter(function($h) use ($dateString) {
                 return $h->est_exceptionnel && $h->date_exception && $h->date_exception->format('Y-m-d') === $dateString;
             });
             
-            // Si pas de jour exceptionnel, utiliser l'horaire régulier
-            $horaire = $horaireExceptionnel ?? $horairesRaw->firstWhere('jour_semaine', $jourSemaine);
+            // Si pas de jour exceptionnel, utiliser les horaires réguliers pour ce jour
+            $plagesHoraires = $horairesExceptionnels->isNotEmpty() 
+                ? $horairesExceptionnels 
+                : $horairesRaw->where('jour_semaine', $jourSemaine)->where('est_exceptionnel', false);
             
-            // Calculer les créneaux disponibles pour ce jour
+            // Calculer les créneaux disponibles pour ce jour (pour toutes les plages)
             $creneaux = [];
-            if ($horaire && $horaire->heure_ouverture && $horaire->heure_fermeture) {
-                $heureOuverture = \Carbon\Carbon::parse($horaire->heure_ouverture);
-                $heureFermeture = \Carbon\Carbon::parse($horaire->heure_fermeture);
-                
+            
+            if ($plagesHoraires->isNotEmpty()) {
                 // Trouver la durée minimale des services (pour calculer les créneaux)
                 $dureeMinimale = $entreprise->typesServices->min('duree_minutes') ?? 30;
                 
                 // Générer des créneaux basés sur la durée minimale (minimum 30 minutes)
                 $dureeCreneau = max(30, ceil($dureeMinimale / 30) * 30);
-                
-                $creneauActuel = $date->copy()->setTimeFromTimeString($heureOuverture->format('H:i'));
-                $fermeture = $date->copy()->setTimeFromTimeString($heureFermeture->format('H:i'));
-                
-                // Si c'est aujourd'hui, commencer à partir de maintenant + 1 heure minimum
-                if ($i === 0) {
-                    $creneauActuel = max($creneauActuel, now()->addHour()->startOfHour());
-                }
                 
                 // Récupérer toutes les réservations pour ce jour (y compris en attente pour bloquer le créneau)
                 $reservationsDuJour = Reservation::where('entreprise_id', $entreprise->id)
@@ -179,35 +172,70 @@ class PublicController extends Controller
                     ->whereIn('statut', ['en_attente', 'confirmee'])
                     ->get();
                 
-                while ($creneauActuel->copy()->addMinutes($dureeCreneau)->lte($fermeture)) {
-                    $debutCreneau = $creneauActuel->copy();
-                    $finCreneau = $creneauActuel->copy()->addMinutes($dureeCreneau);
+                // Pour chaque plage horaire du jour, générer les créneaux
+                foreach ($plagesHoraires as $plage) {
+                    if (!$plage->heure_ouverture || !$plage->heure_fermeture) {
+                        continue; // Plage fermée, on passe à la suivante
+                    }
                     
-                    // Vérifier si ce créneau chevauche avec une réservation existante
-                    $estReserve = false;
-                    foreach ($reservationsDuJour as $reservation) {
-                        $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
-                        $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                    $heureOuverture = \Carbon\Carbon::parse($plage->heure_ouverture);
+                    $heureFermeture = \Carbon\Carbon::parse($plage->heure_fermeture);
+                    
+                    $creneauActuel = $date->copy()->setTimeFromTimeString($heureOuverture->format('H:i'));
+                    $fermeture = $date->copy()->setTimeFromTimeString($heureFermeture->format('H:i'));
+                    
+                    // Si c'est aujourd'hui, commencer à partir de maintenant + 1 heure minimum
+                    if ($i === 0) {
+                        $creneauActuel = max($creneauActuel, now()->addHour()->startOfHour());
+                    }
+                    
+                    // Générer les créneaux pour cette plage
+                    while ($creneauActuel->copy()->addMinutes($dureeCreneau)->lte($fermeture)) {
+                        $debutCreneau = $creneauActuel->copy();
+                        $finCreneau = $creneauActuel->copy()->addMinutes($dureeCreneau);
                         
-                        // Vérifier le chevauchement
-                        if ($debutCreneau->lt($finReservation) && $finCreneau->gt($debutReservation)) {
-                            $estReserve = true;
+                        // Ne pas dépasser la fin de la plage
+                        if ($finCreneau->gt($fermeture)) {
                             break;
                         }
+                        
+                        // Vérifier si ce créneau chevauche avec une réservation existante
+                        $estReserve = false;
+                        foreach ($reservationsDuJour as $reservation) {
+                            $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
+                            $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                            
+                            // Vérifier le chevauchement
+                            if ($debutCreneau->lt($finReservation) && $finCreneau->gt($debutReservation)) {
+                                $estReserve = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!$estReserve) {
+                            $creneaux[] = [
+                                'heure' => $creneauActuel->format('H:i'),
+                                'datetime' => $creneauActuel->format('Y-m-d H:i:s'),
+                                'date' => $creneauActuel->format('Y-m-d'),
+                                'time' => $creneauActuel->format('H:i'),
+                            ];
+                        }
+                        
+                        $creneauActuel->addMinutes(30); // Incrémenter de 30 minutes pour plus de flexibilité
                     }
-                    
-                    if (!$estReserve) {
-                        $creneaux[] = [
-                            'heure' => $creneauActuel->format('H:i'),
-                            'datetime' => $creneauActuel->format('Y-m-d H:i:s'),
-                            'date' => $creneauActuel->format('Y-m-d'),
-                            'time' => $creneauActuel->format('H:i'),
-                        ];
-                    }
-                    
-                    $creneauActuel->addMinutes(30); // Incrémenter de 30 minutes pour plus de flexibilité
                 }
             }
+            
+            // Trier les créneaux par heure pour avoir un ordre chronologique
+            usort($creneaux, function($a, $b) {
+                return strcmp($a['time'], $b['time']);
+            });
+            
+            // Déterminer si le jour est fermé (pas de plages ou toutes les plages sont fermées)
+            $horaire = $plagesHoraires->first();
+            $estFerme = $plagesHoraires->isEmpty() || $plagesHoraires->every(function($p) {
+                return !$p->heure_ouverture || !$p->heure_fermeture;
+            });
             
             $jours[] = [
                 'date' => $date,
@@ -217,7 +245,13 @@ class PublicController extends Controller
                 'date_input' => $date->format('Y-m-d'),
                 'est_aujourdhui' => $i === 0,
                 'horaire' => $horaire,
-                'est_ferme' => !$horaire || !$horaire->heure_ouverture || !$horaire->heure_fermeture,
+                'plages_horaires' => $plagesHoraires->map(function($p) {
+                    return [
+                        'heure_ouverture' => $p->heure_ouverture ? \Carbon\Carbon::parse($p->heure_ouverture)->format('H:i') : null,
+                        'heure_fermeture' => $p->heure_fermeture ? \Carbon\Carbon::parse($p->heure_fermeture)->format('H:i') : null,
+                    ];
+                })->values(),
+                'est_ferme' => $estFerme,
                 'creneaux' => $creneaux,
             ];
         }

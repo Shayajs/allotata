@@ -15,6 +15,7 @@ class HorairesOuverture extends Model
     protected $fillable = [
         'entreprise_id',
         'jour_semaine',
+        'ordre_plage',
         'heure_ouverture',
         'heure_fermeture',
         'est_exceptionnel',
