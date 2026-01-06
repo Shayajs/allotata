@@ -69,3 +69,13 @@ html.dark,
 html.dark * {
     scrollbar-color: #475569 #1e293b;
 }
+
+/* Classe générale pour le contenu des modales */
+.modal-content {
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-xl;
+    border: 1px solid rgb(226 232 240); /* slate-200 pour mode clair */
+}
+
+.dark .modal-content {
+    border-color: #314158; /* Couleur spécifique pour mode sombre */
+}

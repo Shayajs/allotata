@@ -122,6 +122,7 @@ Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entrepr
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');
 Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation'])->name('public.reservation.store');
+Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
 
 // Sites web vitrine (Public)
 Route::get("/w/{slug}", [SiteWebController::class, 'show'])->name('site-web.show');
@@ -191,6 +192,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/m/{slug}/agenda/jour-exceptionnel', [AgendaController::class, 'storeJourExceptionnel'])->name('agenda.jour-exceptionnel.store');
     Route::delete('/m/{slug}/agenda/jour-exceptionnel/{horaireId}', [AgendaController::class, 'deleteJourExceptionnel'])->name('agenda.jour-exceptionnel.delete');
     
+    // Gestion des stocks et produits
+    Route::get('/m/{slug}/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
+    Route::post('/m/{slug}/stock/produit', [\App\Http\Controllers\StockController::class, 'storeProduit'])->name('stock.produit.store');
+    Route::delete('/m/{slug}/stock/produit/{produitId}', [\App\Http\Controllers\StockController::class, 'deleteProduit'])->name('stock.produit.delete');
+    Route::post('/m/{slug}/stock/produit/{produitId}/image', [\App\Http\Controllers\StockController::class, 'uploadProduitImage'])->name('stock.produit.image.upload');
+    Route::post('/m/{slug}/stock/produit/{produitId}/image/{imageId}/cover', [\App\Http\Controllers\StockController::class, 'setProduitImageCover'])->name('stock.produit.image.cover');
+    Route::delete('/m/{slug}/stock/produit/{produitId}/image/{imageId}', [\App\Http\Controllers\StockController::class, 'deleteProduitImage'])->name('stock.produit.image.delete');
+    Route::post('/m/{slug}/stock/produit/{produitId}/stock', [\App\Http\Controllers\StockController::class, 'updateStock'])->name('stock.update');
+    Route::post('/m/{slug}/stock/produit/{produitId}/promotion', [\App\Http\Controllers\StockController::class, 'storePromotion'])->name('stock.promotion.store');
+    Route::delete('/m/{slug}/stock/produit/{produitId}/promotion/{promotionId}', [\App\Http\Controllers\StockController::class, 'deletePromotion'])->name('stock.promotion.delete');
+    
     // Gestion de l'équipe (multi-personnes)
     Route::prefix('m/{slug}/equipe')->name('entreprise.equipe.')->group(function() {
         Route::get('/', [MembreGestionController::class, 'index'])->name('index');
@@ -204,6 +216,10 @@ Route::middleware('auth')->group(function () {
     
     // Gestion des réservations (pour les gérants)
     Route::get('/m/{slug}/reservations', [ReservationController::class, 'index'])->name('reservations.index');
+    // Routes spécifiques AVANT la route {id} pour éviter les conflits
+    Route::get('/m/{slug}/reservations/search-clients', [ReservationController::class, 'searchClients'])->name('reservations.search-clients');
+    Route::post('/m/{slug}/reservations/manuelle', [ReservationController::class, 'storeManuelle'])->name('reservations.store-manuelle');
+    // Route {id} en dernier
     Route::get('/m/{slug}/reservations/{id}', [ReservationController::class, 'show'])->name('reservations.show');
     Route::post('/m/{slug}/reservations/{id}/start-conversation', [ReservationController::class, 'startConversation'])->name('reservations.start-conversation');
     Route::post('/m/{slug}/reservations/{id}/accept', [ReservationController::class, 'accept'])->name('reservations.accept');
@@ -262,6 +278,8 @@ Route::middleware('auth')->group(function () {
     // Messagerie
     Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');
     Route::get('/messagerie/{slug}', [MessagerieController::class, 'show'])->name('messagerie.show');
+    Route::get('/messagerie/{slug}/commander-produit/{produitId}', [MessagerieController::class, 'commanderProduit'])->name('messagerie.commander-produit');
+    Route::get('/messagerie/{slug}/demander-service/{serviceId}', [MessagerieController::class, 'demanderService'])->name('messagerie.demander-service');
     Route::post('/messagerie/{slug}', [MessagerieController::class, 'sendMessage'])->name('messagerie.send');
     Route::get('/m/{slug}/messagerie/{conversationId}', [MessagerieController::class, 'showGerant'])->name('messagerie.show-gerant');
     Route::post('/m/{slug}/messagerie/{conversationId}', [MessagerieController::class, 'sendMessageGerant'])->name('messagerie.send-gerant');

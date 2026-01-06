@@ -15,6 +15,8 @@ class Conversation extends Model
         'user_id',
         'entreprise_id',
         'reservation_id',
+        'produit_id',
+        'type_service_id',
         'dernier_message_at',
         'est_archivee',
     ];
@@ -96,5 +98,38 @@ class Conversation extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    /**
+     * Relation : Une conversation peut être liée à un produit
+     */
+    public function produit(): BelongsTo
+    {
+        return $this->belongsTo(Produit::class);
+    }
+
+    /**
+     * Relation : Une conversation peut être liée à un type de service
+     */
+    public function typeService(): BelongsTo
+    {
+        return $this->belongsTo(TypeService::class);
+    }
+
+    /**
+     * Détermine le type de contexte de la conversation
+     */
+    public function getContexteTypeAttribute(): ?string
+    {
+        if ($this->reservation_id) {
+            return 'reservation';
+        }
+        if ($this->produit_id) {
+            return 'produit';
+        }
+        if ($this->type_service_id) {
+            return 'service';
+        }
+        return null;
     }
 }

@@ -141,8 +141,8 @@
             </div>
 
             <!-- Modal détails réservation -->
-            <div id="modal-reservation" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full">
+            <div id="modal-reservation" class="hidden fixed inset-0 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
+                <div class="modal-content rounded-2xl shadow-2xl p-6 max-w-md w-full">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white">Détails de la réservation</h3>
                         <button onclick="document.getElementById('modal-reservation').classList.add('hidden')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">

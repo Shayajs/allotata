@@ -139,6 +139,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs produits
+     */
+    public function produits()
+    {
+        return $this->hasMany(Produit::class);
+    }
+
+    /**
      * Relation : Une entreprise peut avoir plusieurs factures
      */
     public function factures()

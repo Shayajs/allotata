@@ -399,8 +399,8 @@ class FactureController extends Controller
                 return [
                     'id' => $reservation->id,
                     'date' => $reservation->date_reservation->format('d/m/Y H:i'),
-                    'client' => $reservation->user->name,
-                    'client_email' => $reservation->user->email,
+                    'client' => $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client non inscrit'),
+                    'client_email' => $reservation->user ? $reservation->user->email : ($reservation->email_client ?? 'N/A'),
                     'service' => $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'N/A'),
                     'prix' => number_format($reservation->prix, 2, ',', ' ') . ' €',
                     'statut' => $reservation->statut,
@@ -450,6 +450,12 @@ class FactureController extends Controller
 
         // Récupérer le user_id (doit être le même pour toutes les réservations)
         $userId = $reservations->first()->user_id;
+        
+        // Vérifier que toutes les réservations ont un user_id
+        if (!$userId) {
+            return back()->withErrors(['error' => 'Les réservations doivent avoir un client associé pour créer une facture groupée.']);
+        }
+        
         if ($reservations->pluck('user_id')->unique()->count() > 1) {
             return back()->withErrors(['error' => 'Toutes les réservations doivent être du même client.']);
         }

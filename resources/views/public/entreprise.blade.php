@@ -721,7 +721,7 @@
                                 <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                                     @if($entreprise->rdv_uniquement_messagerie)
                                         @auth
-                                            <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            <a href="#" id="service-reserver-link" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                                 </svg>
@@ -741,11 +741,11 @@
                                         </a>
                                     @endif
                                     @auth
-                                        <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                        <a href="#" id="service-contacter-link" class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm sm:text-base">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                                             </svg>
-                                            Poser une question
+                                            Contacter
                                         </a>
                                     @else
                                         <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm sm:text-base">
@@ -767,13 +767,14 @@
                     const servicesDetailData = [
                         @foreach($services as $service)
                         {
+                            id: {{ $service->id }},
                             nom: "{{ addslashes($service->nom) }}",
                             description: "{{ addslashes($service->description ?? '') }}",
                             prix: "{{ number_format($service->prix, 2, ',', ' ') }}",
                             duree: {{ $service->duree_minutes }},
                             images: [
                                 @foreach($service->images as $image)
-                                "{{ asset('storage/' . $image->image_path) }}",
+                                "{{ asset('media/' . $image->image_path) }}",
                                 @endforeach
                             ],
                         },
@@ -826,6 +827,17 @@
                         document.getElementById('service-detail-prix').textContent = service.prix + ' €';
                         document.getElementById('service-detail-duree').textContent = '⏱️ Durée : ' + service.duree + ' minutes';
                         document.getElementById('service-detail-description').textContent = service.description || 'Aucune description disponible.';
+                        
+                        // Mettre à jour les liens
+                        const contacterLink = document.getElementById('service-contacter-link');
+                        const reserverLink = document.getElementById('service-reserver-link');
+                        const baseUrl = "{{ route('messagerie.demander-service', [$entreprise->slug, 'serviceId' => 0]) }}";
+                        if (contacterLink) {
+                            contacterLink.href = baseUrl.replace('/0', '/' + service.id);
+                        }
+                        if (reserverLink) {
+                            reserverLink.href = baseUrl.replace('/0', '/' + service.id);
+                        }
                         
                         // Badge négociable
                         const negociableBadge = document.getElementById('service-detail-negociable-badge');
@@ -912,6 +924,103 @@
                         }
                     });
                 </script>
+            </section>
+        @endif
+
+        <!-- Section Produits -->
+        @php
+            $produitsDisponibles = $produits ?? collect([]);
+        @endphp
+        @if($produitsDisponibles->count() > 0)
+            <section class="mt-8 sm:mt-12">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                        Produits
+                    </h2>
+                    <a href="{{ route('public.store', $entreprise->slug) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-xs sm:text-sm font-semibold rounded-lg transition">
+                        Voir tous les produits
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </a>
+                </div>
+                <div class="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach($produitsDisponibles->take(6) as $produit)
+                        @php
+                            $imageCouverture = $produit->imageCouverture;
+                            $premiereImage = $produit->images->first();
+                            $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
+                            $promotion = $produit->promotionActive()->first();
+                            $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+                        @endphp
+                        <a href="{{ route('public.store', $entreprise->slug) }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all hover:border-green-300 dark:hover:border-green-700 group">
+                            @if($imageAffichee)
+                                <div class="relative h-36 sm:h-48 w-full overflow-hidden">
+                                    <img 
+                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                        alt="{{ $produit->nom }}"
+                                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                    >
+                                    @if($promotion)
+                                        <div class="absolute top-2 right-2 bg-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
+                                            PROMO
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="relative h-36 sm:h-48 w-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20 flex items-center justify-center">
+                                    <svg class="w-12 h-12 sm:w-16 sm:h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    @if($promotion)
+                                        <div class="absolute top-2 right-2 bg-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
+                                            PROMO
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                            
+                            <div class="p-4 sm:p-6">
+                                <h3 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                                    {{ $produit->nom }}
+                                </h3>
+                                
+                                @if($produit->description)
+                                    <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
+                                        {{ $produit->description }}
+                                    </p>
+                                @endif
+                                
+                                <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <div class="flex flex-col">
+                                        @if($promotion)
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-base sm:text-lg line-through text-slate-400">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
+                                                <span class="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">
+                                                    {{ number_format($prixActuel, 2, ',', ' ') }} €
+                                                </span>
+                                            </div>
+                                        @else
+                                            <span class="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
+                                                {{ number_format($prixActuel, 2, ',', ' ') }} €
+                                            </span>
+                                        @endif
+                                        @if($produit->gestion_stock === 'en_attente_commandes')
+                                            <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">📦 En attente de commandes</span>
+                                        @elseif($produit->stock)
+                                            <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">En stock: {{ $produit->stock->quantite_disponible }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
             </section>
         @endif
 

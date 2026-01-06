@@ -76,6 +76,124 @@ class MessagerieController extends Controller
     }
 
     /**
+     * Créer ou accéder à une conversation pour commander un produit
+     */
+    public function commanderProduit($slug, $produitId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        $produit = \App\Models\Produit::where('id', $produitId)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_actif', true)
+            ->firstOrFail();
+
+        // Vérifier s'il existe déjà une conversation active pour ce produit
+        $conversation = Conversation::where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('produit_id', $produit->id)
+            ->where('est_archivee', false)
+            ->first();
+
+        if (!$conversation) {
+            // Archiver TOUTES les conversations actives entre cet utilisateur et cette entreprise
+            Conversation::where('user_id', $user->id)
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_archivee', false)
+                ->update(['est_archivee' => true]);
+
+            // Créer une nouvelle conversation avec le contexte produit
+            $conversation = Conversation::create([
+                'user_id' => $user->id,
+                'entreprise_id' => $entreprise->id,
+                'produit_id' => $produit->id,
+                'est_archivee' => false,
+            ]);
+
+            // Créer un message automatique pour informer de la demande
+            $promotion = $produit->promotionActive()->first();
+            $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+            $prixTexte = $promotion 
+                ? number_format($produit->prix, 2, ',', ' ') . " € (Prix barré) " . number_format($prixActuel, 2, ',', ' ') . " € (PROMO)"
+                : number_format($prixActuel, 2, ',', ' ') . " €";
+
+            $messageContenu = "🛒 Bonjour, je souhaiterais commander : " . $produit->nom . "\n\n";
+            $messageContenu .= "Prix : " . $prixTexte . "\n\n";
+            if ($produit->description) {
+                $messageContenu .= "Description : " . $produit->description . "\n\n";
+            }
+            $messageContenu .= "Merci de me confirmer la disponibilité et les modalités de commande.";
+
+            \App\Models\Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $user->id,
+                'contenu' => $messageContenu,
+                'est_lu' => false,
+            ]);
+
+            $conversation->update(['dernier_message_at' => now()]);
+        }
+
+        return redirect()->route('messagerie.show', $slug);
+    }
+
+    /**
+     * Créer ou accéder à une conversation pour demander un service
+     */
+    public function demanderService($slug, $serviceId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        $service = \App\Models\TypeService::where('id', $serviceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_actif', true)
+            ->firstOrFail();
+
+        // Vérifier s'il existe déjà une conversation active pour ce service
+        $conversation = Conversation::where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('type_service_id', $service->id)
+            ->where('est_archivee', false)
+            ->first();
+
+        if (!$conversation) {
+            // Archiver TOUTES les conversations actives entre cet utilisateur et cette entreprise
+            // (pas seulement celles avec le même type_service_id)
+            Conversation::where('user_id', $user->id)
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_archivee', false)
+                ->update(['est_archivee' => true]);
+
+            // Créer une nouvelle conversation avec le contexte service
+            $conversation = Conversation::create([
+                'user_id' => $user->id,
+                'entreprise_id' => $entreprise->id,
+                'type_service_id' => $service->id,
+                'est_archivee' => false,
+            ]);
+
+            // Créer un message automatique pour informer de la demande
+            $messageContenu = "📅 Bonjour, je souhaiterais réserver : " . $service->nom . "\n\n";
+            $messageContenu .= "Prix : " . number_format($service->prix, 2, ',', ' ') . " €\n";
+            $messageContenu .= "Durée : " . $service->duree_minutes . " minutes\n\n";
+            if ($service->description) {
+                $messageContenu .= "Description : " . $service->description . "\n\n";
+            }
+            $messageContenu .= "Merci de me proposer des créneaux disponibles.";
+
+            \App\Models\Message::create([
+                'conversation_id' => $conversation->id,
+                'user_id' => $user->id,
+                'contenu' => $messageContenu,
+                'est_lu' => false,
+            ]);
+
+            $conversation->update(['dernier_message_at' => now()]);
+        }
+
+        return redirect()->route('messagerie.show', $slug);
+    }
+
+    /**
      * Afficher ou créer une conversation avec une entreprise
      */
     public function show($slug)
@@ -83,9 +201,10 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
         
-        // Vérifier si une conversation existe déjà (archivée ou non)
+        // Vérifier si une conversation existe déjà (non archivée)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
+            ->where('est_archivee', false)
             ->first();
         
         // Créer la conversation si elle n'existe pas
@@ -94,9 +213,6 @@ class MessagerieController extends Controller
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
-        } else if ($conversation->est_archivee) {
-            // Si la conversation existe mais est archivée, la réactiver
-            $conversation->update(['est_archivee' => false]);
         }
         
         // Charger la réservation si la colonne existe
@@ -119,8 +235,18 @@ class MessagerieController extends Controller
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
             ->where('est_actif', true)
+            ->with(['images', 'imageCouverture'])
             ->orderBy('nom')
             ->get();
+
+        // Charger les produits disponibles de l'entreprise
+        $produits = $entreprise->produits()
+            ->where('est_actif', true)
+            ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
+            ->get()
+            ->filter(function($produit) {
+                return $produit->estDisponible();
+            });
         
         // Marquer les messages comme lus
         $conversation->messages()
@@ -135,6 +261,7 @@ class MessagerieController extends Controller
             'isGerant' => false, // C'est la vue client
             'propositionActive' => $propositionActive,
             'prestations' => $prestations ?? collect(),
+            'produits' => $produits ?? collect(),
         ]);
     }
 
@@ -211,9 +338,15 @@ class MessagerieController extends Controller
             ->with(['user', 'entreprise'])
             ->firstOrFail();
         
-        // Charger la réservation si la colonne existe
-        if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
+        // Charger les relations du contexte
+        if ($conversation->reservation_id) {
             $conversation->load(['reservation.typeService', 'reservation.user']);
+        }
+        if ($conversation->produit_id) {
+            $conversation->load(['produit.stock', 'produit.images', 'produit.imageCouverture', 'produit.promotionActive']);
+        }
+        if ($conversation->type_service_id) {
+            $conversation->load(['typeService.images', 'typeService.imageCouverture']);
         }
         
         // Charger les messages avec leurs propositions
@@ -231,8 +364,18 @@ class MessagerieController extends Controller
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
             ->where('est_actif', true)
+            ->with(['images', 'imageCouverture'])
             ->orderBy('nom')
             ->get();
+
+        // Charger les produits disponibles de l'entreprise
+        $produits = $entreprise->produits()
+            ->where('est_actif', true)
+            ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
+            ->get()
+            ->filter(function($produit) {
+                return $produit->estDisponible();
+            });
         
         // Marquer les messages comme lus
         $conversation->messages()
@@ -247,6 +390,7 @@ class MessagerieController extends Controller
             'isGerant' => true,
             'propositionActive' => $propositionActive,
             'prestations' => $prestations ?? collect(),
+            'produits' => $produits ?? collect(),
         ]);
     }
 

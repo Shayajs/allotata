@@ -179,7 +179,7 @@
 
     <!-- Détail du calcul fiscal -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-        <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
             <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span class="text-xl">📊</span> Détail du calcul ({{ $calculFiscal['regime'] == 'prelevement_liberatoire' ? 'Prélèvement Libératoire' : 'Barème Progressif' }})
             </h3>
@@ -188,16 +188,16 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Colonne Gauche : URSSAF -->
                 <div class="space-y-4">
-                    <h4 class="font-bold text-slate-700 dark:text-slate-300 border-b pb-2">Cotisations sociales (URSSAF)</h4>
+                    <h4 class="font-bold text-slate-700 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">Cotisations sociales (URSSAF)</h4>
                     <div class="flex justify-between py-2">
-                        <span class="text-slate-600 dark:text-slate-400">Type d'activité</span>
+                        <span class="text-slate-600 dark:text-slate-300">Type d'activité</span>
                         <span class="font-medium text-slate-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $calculFiscal['type_activite'])) }}</span>
                     </div>
                     <div class="flex justify-between py-2">
-                        <span class="text-slate-600 dark:text-slate-400">Taux URSSAF</span>
+                        <span class="text-slate-600 dark:text-slate-300">Taux URSSAF</span>
                         <span class="font-medium text-slate-900 dark:text-white">{{ number_format($calculFiscal['urssaf']['taux'], 1) }}%</span>
                     </div>
-                    <div class="flex justify-between py-2 text-lg font-bold text-red-600">
+                    <div class="flex justify-between py-2 text-lg font-bold text-red-500 dark:text-red-400">
                         <span>URSSAF à payer</span>
                         <span>{{ number_format($calculFiscal['urssaf']['montant'], 2, ',', ' ') }} €</span>
                     </div>
@@ -205,42 +205,42 @@
 
                 <!-- Colonne Droite : Impôt -->
                 <div class="space-y-4">
-                    <h4 class="font-bold text-slate-700 dark:text-slate-300 border-b pb-2">Impôt sur le revenu</h4>
+                    <h4 class="font-bold text-slate-700 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">Impôt sur le revenu</h4>
                     @if($calculFiscal['regime'] == 'prelevement_liberatoire')
-                        <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                            <p class="font-bold text-amber-800 dark:text-amber-400">Prélèvement libératoire activé</p>
-                            <p class="text-sm text-amber-600 dark:text-amber-300 mt-1">Taux fixe de {{ number_format($calculFiscal['impot']['taux'], 1) }}% sur le CA</p>
+                        <div class="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl border border-amber-200 dark:border-amber-700">
+                            <p class="font-bold text-amber-800 dark:text-amber-300">Prélèvement libératoire activé</p>
+                            <p class="text-sm text-amber-600 dark:text-amber-200 mt-1">Taux fixe de {{ number_format($calculFiscal['impot']['taux'], 1) }}% sur le CA</p>
                         </div>
-                        <div class="flex justify-between py-2 text-lg font-bold text-orange-600">
+                        <div class="flex justify-between py-2 text-lg font-bold text-orange-500 dark:text-orange-400">
                             <span>Impôt (PL)</span>
                             <span>{{ number_format($calculFiscal['impot']['montant'], 2, ',', ' ') }} €</span>
                         </div>
                     @else
                         <div class="flex justify-between py-2">
-                            <span class="text-slate-600 dark:text-slate-400">Abattement forfaitaire</span>
+                            <span class="text-slate-600 dark:text-slate-300">Abattement forfaitaire</span>
                             <span class="font-medium text-slate-900 dark:text-white">{{ number_format($calculFiscal['abattement']['taux'], 0) }}%</span>
                         </div>
                         <div class="flex justify-between py-2">
-                            <span class="text-slate-600 dark:text-slate-400">Revenu imposable (micro)</span>
+                            <span class="text-slate-600 dark:text-slate-300">Revenu imposable (micro)</span>
                             <span class="font-medium text-slate-900 dark:text-white">{{ number_format($calculFiscal['abattement']['revenu_imposable'], 2, ',', ' ') }} €</span>
                         </div>
                         @if($calculFiscal['revenus_autres_foyer'] > 0)
                         <div class="flex justify-between py-2">
-                            <span class="text-slate-600 dark:text-slate-400">+ Autres revenus du foyer</span>
+                            <span class="text-slate-600 dark:text-slate-300">+ Autres revenus du foyer</span>
                             <span class="font-medium text-slate-900 dark:text-white">{{ number_format($calculFiscal['revenus_autres_foyer'], 2, ',', ' ') }} €</span>
                         </div>
                         @endif
                         <div class="flex justify-between py-2">
-                            <span class="text-slate-600 dark:text-slate-400">Nombre de parts</span>
+                            <span class="text-slate-600 dark:text-slate-300">Nombre de parts</span>
                             <span class="font-medium text-slate-900 dark:text-white">{{ $calculFiscal['parts']['total'] }}</span>
                         </div>
                         @if($calculFiscal['decote']['eligible'])
-                        <div class="flex justify-between py-2 text-green-600">
+                        <div class="flex justify-between py-2 text-green-500 dark:text-green-400">
                             <span>Décote appliquée</span>
                             <span>-{{ number_format($calculFiscal['decote']['montant'], 2, ',', ' ') }} €</span>
                         </div>
                         @endif
-                        <div class="flex justify-between py-2 text-lg font-bold text-orange-600">
+                        <div class="flex justify-between py-2 text-lg font-bold text-orange-500 dark:text-orange-400">
                             <span>Impôt estimé (part micro)</span>
                             <span>{{ number_format($calculFiscal['impot']['part_micro'], 2, ',', ' ') }} €</span>
                         </div>
@@ -395,7 +395,7 @@
     <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('modal-add-record').classList.add('hidden')"></div>
     
     <!-- Modal Content -->
-    <div class="relative z-10 w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="modal-content relative z-10 w-full max-w-lg rounded-2xl text-left overflow-hidden shadow-2xl">
             <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
                 <h3 class="text-lg font-bold text-white">Nouveau mouvement financier</h3>
             </div>
@@ -449,7 +449,7 @@
     <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('modal-edit-record').classList.add('hidden')"></div>
     
     <!-- Modal Content -->
-    <div class="relative z-10 w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
+    <div class="modal-content relative z-10 w-full max-w-lg rounded-2xl text-left overflow-hidden shadow-2xl">
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
             <h3 class="text-lg font-bold text-white">Modifier la transaction</h3>
         </div>

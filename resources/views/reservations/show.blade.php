@@ -58,10 +58,24 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Client</h3>
                         <div class="flex items-center gap-3">
-                            <x-avatar :user="$reservation->user" size="lg" />
+                            @if($reservation->user)
+                                <x-avatar :user="$reservation->user" size="lg" />
+                            @else
+                                <div class="w-12 h-12 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 font-semibold text-lg">
+                                    {{ strtoupper(substr(($reservation->nom_client ?? 'N'), 0, 1)) }}
+                                </div>
+                            @endif
                             <div>
-                                <p class="font-medium text-slate-900 dark:text-white">{{ $reservation->user->name }}</p>
-                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</p>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <p class="font-medium text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</p>
+                                    @if($reservation->estPourClienteNonInscrite())
+                                        <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">Cliente non inscrite</span>
+                                    @endif
+                                    @if($reservation->creee_manuellement)
+                                        <span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 rounded-full">Créée manuellement</span>
+                                    @endif
+                                </div>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user ? $reservation->user->email : ($reservation->email_client ?? 'N/A') }}</p>
                             </div>
                         </div>
                     </div>
@@ -96,7 +110,7 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Téléphone</h3>
                         <p class="text-slate-900 dark:text-white">
-                            {{ $reservation->telephone_client }}
+                            {{ $reservation->telephone_client ?? $reservation->telephone_client_non_inscrit ?? 'N/A' }}
                             @if($reservation->telephone_cache)
                                 <span class="text-xs text-slate-500 dark:text-slate-400">(masqué)</span>
                             @endif
@@ -116,42 +130,50 @@
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-6">
                         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Actions</h3>
                         
-                        @if($conversation)
-                            <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                        </svg>
-                                        <div>
-                                            <p class="font-medium text-blue-900 dark:text-blue-300">Conversation active</p>
-                                            <p class="text-sm text-blue-700 dark:text-blue-400">Vous pouvez discuter et proposer des modifications</p>
+                        @if($reservation->user_id)
+                            @if($conversation)
+                                <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="font-medium text-blue-900 dark:text-blue-300">Conversation active</p>
+                                                <p class="text-sm text-blue-700 dark:text-blue-400">Vous pouvez discuter et proposer des modifications</p>
+                                            </div>
                                         </div>
+                                        <a href="{{ route('messagerie.show-gerant', [$entreprise->slug, $conversation->id]) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                                            Ouvrir la conversation
+                                        </a>
                                     </div>
-                                    <a href="{{ route('messagerie.show-gerant', [$entreprise->slug, $conversation->id]) }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
-                                        Ouvrir la conversation
-                                    </a>
                                 </div>
-                            </div>
+                            @else
+                                <div class="mb-4 p-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="font-medium text-slate-900 dark:text-white">Besoin de clarifier cette réservation ?</p>
+                                                <p class="text-sm text-slate-600 dark:text-slate-400">Démarrez une conversation pour discuter et proposer des modifications</p>
+                                            </div>
+                                        </div>
+                                        <form action="{{ route('reservations.start-conversation', [$entreprise->slug, $reservation->id]) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                                                💬 Démarrer une conversation
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endif
                         @else
-                            <div class="mb-4 p-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <svg class="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                        </svg>
-                                        <div>
-                                            <p class="font-medium text-slate-900 dark:text-white">Besoin de clarifier cette réservation ?</p>
-                                            <p class="text-sm text-slate-600 dark:text-slate-400">Démarrez une conversation pour discuter et proposer des modifications</p>
-                                        </div>
-                                    </div>
-                                    <form action="{{ route('reservations.start-conversation', [$entreprise->slug, $reservation->id]) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
-                                            💬 Démarrer une conversation
-                                        </button>
-                                    </form>
-                                </div>
+                            <div class="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <p class="text-sm text-yellow-800 dark:text-yellow-400">
+                                    ⚠️ Cette réservation concerne une cliente non inscrite. La messagerie n'est pas disponible.
+                                </p>
                             </div>
                         @endif
                         

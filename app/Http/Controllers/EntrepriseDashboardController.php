@@ -205,6 +205,15 @@ class EntrepriseDashboardController extends Controller
         // Onglet actif (par défaut: accueil)
 
 
+        // ===== Données pour l'onglet Stock =====
+        $produits = collect([]);
+        if ($activeTab === 'stock') {
+            $produits = $entreprise->produits()
+                ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
+                ->orderBy('nom')
+                ->get();
+        }
+
         // ===== Données pour l'onglet Abonnements (Prix dynamiques) =====
         $subscriptionPrices = [
             'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois'],
@@ -284,6 +293,8 @@ class EntrepriseDashboardController extends Controller
             'financeStats' => $financeStats,
             // Prix dynamiques
             'subscriptionPrices' => $subscriptionPrices,
+            // Stock
+            'produits' => $produits,
         ]);
     }
 
@@ -357,6 +368,8 @@ class EntrepriseDashboardController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('type_service', 'like', "%{$search}%")
                   ->orWhere('lieu', 'like', "%{$search}%")
+                  ->orWhere('nom_client', 'like', "%{$search}%")
+                  ->orWhere('email_client', 'like', "%{$search}%")
                   ->orWhereHas('user', function($userQuery) use ($search) {
                       $userQuery->where('name', 'like', "%{$search}%")
                                 ->orWhere('email', 'like', "%{$search}%");

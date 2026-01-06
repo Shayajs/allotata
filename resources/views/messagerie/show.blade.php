@@ -116,6 +116,64 @@
                             @endif
                         </div>
                     @endif
+
+                    @if($conversation->produit_id && $conversation->produit)
+                        @php
+                            $produit = $conversation->produit;
+                            $promotion = $produit->promotionActive()->first();
+                            $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+                        @endphp
+                        <div class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                                <span class="text-sm font-semibold text-green-900 dark:text-green-300">Commande de produit</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                @if($produit->imageCouverture || $produit->images->first())
+                                    <img src="{{ asset('media/' . ($produit->imageCouverture ? $produit->imageCouverture->image_path : $produit->images->first()->image_path)) }}" alt="{{ $produit->nom }}" class="w-16 h-16 rounded-lg object-cover">
+                                @endif
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-900 dark:text-white">{{ $produit->nom }}</h4>
+                                    @if($promotion)
+                                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                                            <span class="line-through text-slate-400">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
+                                            <span class="font-bold text-red-600 dark:text-red-400 ml-1">{{ number_format($prixActuel, 2, ',', ' ') }} €</span>
+                                            <span class="ml-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded">PROMO</span>
+                                        </p>
+                                    @else
+                                        <p class="text-sm font-bold text-green-600 dark:text-green-400">{{ number_format($prixActuel, 2, ',', ' ') }} €</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($conversation->type_service_id && $conversation->typeService)
+                        @php
+                            $service = $conversation->typeService;
+                        @endphp
+                        <div class="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                <span class="text-sm font-semibold text-purple-900 dark:text-purple-300">Demande de service</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                @if($service->imageCouverture || $service->images->first())
+                                    <img src="{{ asset('media/' . ($service->imageCouverture ? $service->imageCouverture->image_path : $service->images->first()->image_path)) }}" alt="{{ $service->nom }}" class="w-16 h-16 rounded-lg object-cover">
+                                @endif
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h4>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                                        {{ number_format($service->prix, 2, ',', ' ') }} € • {{ $service->duree_minutes }} min
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -355,7 +413,7 @@
                             <span class="text-sm font-medium text-slate-600 dark:text-slate-400">En ligne</span>
                         </div>
                         <button onclick="scrollToBottom()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
-                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                             </svg>
                         </button>
@@ -575,37 +633,104 @@
                     </form>
                 </div>
 
-                <!-- Section Prestations disponibles (pour les clients uniquement) -->
-                @if(!isset($isGerant) || !$isGerant)
-                    @if(isset($prestations) && $prestations->count() > 0)
-                        <div class="border-t border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 p-4">
-                            <div class="mb-3">
-                                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                <!-- Section Produits et Services dépliables -->
+                @if((!isset($isGerant) || !$isGerant) && (($produits && $produits->count() > 0) || ($prestations && $prestations->count() > 0)))
+                    <div class="border-t border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-900 p-4 space-y-3">
+                        <!-- Volet Produits -->
+                        @if($produits && $produits->count() > 0)
+                            <div>
+                                <button 
+                                    onclick="toggleVolet('produits')"
+                                    class="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-400 transition-all shadow-sm"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                        </svg>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Produits</span>
+                                        <span class="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{{ $produits->count() }}</span>
+                                    </div>
+                                    <svg id="produits-icon" class="w-5 h-5 text-slate-400 dark:text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
-                                    Prestations disponibles
-                                </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                                    @foreach($prestations as $prestation)
-                                        <button
-                                            onclick="selectPrestation({{ $prestation->id }}, '{{ $prestation->nom }}', {{ $prestation->prix }}, {{ $prestation->duree_minutes }})"
-                                            class="text-left p-3 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all group"
+                                </button>
+                                <div id="volet-produits" class="hidden mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2">
+                                    @foreach($produits as $produit)
+                                        @php
+                                            $promotion = $produit->promotionActive()->first();
+                                            $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+                                            $imageAffichee = $produit->imageCouverture ? $produit->imageCouverture : $produit->images->first();
+                                        @endphp
+                                        <a 
+                                            href="{{ route('messagerie.commander-produit', ['slug' => $entreprise->slug, 'produitId' => $produit->id]) }}"
+                                            class="text-left p-3 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-green-500 dark:hover:border-green-400 hover:shadow-md transition-all group"
                                         >
-                                            <div class="flex items-start justify-between gap-2">
-                                                <div class="flex-1 min-w-0">
-                                                    <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
-                                                        {{ $prestation->nom }}
-                                                    </h4>
-                                                    @if($prestation->description)
-                                                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
-                                                            {{ $prestation->description }}
-                                                        </p>
-                                                    @endif
-                                                </div>
+                                            @if($imageAffichee)
+                                                <img src="{{ asset('media/' . $imageAffichee->image_path) }}" alt="{{ $produit->nom }}" class="w-full h-20 object-cover rounded-lg mb-2">
+                                            @endif
+                                            <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-green-600 dark:group-hover:text-green-400 transition truncate">
+                                                {{ $produit->nom }}
+                                            </h4>
+                                            @if($produit->description)
+                                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                                                    {{ $produit->description }}
+                                                </p>
+                                            @endif
+                                            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+                                                @if($promotion)
+                                                    <span class="text-xs">
+                                                        <span class="line-through text-slate-400 dark:text-slate-500">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
+                                                        <span class="font-bold text-red-600 dark:text-red-400 ml-1">{{ number_format($prixActuel, 2, ',', ' ') }} €</span>
+                                                    </span>
+                                                @else
+                                                    <span class="font-bold text-green-600 dark:text-green-400 text-sm">
+                                                        {{ number_format($prixActuel, 2, ',', ' ') }} €
+                                                    </span>
+                                                @endif
                                             </div>
-                                            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                                                <span class="text-xs text-slate-500 dark:text-slate-500">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Volet Services -->
+                        @if($prestations && $prestations->count() > 0)
+                            <div>
+                                <button 
+                                    onclick="toggleVolet('services')"
+                                    class="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-purple-500 dark:hover:border-purple-400 transition-all shadow-sm"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                        </svg>
+                                        <span class="font-semibold text-slate-900 dark:text-slate-100">Services</span>
+                                        <span class="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">{{ $prestations->count() }}</span>
+                                    </div>
+                                    <svg id="services-icon" class="w-5 h-5 text-slate-400 dark:text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="volet-services" class="hidden mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2">
+                                    @foreach($prestations as $prestation)
+                                        <a 
+                                            href="{{ route('messagerie.demander-service', ['slug' => $entreprise->slug, 'serviceId' => $prestation->id]) }}"
+                                            class="text-left p-3 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-md transition-all group"
+                                        >
+                                            @if($prestation->imageCouverture || $prestation->images->first())
+                                                <img src="{{ asset('media/' . ($prestation->imageCouverture ? $prestation->imageCouverture->image_path : $prestation->images->first()->image_path)) }}" alt="{{ $prestation->nom }}" class="w-full h-20 object-cover rounded-lg mb-2">
+                                            @endif
+                                            <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-purple-600 dark:group-hover:text-purple-400 transition truncate">
+                                                {{ $prestation->nom }}
+                                            </h4>
+                                            @if($prestation->description)
+                                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                                                    {{ $prestation->description }}
+                                                </p>
+                                            @endif
+                                            <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+                                                <span class="text-xs text-slate-500 dark:text-slate-400">
                                                     <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                     </svg>
@@ -615,12 +740,12 @@
                                                     {{ number_format($prestation->prix, 2, ',', ' ') }} €
                                                 </span>
                                             </div>
-                                        </button>
+                                        </a>
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 @endif
 
                 <!-- Formulaire pour proposer un RDV (gérant uniquement) -->
@@ -733,6 +858,18 @@
             }
 
             // Fonction pour sélectionner une prestation
+            function toggleVolet(type) {
+                const volet = document.getElementById('volet-' + type);
+                const icon = document.getElementById(type + '-icon');
+                if (volet.classList.contains('hidden')) {
+                    volet.classList.remove('hidden');
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    volet.classList.add('hidden');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }
+
             function selectPrestation(id, nom, prix, duree) {
                 // Ouvrir le modal de proposition avec la prestation pré-remplie
                 const modal = document.getElementById('modal-proposer-rdv-client');

@@ -27,6 +27,10 @@ class Reservation extends Model
         'type_service',
         'type_service_id',
         'duree_minutes',
+        'nom_client',
+        'email_client',
+        'telephone_client_non_inscrit',
+        'creee_manuellement',
     ];
 
     protected function casts(): array
@@ -38,6 +42,7 @@ class Reservation extends Model
             'est_paye' => 'boolean',
             'telephone_cache' => 'boolean',
             'duree_minutes' => 'integer',
+            'creee_manuellement' => 'boolean',
         ];
     }
 
@@ -145,5 +150,35 @@ class Reservation extends Model
     public function getMembreAttribute(): ?EntrepriseMembre
     {
         return $this->membre()->first();
+    }
+
+    /**
+     * Vérifie si la réservation est pour une cliente non inscrite
+     */
+    public function estPourClienteNonInscrite(): bool
+    {
+        return is_null($this->user_id);
+    }
+
+    /**
+     * Retourne le nom du client (inscrit ou non inscrit)
+     */
+    public function getNomClientCompletAttribute(): ?string
+    {
+        if ($this->attributes['nom_client'] ?? null) {
+            return $this->attributes['nom_client'];
+        }
+        return $this->user?->name;
+    }
+
+    /**
+     * Retourne l'email du client (inscrit ou non inscrit)
+     */
+    public function getEmailClientCompletAttribute(): ?string
+    {
+        if ($this->attributes['email_client'] ?? null) {
+            return $this->attributes['email_client'];
+        }
+        return $this->user?->email;
     }
 }

@@ -33,7 +33,7 @@
                         </p>
                     </div>
                     <div>
-                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'finances']) }}" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'finances']) }}" class="inline-flex items-center gap-2 px-8 py-4 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1 border border-white/20 dark:border-slate-700">
                             <span>Accéder à ma comptabilité</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />

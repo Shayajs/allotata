@@ -14,7 +14,7 @@ class PublicController extends Controller
     public function show($slug)
     {
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['user', 'avis.user', 'avis.photos', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture'])
+            ->with(['user', 'avis.user', 'avis.photos', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'produits.stock', 'produits.images', 'produits.imageCouverture', 'produits.promotionActive'])
             ->firstOrFail();
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
@@ -63,11 +63,21 @@ class PublicController extends Controller
             ->orderBy('prix')
             ->get();
 
+        // Charger les produits actifs avec leurs images, stocks et promotions
+        $produits = $entreprise->produits()
+            ->where('est_actif', true)
+            ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
+            ->get()
+            ->filter(function($produit) {
+                return $produit->estDisponible();
+            });
+
         return view('public.entreprise', [
             'entreprise' => $entreprise,
             'slug' => $slug,
             'horaires' => $horaires,
             'services' => $services,
+            'produits' => $produits,
             'avis' => $avis,
             'userAvis' => $userAvis,
             'peutLaisserAvis' => $peutLaisserAvis,
@@ -219,6 +229,39 @@ class PublicController extends Controller
             'isOwner' => $isOwner,
             'membres' => $membres,
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
+        ]);
+    }
+
+    /**
+     * Afficher la page publique du store (vente de produits)
+     */
+    public function store($slug)
+    {
+        $entreprise = Entreprise::where('slug', $slug)
+            ->with(['produits' => function($query) {
+                $query->where('est_actif', true)
+                      ->with(['stock', 'images', 'imageCouverture', 'promotionActive']);
+            }])
+            ->firstOrFail();
+
+        // Vérifier si l'entreprise a un abonnement actif (via son gérant)
+        $user = Auth::user();
+        $isOwner = $user && $user->id === $entreprise->user_id;
+        
+        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+            abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
+        }
+
+        // Filtrer uniquement les produits disponibles
+        $produits = $entreprise->produits->filter(function($produit) {
+            return $produit->estDisponible();
+        });
+
+        return view('public.store', [
+            'entreprise' => $entreprise,
+            'slug' => $slug,
+            'produits' => $produits,
+            'isOwner' => $isOwner,
         ]);
     }
 

@@ -213,6 +213,19 @@
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Services</span>
                         </button>
 
+                        <!-- Stock -->
+                        <button 
+                            onclick="showTab('stock')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'stock' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="stock"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Stock</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Stock</span>
+                        </button>
+
                         @if($aGestionMultiPersonnes)
                         <!-- Équipe -->
                         <button 
@@ -387,9 +400,10 @@
                             @include('entreprise.dashboard.tabs.services')
                         </div>
 
-
-
-
+                        <!-- Onglet Stock -->
+                        <div id="tab-stock" class="tab-content {{ $activeTab !== 'stock' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.stock')
+                        </div>
                         
                         <!-- Onglet Paramètres -->
                         <div id="tab-parametres" class="tab-content {{ $activeTab !== 'parametres' ? 'hidden' : '' }}">
