@@ -82,7 +82,7 @@ class AgendaController extends Controller
             ->get()
             ->map(function($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
-                $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
                 
                 // Couleur selon le statut
                 $color = '#9ca3af'; // Gris par défaut

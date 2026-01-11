@@ -523,7 +523,7 @@ class ReservationController extends Controller
 
         // Vérifier chevauchement uniquement si la date est dans le futur
         if ($debutReservation->isFuture()) {
-            $finReservation = $debutReservation->copy()->addMinutes($validated['duree_minutes']);
+            $finReservation = $debutReservation->copy()->addMinutes((int) $validated['duree_minutes']);
             
             $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
                 ->whereIn('statut', ['en_attente', 'confirmee']);
@@ -535,7 +535,7 @@ class ReservationController extends Controller
             $creneauDejaPris = $queryReservations->get()
                 ->filter(function($r) use ($debutReservation, $finReservation) {
                     $debutR = \Carbon\Carbon::parse($r->date_reservation);
-                    $finR = $debutR->copy()->addMinutes($r->duree_minutes ?? 30);
+                    $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
                     return $debutReservation->lt($finR) && $finReservation->gt($debutR);
                 })
                 ->isNotEmpty();
@@ -558,7 +558,7 @@ class ReservationController extends Controller
             'statut' => $validated['statut'],
             'creee_manuellement' => true,
             'est_paye' => $validated['est_paye'] ?? false,
-            'date_paiement' => $validated['est_paye'] ? ($validated['date_paiement'] ?? now()) : null,
+            'date_paiement' => ($validated['est_paye'] ?? false) ? ($validated['date_paiement'] ?? now()) : null,
         ];
 
         // Si cliente non inscrite, ajouter les informations

@@ -1,6 +1,5 @@
 services:
     laravel.test:
-        container_name: allotata_app
         build:
             context: './vendor/laravel/sail/runtimes/8.5'
             dockerfile: Dockerfile
@@ -10,8 +9,8 @@ services:
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
-            - '127.0.0.2:80:80'
-            - '127.0.0.2:5173:5173'
+            - '${APP_PORT:-80}:80'
+            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
@@ -22,7 +21,6 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
-            - npm_net
         depends_on:
             - mysql
             - redis
@@ -32,7 +30,7 @@ services:
     mysql:
         image: 'mysql:8.4'
         ports:
-            - '127.0.0.2:3306:3306'
+            - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
@@ -57,7 +55,7 @@ services:
     redis:
         image: 'redis:alpine'
         ports:
-            - '127.0.0.2:${FORWARD_REDIS_PORT:-6379}:6379'
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
             - 'sail-redis:/data'
         networks:
@@ -91,8 +89,8 @@ services:
     mailpit:
         image: 'axllent/mailpit:latest'
         ports:
-            - '127.0.0.2:${FORWARD_MAILPIT_PORT:-1025}:1025'
-            - '127.0.0.2:${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
     selenium:
@@ -106,8 +104,6 @@ services:
 networks:
     sail:
         driver: bridge
-    npm_net:
-        external: true
 volumes:
     sail-mysql:
         driver: local

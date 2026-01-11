@@ -1260,7 +1260,7 @@ class MessagerieController extends Controller
             ->get()
             ->map(function($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
-                $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
                 
                 return [
                     'id' => $reservation->id,
@@ -1322,7 +1322,7 @@ class MessagerieController extends Controller
         $conflits = [];
         foreach ($reservations as $reservation) {
             $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
-            $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+            $finReservation = $debutReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
             
             // Vérifier le chevauchement
             if ($heureDebut->lt($finReservation) && $heureFin->gt($debutReservation)) {

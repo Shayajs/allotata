@@ -203,7 +203,7 @@ class PublicController extends Controller
                         $estReserve = false;
                         foreach ($reservationsDuJour as $reservation) {
                             $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
-                            $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                            $finReservation = $debutReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
                             
                             // Vérifier le chevauchement
                             if ($debutCreneau->lt($finReservation) && $finCreneau->gt($debutReservation)) {
@@ -366,7 +366,7 @@ class PublicController extends Controller
         }
 
         // Vérifier si le créneau n'est pas déjà pris (y compris les réservations en attente)
-        $finReservation = $debutReservation->copy()->addMinutes($typeService->duree_minutes);
+        $finReservation = $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes);
         
         $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
             ->whereIn('statut', ['en_attente', 'confirmee']);
@@ -379,7 +379,7 @@ class PublicController extends Controller
         $creneauDejaPris = $queryReservations->get()
             ->filter(function($r) use ($debutReservation, $finReservation) {
                 $debutR = \Carbon\Carbon::parse($r->date_reservation);
-                $finR = $debutR->copy()->addMinutes($r->duree_minutes ?? 30);
+                $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
                 // Vérifier le chevauchement
                 return $debutReservation->lt($finR) && $finReservation->gt($debutR);
             })
@@ -456,7 +456,7 @@ class PublicController extends Controller
         $reservations = $query->get()
             ->map(function($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
-                $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
                 
                 return [
                     'id' => $reservation->id,

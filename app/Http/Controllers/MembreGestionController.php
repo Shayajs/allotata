@@ -395,7 +395,7 @@ class MembreGestionController extends Controller
 
         $reservations = $reservations->map(function($reservation) {
                 $debut = Carbon::parse($reservation->date_reservation);
-                $fin = $debut->copy()->addMinutes($reservation->duree_minutes ?? 30);
+                $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
                 
                 $couleur = match($reservation->statut) {
                     'en_attente' => '#f59e0b',

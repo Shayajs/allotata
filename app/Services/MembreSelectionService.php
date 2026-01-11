@@ -74,7 +74,7 @@ class MembreSelectionService
 
         foreach ($reservations as $reservation) {
             $debutReservation = Carbon::parse($reservation->date_reservation);
-            $finReservation = $debutReservation->copy()->addMinutes($reservation->duree_minutes ?? 30);
+            $finReservation = $debutReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
             if ($heure->lt($finReservation) && $heureFin->gt($debutReservation)) {
                 return false;
             }

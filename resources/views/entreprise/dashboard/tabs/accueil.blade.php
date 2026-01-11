@@ -121,8 +121,8 @@
                             <x-avatar :user="$reservation->user" size="md" class="flex-shrink-0" />
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-2">
-                                    <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h4>
-                                    <span class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ $reservation->user->email }}</span>
+                                    <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->nom_client_complet ?? 'Client non inscrit' }}</h4>
+                                    <span class="text-sm text-slate-500 dark:text-slate-400 truncate">{{ $reservation->email_client_complet ?? 'N/A' }}</span>
                                 </div>
                                 <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                     <span class="font-medium">{{ ($reservation->typeService ? $reservation->typeService->nom : null) ?? $reservation->type_service ?? 'Service' }}</span>
