@@ -409,25 +409,28 @@ class PublicController extends Controller
         // Créer une notification pour le gérant
         $gerant = $entreprise->user;
         if ($gerant) {
+            $nomClient = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
             Notification::creer(
                 $gerant->id,
                 'reservation',
                 'Nouvelle réservation',
-                "Une nouvelle réservation a été demandée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$reservation->user->name}.",
+                "Une nouvelle réservation a été demandée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}.",
                 route('reservations.show', [$entreprise->slug, $reservation->id]),
                 ['reservation_id' => $reservation->id, 'user_id' => $userId]
             );
         }
 
-        // Créer une notification pour le client
-        Notification::creer(
-            $userId,
-            'reservation',
-            'Réservation en attente',
-            "Votre demande de réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} est en attente de confirmation.",
-            route('dashboard'),
-            ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-        );
+        // Créer une notification pour le client (uniquement si inscrit)
+        if ($userId) {
+            Notification::creer(
+                $userId,
+                'reservation',
+                'Réservation en attente',
+                "Votre demande de réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} est en attente de confirmation.",
+                route('dashboard'),
+                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+            );
+        }
 
         return redirect()->route('public.entreprise', $slug)
             ->with('success', 'Votre demande de réservation a été envoyée ! La tata va la valider prochainement.');

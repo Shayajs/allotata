@@ -79,3 +79,26 @@ html.dark * {
 .dark .modal-content {
     border-color: #314158; /* Couleur spécifique pour mode sombre */
 }
+
+/* Fix pour les modales : classes manquantes en production */
+.bg-black\/60 {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.bg-slate-900\/75 {
+    background-color: rgba(15, 23, 42, 0.75); /* slate-900 avec 75% d'opacité */
+}
+
+.bg-black\/50 {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-lg {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}

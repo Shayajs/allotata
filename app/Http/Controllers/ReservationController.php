@@ -221,15 +221,17 @@ class ReservationController extends Controller
             'notes' => $reservation->notes . ($validated['notes_gerant'] ? "\n\n[Note de la tata] " . $validated['notes_gerant'] : ''),
         ]);
 
-        // Créer une notification pour le client
-        Notification::creer(
-            $reservation->user_id,
-            'reservation',
-            'Réservation confirmée',
-            "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
-            route('dashboard'),
-            ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-        );
+        // Créer une notification pour le client (uniquement si inscrit)
+        if ($reservation->user_id) {
+            Notification::creer(
+                $reservation->user_id,
+                'reservation',
+                'Réservation confirmée',
+                "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
+                route('dashboard'),
+                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+            );
+        }
 
         return redirect()->route('reservations.show', [$slug, $id])
             ->with('success', 'La réservation a été acceptée avec succès.');
@@ -262,16 +264,18 @@ class ReservationController extends Controller
             'notes' => $reservation->notes . ($validated['raison_refus'] ? "\n\n[Raison du refus] " . $validated['raison_refus'] : ''),
         ]);
 
-        // Créer une notification pour le client
-        $raison = $validated['raison_refus'] ? " Raison : {$validated['raison_refus']}" : '';
-        Notification::creer(
-            $reservation->user_id,
-            'reservation',
-            'Réservation annulée',
-            "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été annulée.{$raison}",
-            route('dashboard'),
+        // Créer une notification pour le client (uniquement si inscrit)
+        if ($reservation->user_id) {
+            $raison = $validated['raison_refus'] ? " Raison : {$validated['raison_refus']}" : '';
+            Notification::creer(
+                $reservation->user_id,
+                'reservation',
+                'Réservation annulée',
+                "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été annulée.{$raison}",
+                route('dashboard'),
             ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-        );
+            );
+        }
 
         return redirect()->route('reservations.index', $slug)
             ->with('success', 'La réservation a été refusée.');
@@ -356,15 +360,17 @@ class ReservationController extends Controller
             }
         }
 
-        // Créer une notification pour le client
-        Notification::creer(
-            $reservation->user_id,
-            'paiement',
-            'Paiement confirmé',
-            "Votre paiement de {$reservation->prix} € pour la réservation du {$reservation->date_reservation->format('d/m/Y')} a été confirmé par {$entreprise->nom}.",
-            route('dashboard'),
-            ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-        );
+        // Créer une notification pour le client (uniquement si inscrit)
+        if ($reservation->user_id) {
+            Notification::creer(
+                $reservation->user_id,
+                'paiement',
+                'Paiement confirmé',
+                "Votre paiement de {$reservation->prix} € pour la réservation du {$reservation->date_reservation->format('d/m/Y')} a été confirmé par {$entreprise->nom}.",
+                route('dashboard'),
+                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+            );
+        }
 
         return redirect()->route('reservations.show', [$slug, $id])
             ->with('success', $message);
@@ -462,7 +468,7 @@ class ReservationController extends Controller
         $validated = $request->validate([
             'user_id' => 'nullable|exists:users,id',
             'nom_client' => 'required_if:user_id,null|string|max:255',
-            'email_client' => 'required_if:user_id,null|email|max:255',
+            'email_client' => 'nullable|email|max:255',
             'telephone_client_non_inscrit' => 'required_if:user_id,null|string|max:20',
             'date_reservation' => 'required|date',
             'heure_reservation' => 'required|date_format:H:i',
@@ -564,7 +570,7 @@ class ReservationController extends Controller
         // Si cliente non inscrite, ajouter les informations
         if (!$validated['user_id']) {
             $reservationData['nom_client'] = $validated['nom_client'];
-            $reservationData['email_client'] = $validated['email_client'];
+            $reservationData['email_client'] = $validated['email_client'] ?? null;
             $reservationData['telephone_client_non_inscrit'] = $validated['telephone_client_non_inscrit'];
         } else {
             // Pour les clientes inscrites, récupérer le téléphone si disponible

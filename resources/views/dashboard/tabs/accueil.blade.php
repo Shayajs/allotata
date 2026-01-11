@@ -108,7 +108,7 @@
                         <div class="flex items-center gap-3">
                             <x-avatar :user="$reservation->user" size="sm" />
                             <div>
-                                <p class="font-medium text-slate-900 dark:text-white text-sm">{{ $reservation->user->name }}</p>
+                                <p class="font-medium text-slate-900 dark:text-white text-sm">{{ $reservation->nom_client_complet ?? 'Client non inscrit' }}</p>
                                 <p class="text-xs text-slate-600 dark:text-slate-400">
                                     {{ $reservation->entreprise->nom }} - {{ $reservation->date_reservation->format('d/m à H:i') }}
                                 </p>

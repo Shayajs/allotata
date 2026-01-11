@@ -112,7 +112,7 @@ class AgendaController extends Controller
                     'extendedProps' => [
                         'statut' => $reservation->statut,
                         'client' => $reservation->user ? $reservation->user->name : 'N/A',
-                        'client_email' => $reservation->user ? $reservation->user->email : 'N/A',
+                        'client_email' => $reservation->email_client_complet ?? 'N/A',
                         'prix' => $reservation->prix,
                         'duree' => $reservation->duree_minutes,
                         'lieu' => $reservation->lieu,
