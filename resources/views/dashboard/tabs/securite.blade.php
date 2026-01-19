@@ -115,6 +115,51 @@
                         </span>
                     </div>
 
+                    <!-- Codes de récupération -->
+                    @php
+                        $recoveryCodesWithStatus = $user->getRecoveryCodesWithStatus();
+                    @endphp
+                    @if(!empty($recoveryCodesWithStatus))
+                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <p class="font-medium text-blue-900 dark:text-blue-300">🔑 Codes de récupération</p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                                        Enregistrez ces codes dans un endroit sûr. Ils ne peuvent être utilisés qu'une seule fois chacun.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                                @foreach($recoveryCodesWithStatus as $codeData)
+                                    <div class="p-3 bg-white dark:bg-slate-800 rounded-lg border {{ $codeData['used'] ? 'border-red-300 dark:border-red-700 opacity-60' : 'border-slate-200 dark:border-slate-700' }}">
+                                        <div class="flex items-center justify-between">
+                                            <code class="font-mono text-sm {{ $codeData['used'] ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white font-bold' }}">
+                                                {{ $codeData['code'] }}
+                                            </code>
+                                            @if($codeData['used'])
+                                                <span class="text-xs text-red-600 dark:text-red-400 ml-2" title="Utilisé le {{ $codeData['used_at'] ? $codeData['used_at']->format('d/m/Y à H:i') : 'N/A' }}">
+                                                    ✗
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-green-600 dark:text-green-400 ml-2">
+                                                    ✓
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if($codeData['used'] && $codeData['used_at'])
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                Utilisé le {{ $codeData['used_at']->format('d/m/Y H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                                <strong>Note :</strong> Les codes barrés (✗) ont déjà été utilisés et ne peuvent plus être utilisés. Les codes valides (✓) peuvent encore être utilisés une fois.
+                            </p>
+                        </div>
+                    @endif
+
                     <div class="flex gap-3">
                         <button type="button" onclick="showGoogle2FAModal('recovery')"
                                 class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
@@ -381,16 +426,16 @@
                             <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
                                 2. Entrez le code à 6 chiffres généré par votre application :
                             </p>
-                            <form action="{{ route('security.google2fa.enable') }}" method="POST" id="enable-google2fa-form">
+                            <form id="enable-google2fa-form">
                                 @csrf
                                 <div class="flex gap-3">
                                     <input type="text" name="code" id="totp-code" required
                                            pattern="[0-9]{6}" maxlength="6" placeholder="000000"
                                            class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center text-3xl font-mono tracking-widest">
                                 </div>
-                                @error('code')
-                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                @enderror
+                                <div id="google2fa-error" class="hidden mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <p class="text-sm text-red-600 dark:text-red-400"></p>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -503,13 +548,99 @@
             currentGoogle2FAMode = null;
         }
 
-        function handleGoogle2FAModalAction() {
+        async function handleGoogle2FAModalAction() {
             if (currentGoogle2FAMode === 'enable') {
-                document.getElementById('enable-google2fa-form').submit();
+                await submitEnableGoogle2FA();
             } else if (currentGoogle2FAMode === 'disable') {
                 document.getElementById('disable-google2fa-form').submit();
             } else if (currentGoogle2FAMode === 'recovery') {
                 document.getElementById('recovery-codes-form').submit();
+            }
+        }
+
+        async function submitEnableGoogle2FA() {
+            const form = document.getElementById('enable-google2fa-form');
+            const codeInput = document.getElementById('totp-code');
+            const errorDiv = document.getElementById('google2fa-error');
+            const errorText = errorDiv.querySelector('p');
+            const actionBtn = document.getElementById('google2fa-modal-action-btn');
+            
+            const code = codeInput.value.trim();
+            
+            if (!code || code.length !== 6) {
+                errorText.textContent = 'Veuillez entrer un code à 6 chiffres.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Masquer l'erreur précédente
+            errorDiv.classList.add('hidden');
+            actionBtn.disabled = true;
+            actionBtn.textContent = 'Vérification...';
+
+            try {
+                const formData = new FormData();
+                formData.append('code', code);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                const response = await fetch('{{ route("security.google2fa.enable") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    const errorMessage = data.message || data.error || 'Erreur lors de l\'activation.';
+                    if (data.errors && data.errors.code) {
+                        errorText.textContent = Array.isArray(data.errors.code) ? data.errors.code[0] : data.errors.code;
+                    } else {
+                        errorText.textContent = errorMessage;
+                    }
+                    errorDiv.classList.remove('hidden');
+                    actionBtn.disabled = false;
+                    actionBtn.textContent = 'Activer';
+                    return;
+                }
+
+                // Afficher les codes de récupération
+                if (data.recovery_codes && data.recovery_codes.length > 0) {
+                    const recoveryCodesList = document.getElementById('recovery-codes-list');
+                    recoveryCodesList.innerHTML = data.recovery_codes.map(code => 
+                        '<div class="p-2 bg-slate-50 dark:bg-slate-700 rounded mb-1">' + code + '</div>'
+                    ).join('');
+                    
+                    // Masquer le formulaire d'activation
+                    document.getElementById('google2fa-setup').classList.add('hidden');
+                    
+                    // Afficher les codes de récupération
+                    document.getElementById('google2fa-recovery-codes-display').classList.remove('hidden');
+                    
+                    // Changer le titre et le bouton
+                    document.getElementById('google2fa-modal-title').textContent = 'Codes de récupération';
+                    actionBtn.textContent = 'Fermer';
+                    actionBtn.onclick = closeGoogle2FAModal;
+                    actionBtn.disabled = false;
+                    actionBtn.className = 'px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition';
+                    
+                    // Recharger la page après 5 secondes pour afficher le nouveau statut
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                } else {
+                    // Si pas de codes, fermer directement et recharger
+                    closeGoogle2FAModal();
+                    window.location.reload();
+                }
+            } catch (error) {
+                errorText.textContent = 'Erreur : ' + error.message;
+                errorDiv.classList.remove('hidden');
+                actionBtn.disabled = false;
+                actionBtn.textContent = 'Activer';
             }
         }
 
@@ -595,6 +726,17 @@
                     closeGoogle2FAModal();
                 }
             });
+
+            // Soumission du formulaire avec Enter
+            const totpCodeInput = document.getElementById('totp-code');
+            if (totpCodeInput) {
+                totpCodeInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && currentGoogle2FAMode === 'enable') {
+                        e.preventDefault();
+                        handleGoogle2FAModalAction();
+                    }
+                });
+            }
         });
     </script>
     @endpush

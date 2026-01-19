@@ -180,9 +180,9 @@ class SecurityController extends Controller
         $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
         $secret = decrypt($user->google2fa_secret);
         
-        // Créer l'URL du QR code
+        // Créer l'URL du QR code avec le nom de l'application "Allotata"
         $qrCodeUrl = $google2fa->getQRCodeUrl(
-            config('app.name', 'Allotata'),
+            'Allotata',
             $user->email,
             $secret
         );
@@ -234,8 +234,9 @@ class SecurityController extends Controller
             'code' => ['required', 'string', 'size:6'],
         ]);
 
-        // Vérifier le code
-        if (!$user->verifyGoogle2faCode($validated['code'])) {
+        // Vérifier le code - lors de l'activation, on vérifie même si google2fa_enabled est false
+        // On doit vérifier le code directement avec le secret
+        if (!$this->verifyActivationCode($user, $validated['code'])) {
             SecurityLog::log(
                 $user->id,
                 'google2fa_activation_failed',
@@ -252,7 +253,7 @@ class SecurityController extends Controller
             ]);
         }
 
-        // Générer les codes de récupération
+        // Générer les codes de récupération AVANT d'activer (pour qu'ils soient sauvegardés)
         $recoveryCodes = $user->generateRecoveryCodes(8);
         
         // Activer Google 2FA
@@ -268,6 +269,15 @@ class SecurityController extends Controller
             'medium',
             false
         );
+
+        // Retourner une réponse JSON pour fermer la modale et afficher les codes
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'L\'authentification à deux facteurs TOTP a été activée avec succès.',
+                'recovery_codes' => $recoveryCodes,
+            ]);
+        }
 
         return back()->with([
             'success' => 'L\'authentification à deux facteurs TOTP a été activée avec succès.',
@@ -345,6 +355,9 @@ class SecurityController extends Controller
             ]);
         }
 
+        // Supprimer les anciennes utilisations de codes
+        \App\Models\Google2faRecoveryCodeUsage::where('user_id', $user->id)->delete();
+        
         // Générer de nouveaux codes de récupération
         $recoveryCodes = $user->generateRecoveryCodes(8);
 
@@ -360,7 +373,7 @@ class SecurityController extends Controller
         );
 
         return back()->with([
-            'success' => 'De nouveaux codes de récupération ont été générés.',
+            'success' => 'De nouveaux codes de récupération ont été générés. Les anciens codes sont maintenant invalides.',
             'recovery_codes' => $recoveryCodes,
         ]);
     }
@@ -397,5 +410,56 @@ class SecurityController extends Controller
         // Si l'API échoue, retourner une image SVG basique générée côté client
         // Le JavaScript pourra générer le QR code via une bibliothèque côté client
         return '';
+    }
+
+    /**
+     * Vérifier un code TOTP lors de l'activation (avant que google2fa_enabled soit activé)
+     */
+    private function verifyActivationCode($user, string $code): bool
+    {
+        // Vérifier que le package Google2FA est installé
+        if (!class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+            \Log::error('Google2FA class not found');
+            return false;
+        }
+
+        // Vérifier que le secret existe
+        if (!$user->google2fa_secret) {
+            \Log::error('No Google2FA secret found for user');
+            return false;
+        }
+
+        try {
+            $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
+            $secret = decrypt($user->google2fa_secret);
+            
+            // Nettoyer le code (supprimer les espaces, etc.)
+            $code = preg_replace('/[^0-9]/', '', $code);
+            
+            // Vérifier que le code fait bien 6 chiffres
+            if (strlen($code) !== 6) {
+                \Log::error('Invalid code length: ' . strlen($code));
+                return false;
+            }
+            
+            // Vérifier le code avec une fenêtre de tolérance plus large (4) pour l'activation
+            // Cela permet de gérer les petits décalages d'horloge
+            $result = $google2fa->verifyKey($secret, $code, 4);
+            
+            if (!$result) {
+                \Log::warning('Google2FA code verification failed', [
+                    'user_id' => $user->id,
+                    'code' => $code,
+                    'secret_length' => strlen($secret)
+                ]);
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la vérification du code d\'activation Google2FA: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 }

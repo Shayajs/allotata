@@ -195,7 +195,7 @@ class TwoFactorController extends Controller
             // Si le code fait 8 caractères, c'est probablement un code de récupération
             if (strlen($code) === 8) {
                 // Essayer avec un code de récupération
-                if ($user->verifyRecoveryCode(strtoupper($code))) {
+                if ($user->verifyRecoveryCode(strtoupper($code), $request->ip(), $request->userAgent())) {
                     $codeValid = true;
                     SecurityLog::log(
                         $user->id,
@@ -238,7 +238,7 @@ class TwoFactorController extends Controller
                     );
                 } else {
                     // Essayer aussi avec un code de récupération au cas où l'utilisateur a tapé un code de récupération à 6 caractères (peu probable mais possible)
-                    if ($user->verifyRecoveryCode(strtoupper($code))) {
+                    if ($user->verifyRecoveryCode(strtoupper($code), $request->ip(), $request->userAgent())) {
                         $codeValid = true;
                         SecurityLog::log(
                             $user->id,

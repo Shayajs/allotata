@@ -286,6 +286,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Relation : Un utilisateur peut avoir plusieurs utilisations de codes de récupération
+     */
+    public function recoveryCodeUsages()
+    {
+        return $this->hasMany(Google2faRecoveryCodeUsage::class);
+    }
+
+    /**
      * Vérifie si le compte est actuellement verrouillé
      */
     public function isAccountLocked(): bool
@@ -401,7 +409,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Vérifier si un code de récupération est valide
      */
-    public function verifyRecoveryCode(string $code): bool
+    public function verifyRecoveryCode(string $code, ?string $ipAddress = null, ?string $userAgent = null): bool
     {
         $recoveryCodes = $this->google2fa_recovery_codes ?? [];
         
@@ -409,17 +417,69 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        $index = array_search($code, $recoveryCodes);
+        // Normaliser le code (uppercase)
+        $code = strtoupper(trim($code));
         
-        if ($index !== false) {
-            // Retirer le code utilisé
-            unset($recoveryCodes[$index]);
-            $this->google2fa_recovery_codes = array_values($recoveryCodes);
-            $this->save();
-            return true;
+        // Vérifier si le code existe dans la liste
+        if (!in_array($code, $recoveryCodes)) {
+            return false;
         }
 
-        return false;
+        // Vérifier si le code a déjà été utilisé
+        $alreadyUsed = \App\Models\Google2faRecoveryCodeUsage::where('user_id', $this->id)
+            ->where('code', $code)
+            ->exists();
+
+        if ($alreadyUsed) {
+            return false; // Code déjà utilisé
+        }
+
+        // Enregistrer l'utilisation du code (mais ne pas le retirer de la liste)
+        \App\Models\Google2faRecoveryCodeUsage::create([
+            'user_id' => $this->id,
+            'code' => $code,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'used_at' => now(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Obtenir tous les codes de récupération avec leur statut (utilisé ou non)
+     */
+    public function getRecoveryCodesWithStatus(): array
+    {
+        $recoveryCodes = $this->google2fa_recovery_codes ?? [];
+        $usedCodes = \App\Models\Google2faRecoveryCodeUsage::where('user_id', $this->id)
+            ->pluck('code')
+            ->toArray();
+
+        $codesWithStatus = [];
+        foreach ($recoveryCodes as $code) {
+            $codesWithStatus[] = [
+                'code' => $code,
+                'used' => in_array(strtoupper($code), array_map('strtoupper', $usedCodes)),
+                'used_at' => null,
+            ];
+        }
+
+        // Ajouter la date d'utilisation pour les codes utilisés
+        $usages = \App\Models\Google2faRecoveryCodeUsage::where('user_id', $this->id)
+            ->get()
+            ->keyBy(function ($usage) {
+                return strtoupper($usage->code);
+            });
+
+        foreach ($codesWithStatus as &$codeData) {
+            if ($codeData['used']) {
+                $usage = $usages->get(strtoupper($codeData['code']));
+                $codeData['used_at'] = $usage ? $usage->used_at : null;
+            }
+        }
+
+        return $codesWithStatus;
     }
 
     /**
