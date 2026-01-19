@@ -13,10 +13,31 @@
                 <div>
                     <dt class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Adresse Email</dt>
                     <dd class="text-lg lg:text-xl font-bold text-slate-900 dark:text-white break-all leading-relaxed">
-                        {{ $user->email }}
-                        @if($user->email_verified_at)
-                            <span class="inline-block ml-2 px-2.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-800">Vérifié</span>
-                        @endif
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span>{{ $user->email }}</span>
+                            @if($user->hasVerifiedEmail())
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-800">
+                                    <span>✓</span> Vérifié
+                                </span>
+                                @if($user->email_verified_at)
+                                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                        le {{ $user->email_verified_at->format('d/m/Y à H:i') }}
+                                    </span>
+                                @endif
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-800">
+                                    <span>✗</span> Non vérifié
+                                </span>
+                                <form action="{{ route('admin.email-logs.verify-user', $user) }}" method="POST" class="inline-block">
+                                    @csrf
+                                    <button type="submit" 
+                                            onclick="return confirm('Êtes-vous sûr de vouloir vérifier manuellement l\'email de {{ $user->email }} ?')"
+                                            class="px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                                        ✓ Vérifier manuellement
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </dd>
                 </div>
             </dl>

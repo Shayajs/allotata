@@ -263,6 +263,15 @@ class AdminController extends Controller
             }
         }
 
+        // Filtre par email vérifié
+        if ($request->filled('email_verified')) {
+            if ($request->email_verified === '1') {
+                $query->whereNotNull('email_verified_at');
+            } elseif ($request->email_verified === '0') {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
         $users = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
         return view('admin.users.index', compact('users'));

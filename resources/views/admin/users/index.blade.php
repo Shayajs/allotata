@@ -23,7 +23,7 @@
 <!-- Barre de recherche et filtres -->
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
     <form method="GET" action="{{ route('admin.users.index') }}" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Rechercher
@@ -64,13 +64,26 @@
                     <option value="interdit" {{ request('statut') === 'interdit' ? 'selected' : '' }}>Interdit</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Email vérifié
+                </label>
+                <select 
+                    name="email_verified" 
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                >
+                    <option value="">Tous</option>
+                    <option value="1" {{ request('email_verified') === '1' ? 'selected' : '' }}>Vérifiés</option>
+                    <option value="0" {{ request('email_verified') === '0' ? 'selected' : '' }}>Non vérifiés</option>
+                </select>
+            </div>
             <div class="flex items-end">
                 <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                     🔍 Rechercher
                 </button>
             </div>
         </div>
-        @if(request()->hasAny(['search', 'role', 'statut']))
+        @if(request()->hasAny(['search', 'role', 'statut', 'email_verified']))
             <a href="{{ route('admin.users.index') }}" class="text-sm text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400">
                 Réinitialiser les filtres
             </a>
@@ -85,6 +98,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nom</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Email vérifié</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Rôles</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Entreprises</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Réservations</th>
@@ -103,6 +117,28 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($user->hasVerifiedEmail())
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                                    <span>✓</span> Vérifié
+                                </span>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
+                                        <span>✗</span> Non vérifié
+                                    </span>
+                                    <form action="{{ route('admin.email-logs.verify-user', $user) }}" method="POST" class="inline-block">
+                                        @csrf
+                                        <button type="submit" 
+                                                onclick="return confirm('Vérifier manuellement l\'email de {{ $user->email }} ?')"
+                                                class="px-2 py-1 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                                                title="Vérifier manuellement l'email">
+                                            ✓
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex flex-col gap-2">
