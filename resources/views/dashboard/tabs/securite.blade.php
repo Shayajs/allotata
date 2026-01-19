@@ -101,7 +101,7 @@
                 </div>
             @endif
 
-            @if($user->hasGoogle2faEnabled())
+            @if(class_exists('\PragmaRX\Google2FA\Google2FA') && $user->hasGoogle2faEnabled())
                 <div class="space-y-4">
                     <div class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                         <div>
@@ -115,49 +115,17 @@
                         </span>
                     </div>
 
-                    @if(session('recovery_codes'))
-                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                            <p class="font-medium text-blue-900 dark:text-blue-300 mb-2">⚠️ Codes de récupération</p>
-                            <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
-                                Enregistrez ces codes dans un endroit sûr. Vous pourrez les utiliser si vous perdez l'accès à votre application d'authentification.
-                            </p>
-                            <div class="bg-white dark:bg-slate-800 p-3 rounded font-mono text-sm space-y-1">
-                                @foreach(session('recovery_codes') as $code)
-                                    <div>{{ $code }}</div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
                     <div class="flex gap-3">
-                        <form action="{{ route('security.google2fa.recovery-codes') }}" method="POST" class="flex-1">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="password_recovery" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Mot de passe pour régénérer les codes de récupération
-                                </label>
-                                <input type="password" name="password" id="password_recovery" required
-                                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                            </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
-                                Régénérer les codes de récupération
-                            </button>
-                        </form>
+                        <button type="button" onclick="showGoogle2FAModal('recovery')"
+                                class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                            Régénérer les codes de récupération
+                        </button>
 
                         @if(!$google2faDisabled)
-                            <form action="{{ route('security.google2fa.disable') }}" method="POST" class="flex-1">
-                                @csrf
-                                <div class="mb-3">
-                                    <label for="password_disable" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Mot de passe pour désactiver
-                                    </label>
-                                    <input type="password" name="password" id="password_disable" required
-                                           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                                </div>
-                                <button type="submit" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
-                                    Désactiver TOTP
-                                </button>
-                            </form>
+                            <button type="button" onclick="showGoogle2FAModal('disable')"
+                                    class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
+                                Désactiver TOTP
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -168,38 +136,7 @@
                             Utilisez une application d'authentification (comme Google Authenticator, Microsoft Authenticator, ou Authy) pour générer des codes de sécurité à usage unique.
                         </p>
 
-                        <div id="google2fa-setup" class="hidden space-y-4">
-                            <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                                <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                                    1. Scannez ce QR code avec votre application d'authentification :
-                                </p>
-                                <div id="qr-code-container" class="flex justify-center mb-4">
-                                    <!-- Le QR code sera injecté ici -->
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-3">
-                                    Ou entrez manuellement cette clé secrète : <span id="secret-key" class="font-mono font-bold"></span>
-                                </p>
-                                <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                                    2. Entrez le code à 6 chiffres généré par votre application :
-                                </p>
-                                <form action="{{ route('security.google2fa.enable') }}" method="POST" id="enable-google2fa-form">
-                                    @csrf
-                                    <div class="flex gap-3">
-                                        <input type="text" name="code" id="totp-code" required
-                                               pattern="[0-9]{6}" maxlength="6" placeholder="000000"
-                                               class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center text-2xl tracking-widest">
-                                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
-                                            Activer
-                                        </button>
-                                    </div>
-                                    @error('code')
-                                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-                                </form>
-                            </div>
-                        </div>
-
-                        <button type="button" id="enable-google2fa-btn" onclick="setupGoogle2FA()"
+                        <button type="button" onclick="showGoogle2FAModal('enable')"
                                 class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
                             Activer l'authentification TOTP
                         </button>
@@ -404,17 +341,179 @@
         </div>
     </div>
 
+    <!-- Modale Google 2FA -->
+    <div id="google2fa-modal" class="hidden fixed inset-0 bg-black/50 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- En-tête de la modale -->
+            <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <h3 id="google2fa-modal-title" class="text-xl font-bold text-slate-900 dark:text-white">Activer l'authentification TOTP</h3>
+                <button onclick="closeGoogle2FAModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Contenu de la modale -->
+            <div class="overflow-y-auto flex-1 p-6">
+                <!-- Contenu pour l'activation -->
+                <div id="google2fa-enable-content" class="hidden space-y-6">
+                    <div id="google2fa-loading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">Génération du QR code...</p>
+                    </div>
+
+                    <div id="google2fa-setup" class="hidden space-y-6">
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                1. Scannez ce QR code avec votre application d'authentification :
+                            </p>
+                            <div id="qr-code-container" class="flex justify-center mb-4 p-4 bg-white dark:bg-slate-900 rounded-lg">
+                                <!-- Le QR code sera injecté ici -->
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-4">
+                                Ou entrez manuellement cette clé secrète : 
+                                <span id="secret-key" class="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded"></span>
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                2. Entrez le code à 6 chiffres généré par votre application :
+                            </p>
+                            <form action="{{ route('security.google2fa.enable') }}" method="POST" id="enable-google2fa-form">
+                                @csrf
+                                <div class="flex gap-3">
+                                    <input type="text" name="code" id="totp-code" required
+                                           pattern="[0-9]{6}" maxlength="6" placeholder="000000"
+                                           class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center text-3xl font-mono tracking-widest">
+                                </div>
+                                @error('code')
+                                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="google2fa-recovery-codes-display" class="hidden">
+                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p class="font-medium text-blue-900 dark:text-blue-300 mb-2">⚠️ Codes de récupération</p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                                Enregistrez ces codes dans un endroit sûr. Vous pourrez les utiliser si vous perdez l'accès à votre application d'authentification.
+                            </p>
+                            <div id="recovery-codes-list" class="bg-white dark:bg-slate-800 p-3 rounded font-mono text-sm space-y-1">
+                                <!-- Les codes seront injectés ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenu pour la désactivation -->
+                <div id="google2fa-disable-content" class="hidden space-y-4">
+                    <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <p class="text-sm text-red-700 dark:text-red-400">
+                            ⚠️ La désactivation de l'authentification TOTP réduira la sécurité de votre compte.
+                        </p>
+                    </div>
+                    <form action="{{ route('security.google2fa.disable') }}" method="POST" id="disable-google2fa-form">
+                        @csrf
+                        <div>
+                            <label for="password_disable_modal" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Confirmez votre mot de passe pour désactiver :
+                            </label>
+                            <input type="password" name="password" id="password_disable_modal" required
+                                   class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Contenu pour la régénération des codes de récupération -->
+                <div id="google2fa-recovery-content" class="hidden space-y-4">
+                    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p class="text-sm text-blue-700 dark:text-blue-400">
+                            ⚠️ Les anciens codes de récupération seront invalidés après la régénération.
+                        </p>
+                    </div>
+                    <form action="{{ route('security.google2fa.recovery-codes') }}" method="POST" id="recovery-codes-form">
+                        @csrf
+                        <div>
+                            <label for="password_recovery_modal" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Confirmez votre mot de passe :
+                            </label>
+                            <input type="password" name="password" id="password_recovery_modal" required
+                                   class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Pied de la modale -->
+            <div class="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <button onclick="closeGoogle2FAModal()" class="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm font-medium transition">
+                    Annuler
+                </button>
+                <button id="google2fa-modal-action-btn" onclick="handleGoogle2FAModalAction()" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                    Activer
+                </button>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
+        let currentGoogle2FAMode = null;
+
+        function showGoogle2FAModal(mode) {
+            currentGoogle2FAMode = mode;
+            const modal = document.getElementById('google2fa-modal');
+            const modalTitle = document.getElementById('google2fa-modal-title');
+            const actionBtn = document.getElementById('google2fa-modal-action-btn');
+            
+            // Masquer tous les contenus
+            document.getElementById('google2fa-enable-content').classList.add('hidden');
+            document.getElementById('google2fa-disable-content').classList.add('hidden');
+            document.getElementById('google2fa-recovery-content').classList.add('hidden');
+            document.getElementById('google2fa-setup').classList.add('hidden');
+            document.getElementById('google2fa-recovery-codes-display').classList.add('hidden');
+
+            if (mode === 'enable') {
+                modalTitle.textContent = 'Activer l\'authentification TOTP';
+                actionBtn.textContent = 'Activer';
+                actionBtn.className = 'px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition';
+                document.getElementById('google2fa-enable-content').classList.remove('hidden');
+                document.getElementById('google2fa-loading').classList.remove('hidden');
+                setupGoogle2FA();
+            } else if (mode === 'disable') {
+                modalTitle.textContent = 'Désactiver l\'authentification TOTP';
+                actionBtn.textContent = 'Désactiver';
+                actionBtn.className = 'px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition';
+                document.getElementById('google2fa-disable-content').classList.remove('hidden');
+            } else if (mode === 'recovery') {
+                modalTitle.textContent = 'Régénérer les codes de récupération';
+                actionBtn.textContent = 'Régénérer';
+                actionBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition';
+                document.getElementById('google2fa-recovery-content').classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeGoogle2FAModal() {
+            document.getElementById('google2fa-modal').classList.add('hidden');
+            currentGoogle2FAMode = null;
+        }
+
+        function handleGoogle2FAModalAction() {
+            if (currentGoogle2FAMode === 'enable') {
+                document.getElementById('enable-google2fa-form').submit();
+            } else if (currentGoogle2FAMode === 'disable') {
+                document.getElementById('disable-google2fa-form').submit();
+            } else if (currentGoogle2FAMode === 'recovery') {
+                document.getElementById('recovery-codes-form').submit();
+            }
+        }
+
         async function setupGoogle2FA() {
-            const btn = document.getElementById('enable-google2fa-btn');
-            const setupDiv = document.getElementById('google2fa-setup');
-            const qrContainer = document.getElementById('qr-code-container');
-            const secretKeySpan = document.getElementById('secret-key');
-
-            btn.disabled = true;
-            btn.textContent = 'Génération...';
-
             try {
                 const response = await fetch('{{ route("security.google2fa.generate") }}', {
                     method: 'POST',
@@ -427,24 +526,36 @@
 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.message || 'Erreur lors de la génération du QR code');
+                    throw new Error(error.error || error.message || 'Erreur lors de la génération du QR code');
                 }
 
                 const data = await response.json();
                 
-                // Afficher le QR code SVG
-                qrContainer.innerHTML = data.qr_code;
+                // Afficher le QR code (image base64 ou générer côté client)
+                const qrContainer = document.getElementById('qr-code-container');
+                if (data.qr_code_image) {
+                    // Afficher l'image générée par l'API
+                    qrContainer.innerHTML = `<img src="${data.qr_code_image}" alt="QR Code" class="mx-auto" />`;
+                } else if (data.qr_code_url) {
+                    // Fallback: Générer le QR code côté client avec une bibliothèque
+                    // ou utiliser une API directement
+                    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(data.qr_code_url)}" alt="QR Code" class="mx-auto" />`;
+                }
                 
                 // Afficher la clé secrète
-                secretKeySpan.textContent = data.secret;
+                document.getElementById('secret-key').textContent = data.secret;
                 
                 // Afficher le formulaire d'activation
-                setupDiv.classList.remove('hidden');
-                btn.style.display = 'none';
+                document.getElementById('google2fa-loading').classList.add('hidden');
+                document.getElementById('google2fa-setup').classList.remove('hidden');
+                
+                // Focus sur l'input du code
+                setTimeout(() => {
+                    document.getElementById('totp-code')?.focus();
+                }, 100);
             } catch (error) {
                 alert('Erreur : ' + error.message);
-                btn.disabled = false;
-                btn.textContent = 'Activer l\'authentification TOTP';
+                closeGoogle2FAModal();
             }
         }
 
@@ -457,6 +568,33 @@
                     e.target.value = e.target.value.replace(/[^0-9]/g, '');
                 });
             }
+
+            // Afficher les codes de récupération si présents dans la session
+            @if(session('recovery_codes'))
+                const recoveryCodes = @json(session('recovery_codes'));
+                const recoveryCodesList = document.getElementById('recovery-codes-list');
+                if (recoveryCodesList) {
+                    recoveryCodesList.innerHTML = recoveryCodes.map(code => 
+                        '<div class="p-2 bg-slate-50 dark:bg-slate-700 rounded">' + code + '</div>'
+                    ).join('');
+                    document.getElementById('google2fa-recovery-codes-display').classList.remove('hidden');
+                    showGoogle2FAModal('enable');
+                }
+            @endif
+
+            // Fermer la modale en cliquant en dehors
+            document.getElementById('google2fa-modal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeGoogle2FAModal();
+                }
+            });
+
+            // Fermer avec la touche Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !document.getElementById('google2fa-modal').classList.contains('hidden')) {
+                    closeGoogle2FAModal();
+                }
+            });
         });
     </script>
     @endpush

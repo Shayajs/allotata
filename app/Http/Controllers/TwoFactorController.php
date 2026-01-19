@@ -24,14 +24,15 @@ class TwoFactorController extends Controller
 
         $user = User::find($userId);
         
-        if (!$user || (!$user->a2f_enabled && !$user->hasGoogle2faEnabled())) {
+        $hasGoogle2fa = class_exists(\PragmaRX\Google2FA\Google2FA::class) && $user->hasGoogle2faEnabled();
+        if (!$user || (!$user->a2f_enabled && !$hasGoogle2fa)) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Erreur de session.']);
         }
 
         // Si l'utilisateur a Google 2FA activé, on ne peut pas envoyer de code email/SMS
         // Il doit utiliser son application d'authentification
-        if ($user->hasGoogle2faEnabled()) {
+        if ($hasGoogle2fa) {
             return view('auth.two-factor.request', [
                 'user' => $user,
                 'method' => 'totp',
@@ -180,7 +181,8 @@ class TwoFactorController extends Controller
 
         $user = User::find($userId);
         
-        if (!$user || (!$user->a2f_enabled && !$user->hasGoogle2faEnabled())) {
+        $hasGoogle2fa = class_exists(\PragmaRX\Google2FA\Google2FA::class) && $user->hasGoogle2faEnabled();
+        if (!$user || (!$user->a2f_enabled && !$hasGoogle2fa)) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Erreur de session.']);
         }
@@ -188,8 +190,8 @@ class TwoFactorController extends Controller
         $codeValid = false;
         $twoFactorCode = null;
 
-        // Vérifier d'abord si l'utilisateur a Google 2FA activé
-        if ($user->hasGoogle2faEnabled()) {
+        // Vérifier d'abord si l'utilisateur a Google 2FA activé (et si le package est installé)
+        if ($hasGoogle2fa) {
             // Si le code fait 8 caractères, c'est probablement un code de récupération
             if (strlen($code) === 8) {
                 // Essayer avec un code de récupération

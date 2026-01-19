@@ -10,11 +10,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use PragmaRX\Google2FA\Google2FA;
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\Image\SvgImageBackEnd;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Writer;
+// Imports conditionnels - vérifiés au runtime
 
 class SecurityController extends Controller
 {
@@ -159,6 +155,13 @@ class SecurityController extends Controller
      */
     public function generateGoogle2fa(Request $request)
     {
+        // Vérifier que le package Google2FA est installé
+        if (!class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+            return response()->json([
+                'error' => 'Le package Google2FA n\'est pas installé. Veuillez exécuter: composer require pragmarx/google2fa-laravel bacon/bacon-qr-code'
+            ], 500);
+        }
+
         $user = Auth::user();
 
         // Vérifier si l'A2F TOTP est désactivé globalement par l'admin
@@ -173,7 +176,8 @@ class SecurityController extends Controller
             $user->generateGoogle2faSecret();
         }
 
-        $google2fa = new Google2FA();
+        // Utiliser le service container pour résoudre Google2FA
+        $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
         $secret = decrypt($user->google2fa_secret);
         
         // Créer l'URL du QR code
@@ -183,13 +187,9 @@ class SecurityController extends Controller
             $secret
         );
 
-        // Générer le QR code en SVG
-        $renderer = new ImageRenderer(
-            new RendererStyle(400),
-            new SvgImageBackEnd()
-        );
-        $writer = new Writer($renderer);
-        $qrCodeSvg = $writer->writeString($qrCodeUrl);
+        // Générer le QR code via une API externe (compatible avec toutes les versions PHP)
+        // On utilise une API publique pour générer le QR code
+        $qrCodeDataUri = $this->generateQRCodeDataUri($qrCodeUrl);
 
         SecurityLog::log(
             $user->id,
@@ -204,7 +204,8 @@ class SecurityController extends Controller
 
         return response()->json([
             'secret' => $secret,
-            'qr_code' => $qrCodeSvg,
+            'qr_code_url' => $qrCodeUrl,
+            'qr_code_image' => $qrCodeDataUri, // Image en base64 data URI
         ]);
     }
 
@@ -213,6 +214,13 @@ class SecurityController extends Controller
      */
     public function enableGoogle2fa(Request $request)
     {
+        // Vérifier que le package Google2FA est installé
+        if (!class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+            return back()->withErrors([
+                'google2fa' => 'Le package Google2FA n\'est pas installé. Veuillez exécuter: composer require pragmarx/google2fa-laravel bacon/bacon-qr-code'
+            ]);
+        }
+
         $user = Auth::user();
 
         // Vérifier si l'A2F TOTP est désactivé globalement par l'admin
@@ -355,5 +363,39 @@ class SecurityController extends Controller
             'success' => 'De nouveaux codes de récupération ont été générés.',
             'recovery_codes' => $recoveryCodes,
         ]);
+    }
+
+    /**
+     * Générer un QR code via une API externe et retourner en data URI
+     * Compatible avec PHP 8.5+
+     */
+    private function generateQRCodeDataUri(string $url): string
+    {
+        // Utiliser une API publique pour générer le QR code
+        // Option 1: API QR Server (gratuite, pas de clé API requise)
+        $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' . urlencode($url);
+        
+        try {
+            // Récupérer l'image du QR code
+            $imageData = @file_get_contents($qrApiUrl);
+            
+            if ($imageData === false) {
+                // Fallback: Utiliser Google Charts API (dépréciée mais toujours fonctionnelle)
+                $qrApiUrl = 'https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl=' . urlencode($url);
+                $imageData = @file_get_contents($qrApiUrl);
+            }
+            
+            if ($imageData !== false) {
+                // Convertir en data URI (base64)
+                $base64 = base64_encode($imageData);
+                return 'data:image/png;base64,' . $base64;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors de la génération du QR code via API: ' . $e->getMessage());
+        }
+        
+        // Si l'API échoue, retourner une image SVG basique générée côté client
+        // Le JavaScript pourra générer le QR code via une bibliothèque côté client
+        return '';
     }
 }

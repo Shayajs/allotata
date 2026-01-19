@@ -353,10 +353,21 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function generateGoogle2faSecret(): string
     {
-        $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
-        $this->google2fa_secret = encrypt($google2fa->generateSecretKey(32));
-        $this->save();
-        return decrypt($this->google2fa_secret);
+        try {
+            // Essayer d'utiliser le package google2fa via le service container
+            if (class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+                $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
+            } else {
+                // Fallback : utiliser directement la classe si le package est installé différemment
+                $google2fa = new \PragmaRX\Google2FA\Google2FA();
+            }
+            
+            $this->google2fa_secret = encrypt($google2fa->generateSecretKey(32));
+            $this->save();
+            return decrypt($this->google2fa_secret);
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Impossible de générer le secret Google2FA. Assurez-vous que le package pragmarx/google2fa est installé.');
+        }
     }
 
     /**
@@ -368,11 +379,23 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
-        $secret = decrypt($this->google2fa_secret);
-        
-        // Vérifier le code actuel et les deux fenêtres de temps précédentes/suivantes
-        return $google2fa->verifyKey($secret, $code, 2);
+        try {
+            // Essayer d'utiliser le package google2fa via le service container
+            if (class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+                $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
+            } else {
+                // Fallback : utiliser directement la classe si le package est installé différemment
+                $google2fa = new \PragmaRX\Google2FA\Google2FA();
+            }
+            
+            $secret = decrypt($this->google2fa_secret);
+            
+            // Vérifier le code actuel et les deux fenêtres de temps précédentes/suivantes
+            return $google2fa->verifyKey($secret, $code, 2);
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la vérification du code Google2FA: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -440,6 +463,11 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasGoogle2faEnabled(): bool
     {
+        // Vérifier d'abord si le package est installé
+        if (!class_exists(\PragmaRX\Google2FA\Google2FA::class)) {
+            return false;
+        }
+        
         return $this->google2fa_enabled && !empty($this->google2fa_secret);
     }
 }

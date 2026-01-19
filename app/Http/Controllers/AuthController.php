@@ -257,11 +257,12 @@ class AuthController extends Controller
             }
 
             // Vérifier si l'utilisateur a l'A2F activé (email/SMS) ou Google 2FA (TOTP)
-            if ($user->a2f_enabled || $user->hasGoogle2faEnabled()) {
+            $hasGoogle2fa = class_exists(\PragmaRX\Google2FA\Google2FA::class) && $user->hasGoogle2faEnabled();
+            if ($user->a2f_enabled || $hasGoogle2fa) {
                 $securityService = app(SecurityService::class);
                 
                 // Si Google 2FA est activé, toujours demander le code TOTP
-                if ($user->hasGoogle2faEnabled()) {
+                if ($hasGoogle2fa) {
                     // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
                     $request->session()->put('two_factor_user_id', $user->id);
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
