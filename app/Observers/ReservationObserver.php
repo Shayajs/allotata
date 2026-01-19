@@ -7,11 +7,34 @@ use App\Models\Facture;
 
 class ReservationObserver
 {
+
+    /**
+     * Handle the Reservation "created" event.
+     */
+    public function created(Reservation $reservation): void
+    {
+        // Invalider le cache des statistiques
+        $reservation->load('entreprise');
+        if ($reservation->entreprise) {
+            \App\Services\CacheService::clearEntrepriseCache($reservation->entreprise->id, $reservation->entreprise->slug);
+        }
+
+        // Envoyer un SMS si la réservation est confirmée
+        if ($reservation->statut === 'confirmee') {
+            $this->sendSmsNotification($reservation);
+        }
+    }
+    
     /**
      * Handle the Reservation "updated" event.
      */
     public function updated(Reservation $reservation): void
     {
+        // Vérifier si la réservation vient d'être confirmée (passage de en_attente à confirmee)
+        if ($reservation->isDirty('statut') && $reservation->statut === 'confirmee') {
+            $this->sendSmsNotification($reservation);
+        }
+
         // Vérifier si la réservation vient d'être marquée comme payée
         if ($reservation->isDirty('est_paye') && $reservation->est_paye) {
             // Recharger la réservation pour avoir les relations à jour
@@ -51,16 +74,50 @@ class ReservationObserver
             }
         }
     }
-
+    
     /**
-     * Handle the Reservation "created" event.
+     * Envoie la notification SMS pour une réservation confirmée
      */
-    public function created(Reservation $reservation): void
+    protected function sendSmsNotification(Reservation $reservation): void
     {
-        // Invalider le cache des statistiques
-        $reservation->load('entreprise');
-        if ($reservation->entreprise) {
-            \App\Services\CacheService::clearEntrepriseCache($reservation->entreprise->id, $reservation->entreprise->slug);
+        try {
+            // Recharger la réservation avec les relations
+            $reservation->load(['user', 'entreprise']);
+            
+            // Déterminer le destinataire : client inscrit ou téléphone non inscrit
+            $notifiable = null;
+            
+            if ($reservation->user_id && $reservation->user) {
+                // Client inscrit avec téléphone
+                if ($reservation->user->telephone) {
+                    $notifiable = $reservation->user;
+                }
+            } elseif ($reservation->telephone_client || $reservation->telephone_client_non_inscrit) {
+                // Client non inscrit avec téléphone
+                $telephone = $reservation->telephone_client ?? $reservation->telephone_client_non_inscrit;
+                
+                // Créer un notifiable temporaire avec le numéro de téléphone
+                $notifiable = new class($telephone) {
+                    public $telephone;
+                    public $id = null;
+                    
+                    public function __construct($telephone) {
+                        $this->telephone = $telephone;
+                    }
+                };
+            }
+            
+            // Envoyer le SMS si on a un destinataire
+            if ($notifiable) {
+                $notification = new \App\Notifications\BookingConfirmedSms($reservation);
+                
+                // Utiliser le canal personnalisé
+                $channel = new \App\Notifications\Channels\TwilioSmsChannel();
+                $channel->send($notifiable, $notification);
+            }
+        } catch (\Exception $e) {
+            // Logger l'erreur mais ne pas bloquer le processus
+            \Log::error('Erreur lors de l\'envoi du SMS de confirmation de réservation #' . $reservation->id . ': ' . $e->getMessage());
         }
     }
 

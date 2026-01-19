@@ -227,10 +227,76 @@ class Reservation extends Model
     }
 
     /**
-     * Trouve une réservation par son hash
+     * Génère un alias court à partir du hash complet
+     * Format : 2 premières lettres de chaque sous-hash
+     * Exemple : acaae2a7-e52fc00b-fce06b2d-6d5d42f1 -> ace5fc6d
+     */
+    public function getHashAliasAttribute(): ?string
+    {
+        if (empty($this->hash)) {
+            return null;
+        }
+
+        $parts = explode('-', $this->hash);
+        if (count($parts) !== 4) {
+            return null;
+        }
+
+        $alias = '';
+        foreach ($parts as $part) {
+            $alias .= substr($part, 0, 2);
+        }
+
+        return $alias;
+    }
+
+    /**
+     * Génère un alias court depuis un hash complet
+     */
+    public static function generateHashAlias(string $hash): ?string
+    {
+        $parts = explode('-', $hash);
+        if (count($parts) !== 4) {
+            return null;
+        }
+
+        $alias = '';
+        foreach ($parts as $part) {
+            $alias .= substr($part, 0, 2);
+        }
+
+        return $alias;
+    }
+
+    /**
+     * Trouve une réservation par son hash (complet ou alias court)
+     * L'alias court est les 2 premières lettres de chaque sous-hash
+     * Exemple : hash complet = acaae2a7-e52fc00b-fce06b2d-6d5d42f1, alias = ace5fc6d
      */
     public static function findByHash(string $hash): ?self
     {
-        return static::where('hash', $hash)->first();
+        // Si c'est un hash complet (contient des tirets et fait au moins 35 caractères)
+        if (strpos($hash, '-') !== false && strlen($hash) >= 35) {
+            return static::where('hash', $hash)->first();
+        }
+
+        // Sinon, c'est probablement un alias court (8 caractères)
+        // On cherche toutes les réservations avec hash et on compare les alias
+        if (strlen($hash) === 8) {
+            // Récupérer toutes les réservations avec hash (chunk pour éviter la surcharge mémoire)
+            $reservations = static::whereNotNull('hash')
+                ->select('id', 'hash')
+                ->get();
+            
+            foreach ($reservations as $reservation) {
+                $alias = static::generateHashAlias($reservation->hash);
+                if ($alias === $hash) {
+                    // Recharger la réservation complète avec toutes les relations
+                    return static::with(['user', 'entreprise', 'typeService', 'membre'])->find($reservation->id);
+                }
+            }
+        }
+
+        return null;
     }
 }

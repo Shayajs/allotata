@@ -3,10 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Reservation;
+use App\Models\User;
 use App\Observers\ReservationObserver;
+use App\Observers\UserObserver;
+use App\Listeners\LogEmailSent;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Mail\Events\MessageSent;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,11 +29,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Reservation::observe(ReservationObserver::class);
+        User::observe(UserObserver::class);
 
         // Configurer l'adresse d'expéditeur par défaut pour tous les emails
         Mail::alwaysFrom(
             env('MAIL_FROM_ADDRESS', 'noreply@allotata.fr'),
             env('MAIL_FROM_NAME', 'Allo Tata')
         );
+
+        // Enregistrer le listener pour logger les emails envoyés
+        Event::listen(MessageSent::class, LogEmailSent::class);
     }
 }

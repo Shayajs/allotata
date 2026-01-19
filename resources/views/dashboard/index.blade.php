@@ -242,6 +242,28 @@
 
                         <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
 
+                        <!-- Sécurité -->
+                        @php
+                            $hasSuspiciousActivity = \App\Models\SecurityLog::where('user_id', $user->id)
+                                ->where('is_suspicious', true)
+                                ->where('created_at', '>=', now()->subDays(7))
+                                ->exists();
+                        @endphp
+                        <button 
+                            onclick="showTab('securite')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'securite' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="securite"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Sécurité</span>
+                            @if($hasSuspiciousActivity)
+                                <span class="w-2 h-2 bg-red-500 rounded-full xl:ml-auto"></span>
+                            @endif
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Sécurité</span>
+                        </button>
+
                         <!-- Support -->
                         <button 
                             onclick="showTab('support')"
@@ -295,6 +317,11 @@
                         <!-- Onglet Notifications -->
                         <div id="tab-notifications" class="tab-content {{ $activeTab !== 'notifications' ? 'hidden' : '' }}">
                             @include('dashboard.tabs.notifications')
+                        </div>
+
+                        <!-- Onglet Sécurité -->
+                        <div id="tab-securite" class="tab-content {{ $activeTab !== 'securite' ? 'hidden' : '' }}">
+                            @include('dashboard.tabs.securite')
                         </div>
 
                         <!-- Onglet Support -->

@@ -38,7 +38,7 @@ class EmailTemplateService
             ]);
 
             // Envoyer l'email
-            Mail::send('emails.template', $viewData, function ($message) use ($to, $replaced, $options) {
+            Mail::send('emails.template', $viewData, function ($message) use ($to, $replaced, $options, $type) {
                 $message->to($to)
                         ->subject($replaced['subject']);
                 
@@ -59,6 +59,7 @@ class EmailTemplateService
                 }
             });
 
+            // Le logging sera fait automatiquement par le listener LogEmailSent
             return true;
         } catch (\Exception $e) {
             Log::error("Erreur lors de l'envoi de l'email avec template {$type} : " . $e->getMessage());

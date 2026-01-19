@@ -162,6 +162,24 @@
                     <span class="font-medium">Logs d'activité</span>
                 </a>
 
+                <!-- SMS Logs -->
+                <a href="{{ route('admin.sms-logs.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.sms-logs.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">📱</span>
+                    <span class="font-medium">SMS Logs</span>
+                </a>
+
+                <!-- Email Logs -->
+                <a href="{{ route('admin.email-logs.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.email-logs.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <span class="text-lg">📧</span>
+                    <span class="font-medium">Email Logs</span>
+                    @php
+                        $emailsNonVerifies = \App\Models\User::whereNull('email_verified_at')->count();
+                    @endphp
+                    @if($emailsNonVerifies > 0)
+                        <span class="ml-auto px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">{{ $emailsNonVerifies }}</span>
+                    @endif
+                </a>
+
                 <!-- Exports -->
                 <a href="{{ route('admin.exports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.exports.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
                     <span class="text-lg">📤</span>

@@ -233,6 +233,30 @@ class EmailTemplateSeeder extends Seeder
                 'variables' => ['nom_gerant', 'nom_entreprise', 'total_reservations', 'reservations_confirmees', 'reservations_en_attente', 'revenu_total', 'revenu_paye', 'url_dashboard'],
                 'description' => 'Rapport hebdomadaire envoyé aux gérants',
             ],
+            [
+                'type' => 'email_verification',
+                'name' => 'Vérification d\'email',
+                'subject' => 'Vérifiez votre adresse email - Allo Tata',
+                'body' => '<h1 style="color: #22c55e; margin-bottom: 20px;">Vérification de votre email</h1>
+                
+                <p>Bonjour {nom_client},</p>
+                
+                <p>Merci de vous être inscrit sur <strong>Allo Tata</strong>.</p>
+                
+                <p>Pour accéder à votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{url_verification}" class="button">Vérifier mon email</a>
+                </div>
+                
+                <p><strong>Ce lien est valide pendant 7 jours.</strong></p>
+                
+                <p>Si vous n\'avez pas créé de compte sur Allo Tata, vous pouvez ignorer cet email en toute sécurité.</p>
+                
+                <p>Bonne journée,<br>L\'équipe Allo Tata</p>',
+                'variables' => ['nom_client', 'url_verification'],
+                'description' => 'Email de vérification d\'adresse email lors de l\'inscription',
+            ],
         ];
 
         foreach ($templates as $template) {

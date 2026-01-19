@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\LoginAttempt;
+use App\Models\AccountLockout;
+use App\Models\SecurityLog;
+use App\Services\SecurityService;
 use App\Mail\WelcomeEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,52 +62,44 @@ class AuthController extends Controller
         }
 
         // Créer un membre (par défaut client uniquement)
+        // email_verified_at reste null jusqu'à vérification
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'est_client' => true, // Par défaut, tous les membres sont clients
             'est_gerant' => false, // Ils deviendront gérants après avoir ajouté une entreprise
+            'email_verified_at' => null, // Pas vérifié à la création
         ]);
 
-        Auth::login($user);
+        // Générer un hash de vérification
+        $emailVerification = \App\Models\EmailVerification::generateHashForUser($user->id);
 
-        // Envoyer l'email de bienvenue
+        // Envoyer l'email de vérification
         try {
-            \App\Helpers\EmailHelper::sendWelcome($user);
+            $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de bienvenue : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de vérification : " . $e->getMessage());
         }
 
-        // Vérifier s'il y a des invitations en attente pour cet email
-        $invitationsEnAttente = \App\Models\EntrepriseInvitation::where('email', $validated['email'])
-            ->where('statut', 'en_attente_compte')
-            ->where(function($query) {
-                $query->whereNull('expire_at')
-                      ->orWhere('expire_at', '>', now());
-            })
-            ->get();
+        // Logger l'inscription
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'account_created',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'low',
+            false
+        );
 
-        $invitationService = app(\App\Services\InvitationService::class);
-        $invitationsConverties = 0;
+        // NE PAS connecter automatiquement - rediriger vers le sas de vérification
+        // Les invitations seront gérées après la vérification de l'email (dans EmailVerificationController après vérification)
 
-        foreach ($invitationsEnAttente as $invitation) {
-            // Convertir l'invitation en invitation de membre
-            $invitationService->convertirEnInvitationMembre($invitation, $user);
-            $invitationsConverties++;
-        }
-
-        $message = 'Inscription réussie ! Bienvenue sur Allo Tata.';
-        if ($invitationsConverties > 0) {
-            $message .= " Vous avez {$invitationsConverties} invitation(s) en attente d'acceptation.";
-            // Rediriger vers la première invitation si une seule, sinon vers le dashboard
-            if ($invitationsConverties === 1 && $invitationsEnAttente->first()) {
-                return redirect()->route('invitations.show', $invitationsEnAttente->first()->token)
-                    ->with('success', $message);
-            }
-        }
-
-        return redirect()->route('dashboard')->with('success', $message);
+        // Rediriger vers le sas de vérification d'email
+        return redirect()->route('verification.required')
+            ->with('status', 'Votre compte a été créé avec succès ! Veuillez vérifier votre email pour accéder à votre compte.');
     }
 
     /**
@@ -128,7 +124,156 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+        $email = $credentials['email'];
+
+        // Chercher l'utilisateur
+        $user = User::where('email', $email)->first();
+
+        // Logger la tentative de connexion
+        $loginAttempt = LoginAttempt::create([
+            'email' => $email,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'success' => false,
+            'user_id' => $user?->id,
+            'attempted_at' => now(),
+        ]);
+
+        // Si l'utilisateur existe, vérifier le blocage
+        if ($user) {
+            // Vérifier si le compte est interdit ou supprimé
+            if ($user->isInterdit()) {
+                $loginAttempt->update([
+                    'failure_reason' => 'account_forbidden',
+                ]);
+
+                SecurityLog::log(
+                    $user->id,
+                    'login_blocked',
+                    $ipAddress,
+                    $userAgent,
+                    null,
+                    ['reason' => 'account_forbidden'],
+                    'high',
+                    true,
+                    "Tentative de connexion sur un compte interdit"
+                );
+
+                return back()->withErrors([
+                    'email' => "Votre compte a été désactivé. Veuillez contacter l'administrateur pour plus d'informations.",
+                ])->onlyInput('email');
+            }
+
+            if ($user->isSupprime()) {
+                $loginAttempt->update([
+                    'failure_reason' => 'account_deleted',
+                ]);
+
+                SecurityLog::log(
+                    $user->id,
+                    'login_blocked',
+                    $ipAddress,
+                    $userAgent,
+                    null,
+                    ['reason' => 'account_deleted'],
+                    'high',
+                    true,
+                    "Tentative de connexion sur un compte supprimé"
+                );
+
+                return back()->withErrors([
+                    'email' => "Ce compte n'existe plus ou a été archivé.",
+                ])->onlyInput('email');
+            }
+
+            $lockout = AccountLockout::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'failed_attempts' => 0,
+                    'is_locked' => false,
+                ]
+            );
+
+            // Vérifier si le compte est verrouillé
+            if ($lockout->isCurrentlyLocked()) {
+                $remainingMinutes = now()->diffInMinutes($lockout->locked_until, false);
+                
+                $loginAttempt->update([
+                    'failure_reason' => 'account_locked',
+                ]);
+
+                SecurityLog::log(
+                    $user->id,
+                    'login_blocked',
+                    $ipAddress,
+                    $userAgent,
+                    null,
+                    ['locked_until' => $lockout->locked_until],
+                    'high',
+                    true,
+                    "Tentative de connexion alors que le compte est verrouillé"
+                );
+
+                return back()->withErrors([
+                    'email' => "Votre compte est temporairement verrouillé après plusieurs tentatives échouées. Veuillez réessayer dans {$remainingMinutes} minute(s) ou réinitialiser votre mot de passe.",
+                ])->onlyInput('email');
+            }
+        }
+
+        // Tentative de connexion
+        if ($user && Auth::attempt($credentials, $request->boolean('remember'))) {
+            // Vérifier si l'email est vérifié
+            if (!$user->hasVerifiedEmail()) {
+                // Logger la tentative
+                $loginAttempt->update([
+                    'success' => false,
+                    'failure_reason' => 'email_not_verified',
+                ]);
+
+                SecurityLog::log(
+                    $user->id,
+                    'login_blocked_unverified',
+                    $ipAddress,
+                    $userAgent,
+                    null,
+                    [],
+                    'medium',
+                    false,
+                    "Tentative de connexion avec email non vérifié"
+                );
+
+                // Stocker l'email en session pour le sas (AVANT de déconnecter)
+                // Le sas enverra automatiquement l'email de vérification
+                $request->session()->put('pending_verification_email', $user->email);
+                
+                // Déconnecter et rediriger vers le sas
+                Auth::logout();
+                $request->session()->regenerateToken(); // Régénérer le token CSRF mais garder les données de session
+
+                return redirect()->route('verification.required')
+                    ->with('status', 'Votre email n\'a pas encore été vérifié. Un email de vérification va vous être envoyé.');
+            }
+
+            // Connexion réussie et email vérifié
+            $loginAttempt->update([
+                'success' => true,
+                'user_id' => $user->id,
+            ]);
+
+            // Réinitialiser les tentatives échouées
+            if ($user->accountLockout) {
+                $user->accountLockout->update([
+                    'failed_attempts' => 0,
+                    'last_failed_attempt' => null,
+                ]);
+            }
+
+            // Enregistrer la connexion réussie dans les logs de sécurité
+            $securityService = app(SecurityService::class);
+            $securityService->recordSuccessfulLogin($user, $ipAddress, $userAgent);
+
             $request->session()->regenerate();
             
             // Si une invitation est en attente, rediriger vers la page d'invitation
@@ -141,8 +286,48 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
+        // Connexion échouée
+        $failureReason = $user ? 'invalid_credentials' : 'user_not_found';
+        
+        $loginAttempt->update([
+            'failure_reason' => $failureReason,
+        ]);
+
+        // Si l'utilisateur existe, incrémenter les tentatives échouées
+        if ($user) {
+            $lockout = AccountLockout::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'failed_attempts' => 0,
+                    'is_locked' => false,
+                ]
+            );
+
+            $lockout->incrementFailedAttempts($ipAddress);
+
+            // Logger l'événement de sécurité
+            SecurityLog::log(
+                $user->id,
+                'login_failed',
+                $ipAddress,
+                $userAgent,
+                null,
+                ['failed_attempts' => $lockout->failed_attempts],
+                $lockout->failed_attempts >= 5 ? 'high' : 'medium',
+                $lockout->failed_attempts >= 5,
+                $lockout->failed_attempts >= 5 ? 'Compte verrouillé après 5 tentatives échouées' : 'Tentative de connexion échouée'
+            );
+        }
+
+        $errorMessage = 'Les identifiants fournis ne correspondent à aucun compte.';
+        
+        if ($user && $lockout && $lockout->isCurrentlyLocked()) {
+            $remainingMinutes = now()->diffInMinutes($lockout->locked_until, false);
+            $errorMessage = "Votre compte est temporairement verrouillé après plusieurs tentatives échouées. Veuillez réessayer dans {$remainingMinutes} minute(s) ou réinitialiser votre mot de passe.";
+        }
+
         return back()->withErrors([
-            'email' => 'Les identifiants fournis ne correspondent à aucun compte.',
+            'email' => $errorMessage,
         ])->onlyInput('email');
     }
 
@@ -151,6 +336,22 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        
+        if ($user) {
+            // Logger la déconnexion
+            SecurityLog::log(
+                $user->id,
+                'logout',
+                $request->ip(),
+                $request->userAgent(),
+                null,
+                [],
+                'low',
+                false
+            );
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

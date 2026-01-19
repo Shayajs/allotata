@@ -16,7 +16,7 @@
     </div>
     
     <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ route('public.reservation.show', $reservation->id) }}" class="button">Voir ma réservation</a>
+        <a href="{{ route('public.reservation.show', $reservation->hash ?? $reservation->id) }}" class="button">Voir ma réservation</a>
     </div>
     
     <p>Merci pour votre confiance !<br>L'équipe Allo Tata</p>

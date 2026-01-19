@@ -39,7 +39,7 @@ class EmailHelper
             'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
             'duree' => $reservation->duree_minutes ?? 30,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
-            'url_reservation' => route('public.reservation.show', $reservation->id),
+            'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
         ];
 
         // Lieu (optionnel)
@@ -127,7 +127,7 @@ class EmailHelper
             'duree' => $reservation->duree_minutes ?? 30,
             'heures_avant' => $hoursBefore,
             'contact_entreprise' => $contact,
-            'url_reservation' => route('public.reservation.show', $reservation->id),
+            'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
         ];
 
         // Lieu (optionnel)
@@ -164,7 +164,7 @@ class EmailHelper
             'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
             'montant' => number_format($reservation->prix, 2, ',', ' '),
             'date_paiement' => ($reservation->date_paiement ?? now())->format('d/m/Y à H:i'),
-            'url_reservation' => route('public.reservation.show', $reservation->id),
+            'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
         ];
 
         return EmailTemplateService::send('payment_received', $client->email, $data);
@@ -255,5 +255,18 @@ class EmailHelper
         ];
 
         return EmailTemplateService::send('weekly_report', $user->email, $data);
+    }
+
+    /**
+     * Envoyer un email de vérification
+     */
+    public static function sendEmailVerification(User $user, \App\Models\EmailVerification $emailVerification): bool
+    {
+        $verificationUrl = route('verification.verify', ['hash' => $emailVerification->hash]);
+        
+        return EmailTemplateService::send('email_verification', $user->email, [
+            'nom_client' => $user->name,
+            'url_verification' => $verificationUrl,
+        ]);
     }
 }

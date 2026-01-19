@@ -74,6 +74,11 @@
                             Se souvenir de moi
                         </label>
                     </div>
+                    <div class="text-sm">
+                        <a href="{{ route('password.request') }}" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400">
+                            Mot de passe oublié ?
+                        </a>
+                    </div>
                 </div>
 
                 <div>

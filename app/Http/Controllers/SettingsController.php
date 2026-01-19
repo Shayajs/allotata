@@ -132,6 +132,23 @@ class SettingsController extends Controller
             'password' => Hash::make($validated['new_password']),
         ]);
 
+        // Déverrouiller le compte si il était verrouillé
+        if ($user->accountLockout) {
+            $user->accountLockout->unlock();
+        }
+
+        // Logger l'événement
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'password_changed',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'medium',
+            false
+        );
+
         return redirect()->route('settings.index', ['tab' => 'security'])
             ->with('success', 'Votre mot de passe a été mis à jour avec succès.');
     }

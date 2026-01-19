@@ -223,6 +223,12 @@ class AdminController extends Controller
     {
         $query = User::withCount(['entreprises', 'reservations']);
 
+        // Exclure les comptes supprimés par défaut
+        $query->where(function($q) {
+            $q->where('statut_compte', '!=', 'supprime')
+              ->orWhereNull('statut_compte');
+        });
+
         // Recherche par nom ou email
         if ($request->filled('search')) {
             $search = $request->search;
@@ -244,9 +250,86 @@ class AdminController extends Controller
             }
         }
 
+        // Filtre par statut
+        if ($request->filled('statut')) {
+            $statut = $request->statut;
+            if ($statut === 'normal') {
+                $query->where(function($q) {
+                    $q->where('statut_compte', 'normal')
+                      ->orWhereNull('statut_compte');
+                });
+            } else {
+                $query->where('statut_compte', $statut);
+            }
+        }
+
         $users = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
 
         return view('admin.users.index', compact('users'));
+    }
+
+    /**
+     * Liste des utilisateurs supprimés (archivés)
+     */
+    public function usersDeleted(Request $request)
+    {
+        $query = User::withCount(['entreprises', 'reservations'])
+            ->where('statut_compte', 'supprime');
+
+        // Recherche par nom ou email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+
+        return view('admin.users.deleted', compact('users'));
+    }
+
+    /**
+     * Changer le statut d'un compte utilisateur
+     */
+    public function updateUserStatus(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'statut_compte' => ['required', 'in:normal,limite,interdit,supprime'],
+        ]);
+
+        $oldStatus = $user->statut_compte ?? 'normal';
+        $newStatus = $validated['statut_compte'];
+
+        $user->update([
+            'statut_compte' => $newStatus,
+        ]);
+
+        // Logger le changement de statut
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'account_status_changed',
+            $request->ip(),
+            $request->userAgent(),
+            auth()->id(),
+            [
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ],
+            'medium',
+            false,
+            "Statut du compte changé de '{$oldStatus}' à '{$newStatus}' par l'administrateur"
+        );
+
+        $statusLabels = [
+            'normal' => 'Normal',
+            'limite' => 'Limité',
+            'interdit' => 'Interdit',
+            'supprime' => 'Supprimé',
+        ];
+
+        return back()->with('success', "Le statut du compte a été changé en : {$statusLabels[$newStatus]}");
     }
 
     /**

@@ -8,16 +8,22 @@
 <div class="mb-8 flex items-center justify-between">
     <div>
         <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Liste des utilisateurs</h1>
+        <p class="text-slate-600 dark:text-slate-400 mt-1">Gérez tous les utilisateurs de la plateforme</p>
     </div>
-    <a href="{{ route('admin.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
-        ← Retour au Dashboard
-    </a>
+    <div class="flex gap-3">
+        <a href="{{ route('admin.users.deleted') }}" class="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition">
+            📦 Comptes supprimés
+        </a>
+        <a href="{{ route('admin.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
+            ← Retour au Dashboard
+        </a>
+    </div>
 </div>
 
 <!-- Barre de recherche et filtres -->
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
     <form method="GET" action="{{ route('admin.users.index') }}" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Rechercher
@@ -44,13 +50,27 @@
                     <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Filtrer par statut
+                </label>
+                <select 
+                    name="statut" 
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                >
+                    <option value="">Tous les statuts</option>
+                    <option value="normal" {{ request('statut') === 'normal' ? 'selected' : '' }}>Normal</option>
+                    <option value="limite" {{ request('statut') === 'limite' ? 'selected' : '' }}>Limité</option>
+                    <option value="interdit" {{ request('statut') === 'interdit' ? 'selected' : '' }}>Interdit</option>
+                </select>
+            </div>
             <div class="flex items-end">
                 <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                     🔍 Rechercher
                 </button>
             </div>
         </div>
-        @if(request()->hasAny(['search', 'role']))
+        @if(request()->hasAny(['search', 'role', 'statut']))
             <a href="{{ route('admin.users.index') }}" class="text-sm text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400">
                 Réinitialiser les filtres
             </a>
@@ -124,7 +144,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
+                        <td colspan="8" class="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
                             Aucun utilisateur trouvé
                         </td>
                     </tr>

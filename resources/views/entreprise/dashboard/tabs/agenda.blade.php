@@ -531,6 +531,8 @@
     function showReservationDetails(res) {
         const props = res.extendedProps || {};
         const startTime = new Date(res.start);
+        // Utiliser le hash complet pour les liens web (emails, etc.)
+        // L'alias court est uniquement pour les SMS
         const reservationHash = res.extendedProps?.hash || res.hash;
         const reservationUrl = reservationHash ? `/r/${reservationHash}` : `/r/${res.id}`;
         

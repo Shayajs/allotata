@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Cashier\Billable;
 use App\Traits\HasEssaisGratuits;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, Billable, HasEssaisGratuits;
@@ -41,6 +41,7 @@ class User extends Authenticatable
         'adresse',
         'ville',
         'code_postal',
+        'statut_compte',
     ];
 
     /**
@@ -210,5 +211,116 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->is_admin === true;
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs tentatives de connexion
+     */
+    public function loginAttempts()
+    {
+        return $this->hasMany(LoginAttempt::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir un blocage de compte
+     */
+    public function accountLockout()
+    {
+        return $this->hasOne(AccountLockout::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs codes de réinitialisation
+     */
+    public function passwordResetCodes()
+    {
+        return $this->hasMany(PasswordResetCode::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs logs de sécurité
+     */
+    public function securityLogs()
+    {
+        return $this->hasMany(SecurityLog::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs IPs dans l'historique
+     */
+    public function ipHistory()
+    {
+        return $this->hasMany(UserIpHistory::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs hash de vérification d'email
+     */
+    public function emailVerifications()
+    {
+        return $this->hasMany(EmailVerification::class);
+    }
+
+    /**
+     * Vérifie si le compte est actuellement verrouillé
+     */
+    public function isAccountLocked(): bool
+    {
+        $lockout = $this->accountLockout;
+        return $lockout && $lockout->isCurrentlyLocked();
+    }
+
+    /**
+     * Vérifie si le compte est dans un état normal
+     */
+    public function isNormal(): bool
+    {
+        return $this->statut_compte === 'normal' || $this->statut_compte === null;
+    }
+
+    /**
+     * Vérifie si le compte est limité
+     */
+    public function isLimite(): bool
+    {
+        return $this->statut_compte === 'limite';
+    }
+
+    /**
+     * Vérifie si le compte est interdit (ne peut pas se connecter)
+     */
+    public function isInterdit(): bool
+    {
+        return $this->statut_compte === 'interdit';
+    }
+
+    /**
+     * Vérifie si le compte est supprimé (archivé)
+     */
+    public function isSupprime(): bool
+    {
+        return $this->statut_compte === 'supprime';
+    }
+
+    /**
+     * Vérifie si le compte peut se connecter
+     */
+    public function canLogin(): bool
+    {
+        return !$this->isInterdit() && !$this->isSupprime();
+    }
+
+    /**
+     * Obtenir le libellé du statut
+     */
+    public function getStatutCompteLabelAttribute(): string
+    {
+        return match($this->statut_compte) {
+            'normal' => 'Normal',
+            'limite' => 'Limité',
+            'interdit' => 'Interdit',
+            'supprime' => 'Supprimé',
+            default => 'Normal',
+        };
     }
 }

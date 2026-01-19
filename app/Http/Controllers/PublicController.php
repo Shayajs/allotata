@@ -28,7 +28,7 @@ class PublicController extends Controller
                               ->latest()
                               ->limit(5);
                     },
-                    'realisationPhotos:id,entreprise_id,image_path,ordre',
+                    'realisationPhotos:id,entreprise_id,photo_path,ordre',
                     'typesServices' => function($query) {
                         $query->where('est_actif', true)
                               ->with(['images:id,type_service_id,image_path', 'imageCouverture:id,type_service_id,image_path']);
@@ -45,6 +45,14 @@ class PublicController extends Controller
                 ])
                 ->firstOrFail();
         });
+
+        // Recharger le user avec toutes ses colonnes pour vérifier l'abonnement
+        // (car il est mis en cache avec seulement id,name,email)
+        if ($entreprise->user_id) {
+            // Forcer le rechargement en désactivant puis rechargeant la relation
+            $entreprise->unsetRelation('user');
+            $entreprise->load('user'); // Recharge toutes les colonnes du user
+        }
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         // MAIS permettre au propriétaire de voir sa propre entreprise même sans abonnement
@@ -124,6 +132,13 @@ class PublicController extends Controller
                 $query->where('est_actif', true);
             }])
             ->firstOrFail();
+
+        // Recharger le user avec toutes ses colonnes pour vérifier l'abonnement
+        if ($entreprise->user_id) {
+            // Forcer le rechargement en désactivant puis rechargeant la relation
+            $entreprise->unsetRelation('user');
+            $entreprise->load('user'); // Recharge toutes les colonnes du user
+        }
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         // MAIS permettre au propriétaire de voir sa propre entreprise même sans abonnement
@@ -306,6 +321,13 @@ class PublicController extends Controller
                       ->with(['stock', 'images', 'imageCouverture', 'promotionActive']);
             }])
             ->firstOrFail();
+
+        // Recharger le user avec toutes ses colonnes pour vérifier l'abonnement
+        if ($entreprise->user_id) {
+            // Forcer le rechargement en désactivant puis rechargeant la relation
+            $entreprise->unsetRelation('user');
+            $entreprise->load('user'); // Recharge toutes les colonnes du user
+        }
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         $user = Auth::user();
@@ -516,12 +538,18 @@ class PublicController extends Controller
 
     /**
      * Afficher une réservation publique (accessible via lien partagé)
+     * Accepte soit le hash complet soit l'alias court (pour SMS)
      */
     public function showReservation($hash)
     {
-        $reservation = Reservation::with(['user', 'entreprise.user', 'entreprise.avis', 'typeService', 'membre.user'])
-            ->where('hash', $hash)
-            ->firstOrFail();
+        $reservation = Reservation::findByHash($hash);
+        
+        if (!$reservation) {
+            abort(404, 'Réservation non trouvée.');
+        }
+        
+        // Charger les relations nécessaires
+        $reservation->load(['user', 'entreprise.user', 'entreprise.avis', 'typeService', 'membre.user']);
 
         $entreprise = $reservation->entreprise;
 
@@ -574,12 +602,18 @@ class PublicController extends Controller
 
     /**
      * Annuler une réservation
+     * Accepte soit le hash complet soit l'alias court (pour SMS)
      */
     public function annulerReservation(Request $request, $hash)
     {
-        $reservation = Reservation::with(['entreprise', 'user'])
-            ->where('hash', $hash)
-            ->firstOrFail();
+        $reservation = Reservation::findByHash($hash);
+        
+        if (!$reservation) {
+            abort(404, 'Réservation non trouvée.');
+        }
+        
+        // Charger les relations nécessaires
+        $reservation->load(['entreprise', 'user']);
 
         $user = Auth::user();
 

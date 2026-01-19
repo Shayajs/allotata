@@ -117,6 +117,19 @@ Route::post('/invitations/{token}/refuser', [InvitationController::class, 'refus
 // Déconnexion
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Récupération de mot de passe
+Route::get('/password/reset', [\App\Http\Controllers\PasswordResetController::class, 'showRequestForm'])->name('password.request');
+Route::post('/password/reset', [\App\Http\Controllers\PasswordResetController::class, 'sendCode'])->name('password.send-code');
+Route::get('/password/reset/verify', [\App\Http\Controllers\PasswordResetController::class, 'showVerifyForm'])->name('password.reset.verify');
+Route::post('/password/reset/verify', [\App\Http\Controllers\PasswordResetController::class, 'verifyCode'])->name('password.verify-code');
+Route::get('/password/reset/{token}', [\App\Http\Controllers\PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/password/reset/confirm', [\App\Http\Controllers\PasswordResetController::class, 'resetPassword'])->name('password.reset');
+
+// Vérification d'email
+Route::get('/verification/required', [\App\Http\Controllers\EmailVerificationController::class, 'show'])->name('verification.required');
+Route::post('/verification/resend', [\App\Http\Controllers\EmailVerificationController::class, 'resend'])->middleware('auth')->name('verification.resend');
+Route::get('/security/{hash}', [\App\Http\Controllers\EmailVerificationController::class, 'verify'])->name('verification.verify');
+
 // Entreprise (Public)
 Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entreprise');
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
@@ -161,8 +174,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/message', [TicketController::class, 'addMessage'])->name('tickets.add-message');
 });
 
-// Routes protégées
-Route::middleware('auth')->group(function () {
+// Routes protégées - nécessitent authentification et email vérifié
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
     Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
@@ -251,6 +264,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
     Route::post('/settings/error-notifications', [SettingsController::class, 'updateErrorNotifications'])->name('settings.error-notifications.update');
+    
+    // Sécurité
+    Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+    Route::post('/security/recovery-method', [SecurityController::class, 'updateRecoveryMethod'])->name('security.recovery-method.update');
     Route::post('/settings/entreprise/{slug}', [SettingsController::class, 'updateEntreprise'])->name('settings.entreprise.update');
     Route::post('/settings/entreprise/{slug}/logo/upload', [SettingsController::class, 'uploadLogo'])->name('settings.entreprise.logo.upload');
     Route::post('/settings/entreprise/{slug}/image-fond/upload', [SettingsController::class, 'uploadImageFond'])->name('settings.entreprise.image-fond.upload');
@@ -353,8 +370,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Gestion des utilisateurs
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');
+    Route::get('/users/deleted', [AdminController::class, 'usersDeleted'])->name('users.deleted');
     Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
     Route::post('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::post('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('users.status.update');
     Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
     
     // Gestion des entreprises
@@ -449,6 +468,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/email-templates/{emailTemplate}/edit', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'edit'])->name('email-templates.edit');
     Route::put('/email-templates/{emailTemplate}', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'update'])->name('email-templates.update');
     Route::get('/email-templates/{emailTemplate}/preview', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+    
+    // Logs SMS
+    Route::get('/sms-logs', [\App\Http\Controllers\Admin\SmsLogController::class, 'index'])->name('sms-logs.index');
+    Route::post('/sms-logs/test', [\App\Http\Controllers\Admin\SmsLogController::class, 'sendTestSms'])->name('sms-logs.test');
+    Route::post('/sms-logs/mode', [\App\Http\Controllers\Admin\SmsLogController::class, 'updateMode'])->name('sms-logs.mode.update');
+    
+    // Logs Emails
+    Route::get('/email-logs', [\App\Http\Controllers\Admin\EmailLogController::class, 'index'])->name('email-logs.index');
+    Route::post('/email-logs/verify-user/{user}', [\App\Http\Controllers\Admin\EmailLogController::class, 'verifyUserEmail'])->name('email-logs.verify-user');
     
     // Gestion des prix Stripe
     Route::get('/stripe-prices', [AdminController::class, 'stripePrices'])->name('stripe-prices.index');
