@@ -231,6 +231,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/m/{slug}/reservations/{id}/notes', [ReservationController::class, 'addNotes'])->name('reservations.notes');
     Route::post('/m/{slug}/reservations/{id}/marquer-payee', [ReservationController::class, 'marquerPayee'])->name('reservations.marquer-payee');
     
+    // Export de rapports
+    Route::get('/m/{slug}/reports/reservations', [\App\Http\Controllers\ReportController::class, 'exportReservations'])->name('reports.export-reservations');
+    Route::get('/m/{slug}/reports/financial', [\App\Http\Controllers\ReportController::class, 'exportFinancialReport'])->name('reports.export-financial');
+    
+    // Programme de fidélité
+    Route::get('/m/{slug}/loyalty', [\App\Http\Controllers\LoyaltyController::class, 'index'])->name('loyalty.index');
+    Route::get('/m/{slug}/loyalty/{userId}', [\App\Http\Controllers\LoyaltyController::class, 'show'])->name('loyalty.show');
+    
+    // Notes clients
+    Route::get('/m/{slug}/client-notes/{userId}', [\App\Http\Controllers\ClientNoteController::class, 'index'])->name('client-notes.index');
+    Route::get('/m/{slug}/client-notes', [\App\Http\Controllers\ClientNoteController::class, 'all'])->name('client-notes.all');
+    Route::post('/m/{slug}/client-notes/{userId}', [\App\Http\Controllers\ClientNoteController::class, 'store'])->name('client-notes.store');
+    Route::put('/m/{slug}/client-notes/{noteId}', [\App\Http\Controllers\ClientNoteController::class, 'update'])->name('client-notes.update');
+    Route::delete('/m/{slug}/client-notes/{noteId}', [\App\Http\Controllers\ClientNoteController::class, 'destroy'])->name('client-notes.destroy');
+    
     // Paramètres
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
@@ -428,6 +443,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Codes promo
     Route::resource('promo-codes', \App\Http\Controllers\Admin\PromoCodeController::class);
+    
+    // Templates d'emails
+    Route::get('/email-templates', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::get('/email-templates/{emailTemplate}/edit', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'edit'])->name('email-templates.edit');
+    Route::put('/email-templates/{emailTemplate}', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::get('/email-templates/{emailTemplate}/preview', [\App\Http\Controllers\Admin\EmailTemplateController::class, 'preview'])->name('email-templates.preview');
     
     // Gestion des prix Stripe
     Route::get('/stripe-prices', [AdminController::class, 'stripePrices'])->name('stripe-prices.index');
@@ -633,6 +654,41 @@ Route::get('/diagnostic-auth', function () {
 
 
 
+
+// Route de test email (à supprimer en production)
+Route::get('/test-email', function() {
+    if (!auth()->check() || !auth()->user()->is_admin) {
+        abort(403, 'Accès refusé');
+    }
+    
+    try {
+        $testEmail = request()->get('email', auth()->user()->email);
+        
+        \Illuminate\Support\Facades\Mail::raw('Test email depuis Allo Tata - Configuration SMTP', function ($message) use ($testEmail) {
+            $message->to($testEmail)
+                    ->subject('Test de configuration email - Allo Tata');
+        });
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Email de test envoyé à {$testEmail}",
+            'config' => [
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from_address' => config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+        ], 500);
+    }
+})->middleware('auth');
 
 // Route de debug temporaire
 require __DIR__ . '/debug_temp.php';

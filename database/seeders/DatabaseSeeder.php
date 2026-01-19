@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Charger les templates d'emails par défaut
+        $this->call(EmailTemplateSeeder::class);
     }
 }

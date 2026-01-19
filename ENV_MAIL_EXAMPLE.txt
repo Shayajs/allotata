@@ -1,0 +1,19 @@
+# Configuration Email - À ajouter dans votre fichier .env
+
+# Mailer par défaut (smtp pour utiliser le serveur SMTP)
+MAIL_MAILER=smtp
+
+# Configuration SMTP
+MAIL_HOST=mail.allotata.fr
+MAIL_PORT=465
+MAIL_USERNAME=noreply@allotata.fr
+MAIL_PASSWORD=Lapino1407--
+MAIL_ENCRYPTION=ssl
+
+# Adresse d'expéditeur par défaut
+MAIL_FROM_ADDRESS=noreply@allotata.fr
+MAIL_FROM_NAME="Allo Tata"
+
+# Alternative avec port 587 (si 465 ne fonctionne pas)
+# MAIL_PORT=587
+# MAIL_ENCRYPTION=tls

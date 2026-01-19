@@ -315,6 +315,17 @@ class MessagerieController extends Controller
         $conversation->update([
             'dernier_message_at' => now(),
         ]);
+
+        // Envoyer un email à l'autre partie si elle n'est pas en ligne
+        try {
+            $conversation->refresh();
+            $recipient = $conversation->user_id ? $conversation->user : $conversation->entreprise->user;
+            if ($recipient && $recipient->id !== $user->id) {
+                \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : " . $e->getMessage());
+        }
         
         return back()->with('success', 'Message envoyé !');
     }
@@ -439,6 +450,16 @@ class MessagerieController extends Controller
         $conversation->update([
             'dernier_message_at' => now(),
         ]);
+
+        // Envoyer un email au client si ce n'est pas lui qui a envoyé
+        try {
+            $conversation->refresh();
+            if ($conversation->user_id && $conversation->user_id !== $user->id) {
+                \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : " . $e->getMessage());
+        }
         
         return back()->with('success', 'Message envoyé !');
     }

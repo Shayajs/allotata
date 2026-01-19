@@ -307,7 +307,22 @@ class EntrepriseDashboardController extends Controller
      */
     private function getStats(Entreprise $entreprise): array
     {
-        $allReservations = Reservation::where('entreprise_id', $entreprise->id)->get();
+        // Utiliser le cache pour les statistiques (5 minutes)
+        return \Illuminate\Support\Facades\Cache::remember(
+            "entreprise_stats_{$entreprise->id}",
+            300,
+            function () use ($entreprise) {
+                return $this->calculateStats($entreprise);
+            }
+        );
+    }
+
+    private function calculateStats(Entreprise $entreprise): array
+    {
+        // Charger uniquement les colonnes nécessaires
+        $allReservations = Reservation::where('entreprise_id', $entreprise->id)
+            ->select('id', 'date_reservation', 'statut', 'est_paye', 'prix')
+            ->get();
         
         $reservationsCeMois = $allReservations->filter(function($r) {
             return $r->date_reservation && $r->date_reservation->isCurrentMonth();
@@ -329,7 +344,23 @@ class EntrepriseDashboardController extends Controller
             return in_array($r->statut, ['confirmee', 'terminee']);
         });
         
-        return [
+        // Données pour graphiques - 12 derniers mois
+        $chartData = $this->getChartData($entreprise, $allReservations);
+        
+        // Données par jour de la semaine
+        $dayOfWeekData = $this->getDayOfWeekData($allReservations);
+        
+        // Taux de conversion
+        $tauxConversion = $allReservations->count() > 0 
+            ? round(($allReservations->where('statut', 'confirmee')->count() / $allReservations->count()) * 100, 1)
+            : 0;
+        
+        // Taux d'annulation
+        $tauxAnnulation = $allReservations->count() > 0
+            ? round(($allReservations->where('statut', 'annulee')->count() / $allReservations->count()) * 100, 1)
+            : 0;
+        
+        $stats = [
             'total_reservations' => $allReservations->count(),
             'reservations_confirmees' => $allReservations->where('statut', 'confirmee')->count(),
             'reservations_en_attente' => $allReservations->where('statut', 'en_attente')->count(),
@@ -343,7 +374,13 @@ class EntrepriseDashboardController extends Controller
             'evolution_revenu' => $evolutionRevenu,
             'note_moyenne' => $entreprise->note_moyenne,
             'nombre_avis' => $entreprise->nombre_avis,
+            'taux_conversion' => $tauxConversion,
+            'taux_annulation' => $tauxAnnulation,
+            'chart_data' => $chartData,
+            'day_of_week_data' => $dayOfWeekData,
         ];
+        
+        return $stats;
     }
 
     /**
@@ -351,10 +388,12 @@ class EntrepriseDashboardController extends Controller
      */
     private function getReservationsEnAttente(Entreprise $entreprise)
     {
+        // Limiter à 20 réservations pour éviter de surcharger
         return Reservation::where('entreprise_id', $entreprise->id)
             ->where('statut', 'en_attente')
-            ->with(['user', 'typeService', 'membre.user'])
+            ->with(['user:id,name,email', 'typeService:id,nom,prix', 'membre.user:id,name'])
             ->orderBy('date_reservation', 'asc')
+            ->limit(20)
             ->get();
     }
 
@@ -467,5 +506,62 @@ class EntrepriseDashboardController extends Controller
             }])
             ->orderBy('updated_at', 'desc')
             ->get();
+    }
+
+    /**
+     * Générer les données pour les graphiques (12 derniers mois)
+     */
+    private function getChartData(Entreprise $entreprise, $allReservations): array
+    {
+        $labels = [];
+        $revenus = [];
+        $reservations = [];
+        
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $moisLabel = $date->format('M Y');
+            $labels[] = $moisLabel;
+            
+            $reservationsMois = $allReservations->filter(function($r) use ($date) {
+                return $r->date_reservation && 
+                       $r->date_reservation->format('Y-m') === $date->format('Y-m');
+            });
+            
+            $reservationsAcceptees = $reservationsMois->filter(function($r) {
+                return in_array($r->statut, ['confirmee', 'terminee']);
+            });
+            
+            $revenus[] = round($reservationsAcceptees->sum('prix'), 2);
+            $reservations[] = $reservationsMois->count();
+        }
+        
+        return [
+            'labels' => $labels,
+            'revenus' => $revenus,
+            'reservations' => $reservations,
+        ];
+    }
+
+    /**
+     * Générer les données par jour de la semaine
+     */
+    private function getDayOfWeekData($allReservations): array
+    {
+        $jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+        $data = array_fill(0, 7, 0);
+        
+        foreach ($allReservations as $reservation) {
+            if ($reservation->date_reservation) {
+                $jourSemaine = $reservation->date_reservation->dayOfWeek; // 0 = dimanche, 1 = lundi, etc.
+                // Convertir pour avoir lundi = 0
+                $index = $jourSemaine === 0 ? 6 : $jourSemaine - 1;
+                $data[$index]++;
+            }
+        }
+        
+        return [
+            'labels' => $jours,
+            'data' => $data,
+        ];
     }
 }

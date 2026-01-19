@@ -167,6 +167,48 @@
         </div>
     @endif
 
+    <!-- Graphiques analytiques -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Graphique des revenus sur 12 mois -->
+        <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Évolution des revenus (12 mois)</h3>
+            <canvas id="revenusChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Graphique des réservations sur 12 mois -->
+        <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Évolution des réservations (12 mois)</h3>
+            <canvas id="reservationsChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Graphique par jour de la semaine -->
+        <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Activité par jour de la semaine</h3>
+            <canvas id="dayOfWeekChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Métriques clés -->
+        <div class="p-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Métriques clés</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <span class="text-slate-600 dark:text-slate-400">Taux de conversion</span>
+                    <span class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $stats['taux_conversion'] ?? 0 }}%</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <span class="text-slate-600 dark:text-slate-400">Taux d'annulation</span>
+                    <span class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $stats['taux_annulation'] ?? 0 }}%</span>
+                </div>
+                @if($stats['note_moyenne'] ?? null)
+                    <div class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <span class="text-slate-600 dark:text-slate-400">Note moyenne</span>
+                        <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($stats['note_moyenne'], 1) }}/5</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- Accès rapides -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button onclick="showTab('agenda')" class="p-6 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl hover:bg-orange-100 dark:hover:bg-orange-900/30 transition text-left group">
@@ -212,4 +254,144 @@
             </div>
         </button>
     </div>
+
+    <!-- Scripts pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Configuration des couleurs selon le thème
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#e2e8f0' : '#1e293b';
+        const gridColor = isDark ? '#334155' : '#e2e8f0';
+        
+        // Graphique des revenus
+        const revenusCtx = document.getElementById('revenusChart');
+        if (revenusCtx) {
+            new Chart(revenusCtx, {
+                type: 'line',
+                data: {
+                    labels: @json($stats['chart_data']['labels'] ?? []),
+                    datasets: [{
+                        label: 'Revenus (€)',
+                        data: @json($stats['chart_data']['revenus'] ?? []),
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: textColor }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Graphique des réservations
+        const reservationsCtx = document.getElementById('reservationsChart');
+        if (reservationsCtx) {
+            new Chart(reservationsCtx, {
+                type: 'bar',
+                data: {
+                    labels: @json($stats['chart_data']['labels'] ?? []),
+                    datasets: [{
+                        label: 'Réservations',
+                        data: @json($stats['chart_data']['reservations'] ?? []),
+                        backgroundColor: '#f97316',
+                        borderColor: '#ea580c',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: { color: textColor }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor, stepSize: 1 },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Graphique par jour de la semaine
+        const dayOfWeekCtx = document.getElementById('dayOfWeekChart');
+        if (dayOfWeekCtx) {
+            new Chart(dayOfWeekCtx, {
+                type: 'bar',
+                data: {
+                    labels: @json($stats['day_of_week_data']['labels'] ?? []),
+                    datasets: [{
+                        label: 'Réservations',
+                        data: @json($stats['day_of_week_data']['data'] ?? []),
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(249, 115, 22, 0.8)',
+                            'rgba(168, 85, 247, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(14, 165, 233, 0.8)',
+                            'rgba(251, 191, 36, 0.8)'
+                        ],
+                        borderColor: [
+                            '#22c55e',
+                            '#3b82f6',
+                            '#f97316',
+                            '#a855f7',
+                            '#ec4899',
+                            '#0ea5e9',
+                            '#fbbf24'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor, stepSize: 1 },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </div>

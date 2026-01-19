@@ -149,6 +149,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relation : Un utilisateur (client) peut avoir plusieurs notes
+     */
+    public function clientNotes()
+    {
+        return $this->hasMany(ClientNote::class, 'user_id');
+    }
+
+    /**
      * Notifications non lues
      */
     public function notificationsNonLues()

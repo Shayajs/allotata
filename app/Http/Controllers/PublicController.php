@@ -6,16 +6,45 @@ use App\Models\Entreprise;
 use App\Models\Reservation;
 use App\Models\TypeService;
 use App\Models\Notification;
+use App\Mail\ReservationConfirmationEmail;
+use App\Mail\ReservationCancelledEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class PublicController extends Controller
 {
     public function show($slug)
     {
-        $entreprise = Entreprise::where('slug', $slug)
-            ->with(['user', 'avis.user', 'avis.photos', 'realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'produits.stock', 'produits.images', 'produits.imageCouverture', 'produits.promotionActive'])
-            ->firstOrFail();
+        // Cache de 10 minutes pour les pages publiques d'entreprise
+        $cacheKey = "entreprise_public_{$slug}";
+        $entreprise = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($slug) {
+            return Entreprise::where('slug', $slug)
+                ->with([
+                    'user:id,name,email',
+                    'avis' => function($query) {
+                        $query->where('est_approuve', true)
+                              ->with(['user:id,name', 'photos'])
+                              ->latest()
+                              ->limit(5);
+                    },
+                    'realisationPhotos:id,entreprise_id,image_path,ordre',
+                    'typesServices' => function($query) {
+                        $query->where('est_actif', true)
+                              ->with(['images:id,type_service_id,image_path', 'imageCouverture:id,type_service_id,image_path']);
+                    },
+                    'produits' => function($query) {
+                        $query->where('est_actif', true)
+                              ->with([
+                                  'stock:id,produit_id,quantite_disponible',
+                                  'images:id,produit_id,image_path',
+                                  'imageCouverture:id,produit_id,image_path',
+                                  'promotionActive:id,produit_id,reduction_pourcentage,date_debut,date_fin'
+                              ]);
+                    }
+                ])
+                ->firstOrFail();
+        });
 
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         // MAIS permettre au propriétaire de voir sa propre entreprise même sans abonnement
@@ -418,6 +447,14 @@ class PublicController extends Controller
                 route('reservations.show', [$entreprise->slug, $reservation->id]),
                 ['reservation_id' => $reservation->id, 'user_id' => $userId]
             );
+
+            // Envoyer un email au gérant
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationConfirmationGerant($reservation);
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email au gérant : " . $e->getMessage());
+            }
         }
 
         // Créer une notification pour le client (uniquement si inscrit)
@@ -584,6 +621,19 @@ class PublicController extends Controller
                 route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
                 ['reservation_id' => $reservation->id]
             );
+
+            // Envoyer un email au gérant (via template si nécessaire)
+            // Note: Pas de template spécifique pour le gérant lors d'annulation client
+        }
+
+        // Envoyer un email au client s'il est inscrit
+        if ($reservation->user_id) {
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'client');
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email d'annulation au client : " . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'La réservation a été annulée avec succès.');

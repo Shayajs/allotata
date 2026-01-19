@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Mail\WelcomeEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -65,6 +67,13 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+
+        // Envoyer l'email de bienvenue
+        try {
+            \App\Helpers\EmailHelper::sendWelcome($user);
+        } catch (\Exception $e) {
+            \Log::error("Erreur lors de l'envoi de l'email de bienvenue : " . $e->getMessage());
+        }
 
         // Vérifier s'il y a des invitations en attente pour cet email
         $invitationsEnAttente = \App\Models\EntrepriseInvitation::where('email', $validated['email'])

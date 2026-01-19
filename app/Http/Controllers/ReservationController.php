@@ -6,8 +6,12 @@ use App\Models\Reservation;
 use App\Models\Entreprise;
 use App\Models\Notification;
 use App\Models\User;
+use App\Mail\ReservationConfirmationEmail;
+use App\Mail\ReservationCancelledEmail;
+use App\Mail\PaymentReceivedEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class ReservationController extends Controller
@@ -221,6 +225,9 @@ class ReservationController extends Controller
             'notes' => $reservation->notes . ($validated['notes_gerant'] ? "\n\n[Note de la tata] " . $validated['notes_gerant'] : ''),
         ]);
 
+        // Invalider le cache des statistiques
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         // Créer une notification pour le client (uniquement si inscrit)
         if ($reservation->user_id) {
             Notification::creer(
@@ -231,6 +238,14 @@ class ReservationController extends Controller
                 route('dashboard'),
                 ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
             );
+
+            // Envoyer un email de confirmation au client
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email de confirmation : " . $e->getMessage());
+            }
         }
 
         return redirect()->route('reservations.show', [$slug, $id])
@@ -275,6 +290,14 @@ class ReservationController extends Controller
                 route('dashboard'),
             ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
             );
+
+            // Envoyer un email d'annulation au client
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'gerant');
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email d'annulation : " . $e->getMessage());
+            }
         }
 
         return redirect()->route('reservations.index', $slug)
@@ -341,6 +364,15 @@ class ReservationController extends Controller
 
         // Recharger la réservation pour avoir les dernières valeurs
         $reservation->refresh();
+        
+        // Envoyer un email au client pour confirmer le paiement
+        if ($reservation->user_id) {
+            try {
+                \App\Helpers\EmailHelper::sendPaymentReceived($reservation);
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email de paiement : " . $e->getMessage());
+            }
+        }
         
         // La facture sera générée automatiquement par l'observer ReservationObserver
         // Vérifier si une facture a été créée

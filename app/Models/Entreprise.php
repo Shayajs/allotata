@@ -268,6 +268,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs notes sur ses clients
+     */
+    public function clientNotes()
+    {
+        return $this->hasMany(ClientNote::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string
