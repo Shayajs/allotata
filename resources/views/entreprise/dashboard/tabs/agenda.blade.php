@@ -168,6 +168,145 @@
                 </form>
             </div>
 
+            <!-- Section Jours exceptionnels -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </span>
+                        Jours exceptionnels
+                    </h2>
+                    <button 
+                        onclick="document.getElementById('modal-jour-exceptionnel').classList.remove('hidden')"
+                        class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
+                    >
+                        + Ajouter
+                    </button>
+                </div>
+                
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                    Les jours exceptionnels sont prioritaires sur les horaires réguliers.
+                </p>
+
+                @php
+                    $joursExceptionnels = $entreprise->horairesOuverture()
+                        ->where('est_exceptionnel', true)
+                        ->where('date_exception', '>=', now()->format('Y-m-d'))
+                        ->orderBy('date_exception')
+                        ->get();
+                @endphp
+
+                @if($joursExceptionnels->count() > 0)
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach($joursExceptionnels as $horaire)
+                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between bg-slate-50 dark:bg-slate-700/50">
+                                <div>
+                                    <p class="font-semibold text-slate-900 dark:text-white">
+                                        {{ \Carbon\Carbon::parse($horaire->date_exception)->locale('fr')->isoFormat('dddd D MMM') }}
+                                    </p>
+                                    <p class="text-sm {{ $horaire->heure_ouverture ? 'text-slate-600 dark:text-slate-400' : 'text-red-600 dark:text-red-400' }}">
+                                        @if($horaire->heure_ouverture && $horaire->heure_fermeture)
+                                            {{ \Carbon\Carbon::parse($horaire->heure_ouverture)->format('H:i') }} - 
+                                            {{ \Carbon\Carbon::parse($horaire->heure_fermeture)->format('H:i') }}
+                                        @else
+                                            Fermé
+                                        @endif
+                                    </p>
+                                </div>
+                                <form action="{{ route('agenda.jour-exceptionnel.delete', [$entreprise->slug, $horaire->id]) }}" method="POST" onsubmit="return confirm('Supprimer ce jour ?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p>Aucun jour exceptionnel configuré</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Modal pour ajouter un jour exceptionnel -->
+            <div id="modal-jour-exceptionnel" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Jour exceptionnel</h3>
+                        <button onclick="document.getElementById('modal-jour-exceptionnel').classList.add('hidden')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <form action="{{ route('agenda.jour-exceptionnel.store', $entreprise->slug) }}" method="POST">
+                        @csrf
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date *</label>
+                                <input 
+                                    type="date" 
+                                    name="date_exception"
+                                    required
+                                    min="{{ now()->format('Y-m-d') }}"
+                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                >
+                            </div>
+                            <label class="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                                <input 
+                                    type="checkbox" 
+                                    name="est_ferme"
+                                    id="est_ferme"
+                                    value="1"
+                                    checked
+                                    onchange="toggleHorairesExceptionnel()"
+                                    class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500"
+                                >
+                                <span class="text-sm font-medium text-red-700 dark:text-red-400">Fermé ce jour</span>
+                            </label>
+                            <div id="horaires-exceptionnel" class="grid grid-cols-2 gap-4 opacity-50">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ouverture</label>
+                                    <input 
+                                        type="time" 
+                                        name="heure_ouverture"
+                                        disabled
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Fermeture</label>
+                                    <input 
+                                        type="time" 
+                                        name="heure_fermeture"
+                                        disabled
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mt-6">
+                            <button type="button" onclick="document.getElementById('modal-jour-exceptionnel').classList.add('hidden')" class="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition">
+                                Annuler
+                            </button>
+                            <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                                Ajouter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Modal détails réservation -->
             <div id="modal-reservation" class="hidden fixed inset-0 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
                 <div class="modal-content rounded-2xl shadow-2xl p-6 max-w-md w-full">
@@ -504,6 +643,31 @@
     });
     
     document.getElementById('modal-reservation')?.addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+    
+    // Modal jour exceptionnel - Toggle horaires
+    function toggleHorairesExceptionnel() {
+        const estFerme = document.getElementById('est_ferme').checked;
+        const horairesDiv = document.getElementById('horaires-exceptionnel');
+        const inputs = horairesDiv.querySelectorAll('input[type="time"]');
+        
+        if (estFerme) {
+            horairesDiv.style.opacity = '0.5';
+            inputs.forEach(input => {
+                input.disabled = true;
+                input.value = '';
+            });
+        } else {
+            horairesDiv.style.opacity = '1';
+            inputs.forEach(input => input.disabled = false);
+        }
+    }
+    
+    // Fermer le modal jour exceptionnel en cliquant dehors
+    document.getElementById('modal-jour-exceptionnel')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
     
     renderCalendar();
 </script>
