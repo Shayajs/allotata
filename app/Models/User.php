@@ -42,6 +42,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'ville',
         'code_postal',
         'statut_compte',
+        'a2f_enabled',
+        'a2f_method',
     ];
 
     /**
@@ -74,6 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'abonnement_manuel_montant' => 'decimal:2',
             'notifications_erreurs_actives' => 'boolean',
             'date_naissance' => 'date',
+            'a2f_enabled' => 'boolean',
         ];
     }
 
@@ -259,6 +262,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function emailVerifications()
     {
         return $this->hasMany(EmailVerification::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs codes A2F
+     */
+    public function twoFactorCodes()
+    {
+        return $this->hasMany(TwoFactorCode::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs périphériques approuvés
+     */
+    public function trustedDevices()
+    {
+        return $this->hasMany(TrustedDevice::class);
     }
 
     /**

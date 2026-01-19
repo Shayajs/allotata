@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use App\Models\Notification;
+use App\Models\LoginAttempt;
+use App\Models\SecurityLog;
+use App\Models\UserIpHistory;
+use App\Models\AccountLockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -66,7 +70,7 @@ class DashboardController extends Controller
         }
 
         // Statistiques et réservations en attente pour les gérants
-        $stats = null;
+        $entrepriseStats = null;
         $reservationsEnAttente = collect([]);
         
         if ($user->est_gerant && $entreprises->count() > 0) {
@@ -79,7 +83,7 @@ class DashboardController extends Controller
                 return in_array($r->statut, ['confirmee', 'terminee']);
             });
             
-            $stats = [
+            $entrepriseStats = [
                 'total_reservations' => $allReservations->count(),
                 'reservations_confirmees' => $allReservations->where('statut', 'confirmee')->count(),
                 'reservations_en_attente' => $allReservations->where('statut', 'en_attente')->count(),
@@ -153,16 +157,60 @@ class DashboardController extends Controller
             }
         }
 
+        // Variables pour l'onglet Sécurité
+        $loginAttempts = LoginAttempt::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->orderBy('attempted_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        $securityLogs = SecurityLog::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        $ipHistory = UserIpHistory::where('user_id', $user->id)
+            ->orderBy('last_seen_at', 'desc')
+            ->get();
+
+        $lockout = $user->accountLockout;
+        $isLocked = $lockout && $lockout->isCurrentlyLocked();
+
+        $hasSuspiciousActivity = SecurityLog::where('user_id', $user->id)
+            ->where('is_suspicious', true)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->exists();
+
+        $stats = [
+            'total_login_attempts' => $loginAttempts->count(),
+            'failed_attempts' => $loginAttempts->where('success', false)->count(),
+            'successful_logins' => $loginAttempts->where('success', true)->count(),
+            'suspicious_logs' => SecurityLog::where('user_id', $user->id)
+                ->where('is_suspicious', true)
+                ->where('created_at', '>=', now()->subDays(30))
+                ->count(),
+            'unique_ips' => $ipHistory->count(),
+        ];
+
         return view('dashboard.index', [
             'user' => $user,
             'entreprises' => $entreprises,
             'entreprisesAutres' => $entreprisesAutres,
             'reservations' => $reservations,
-            'stats' => $stats,
+            'stats' => $entrepriseStats, // Stats des entreprises (pour l'onglet accueil)
             'reservationsEnAttente' => $reservationsEnAttente,
             'subscription' => $subscription,
             'stripeSubscription' => $stripeSubscription,
             'invoices' => $invoices,
+            // Variables pour l'onglet Sécurité
+            'loginAttempts' => $loginAttempts,
+            'securityLogs' => $securityLogs,
+            'ipHistory' => $ipHistory,
+            'lockout' => $lockout,
+            'isLocked' => $isLocked,
+            'hasSuspiciousActivity' => $hasSuspiciousActivity,
+            'securityStats' => $stats, // Stats de sécurité
         ]);
     }
 

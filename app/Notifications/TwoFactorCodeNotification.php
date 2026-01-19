@@ -2,12 +2,11 @@
 
 namespace App\Notifications;
 
-use App\Models\PasswordResetCode;
+use App\Models\TwoFactorCode;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PasswordResetCodeNotification extends Notification
+class TwoFactorCodeNotification extends Notification
 {
     use Queueable;
 
@@ -15,7 +14,7 @@ class PasswordResetCodeNotification extends Notification
      * Create a new notification instance.
      */
     public function __construct(
-        public PasswordResetCode $resetCode
+        public TwoFactorCode $twoFactorCode
     ) {
         //
     }
@@ -28,7 +27,7 @@ class PasswordResetCodeNotification extends Notification
     public function via(object $notifiable): array
     {
         // Utiliser le canal approprié selon la méthode
-        if ($this->resetCode->method === 'sms') {
+        if ($this->twoFactorCode->method === 'sms') {
             return ['twilio'];
         }
         
@@ -41,11 +40,11 @@ class PasswordResetCodeNotification extends Notification
     public function toMail(object $notifiable): \Illuminate\Notifications\Messages\MailMessage
     {
         return (new \Illuminate\Notifications\Messages\MailMessage)
-            ->subject('Code de réinitialisation de mot de passe - Allo Tata')
-            ->line('Vous avez demandé à réinitialiser votre mot de passe.')
-            ->line('Votre code de réinitialisation est : **' . $this->resetCode->code . '**')
-            ->line('Ce code est valide pendant 15 minutes.')
-            ->line('Si vous n\'avez pas demandé cette réinitialisation, ignorez ce message.');
+            ->subject('Code de vérification - Allo Tata')
+            ->line('Une tentative de connexion nécessite une vérification supplémentaire.')
+            ->line('Votre code de vérification est : **' . $this->twoFactorCode->code . '**')
+            ->line('Ce code est valide pendant 10 minutes.')
+            ->line('Si vous n\'avez pas tenté de vous connecter, ignorez cet email et contactez le support si nécessaire.');
     }
 
     /**
@@ -53,7 +52,7 @@ class PasswordResetCodeNotification extends Notification
      */
     public function toTwilio(object $notifiable): array
     {
-        $message = "Allo Tata - Code de réinitialisation : {$this->resetCode->code}. Valide 15 minutes. Si vous n'avez pas demandé ce code, ignorez ce message.";
+        $message = "Allo Tata - Code de vérification : {$this->twoFactorCode->code}. Valide 10 minutes. Si vous n'avez pas tenté de vous connecter, ignorez ce message.";
         
         return [
             'message' => $message,
@@ -68,9 +67,9 @@ class PasswordResetCodeNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'code' => $this->resetCode->code,
-            'method' => $this->resetCode->method,
-            'expires_at' => $this->resetCode->expires_at,
+            'code' => $this->twoFactorCode->code,
+            'method' => $this->twoFactorCode->method,
+            'expires_at' => $this->twoFactorCode->expires_at,
         ];
     }
 }

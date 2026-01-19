@@ -130,6 +130,11 @@ Route::get('/verification/required', [\App\Http\Controllers\EmailVerificationCon
 Route::post('/verification/resend', [\App\Http\Controllers\EmailVerificationController::class, 'resend'])->middleware('auth')->name('verification.resend');
 Route::get('/security/{hash}', [\App\Http\Controllers\EmailVerificationController::class, 'verify'])->name('verification.verify');
 
+// Authentification à deux facteurs (A2F)
+Route::get('/two-factor', [\App\Http\Controllers\TwoFactorController::class, 'show'])->name('two-factor.show');
+Route::post('/two-factor/request', [\App\Http\Controllers\TwoFactorController::class, 'requestCode'])->name('two-factor.request');
+Route::post('/two-factor/verify', [\App\Http\Controllers\TwoFactorController::class, 'verify'])->name('two-factor.verify');
+
 // Entreprise (Public)
 Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entreprise');
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
@@ -175,7 +180,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Routes protégées - nécessitent authentification et email vérifié
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
     Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
@@ -268,6 +273,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Sécurité
     Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
     Route::post('/security/recovery-method', [SecurityController::class, 'updateRecoveryMethod'])->name('security.recovery-method.update');
+    Route::post('/security/a2f', [SecurityController::class, 'updateA2F'])->name('security.a2f.update');
     Route::post('/settings/entreprise/{slug}', [SettingsController::class, 'updateEntreprise'])->name('settings.entreprise.update');
     Route::post('/settings/entreprise/{slug}/logo/upload', [SettingsController::class, 'uploadLogo'])->name('settings.entreprise.logo.upload');
     Route::post('/settings/entreprise/{slug}/image-fond/upload', [SettingsController::class, 'uploadImageFond'])->name('settings.entreprise.image-fond.upload');

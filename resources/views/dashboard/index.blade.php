@@ -158,8 +158,11 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
                             <span class="hidden xl:inline">Mes entreprises</span>
-                            @if(isset($stats['reservations_en_attente']) && $stats['reservations_en_attente'] > 0)
-                                <span class="xl:ml-auto px-2 py-0.5 text-xs bg-yellow-500 text-white rounded-full">{{ $stats['reservations_en_attente'] }}</span>
+                            @php
+                                $entrepriseStats = $stats ?? null;
+                            @endphp
+                            @if(isset($entrepriseStats['reservations_en_attente']) && $entrepriseStats['reservations_en_attente'] > 0)
+                                <span class="xl:ml-auto px-2 py-0.5 text-xs bg-yellow-500 text-white rounded-full">{{ $entrepriseStats['reservations_en_attente'] }}</span>
                             @endif
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes entreprises</span>
                         </button>

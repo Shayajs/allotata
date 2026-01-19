@@ -105,4 +105,46 @@ class SecurityController extends Controller
 
         return back()->with('success', 'Votre préférence de méthode de récupération a été mise à jour.');
     }
+
+    /**
+     * Activer ou désactiver l'A2F
+     */
+    public function updateA2F(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'a2f_enabled' => ['required', 'boolean'],
+            'a2f_method' => ['required_if:a2f_enabled,1', 'in:email,sms'],
+        ]);
+
+        // Vérifier si SMS est choisi mais pas de téléphone
+        if ($validated['a2f_enabled'] && ($validated['a2f_method'] ?? 'email') === 'sms' && !$user->telephone) {
+            return back()->withErrors([
+                'a2f_method' => 'Vous devez d\'abord ajouter un numéro de téléphone dans vos paramètres pour utiliser l\'A2F par SMS.',
+            ]);
+        }
+
+        $user->update([
+            'a2f_enabled' => $validated['a2f_enabled'],
+            'a2f_method' => $validated['a2f_enabled'] ? ($validated['a2f_method'] ?? 'email') : 'email',
+        ]);
+
+        SecurityLog::log(
+            $user->id,
+            $validated['a2f_enabled'] ? 'a2f_enabled' : 'a2f_disabled',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['method' => $validated['a2f_method'] ?? 'email'],
+            'medium',
+            false
+        );
+
+        $message = $validated['a2f_enabled'] 
+            ? 'L\'authentification à deux facteurs a été activée. Vous devrez saisir un code à chaque connexion.'
+            : 'L\'authentification à deux facteurs a été désactivée.';
+
+        return back()->with('success', $message);
+    }
 }

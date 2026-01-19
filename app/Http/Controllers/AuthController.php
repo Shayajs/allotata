@@ -256,7 +256,48 @@ class AuthController extends Controller
                     ->with('status', 'Votre email n\'a pas encore été vérifié. Un email de vérification va vous être envoyé.');
             }
 
-            // Connexion réussie et email vérifié
+            // Vérifier si l'utilisateur a l'A2F activé et si on doit demander le code
+            if ($user->a2f_enabled) {
+                $securityService = app(SecurityService::class);
+                
+                // Vérifier si l'A2F est nécessaire (nouvelle IP, nouveau périphérique, ou changement de pays)
+                if ($securityService->shouldRequireA2F($user, $ipAddress, $userAgent)) {
+                    // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
+                    $request->session()->put('two_factor_user_id', $user->id);
+                    $request->session()->put('two_factor_remember', $request->boolean('remember'));
+                    
+                    // Déconnecter temporairement (sera reconnecté après vérification A2F)
+                    Auth::logout();
+                    $request->session()->regenerateToken();
+                    
+                    // Logger la tentative
+                    $loginAttempt->update([
+                        'success' => false,
+                        'failure_reason' => 'a2f_required',
+                    ]);
+
+                    SecurityLog::log(
+                        $user->id,
+                        'a2f_required',
+                        $ipAddress,
+                        $userAgent,
+                        null,
+                        [],
+                        'medium',
+                        false,
+                        "A2F requis pour la connexion - nouvelle IP ou périphérique détecté"
+                    );
+
+                    // Rediriger vers la page A2F
+                    return redirect()->route('two-factor.show');
+                }
+                
+                // A2F activé mais IP/périphérique connus → Pas besoin de code
+                // Marquer le périphérique comme approuvé pour cette connexion
+                $securityService->markDeviceAsTrusted($user, $ipAddress, $userAgent);
+            }
+
+            // Connexion réussie et email vérifié (sans A2F)
             $loginAttempt->update([
                 'success' => true,
                 'user_id' => $user->id,

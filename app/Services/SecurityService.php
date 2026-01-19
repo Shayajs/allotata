@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserIpHistory;
 use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
+use App\Models\TrustedDevice;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -165,6 +166,115 @@ class SecurityService
             $isSuspicious ? 'medium' : 'low',
             $isSuspicious,
             $isSuspicious ? 'Connexion depuis une IP suspecte ou inhabituelle' : null
+        );
+    }
+
+    /**
+     * Détermine si l'A2F doit être demandé pour une connexion
+     * Basé sur l'IP, le périphérique et la géolocalisation
+     */
+    public function shouldRequireA2F(User $user, string $ipAddress, string $userAgent): bool
+    {
+        // Si l'utilisateur n'a pas l'A2F activé, ne pas demander
+        if (!$user->a2f_enabled) {
+            return false;
+        }
+
+        // Vérifier si le périphérique/IP sont déjà approuvés
+        if (TrustedDevice::isTrusted($user->id, $ipAddress, $userAgent)) {
+            return false;
+        }
+
+        // Obtenir les infos de l'IP
+        $ipInfo = $this->getIpInfo($ipAddress);
+        
+        // Vérifier si l'IP est connue dans l'historique
+        $ipKnown = UserIpHistory::where('user_id', $user->id)
+            ->where('ip_address', $ipAddress)
+            ->exists();
+
+        // Vérifier si le périphérique est connu (même hash)
+        $deviceKnown = TrustedDevice::isDeviceKnown($user->id, $userAgent);
+
+        // Cas 1: IP ET périphérique connus → Pas d'A2F
+        if ($ipKnown && $deviceKnown) {
+            return false;
+        }
+
+        // Cas 2: IP connue mais périphérique différent → Vérifier si changement géographique
+        if ($ipKnown && !$deviceKnown) {
+            // Si changement de pays, demander A2F
+            if ($ipInfo && $this->isCountryChange($user, $ipInfo['country_code'] ?? null)) {
+                return true;
+            }
+            // Sinon, périphérique différent mais même réseau → Pas d'A2F (déjà enregistré)
+            return false;
+        }
+
+        // Cas 3: Nouvelle IP → Vérifier le pays
+        if (!$ipKnown) {
+            // Si changement de pays important, demander A2F
+            if ($ipInfo && $this->isCountryChange($user, $ipInfo['country_code'] ?? null)) {
+                return true;
+            }
+            
+            // Vérifier si c'est une IP suspecte
+            if ($this->isSuspiciousIp($user, $ipAddress)) {
+                return true;
+            }
+        }
+
+        // Par défaut, si nouvelle IP ou nouveau périphérique, demander A2F
+        return !$ipKnown || !$deviceKnown;
+    }
+
+    /**
+     * Vérifie si c'est un changement de pays par rapport aux connexions précédentes
+     */
+    private function isCountryChange(User $user, ?string $newCountryCode): bool
+    {
+        if (!$newCountryCode) {
+            return false; // Pas d'info, on ne peut pas décider
+        }
+
+        // Obtenir les pays connus de l'utilisateur
+        $knownCountries = UserIpHistory::where('user_id', $user->id)
+            ->whereNotNull('country_code')
+            ->where('last_seen_at', '>=', now()->subDays(30)) // Derniers 30 jours
+            ->distinct()
+            ->pluck('country_code')
+            ->toArray();
+
+        // Si aucun pays connu, pas de changement
+        if (empty($knownCountries)) {
+            return false;
+        }
+
+        // Si le nouveau pays n'est pas dans la liste, c'est un changement
+        return !in_array($newCountryCode, $knownCountries);
+    }
+
+    /**
+     * Marque un périphérique/IP comme approuvé après vérification A2F réussie
+     */
+    public function markDeviceAsTrusted(User $user, string $ipAddress, string $userAgent): void
+    {
+        $ipInfo = $this->getIpInfo($ipAddress);
+        
+        TrustedDevice::markAsTrusted(
+            $user->id,
+            $ipAddress,
+            $userAgent,
+            $ipInfo['country_code'] ?? null,
+            $ipInfo['location'] ?? null
+        );
+
+        // Mettre à jour aussi l'historique IP
+        UserIpHistory::recordIp(
+            $user->id,
+            $ipAddress,
+            $ipInfo['location'] ?? null,
+            $ipInfo['country_code'] ?? null
         );
     }
 }

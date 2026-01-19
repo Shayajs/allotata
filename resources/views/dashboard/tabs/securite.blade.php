@@ -1,4 +1,8 @@
 {{-- Onglet Sécurité --}}
+@php
+    // Utiliser $securityStats si disponible (depuis DashboardController), sinon $stats (depuis SecurityController)
+    $stats = $securityStats ?? $stats;
+@endphp
 <div>
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Sécurité</h2>
@@ -28,6 +32,58 @@
             </div>
         </div>
     @endif
+
+    <!-- Authentification à deux facteurs (A2F) -->
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Authentification à deux facteurs (A2F)</h3>
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+            <form action="{{ route('security.a2f.update') }}" method="POST">
+                @csrf
+                <div class="space-y-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="a2f_enabled" value="1" 
+                               {{ $user->a2f_enabled ? 'checked' : '' }}
+                               onchange="document.getElementById('a2f-method-container').classList.toggle('hidden', !this.checked)"
+                               class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500">
+                        <div>
+                            <span class="font-medium text-slate-900 dark:text-white">Activer l'A2F</span>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">Vous devrez saisir un code à chaque connexion pour plus de sécurité</p>
+                        </div>
+                    </label>
+                    <div id="a2f-method-container" class="{{ $user->a2f_enabled ? '' : 'hidden' }} space-y-3">
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Méthode de réception du code :</p>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="a2f_method" value="email" 
+                                   {{ ($user->a2f_method ?? 'email') === 'email' ? 'checked' : '' }}
+                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500">
+                            <div>
+                                <span class="font-medium text-slate-900 dark:text-white">Email</span>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Recevoir le code par email</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="radio" name="a2f_method" value="sms" 
+                                   {{ ($user->a2f_method ?? 'email') === 'sms' ? 'checked' : '' }}
+                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500"
+                                   {{ !$user->telephone ? 'disabled' : '' }}>
+                            <div>
+                                <span class="font-medium text-slate-900 dark:text-white">SMS</span>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">
+                                    Recevoir le code par SMS
+                                    @if(!$user->telephone)
+                                        <span class="text-red-600 dark:text-red-400">(Ajoutez un numéro de téléphone dans vos paramètres)</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                    Enregistrer
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Préférences de récupération -->
     <div class="mb-8">

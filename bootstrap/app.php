@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'check.trusted.device' => \App\Http\Middleware\CheckTrustedDevice::class,
         ]);
         
         // Exception CSRF pour les webhooks Stripe
