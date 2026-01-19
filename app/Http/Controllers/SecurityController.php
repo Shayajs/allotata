@@ -6,9 +6,15 @@ use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
 use App\Models\UserIpHistory;
 use App\Models\AccountLockout;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use PragmaRX\Google2FA\Google2FA;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 
 class SecurityController extends Controller
 {
@@ -146,5 +152,208 @@ class SecurityController extends Controller
             : 'L\'authentification à deux facteurs a été désactivée.';
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Générer le secret Google 2FA et afficher le QR code
+     */
+    public function generateGoogle2fa(Request $request)
+    {
+        $user = Auth::user();
+
+        // Vérifier si l'A2F TOTP est désactivé globalement par l'admin
+        if (Setting::get('google2fa_disabled', false)) {
+            return back()->withErrors([
+                'google2fa' => 'L\'authentification à deux facteurs TOTP est désactivée par l\'administrateur.',
+            ]);
+        }
+
+        // Générer un nouveau secret si nécessaire
+        if (!$user->google2fa_secret) {
+            $user->generateGoogle2faSecret();
+        }
+
+        $google2fa = new Google2FA();
+        $secret = decrypt($user->google2fa_secret);
+        
+        // Créer l'URL du QR code
+        $qrCodeUrl = $google2fa->getQRCodeUrl(
+            config('app.name', 'Allotata'),
+            $user->email,
+            $secret
+        );
+
+        // Générer le QR code en SVG
+        $renderer = new ImageRenderer(
+            new RendererStyle(400),
+            new SvgImageBackEnd()
+        );
+        $writer = new Writer($renderer);
+        $qrCodeSvg = $writer->writeString($qrCodeUrl);
+
+        SecurityLog::log(
+            $user->id,
+            'google2fa_secret_generated',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'medium',
+            false
+        );
+
+        return response()->json([
+            'secret' => $secret,
+            'qr_code' => $qrCodeSvg,
+        ]);
+    }
+
+    /**
+     * Activer Google 2FA après vérification du code
+     */
+    public function enableGoogle2fa(Request $request)
+    {
+        $user = Auth::user();
+
+        // Vérifier si l'A2F TOTP est désactivé globalement par l'admin
+        if (Setting::get('google2fa_disabled', false)) {
+            return back()->withErrors([
+                'google2fa' => 'L\'authentification à deux facteurs TOTP est désactivée par l\'administrateur.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:6'],
+        ]);
+
+        // Vérifier le code
+        if (!$user->verifyGoogle2faCode($validated['code'])) {
+            SecurityLog::log(
+                $user->id,
+                'google2fa_activation_failed',
+                $request->ip(),
+                $request->userAgent(),
+                null,
+                ['reason' => 'invalid_code'],
+                'high',
+                false
+            );
+
+            return back()->withErrors([
+                'code' => 'Le code fourni est invalide.',
+            ]);
+        }
+
+        // Générer les codes de récupération
+        $recoveryCodes = $user->generateRecoveryCodes(8);
+        
+        // Activer Google 2FA
+        $user->enableGoogle2fa();
+
+        SecurityLog::log(
+            $user->id,
+            'google2fa_enabled',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'medium',
+            false
+        );
+
+        return back()->with([
+            'success' => 'L\'authentification à deux facteurs TOTP a été activée avec succès.',
+            'recovery_codes' => $recoveryCodes,
+        ]);
+    }
+
+    /**
+     * Désactiver Google 2FA
+     */
+    public function disableGoogle2fa(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        // Vérifier le mot de passe
+        if (!Auth::guard()->validate(['email' => $user->email, 'password' => $validated['password']])) {
+            SecurityLog::log(
+                $user->id,
+                'google2fa_disable_failed',
+                $request->ip(),
+                $request->userAgent(),
+                null,
+                ['reason' => 'invalid_password'],
+                'high',
+                false
+            );
+
+            return back()->withErrors([
+                'password' => 'Le mot de passe est incorrect.',
+            ]);
+        }
+
+        // Désactiver Google 2FA
+        $user->disableGoogle2fa();
+
+        SecurityLog::log(
+            $user->id,
+            'google2fa_disabled',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'medium',
+            false
+        );
+
+        return back()->with('success', 'L\'authentification à deux facteurs TOTP a été désactivée.');
+    }
+
+    /**
+     * Régénérer les codes de récupération
+     */
+    public function regenerateRecoveryCodes(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user->hasGoogle2faEnabled()) {
+            return back()->withErrors([
+                'google2fa' => 'L\'authentification à deux facteurs TOTP n\'est pas activée.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        // Vérifier le mot de passe
+        if (!Auth::guard()->validate(['email' => $user->email, 'password' => $validated['password']])) {
+            return back()->withErrors([
+                'password' => 'Le mot de passe est incorrect.',
+            ]);
+        }
+
+        // Générer de nouveaux codes de récupération
+        $recoveryCodes = $user->generateRecoveryCodes(8);
+
+        SecurityLog::log(
+            $user->id,
+            'google2fa_recovery_codes_regenerated',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [],
+            'medium',
+            false
+        );
+
+        return back()->with([
+            'success' => 'De nouveaux codes de récupération ont été générés.',
+            'recovery_codes' => $recoveryCodes,
+        ]);
     }
 }

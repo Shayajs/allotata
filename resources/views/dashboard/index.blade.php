@@ -472,6 +472,7 @@
                 }
             });
         </script>
+    @stack('scripts')
     @include('partials.footer')
     @include('partials.cookie-banner')
     </body>

@@ -44,6 +44,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'statut_compte',
         'a2f_enabled',
         'a2f_method',
+        'google2fa_enabled',
+        'google2fa_secret',
+        'google2fa_recovery_codes',
     ];
 
     /**
@@ -77,6 +80,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'notifications_erreurs_actives' => 'boolean',
             'date_naissance' => 'date',
             'a2f_enabled' => 'boolean',
+            'google2fa_enabled' => 'boolean',
+            'google2fa_recovery_codes' => 'array',
         ];
     }
 
@@ -341,5 +346,100 @@ class User extends Authenticatable implements MustVerifyEmail
             'supprime' => 'Supprimé',
             default => 'Normal',
         };
+    }
+
+    /**
+     * Générer un nouveau secret pour Google 2FA
+     */
+    public function generateGoogle2faSecret(): string
+    {
+        $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
+        $this->google2fa_secret = encrypt($google2fa->generateSecretKey(32));
+        $this->save();
+        return decrypt($this->google2fa_secret);
+    }
+
+    /**
+     * Vérifier un code TOTP
+     */
+    public function verifyGoogle2faCode(string $code): bool
+    {
+        if (!$this->google2fa_enabled || !$this->google2fa_secret) {
+            return false;
+        }
+
+        $google2fa = app(\PragmaRX\Google2FA\Google2FA::class);
+        $secret = decrypt($this->google2fa_secret);
+        
+        // Vérifier le code actuel et les deux fenêtres de temps précédentes/suivantes
+        return $google2fa->verifyKey($secret, $code, 2);
+    }
+
+    /**
+     * Vérifier si un code de récupération est valide
+     */
+    public function verifyRecoveryCode(string $code): bool
+    {
+        $recoveryCodes = $this->google2fa_recovery_codes ?? [];
+        
+        if (empty($recoveryCodes)) {
+            return false;
+        }
+
+        $index = array_search($code, $recoveryCodes);
+        
+        if ($index !== false) {
+            // Retirer le code utilisé
+            unset($recoveryCodes[$index]);
+            $this->google2fa_recovery_codes = array_values($recoveryCodes);
+            $this->save();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Générer de nouveaux codes de récupération
+     */
+    public function generateRecoveryCodes(int $count = 8): array
+    {
+        $codes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $codes[] = strtoupper(bin2hex(random_bytes(4)));
+        }
+        
+        $this->google2fa_recovery_codes = $codes;
+        $this->save();
+        
+        return $codes;
+    }
+
+    /**
+     * Activer Google 2FA
+     */
+    public function enableGoogle2fa(): void
+    {
+        $this->google2fa_enabled = true;
+        $this->save();
+    }
+
+    /**
+     * Désactiver Google 2FA
+     */
+    public function disableGoogle2fa(): void
+    {
+        $this->google2fa_enabled = false;
+        $this->google2fa_secret = null;
+        $this->google2fa_recovery_codes = null;
+        $this->save();
+    }
+
+    /**
+     * Vérifie si l'utilisateur a l'A2F TOTP activé
+     */
+    public function hasGoogle2faEnabled(): bool
+    {
+        return $this->google2fa_enabled && !empty($this->google2fa_secret);
     }
 }

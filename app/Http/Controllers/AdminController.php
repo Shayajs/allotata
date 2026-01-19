@@ -339,7 +339,252 @@ class AdminController extends Controller
     {
         $user->load(['entreprises', 'reservations.entreprise']);
         
-        return view('admin.users.show', compact('user'));
+        // Charger les données de sécurité
+        $lockout = $user->accountLockout;
+        $isLocked = $lockout && $lockout->isCurrentlyLocked();
+        
+        $loginAttempts = \App\Models\LoginAttempt::where('user_id', $user->id)
+            ->orderBy('attempted_at', 'desc')
+            ->limit(50)
+            ->get();
+        
+        $securityLogs = \App\Models\SecurityLog::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+        
+        $ipHistory = \App\Models\UserIpHistory::where('user_id', $user->id)
+            ->orderBy('last_seen_at', 'desc')
+            ->get();
+        
+        $hasSuspiciousActivity = \App\Models\SecurityLog::where('user_id', $user->id)
+            ->where('is_suspicious', true)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->exists();
+        
+        $securityStats = [
+            'total_login_attempts' => $loginAttempts->count(),
+            'failed_attempts' => $loginAttempts->where('success', false)->count(),
+            'successful_logins' => $loginAttempts->where('success', true)->count(),
+            'suspicious_logs' => \App\Models\SecurityLog::where('user_id', $user->id)
+                ->where('is_suspicious', true)
+                ->where('created_at', '>=', now()->subDays(30))
+                ->count(),
+            'unique_ips' => $ipHistory->count(),
+        ];
+        
+        // Charger l'historique de sécurité
+        $securityHistory = \App\Models\UserSecurityHistory::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        return view('admin.users.show', compact(
+            'user',
+            'lockout',
+            'isLocked',
+            'loginAttempts',
+            'securityLogs',
+            'ipHistory',
+            'hasSuspiciousActivity',
+            'securityStats',
+            'securityHistory'
+        ));
+    }
+
+    /**
+     * Générer un nouveau mot de passe aléatoire pour un utilisateur
+     */
+    public function generatePasswordForUser(Request $request, User $user)
+    {
+        $request->validate([
+            'send_email' => ['boolean'],
+        ]);
+
+        // Générer un mot de passe aléatoire sécurisé
+        $newPassword = \Illuminate\Support\Str::password(16);
+        $oldPasswordHash = $user->password;
+
+        // Mettre à jour le mot de passe
+        $user->password = \Hash::make($newPassword);
+        $user->save();
+
+        // Enregistrer dans l'historique
+        \App\Models\UserSecurityHistory::recordPasswordChange(
+            $user,
+            $oldPasswordHash,
+            auth()->id(),
+            $request->ip(),
+            $request->userAgent(),
+            'Mot de passe généré par l\'administrateur'
+        );
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'admin_password_reset',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id()],
+            'high',
+            false,
+            "Mot de passe régénéré par l'administrateur"
+        );
+
+        // Envoyer l'email si demandé
+        if ($request->boolean('send_email')) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\PasswordGeneratedEmail($user, $newPassword));
+                return back()->with('success', 'Mot de passe généré avec succès. Un email a été envoyé à l\'utilisateur.');
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email de mot de passe : " . $e->getMessage());
+                return back()->with('success', 'Mot de passe généré avec succès, mais l\'envoi de l\'email a échoué. Mot de passe : ' . $newPassword)->with('warning', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Mot de passe généré avec succès. N\'oubliez pas de communiquer le mot de passe à l\'utilisateur : ' . $newPassword);
+    }
+
+    /**
+     * Modifier l'email d'un utilisateur
+     */
+    public function updateUserEmail(Request $request, User $user)
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $oldEmail = $user->email;
+        $newEmail = $request->email;
+
+        // Mettre à jour l'email
+        $user->email = $newEmail;
+        $user->email_verified_at = null; // Réinitialiser la vérification
+        $user->save();
+
+        // Enregistrer dans l'historique
+        \App\Models\UserSecurityHistory::recordEmailChange(
+            $user,
+            $oldEmail,
+            $newEmail,
+            auth()->id(),
+            $request->ip(),
+            $request->userAgent(),
+            $request->input('reason', 'Modification par l\'administrateur')
+        );
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'admin_email_change',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'old_email' => $oldEmail, 'new_email' => $newEmail],
+            'high',
+            false,
+            "Email modifié par l'administrateur"
+        );
+
+        return back()->with('success', 'Email modifié avec succès. L\'utilisateur devra vérifier son nouveau email.');
+    }
+
+    /**
+     * Bloquer un utilisateur
+     */
+    public function blockUser(Request $request, User $user)
+    {
+        $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Bloquer l'utilisateur
+        $user->update([
+            'statut_compte' => 'interdit',
+        ]);
+
+        // Créer un verrouillage permanent
+        $lockout = \App\Models\AccountLockout::firstOrCreate(
+            ['user_id' => $user->id],
+            ['failed_attempts' => 0, 'is_locked' => false]
+        );
+        $lockout->lockPermanently();
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'admin_account_blocked',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'reason' => $request->input('reason')],
+            'critical',
+            true,
+            "Compte bloqué par l'administrateur : " . ($request->input('reason') ?? 'Aucune raison spécifiée')
+        );
+
+        return back()->with('success', 'Utilisateur bloqué avec succès.');
+    }
+
+    /**
+     * Débloquer un utilisateur
+     */
+    public function unblockUser(Request $request, User $user)
+    {
+        // Débloquer l'utilisateur
+        $user->update([
+            'statut_compte' => 'actif',
+        ]);
+
+        // Déverrouiller le compte
+        if ($user->accountLockout) {
+            $user->accountLockout->unlock();
+        }
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'admin_account_unblocked',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id()],
+            'medium',
+            false,
+            "Compte débloqué par l'administrateur"
+        );
+
+        return back()->with('success', 'Utilisateur débloqué avec succès.');
+    }
+
+    /**
+     * Archiver (soft delete) un utilisateur
+     */
+    public function archiveUser(Request $request, User $user)
+    {
+        $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Archiver l'utilisateur (soft delete)
+        $user->delete();
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $user->id,
+            'admin_account_archived',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'reason' => $request->input('reason')],
+            'high',
+            false,
+            "Compte archivé par l'administrateur : " . ($request->input('reason') ?? 'Aucune raison spécifiée')
+        );
+
+        return redirect()->route('admin.users.index')->with('success', 'Utilisateur archivé avec succès.');
     }
 
     /**
@@ -409,7 +654,85 @@ class AdminController extends Controller
     {
         $entreprise->load(['user', 'reservations.user']);
         
-        return view('admin.entreprises.show', compact('entreprise'));
+        // Charger l'historique de sécurité
+        $securityHistory = \App\Models\EntrepriseSecurityHistory::where('entreprise_id', $entreprise->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+        
+        return view('admin.entreprises.show', compact('entreprise', 'securityHistory'));
+    }
+
+    /**
+     * Modifier l'email d'une entreprise
+     */
+    public function updateEntrepriseEmail(Request $request, Entreprise $entreprise)
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'unique:entreprises,email,' . $entreprise->id],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $oldEmail = $entreprise->email;
+        $newEmail = $request->email;
+
+        // Mettre à jour l'email
+        $entreprise->email = $newEmail;
+        $entreprise->save();
+
+        // Enregistrer dans l'historique
+        \App\Models\EntrepriseSecurityHistory::recordEmailChange(
+            $entreprise,
+            $oldEmail,
+            $newEmail,
+            auth()->id(),
+            $request->ip(),
+            $request->userAgent(),
+            $request->input('reason', 'Modification par l\'administrateur')
+        );
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_email_change',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id, 'old_email' => $oldEmail, 'new_email' => $newEmail],
+            'high',
+            false,
+            "Email de l'entreprise modifié par l'administrateur"
+        );
+
+        return back()->with('success', 'Email modifié avec succès.');
+    }
+
+    /**
+     * Archiver (soft delete) une entreprise
+     */
+    public function archiveEntreprise(Request $request, Entreprise $entreprise)
+    {
+        $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Archiver l'entreprise (soft delete)
+        $entreprise->delete();
+
+        // Logger l'action
+        \App\Models\SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_archived',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id, 'reason' => $request->input('reason')],
+            'high',
+            false,
+            "Entreprise archivée par l'administrateur : " . ($request->input('reason') ?? 'Aucune raison spécifiée')
+        );
+
+        return redirect()->route('admin.entreprises.index')->with('success', 'Entreprise archivée avec succès.');
     }
 
     /**

@@ -256,12 +256,44 @@ class AuthController extends Controller
                     ->with('status', 'Votre email n\'a pas encore été vérifié. Un email de vérification va vous être envoyé.');
             }
 
-            // Vérifier si l'utilisateur a l'A2F activé et si on doit demander le code
-            if ($user->a2f_enabled) {
+            // Vérifier si l'utilisateur a l'A2F activé (email/SMS) ou Google 2FA (TOTP)
+            if ($user->a2f_enabled || $user->hasGoogle2faEnabled()) {
                 $securityService = app(SecurityService::class);
                 
-                // Vérifier si l'A2F est nécessaire (nouvelle IP, nouveau périphérique, ou changement de pays)
-                if ($securityService->shouldRequireA2F($user, $ipAddress, $userAgent)) {
+                // Si Google 2FA est activé, toujours demander le code TOTP
+                if ($user->hasGoogle2faEnabled()) {
+                    // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
+                    $request->session()->put('two_factor_user_id', $user->id);
+                    $request->session()->put('two_factor_remember', $request->boolean('remember'));
+                    
+                    // Déconnecter temporairement (sera reconnecté après vérification A2F)
+                    Auth::logout();
+                    $request->session()->regenerateToken();
+                    
+                    // Logger la tentative
+                    $loginAttempt->update([
+                        'success' => false,
+                        'failure_reason' => 'google2fa_required',
+                    ]);
+
+                    SecurityLog::log(
+                        $user->id,
+                        'google2fa_required',
+                        $ipAddress,
+                        $userAgent,
+                        null,
+                        [],
+                        'medium',
+                        false,
+                        "Google 2FA (TOTP) requis pour la connexion"
+                    );
+
+                    // Rediriger vers la page A2F (qui affichera le formulaire TOTP)
+                    return redirect()->route('two-factor.show');
+                }
+                
+                // Vérifier si l'A2F email/SMS est nécessaire (nouvelle IP, nouveau périphérique, ou changement de pays)
+                if ($user->a2f_enabled && $securityService->shouldRequireA2F($user, $ipAddress, $userAgent)) {
                     // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
                     $request->session()->put('two_factor_user_id', $user->id);
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
@@ -327,8 +359,31 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        // Connexion échouée
+        // Connexion échouée - Vérifier si c'est un ancien mot de passe
         $failureReason = $user ? 'invalid_credentials' : 'user_not_found';
+        $isOldPassword = false;
+        
+        if ($user && $request->filled('password')) {
+            // Vérifier si le mot de passe correspond à un ancien mot de passe
+            $isOldPassword = \App\Models\UserSecurityHistory::checkOldPassword($user, $request->password);
+            
+            if ($isOldPassword) {
+                $failureReason = 'old_password_used';
+                
+                // Logger l'événement de sécurité suspect
+                SecurityLog::log(
+                    $user->id,
+                    'old_password_attempt',
+                    $ipAddress,
+                    $userAgent,
+                    null,
+                    [],
+                    'high',
+                    true,
+                    "Tentative de connexion avec un ancien mot de passe"
+                );
+            }
+        }
         
         $loginAttempt->update([
             'failure_reason' => $failureReason,
@@ -362,7 +417,10 @@ class AuthController extends Controller
 
         $errorMessage = 'Les identifiants fournis ne correspondent à aucun compte.';
         
-        if ($user && $lockout && $lockout->isCurrentlyLocked()) {
+        // Message spécifique pour les anciens mots de passe
+        if ($isOldPassword) {
+            $errorMessage = "Vous avez utilisé un ancien mot de passe. Veuillez utiliser votre mot de passe actuel. Si vous avez oublié votre mot de passe, utilisez la fonction de réinitialisation.";
+        } elseif ($user && $lockout && $lockout->isCurrentlyLocked()) {
             $remainingMinutes = now()->diffInMinutes($lockout->locked_until, false);
             $errorMessage = "Votre compte est temporairement verrouillé après plusieurs tentatives échouées. Veuillez réessayer dans {$remainingMinutes} minute(s) ou réinitialiser votre mot de passe.";
         }

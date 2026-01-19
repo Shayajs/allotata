@@ -363,5 +363,156 @@
         </form>
     </div>
 </div>
+
+<!-- Section Sécurité -->
+<div class="mt-8 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>🔒</span>
+            Sécurité & Historique
+        </h2>
+    </div>
+    <div class="p-6 space-y-6">
+        <!-- Actions Administrateur -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-6 border border-slate-700 shadow-lg">
+            <h3 class="text-lg font-bold text-white mb-4">Actions Administrateur</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Modifier l'email -->
+                <button onclick="showEmailModal()" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
+                    <span>✉️</span>
+                    <span class="text-center">Modifier l'email</span>
+                </button>
+
+                <!-- Archiver -->
+                <button onclick="showArchiveModal()" class="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
+                    <span>🗄️</span>
+                    <span class="text-center">Archiver</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Historique de sécurité -->
+        <div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <span>📜</span>
+                Historique des changements d'email
+            </h3>
+            @if(isset($securityHistory) && $securityHistory->count() > 0)
+                <div class="space-y-3">
+                    @foreach($securityHistory as $history)
+                        <div class="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-4 border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="px-3 py-1 text-xs font-bold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                                            ✉️ Email
+                                        </span>
+                                        @if($history->changed_by)
+                                            <span class="text-xs text-slate-500">Par admin #{{ $history->changed_by }}</span>
+                                        @else
+                                            <span class="text-xs text-slate-500">Par le gérant</span>
+                                        @endif
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                        <strong>Ancien :</strong> {{ $history->old_email ?? 'N/A' }}
+                                    </p>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                                        <strong>Nouveau :</strong> {{ $history->new_email ?? 'N/A' }}
+                                    </p>
+                                    @if($history->reason)
+                                        <p class="text-xs text-slate-500 mt-1 italic">{{ $history->reason }}</p>
+                                    @endif
+                                    <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-500 mt-2">
+                                        <span>{{ $history->created_at->format('d/m/Y H:i') }}</span>
+                                        @if($history->ip_address)
+                                            <span class="font-mono">{{ $history->ip_address }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-8">Aucun historique disponible.</p>
+            @endif
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Modal Modifier Email -->
+<div id="emailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Modifier l'email</h3>
+        <form action="{{ route('admin.entreprises.update-email', $entreprise) }}" method="POST">
+            @csrf
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nouvel email</label>
+                    <input type="email" name="email" value="{{ $entreprise->email }}" required class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
+                    <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="hideEmailModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                    Annuler
+                </button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">
+                    Modifier
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Archiver -->
+<div id="archiveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-6">🗄️ Archiver l'entreprise</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Cette action archivera l'entreprise (soft delete). Elle pourra être restaurée ultérieurement.</p>
+        <form action="{{ route('admin.entreprises.archive', $entreprise) }}" method="POST">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
+                <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="hideArchiveModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+                    Annuler
+                </button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition">
+                    Archiver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showEmailModal() {
+    document.getElementById('emailModal').classList.remove('hidden');
+}
+function hideEmailModal() {
+    document.getElementById('emailModal').classList.add('hidden');
+}
+function showArchiveModal() {
+    document.getElementById('archiveModal').classList.remove('hidden');
+}
+function hideArchiveModal() {
+    document.getElementById('archiveModal').classList.add('hidden');
+}
+
+// Fermer les modals en cliquant à l'extérieur
+document.getElementById('emailModal')?.addEventListener('click', function(e) {
+    if (e.target === this) hideEmailModal();
+});
+document.getElementById('archiveModal')?.addEventListener('click', function(e) {
+    if (e.target === this) hideArchiveModal();
+});
+</script>
 @endsection
 

@@ -105,15 +105,36 @@
                             <div class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex gap-2">
-                                @if($user->est_client)
-                                    <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Client</span>
-                                @endif
-                                @if($user->est_gerant)
-                                    <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 rounded">Gérant</span>
-                                @endif
-                                @if($user->is_admin)
-                                    <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">Admin</span>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex gap-2">
+                                    @if($user->est_client)
+                                        <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Client</span>
+                                    @endif
+                                    @if($user->est_gerant)
+                                        <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 rounded">Gérant</span>
+                                    @endif
+                                    @if($user->is_admin)
+                                        <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">Admin</span>
+                                    @endif
+                                </div>
+                                @php
+                                    $statut = $user->statut_compte ?? 'normal';
+                                    $statutConfig = [
+                                        'normal' => ['label' => 'Normal', 'color' => 'green'],
+                                        'limite' => ['label' => 'Limité', 'color' => 'yellow'],
+                                        'interdit' => ['label' => 'Interdit', 'color' => 'red'],
+                                        'supprime' => ['label' => 'Supprimé', 'color' => 'gray'],
+                                    ];
+                                    $config = $statutConfig[$statut] ?? $statutConfig['normal'];
+                                @endphp
+                                @if($statut !== 'normal')
+                                    <span class="px-2 py-1 text-xs font-bold rounded
+                                        @if($config['color'] === 'yellow') bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400
+                                        @elseif($config['color'] === 'red') bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400
+                                        @else bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-400
+                                        @endif">
+                                        {{ $config['label'] }}
+                                    </span>
                                 @endif
                             </div>
                         </td>

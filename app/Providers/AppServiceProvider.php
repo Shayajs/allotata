@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Entreprise;
 use App\Observers\ReservationObserver;
 use App\Observers\UserObserver;
+use App\Observers\EntrepriseObserver;
 use App\Listeners\LogEmailSent;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Reservation::observe(ReservationObserver::class);
         User::observe(UserObserver::class);
+        Entreprise::observe(EntrepriseObserver::class);
 
         // Configurer l'adresse d'expéditeur par défaut pour tous les emails
         Mail::alwaysFrom(

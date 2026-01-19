@@ -29,6 +29,30 @@
             </h3>
             <dl class="space-y-8 mt-2">
                 <div>
+                    <dt class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Statut du compte</dt>
+                    <dd class="flex items-center gap-2">
+                        @php
+                            $statut = $user->statut_compte ?? 'normal';
+                            $statutConfig = [
+                                'normal' => ['label' => 'Normal', 'color' => 'green', 'icon' => '✅'],
+                                'limite' => ['label' => 'Limité', 'color' => 'yellow', 'icon' => '⚠️'],
+                                'interdit' => ['label' => 'Interdit', 'color' => 'red', 'icon' => '🚫'],
+                                'supprime' => ['label' => 'Supprimé', 'color' => 'gray', 'icon' => '🗑️'],
+                            ];
+                            $config = $statutConfig[$statut] ?? $statutConfig['normal'];
+                        @endphp
+                        <span class="text-lg">{{ $config['icon'] }}</span>
+                        <span class="px-3 py-1.5 text-sm font-bold rounded-lg
+                            @if($config['color'] === 'green') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
+                            @elseif($config['color'] === 'yellow') bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400
+                            @elseif($config['color'] === 'red') bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400
+                            @else bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-400
+                            @endif">
+                            {{ $config['label'] }}
+                        </span>
+                    </dd>
+                </div>
+                <div>
                     <dt class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Date d'inscription</dt>
                     <dd class="text-lg lg:text-xl font-bold text-slate-900 dark:text-white leading-relaxed">{{ $user->created_at->format('d/m/Y') }} <span class="text-sm font-medium text-slate-400 ml-1">à {{ $user->created_at->format('H:i') }}</span></dd>
                 </div>

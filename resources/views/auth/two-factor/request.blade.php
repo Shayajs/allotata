@@ -21,7 +21,11 @@
                     Vérification en deux étapes
                 </h2>
                 <p class="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Entrez le code de vérification pour finaliser votre connexion
+                    @if(isset($hasGoogle2fa) && $hasGoogle2fa)
+                        Entrez le code TOTP depuis votre application d'authentification
+                    @else
+                        Entrez le code de vérification pour finaliser votre connexion
+                    @endif
                 </p>
             </div>
 
@@ -40,51 +44,72 @@
                     </div>
                 @endif
 
-                <!-- Boutons pour choisir la méthode -->
-                <div class="mb-6">
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Recevoir le code par :</p>
-                    <div class="flex gap-3">
-                        <form action="{{ route('two-factor.request') }}" method="POST" class="flex-1">
-                            @csrf
-                            <input type="hidden" name="method" value="email">
-                            <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg border transition
-                                {{ $method === 'email' ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400' : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}">
-                                📧 Email
-                            </button>
-                        </form>
-                        @if($user->telephone)
+                @if(isset($hasGoogle2fa) && $hasGoogle2fa)
+                    <!-- Mode TOTP (Google Authenticator) -->
+                    <div class="mb-6">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 text-center">
+                            Ouvrez votre application d'authentification (Google Authenticator, Microsoft Authenticator, etc.) et entrez le code à 6 chiffres affiché.
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 text-center">
+                            Vous pouvez également utiliser un code de récupération si vous avez perdu l'accès à votre application.
+                        </p>
+                    </div>
+                @else
+                    <!-- Boutons pour choisir la méthode Email/SMS -->
+                    <div class="mb-6">
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Recevoir le code par :</p>
+                        <div class="flex gap-3">
                             <form action="{{ route('two-factor.request') }}" method="POST" class="flex-1">
                                 @csrf
-                                <input type="hidden" name="method" value="sms">
+                                <input type="hidden" name="method" value="email">
                                 <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg border transition
-                                    {{ $method === 'sms' ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400' : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}">
-                                    📱 SMS
+                                    {{ $method === 'email' ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400' : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}">
+                                    📧 Email
                                 </button>
                             </form>
-                        @endif
+                            @if($user->telephone)
+                                <form action="{{ route('two-factor.request') }}" method="POST" class="flex-1">
+                                    @csrf
+                                    <input type="hidden" name="method" value="sms">
+                                    <button type="submit" class="w-full px-4 py-2 text-sm font-medium rounded-lg border transition
+                                        {{ $method === 'sms' ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400' : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' }}">
+                                        📱 SMS
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- Formulaire de saisie du code -->
                 <form action="{{ route('two-factor.verify') }}" method="POST">
                     @csrf
                     <div class="mb-6">
                         <label for="code" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Code de vérification
+                            @if(isset($hasGoogle2fa) && $hasGoogle2fa)
+                                Code TOTP ou code de récupération
+                            @else
+                                Code de vérification
+                            @endif
                         </label>
                         <input 
                             id="code" 
                             name="code" 
                             type="text" 
                             required 
-                            maxlength="6"
-                            pattern="[0-9]{6}"
+                            maxlength="8"
+                            pattern="[0-9A-Za-z]{6,8}"
                             class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 text-center text-2xl font-mono tracking-widest"
-                            placeholder="000000"
+                            placeholder="{{ isset($hasGoogle2fa) && $hasGoogle2fa ? '000000 ou CODE' : '000000' }}"
                             autocomplete="off"
                             inputmode="numeric"
                             autofocus
                         >
+                        @if(isset($hasGoogle2fa) && $hasGoogle2fa)
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 text-center">
+                                Le code peut contenir des lettres si c'est un code de récupération (format: A1B2C3)
+                            </p>
+                        @endif
                     </div>
 
                     <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">

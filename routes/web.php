@@ -13,6 +13,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\SecurityController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
@@ -274,6 +275,12 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
     Route::post('/security/recovery-method', [SecurityController::class, 'updateRecoveryMethod'])->name('security.recovery-method.update');
     Route::post('/security/a2f', [SecurityController::class, 'updateA2F'])->name('security.a2f.update');
+    
+    // Google 2FA TOTP
+    Route::post('/security/google2fa/generate', [SecurityController::class, 'generateGoogle2fa'])->name('security.google2fa.generate');
+    Route::post('/security/google2fa/enable', [SecurityController::class, 'enableGoogle2fa'])->name('security.google2fa.enable');
+    Route::post('/security/google2fa/disable', [SecurityController::class, 'disableGoogle2fa'])->name('security.google2fa.disable');
+    Route::post('/security/google2fa/recovery-codes', [SecurityController::class, 'regenerateRecoveryCodes'])->name('security.google2fa.recovery-codes');
     Route::post('/settings/entreprise/{slug}', [SettingsController::class, 'updateEntreprise'])->name('settings.entreprise.update');
     Route::post('/settings/entreprise/{slug}/logo/upload', [SettingsController::class, 'uploadLogo'])->name('settings.entreprise.logo.upload');
     Route::post('/settings/entreprise/{slug}/image-fond/upload', [SettingsController::class, 'uploadImageFond'])->name('settings.entreprise.image-fond.upload');
@@ -381,12 +388,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::post('/users/{user}/status', [AdminController::class, 'updateUserStatus'])->name('users.status.update');
     Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
+    Route::post('/users/{user}/generate-password', [AdminController::class, 'generatePasswordForUser'])->name('users.generate-password');
+    Route::post('/users/{user}/update-email', [AdminController::class, 'updateUserEmail'])->name('users.update-email');
+    Route::post('/users/{user}/block', [AdminController::class, 'blockUser'])->name('users.block');
+    Route::post('/users/{user}/unblock', [AdminController::class, 'unblockUser'])->name('users.unblock');
+    Route::post('/users/{user}/archive', [AdminController::class, 'archiveUser'])->name('users.archive');
     
     // Gestion des entreprises
     Route::get('/entreprises', [AdminController::class, 'entreprises'])->name('entreprises.index');
     Route::get('/entreprises/{entreprise}', [AdminController::class, 'showEntreprise'])->name('entreprises.show');
     Route::post('/entreprises/{entreprise}/verify', [AdminController::class, 'verifyEntreprise'])->name('entreprises.verify');
     Route::post('/entreprises/{entreprise}/unverify', [AdminController::class, 'unverifyEntreprise'])->name('entreprises.unverify');
+    Route::post('/entreprises/{entreprise}/update-email', [AdminController::class, 'updateEntrepriseEmail'])->name('entreprises.update-email');
+    Route::post('/entreprises/{entreprise}/archive', [AdminController::class, 'archiveEntreprise'])->name('entreprises.archive');
     
     // Gestion des réservations
     Route::get('/reservations', [AdminController::class, 'reservations'])->name('reservations.index');

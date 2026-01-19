@@ -85,6 +85,130 @@
         </div>
     </div>
 
+    <!-- Authentification à deux facteurs TOTP (Google Authenticator) -->
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Authentification TOTP (Google Authenticator)</h3>
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+            @php
+                $google2faDisabled = \App\Models\Setting::get('google2fa_disabled', false);
+            @endphp
+            
+            @if($google2faDisabled)
+                <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                        ⚠️ L'authentification TOTP est désactivée par l'administrateur.
+                    </p>
+                </div>
+            @endif
+
+            @if($user->hasGoogle2faEnabled())
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div>
+                            <p class="font-medium text-green-900 dark:text-green-300">✓ Authentification TOTP activée</p>
+                            <p class="text-sm text-green-700 dark:text-green-400 mt-1">
+                                Votre compte est protégé par l'authentification à deux facteurs via Google Authenticator.
+                            </p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                            Activé
+                        </span>
+                    </div>
+
+                    @if(session('recovery_codes'))
+                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p class="font-medium text-blue-900 dark:text-blue-300 mb-2">⚠️ Codes de récupération</p>
+                            <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                                Enregistrez ces codes dans un endroit sûr. Vous pourrez les utiliser si vous perdez l'accès à votre application d'authentification.
+                            </p>
+                            <div class="bg-white dark:bg-slate-800 p-3 rounded font-mono text-sm space-y-1">
+                                @foreach(session('recovery_codes') as $code)
+                                    <div>{{ $code }}</div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="flex gap-3">
+                        <form action="{{ route('security.google2fa.recovery-codes') }}" method="POST" class="flex-1">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="password_recovery" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Mot de passe pour régénérer les codes de récupération
+                                </label>
+                                <input type="password" name="password" id="password_recovery" required
+                                       class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                            </div>
+                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                                Régénérer les codes de récupération
+                            </button>
+                        </form>
+
+                        @if(!$google2faDisabled)
+                            <form action="{{ route('security.google2fa.disable') }}" method="POST" class="flex-1">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="password_disable" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Mot de passe pour désactiver
+                                    </label>
+                                    <input type="password" name="password" id="password_disable" required
+                                           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                                </div>
+                                <button type="submit" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
+                                    Désactiver TOTP
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            @else
+                @if(!$google2faDisabled)
+                    <div class="space-y-4">
+                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                            Utilisez une application d'authentification (comme Google Authenticator, Microsoft Authenticator, ou Authy) pour générer des codes de sécurité à usage unique.
+                        </p>
+
+                        <div id="google2fa-setup" class="hidden space-y-4">
+                            <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                    1. Scannez ce QR code avec votre application d'authentification :
+                                </p>
+                                <div id="qr-code-container" class="flex justify-center mb-4">
+                                    <!-- Le QR code sera injecté ici -->
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-3">
+                                    Ou entrez manuellement cette clé secrète : <span id="secret-key" class="font-mono font-bold"></span>
+                                </p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                                    2. Entrez le code à 6 chiffres généré par votre application :
+                                </p>
+                                <form action="{{ route('security.google2fa.enable') }}" method="POST" id="enable-google2fa-form">
+                                    @csrf
+                                    <div class="flex gap-3">
+                                        <input type="text" name="code" id="totp-code" required
+                                               pattern="[0-9]{6}" maxlength="6" placeholder="000000"
+                                               class="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center text-2xl tracking-widest">
+                                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                                            Activer
+                                        </button>
+                                    </div>
+                                    @error('code')
+                                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </form>
+                            </div>
+                        </div>
+
+                        <button type="button" id="enable-google2fa-btn" onclick="setupGoogle2FA()"
+                                class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+                            Activer l'authentification TOTP
+                        </button>
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
     <!-- Préférences de récupération -->
     <div class="mb-8">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Méthode de récupération de mot de passe</h3>
@@ -279,4 +403,61 @@
             @endif
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        async function setupGoogle2FA() {
+            const btn = document.getElementById('enable-google2fa-btn');
+            const setupDiv = document.getElementById('google2fa-setup');
+            const qrContainer = document.getElementById('qr-code-container');
+            const secretKeySpan = document.getElementById('secret-key');
+
+            btn.disabled = true;
+            btn.textContent = 'Génération...';
+
+            try {
+                const response = await fetch('{{ route("security.google2fa.generate") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Erreur lors de la génération du QR code');
+                }
+
+                const data = await response.json();
+                
+                // Afficher le QR code SVG
+                qrContainer.innerHTML = data.qr_code;
+                
+                // Afficher la clé secrète
+                secretKeySpan.textContent = data.secret;
+                
+                // Afficher le formulaire d'activation
+                setupDiv.classList.remove('hidden');
+                btn.style.display = 'none';
+            } catch (error) {
+                alert('Erreur : ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Activer l\'authentification TOTP';
+            }
+        }
+
+        // Validation du code TOTP en temps réel
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeInput = document.getElementById('totp-code');
+            if (codeInput) {
+                codeInput.addEventListener('input', function(e) {
+                    // Ne garder que les chiffres
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+            }
+        });
+    </script>
+    @endpush
 </div>

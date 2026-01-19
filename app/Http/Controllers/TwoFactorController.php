@@ -24,9 +24,19 @@ class TwoFactorController extends Controller
 
         $user = User::find($userId);
         
-        if (!$user || !$user->a2f_enabled) {
+        if (!$user || (!$user->a2f_enabled && !$user->hasGoogle2faEnabled())) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Erreur de session.']);
+        }
+
+        // Si l'utilisateur a Google 2FA activé, on ne peut pas envoyer de code email/SMS
+        // Il doit utiliser son application d'authentification
+        if ($user->hasGoogle2faEnabled()) {
+            return view('auth.two-factor.request', [
+                'user' => $user,
+                'method' => 'totp',
+                'hasGoogle2fa' => true,
+            ]);
         }
 
         // Envoyer automatiquement un code à l'arrivée sur la page (si pas déjà envoyé récemment)
@@ -83,6 +93,7 @@ class TwoFactorController extends Controller
         return view('auth.two-factor.request', [
             'user' => $user,
             'method' => $user->a2f_method ?? 'email',
+            'hasGoogle2fa' => false,
         ]);
     }
 
@@ -156,7 +167,7 @@ class TwoFactorController extends Controller
     public function verify(Request $request)
     {
         $request->validate([
-            'code' => ['required', 'string', 'size:6'],
+            'code' => ['required', 'string', 'min:6', 'max:8'], // 6 pour TOTP, 8 pour codes de récupération
         ]);
 
         $userId = $request->session()->get('two_factor_user_id');
@@ -169,37 +180,123 @@ class TwoFactorController extends Controller
 
         $user = User::find($userId);
         
-        if (!$user || !$user->a2f_enabled) {
+        if (!$user || (!$user->a2f_enabled && !$user->hasGoogle2faEnabled())) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Erreur de session.']);
         }
 
-        // Chercher le code valide
-        $twoFactorCode = TwoFactorCode::where('user_id', $user->id)
-            ->where('code', $code)
-            ->where('is_used', false)
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        $codeValid = false;
+        $twoFactorCode = null;
 
-        if (!$twoFactorCode || !$twoFactorCode->isValid()) {
-            SecurityLog::log(
-                $user->id,
-                'a2f_code_invalid',
-                $request->ip(),
-                $request->userAgent(),
-                null,
-                [],
-                'high',
-                true,
-                'Tentative de connexion avec un code A2F invalide'
-            );
+        // Vérifier d'abord si l'utilisateur a Google 2FA activé
+        if ($user->hasGoogle2faEnabled()) {
+            // Si le code fait 8 caractères, c'est probablement un code de récupération
+            if (strlen($code) === 8) {
+                // Essayer avec un code de récupération
+                if ($user->verifyRecoveryCode(strtoupper($code))) {
+                    $codeValid = true;
+                    SecurityLog::log(
+                        $user->id,
+                        'google2fa_recovery_code_used',
+                        $request->ip(),
+                        $request->userAgent(),
+                        null,
+                        [],
+                        'medium',
+                        false
+                    );
+                } else {
+                    SecurityLog::log(
+                        $user->id,
+                        'google2fa_recovery_code_invalid',
+                        $request->ip(),
+                        $request->userAgent(),
+                        null,
+                        [],
+                        'high',
+                        true,
+                        'Tentative de connexion avec un code de récupération invalide'
+                    );
 
-            return back()->withErrors(['code' => 'Code invalide ou expiré.']);
+                    return back()->withErrors(['code' => 'Code de récupération invalide.']);
+                }
+            } else {
+                // Vérifier le code TOTP (6 chiffres)
+                if ($user->verifyGoogle2faCode($code)) {
+                    $codeValid = true;
+                    SecurityLog::log(
+                        $user->id,
+                        'google2fa_verified',
+                        $request->ip(),
+                        $request->userAgent(),
+                        null,
+                        [],
+                        'low',
+                        false
+                    );
+                } else {
+                    // Essayer aussi avec un code de récupération au cas où l'utilisateur a tapé un code de récupération à 6 caractères (peu probable mais possible)
+                    if ($user->verifyRecoveryCode(strtoupper($code))) {
+                        $codeValid = true;
+                        SecurityLog::log(
+                            $user->id,
+                            'google2fa_recovery_code_used',
+                            $request->ip(),
+                            $request->userAgent(),
+                            null,
+                            [],
+                            'medium',
+                            false
+                        );
+                    } else {
+                        SecurityLog::log(
+                            $user->id,
+                            'google2fa_code_invalid',
+                            $request->ip(),
+                            $request->userAgent(),
+                            null,
+                            [],
+                            'high',
+                            true,
+                            'Tentative de connexion avec un code TOTP invalide'
+                        );
+
+                        return back()->withErrors(['code' => 'Code TOTP ou code de récupération invalide.']);
+                    }
+                }
+            }
+        } else if ($user->a2f_enabled) {
+            // Vérifier le code email/SMS
+            $twoFactorCode = TwoFactorCode::where('user_id', $user->id)
+                ->where('code', $code)
+                ->where('is_used', false)
+                ->where('expires_at', '>', now())
+                ->latest()
+                ->first();
+
+            if ($twoFactorCode && $twoFactorCode->isValid()) {
+                $codeValid = true;
+                // Marquer le code comme utilisé
+                $twoFactorCode->markAsUsed();
+            } else {
+                SecurityLog::log(
+                    $user->id,
+                    'a2f_code_invalid',
+                    $request->ip(),
+                    $request->userAgent(),
+                    null,
+                    [],
+                    'high',
+                    true,
+                    'Tentative de connexion avec un code A2F invalide'
+                );
+
+                return back()->withErrors(['code' => 'Code invalide ou expiré.']);
+            }
+        } else {
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Erreur de session.']);
         }
-
-        // Marquer le code comme utilisé
-        $twoFactorCode->markAsUsed();
 
         // Marquer le périphérique/IP comme approuvés (trusted)
         $securityService = app(\App\Services\SecurityService::class);

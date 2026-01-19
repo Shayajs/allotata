@@ -36,6 +36,7 @@
                     ['id' => 'reservations', 'label' => 'Réservations', 'icon' => '📅', 'count' => $user->reservations->count()],
                     ['id' => 'subscription', 'label' => 'Abonnement', 'icon' => '💳'],
                     ['id' => 'roles', 'label' => 'Accès & Rôles', 'icon' => '🛡️'],
+                    ['id' => 'security', 'label' => 'Sécurité', 'icon' => '🔒'],
                 ];
             @endphp
             @foreach($tabs as $tab)
@@ -74,6 +75,10 @@
         
         <div id="user-tab-roles" class="user-tab-content hidden">
             @include('admin.users.partials._roles')
+        </div>
+        
+        <div id="user-tab-security" class="user-tab-content hidden">
+            @include('admin.users.partials._security')
         </div>
     </div>
 </div>

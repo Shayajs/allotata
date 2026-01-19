@@ -117,6 +117,9 @@ class Setting extends Model
             
             // Commission
             ['key' => 'commission_percentage', 'value' => '10', 'type' => 'float', 'group' => 'commission', 'label' => 'Commission plateforme (%)'],
+            
+            // Sécurité
+            ['key' => 'google2fa_disabled', 'value' => '0', 'type' => 'boolean', 'group' => 'security', 'label' => 'Désactiver l\'authentification TOTP (Google Authenticator)', 'description' => 'Si activé, les utilisateurs ne pourront plus activer l\'authentification à deux facteurs TOTP. Les utilisateurs qui l\'ont déjà activée pourront continuer à l\'utiliser.'],
         ];
 
         foreach ($defaults as $setting) {

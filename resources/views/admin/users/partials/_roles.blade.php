@@ -1,4 +1,72 @@
-<div class="max-w-2xl">
+<div class="max-w-2xl space-y-6">
+    <!-- Gestion du statut du compte -->
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">État du compte</h3>
+        
+        <form action="{{ route('admin.users.status.update', $user) }}" method="POST" class="space-y-6">
+            @csrf
+            @method('POST')
+            
+            <!-- Affichage du statut actuel -->
+            <div class="mb-6 p-5 bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Statut actuel</p>
+                        <div class="flex items-center gap-3">
+                            @php
+                                $currentStatus = $user->statut_compte ?? 'normal';
+                                $statusConfig = [
+                                    'normal' => ['label' => 'Normal', 'color' => 'green', 'icon' => '✅'],
+                                    'limite' => ['label' => 'Limité', 'color' => 'yellow', 'icon' => '⚠️'],
+                                    'interdit' => ['label' => 'Interdit', 'color' => 'red', 'icon' => '🚫'],
+                                    'supprime' => ['label' => 'Supprimé', 'color' => 'gray', 'icon' => '🗑️'],
+                                ];
+                                $config = $statusConfig[$currentStatus] ?? $statusConfig['normal'];
+                            @endphp
+                            <span class="text-2xl">{{ $config['icon'] }}</span>
+                            <span class="text-lg font-bold text-slate-900 dark:text-white">{{ $config['label'] }}</span>
+                            <span class="px-3 py-1 text-xs font-bold rounded-full
+                                @if($config['color'] === 'green') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
+                                @elseif($config['color'] === 'yellow') bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400
+                                @elseif($config['color'] === 'red') bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400
+                                @else bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-400
+                                @endif">
+                                {{ $config['label'] }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sélecteur de statut -->
+            <div>
+                <label class="block text-sm font-bold text-slate-900 dark:text-white mb-3">
+                    Changer l'état du compte
+                </label>
+                <select 
+                    name="statut_compte" 
+                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold text-base"
+                >
+                    <option value="normal" {{ $currentStatus === 'normal' ? 'selected' : '' }}>✅ Normal - Accès complet</option>
+                    <option value="limite" {{ $currentStatus === 'limite' ? 'selected' : '' }}>⚠️ Limité - Accès restreint</option>
+                    <option value="interdit" {{ $currentStatus === 'interdit' ? 'selected' : '' }}>🚫 Interdit - Connexion bloquée</option>
+                </select>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    <strong>Normal :</strong> L'utilisateur a un accès complet à toutes les fonctionnalités autorisées par ses rôles.<br>
+                    <strong>Limité :</strong> L'utilisateur a un accès restreint mais peut toujours se connecter.<br>
+                    <strong>Interdit :</strong> L'utilisateur ne peut plus se connecter. Les tentatives de connexion seront bloquées.
+                </p>
+            </div>
+            
+            <div class="pt-4">
+                <button type="submit" class="w-full px-8 py-5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                    <span>💾</span> Enregistrer l'état du compte
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Gestion des permissions -->
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Gestion des permissions</h3>
         
