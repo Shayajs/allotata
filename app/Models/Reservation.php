@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class Reservation extends Model
 {
@@ -31,6 +33,7 @@ class Reservation extends Model
         'email_client',
         'telephone_client_non_inscrit',
         'creee_manuellement',
+        'hash',
     ];
 
     protected function casts(): array
@@ -180,5 +183,54 @@ class Reservation extends Model
             return $this->attributes['email_client'];
         }
         return $this->user?->email;
+    }
+
+    /**
+     * Génère un hash unique pour la réservation
+     * Format : {hash de la date}-{hash de l'id du membre}-{hash de l'id de l'entreprise}
+     * + un élément aléatoire pour garantir l'unicité
+     */
+    public function generateHash(): string
+    {
+        // Hash de la date (timestamp format YmdHis)
+        $dateTimestamp = $this->date_reservation ? $this->date_reservation->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
+        $dateHash = substr(hash('sha256', $dateTimestamp . config('app.key')), 0, 8);
+        
+        // Hash de l'ID du membre (ou 0 si pas de membre)
+        $membreId = $this->membre_id ?? 0;
+        $membreHash = substr(hash('sha256', $membreId . config('app.key')), 0, 8);
+        
+        // Hash de l'ID de l'entreprise
+        $entrepriseHash = substr(hash('sha256', ($this->entreprise_id ?? 0) . config('app.key')), 0, 8);
+        
+        // Ajouter un élément unique (microtime + random + ID si disponible) pour garantir l'unicité même avec mêmes données
+        $uniquePart = substr(hash('sha256', microtime(true) . Str::random(16) . ($this->id ?? Str::random(8))), 0, 8);
+        
+        return $dateHash . '-' . $membreHash . '-' . $entrepriseHash . '-' . $uniquePart;
+    }
+
+    /**
+     * Boot method pour générer automatiquement le hash lors de la création
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($reservation) {
+            if (empty($reservation->hash)) {
+                // Générer un hash unique
+                do {
+                    $reservation->hash = $reservation->generateHash();
+                } while (static::where('hash', $reservation->hash)->exists());
+            }
+        });
+    }
+
+    /**
+     * Trouve une réservation par son hash
+     */
+    public static function findByHash(string $hash): ?self
+    {
+        return static::where('hash', $hash)->first();
     }
 }

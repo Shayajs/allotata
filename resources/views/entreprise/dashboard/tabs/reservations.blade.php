@@ -145,12 +145,22 @@
                                             {{ number_format($reservation->prix, 2, ',', ' ') }} €
                                         </p>
                                     </div>
-                                    <a 
-                                        href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all flex-shrink-0"
-                                    >
-                                        Gérer →
-                                    </a>
+                                    <div class="flex gap-2 flex-shrink-0">
+                                        <a 
+                                            href="{{ route('public.reservation.show', $reservation->hash ?? $reservation->id) }}" 
+                                            target="_blank"
+                                            class="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+                                            title="Voir la réservation côté client"
+                                        >
+                                            👁️ Côté client
+                                        </a>
+                                        <a 
+                                            href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
+                                            class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+                                        >
+                                            Gérer →
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -206,12 +216,22 @@
                                                         </p>
                                                     @endif
                                                 </div>
-                                                <a 
-                                                    href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                                    class="px-3 py-1 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition flex-shrink-0"
-                                                >
-                                                    Voir →
-                                                </a>
+                                                <div class="flex gap-2 flex-shrink-0">
+                                                    <a 
+                                                        href="{{ route('public.reservation.show', $reservation->hash ?? $reservation->id) }}" 
+                                                        target="_blank"
+                                                        class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+                                                        title="Voir la réservation côté client"
+                                                    >
+                                                        👁️
+                                                    </a>
+                                                    <a 
+                                                        href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
+                                                        class="px-3 py-1 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition"
+                                                    >
+                                                        Voir →
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach

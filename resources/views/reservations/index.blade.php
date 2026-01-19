@@ -134,9 +134,12 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-2">
-                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h3>
+                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h3>
                                             <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
-                                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</span>
+                                            <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user ? $reservation->user->email : ($reservation->email_client ?? 'N/A') }}</span>
+                                            @if($reservation->creee_manuellement)
+                                                <span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 rounded-full">Créée manuellement</span>
+                                            @endif
                                         </div>
                                         <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                             <strong>{{ $reservation->type_service ?? 'Service' }}</strong> - 
@@ -152,12 +155,22 @@
                                             {{ number_format($reservation->prix, 2, ',', ' ') }} €
                                         </p>
                                     </div>
-                                    <a 
-                                        href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                        class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
-                                    >
-                                        Gérer →
-                                    </a>
+                                    <div class="flex gap-2 flex-shrink-0">
+                                        <a 
+                                            href="{{ route('public.reservation.show', $reservation->hash ?? $reservation->id) }}" 
+                                            target="_blank"
+                                            class="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+                                            title="Voir la réservation côté client"
+                                        >
+                                            👁️
+                                        </a>
+                                        <a 
+                                            href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
+                                            class="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+                                        >
+                                            Gérer →
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -182,21 +195,34 @@
                                         <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-green-500 dark:hover:border-green-500 transition">
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
-                                                    <div class="flex items-center gap-2 mb-2">
-                                                        <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user->name }}</h4>
+                                                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                                        <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h4>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</span>
+                                                        @if($reservation->creee_manuellement)
+                                                            <span class="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 rounded-full">Créée manuellement</span>
+                                                        @endif
                                                     </div>
                                                     <p class="text-sm text-slate-600 dark:text-slate-400">
                                                         {{ $reservation->type_service ?? 'Service' }} - {{ number_format($reservation->prix, 2, ',', ' ') }} €
                                                     </p>
                                                 </div>
-                                                <a 
-                                                    href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
-                                                    class="text-sm text-green-600 dark:text-green-400 hover:underline"
-                                                >
-                                                    Voir →
-                                                </a>
+                                                <div class="flex gap-2 items-center">
+                                                    <a 
+                                                        href="{{ route('public.reservation.show', $reservation->hash ?? $reservation->id) }}" 
+                                                        target="_blank"
+                                                        class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition-all"
+                                                        title="Voir la réservation côté client"
+                                                    >
+                                                        👁️
+                                                    </a>
+                                                    <a 
+                                                        href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
+                                                        class="text-sm text-green-600 dark:text-green-400 hover:underline"
+                                                    >
+                                                        Voir →
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach

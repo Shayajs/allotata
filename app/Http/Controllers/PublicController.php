@@ -476,5 +476,117 @@ class PublicController extends Controller
 
         return response()->json($reservations);
     }
+
+    /**
+     * Afficher une réservation publique (accessible via lien partagé)
+     */
+    public function showReservation($hash)
+    {
+        $reservation = Reservation::with(['user', 'entreprise.user', 'entreprise.avis', 'typeService', 'membre.user'])
+            ->where('hash', $hash)
+            ->firstOrFail();
+
+        $entreprise = $reservation->entreprise;
+
+        // Vérifier si l'utilisateur connecté est autorisé à voir cette réservation
+        $user = Auth::user();
+        $peutVoir = false;
+        $peutAnnuler = false;
+
+        if ($user) {
+            // L'utilisateur peut voir s'il est :
+            // - Le client qui a fait la réservation
+            // - Le propriétaire de l'entreprise
+            // - Un membre assigné à la réservation
+            $peutVoir = $reservation->user_id === $user->id 
+                     || $entreprise->user_id === $user->id
+                     || ($reservation->membre && $reservation->membre->user_id === $user->id)
+                     || $user->is_admin;
+            
+            // Peut annuler si :
+            // - C'est le client qui a fait la réservation
+            // - La réservation n'est pas passée
+            // - La réservation n'est pas payée
+            // - La réservation n'est pas déjà annulée ou terminée
+            $peutAnnuler = $reservation->user_id === $user->id
+                        && $reservation->date_reservation->isFuture()
+                        && !$reservation->est_paye
+                        && !in_array($reservation->statut, ['annulee', 'terminee']);
+        } else {
+            // Un utilisateur non connecté peut voir les réservations créées manuellement pour des clients non inscrits
+            // mais seulement si on a le bon email/téléphone (on ne vérifie pas pour simplifier, mais on pourrait ajouter un token)
+            $peutVoir = $reservation->creee_manuellement && !$reservation->user_id;
+        }
+
+        if (!$peutVoir) {
+            abort(403, 'Vous n\'êtes pas autorisé à voir cette réservation.');
+        }
+
+        // Charger les horaires de l'entreprise
+        $horaires = $entreprise->horairesOuverture()
+            ->orderBy('jour_semaine')
+            ->get();
+
+        return view('public.reservation', [
+            'reservation' => $reservation,
+            'entreprise' => $entreprise,
+            'horaires' => $horaires,
+            'peutAnnuler' => $peutAnnuler,
+        ]);
+    }
+
+    /**
+     * Annuler une réservation
+     */
+    public function annulerReservation(Request $request, $hash)
+    {
+        $reservation = Reservation::with(['entreprise', 'user'])
+            ->where('hash', $hash)
+            ->firstOrFail();
+
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user) {
+            abort(403, 'Vous devez être connecté pour annuler une réservation.');
+        }
+
+        if ($reservation->user_id !== $user->id && !$user->is_admin) {
+            abort(403, 'Vous n\'êtes pas autorisé à annuler cette réservation.');
+        }
+
+        // Vérifier que la réservation peut être annulée
+        if ($reservation->date_reservation->isPast()) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas annuler une réservation passée.']);
+        }
+
+        if ($reservation->est_paye) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas annuler une réservation déjà payée.']);
+        }
+
+        if (in_array($reservation->statut, ['annulee', 'terminee'])) {
+            return back()->withErrors(['error' => 'Cette réservation est déjà annulée ou terminée.']);
+        }
+
+        // Annuler la réservation
+        $reservation->statut = 'annulee';
+        $reservation->save();
+
+        // Notifier le gérant
+        $gerant = $reservation->entreprise->user;
+        if ($gerant) {
+            $nomClient = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
+            Notification::creer(
+                $gerant->id,
+                'reservation',
+                'Réservation annulée',
+                "La réservation du {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient} a été annulée.",
+                route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
+                ['reservation_id' => $reservation->id]
+            );
+        }
+
+        return back()->with('success', 'La réservation a été annulée avec succès.');
+    }
 }
 

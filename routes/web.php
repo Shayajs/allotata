@@ -124,6 +124,10 @@ Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReserv
 Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation'])->name('public.reservation.store');
 Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
 
+// Réservation publique (accessible via lien partagé)
+Route::get("/r/{hash}", [PublicController::class, 'showReservation'])->name('public.reservation.show');
+Route::post("/r/{hash}/annuler", [PublicController::class, 'annulerReservation'])->name('public.reservation.annuler');
+
 // Sites web vitrine (Public)
 Route::get("/w/{slug}", [SiteWebController::class, 'show'])->name('site-web.show');
 

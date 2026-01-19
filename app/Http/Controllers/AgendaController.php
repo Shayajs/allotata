@@ -97,8 +97,9 @@ class AgendaController extends Controller
                 }
                 
                 // Titre avec membre si assigné
+                $clientName = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
                 $title = ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
-                         ($reservation->user ? ' - ' . $reservation->user->name : '');
+                         ' - ' . $clientName;
                 if ($reservation->membre && $reservation->membre->user) {
                     $title .= ' [' . $reservation->membre->user->name . ']';
                 }
@@ -110,17 +111,19 @@ class AgendaController extends Controller
                     'end' => $fin->toIso8601String(),
                     'color' => $color,
                     'extendedProps' => [
+                        'hash' => $reservation->hash ?? null,
                         'statut' => $reservation->statut,
-                        'client' => $reservation->user ? $reservation->user->name : 'N/A',
-                        'client_email' => $reservation->email_client_complet ?? 'N/A',
+                        'client' => $clientName,
+                        'client_email' => $reservation->emailClientComplet ?? 'N/A',
                         'prix' => $reservation->prix,
                         'duree' => $reservation->duree_minutes,
                         'lieu' => $reservation->lieu,
                         'est_paye' => $reservation->est_paye,
-                        'telephone' => $reservation->telephone_client,
+                        'telephone' => $reservation->telephone_client ?? $reservation->telephone_client_non_inscrit ?? null,
                         'notes' => $reservation->notes,
                         'type_service' => $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'N/A'),
                         'membre' => $reservation->membre && $reservation->membre->user ? $reservation->membre->user->name : null,
+                        'creee_manuellement' => $reservation->creee_manuellement ?? false,
                     ],
                 ];
             });
