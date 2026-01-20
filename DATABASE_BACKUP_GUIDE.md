@@ -11,6 +11,11 @@ Ce système permet de gérer complètement les sauvegardes et restaurations de v
 - ✅ **Routines** : Procédures stockées et fonctions
 - ✅ **Triggers** : Tous les triggers de la base de données
 
+**🛡️ Sécurité pour la restauration d'urgence :**
+- ✅ **CREATE TABLE IF NOT EXISTS** : Évite les erreurs si les tables existent déjà
+- ✅ **INSERT IGNORE** : Ignore les doublons lors de l'import (évite les erreurs de clés primaires)
+- ✅ **Pas de DROP TABLE** : Les tables existantes ne sont pas supprimées
+
 ## Fonctionnalités
 
 ### Sauvegardes manuelles
@@ -132,6 +137,11 @@ sudo yum install mysql
 ### Restaurer une sauvegarde
 
 ⚠️ **ATTENTION :** La restauration remplace TOUTE la base de données actuelle. Cette action est IRRÉVERSIBLE.
+
+**🛡️ Sécurité intégrée :**
+- Les sauvegardes utilisent `CREATE TABLE IF NOT EXISTS` : les tables existantes ne sont pas supprimées
+- Les sauvegardes utilisent `INSERT IGNORE` : les doublons sont ignorés sans erreur
+- Vous pouvez restaurer même si certaines tables existent déjà
 
 1. Allez dans **Admin → Base de données**
 2. Trouvez la sauvegarde à restaurer

@@ -142,10 +142,24 @@ class DatabaseBackupController extends Controller
     /**
      * Obtenir les informations sur la base de données
      */
-    public function getDatabaseInfo()
+    public function getDatabaseInfo(Request $request)
     {
         try {
             $info = $this->backupService->getDatabaseInfo();
+            
+            // Si une table spécifique est demandée, récupérer ses données
+            if ($request->has('table')) {
+                $tableName = $request->get('table');
+                $tableData = $this->backupService->getTableData($tableName, $request->get('page', 1), $request->get('limit', 50));
+                
+                return view('admin.database.table-data', [
+                    'tableName' => $tableName,
+                    'data' => $tableData['data'],
+                    'total' => $tableData['total'],
+                    'page' => $tableData['page'],
+                    'perPage' => $tableData['perPage'],
+                ]);
+            }
             
             return response()->json([
                 'success' => true,

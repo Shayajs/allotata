@@ -631,6 +631,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/database/backup/{filename}/restore', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'restore'])->name('database.restore');
     Route::delete('/database/backup/{filename}', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'destroy'])->name('database.destroy');
     Route::get('/database/info', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'getDatabaseInfo'])->name('database.info');
+    Route::get('/database/table-data', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'getDatabaseInfo'])->name('database.table-data');
     Route::post('/database/clean', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'clean'])->name('database.clean');
     Route::post('/database/import', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'import'])->name('database.import');
 });
