@@ -261,9 +261,25 @@
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-
+        
         @if(session('info'))
             <div class="alert alert-info">{{ session('info') }}</div>
+        @endif
+        
+        @if(session('error'))
+            <div class="alert" style="background: #4a2a2a; border-left: 4px solid #ff6b6b; color: #ffaaaa;">
+                {{ session('error') }}
+            </div>
+        @endif
+        
+        @if($errors->any())
+            <div class="alert" style="background: #4a2a2a; border-left: 4px solid #ff6b6b; color: #ffaaaa;">
+                <ul style="margin: 0; padding-left: 20px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <div class="stats">

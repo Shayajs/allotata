@@ -60,33 +60,48 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->input('secret_token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return redirect()->route('emergency.recovery', ['token' => $request->get('token')])
+                ->with('error', 'Token invalide');
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_admin' => true,
-            'est_client' => true,
-            'email_verified_at' => now(), // Auto-vérifier pour l'urgence
-        ]);
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'is_admin' => true,
+                'est_client' => true,
+                'email_verified_at' => now(), // Auto-vérifier pour l'urgence
+            ]);
 
-        // Logger l'action critique
-        Log::critical("EMERGENCY RECOVERY: Nouveau compte admin créé", [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            // Logger l'action critique
+            Log::critical("EMERGENCY RECOVERY: Nouveau compte admin créé", [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
-        return back()->with('success', "✅ Compte admin créé avec succès : {$user->email}");
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('success', "✅ Compte admin créé avec succès : {$user->email}");
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la création d'admin dans emergency recovery: " . $e->getMessage());
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('error', 'Erreur lors de la création : ' . $e->getMessage());
+        }
     }
 
     /**
@@ -97,26 +112,38 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->input('secret_token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return redirect()->route('emergency.recovery', ['token' => $request->get('token')])
+                ->with('error', 'Token invalide');
         }
 
-        $user = User::findOrFail($userId);
-        
-        if ($user->is_admin) {
-            return back()->with('info', "{$user->name} est déjà administrateur.");
+        try {
+            $user = User::findOrFail($userId);
+            
+            $token = $request->get('token') ?: $secretToken;
+            
+            if ($user->is_admin) {
+                return redirect()->route('emergency.recovery', ['token' => $token])
+                    ->with('info', "{$user->name} est déjà administrateur.");
+            }
+
+            $user->update(['is_admin' => true]);
+
+            // Logger l'action critique
+            Log::critical("EMERGENCY RECOVERY: Utilisateur promu admin", [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('success', "✅ {$user->name} ({$user->email}) a été promu administrateur.");
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la promotion d'admin dans emergency recovery: " . $e->getMessage());
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('error', 'Erreur lors de la promotion : ' . $e->getMessage());
         }
-
-        $user->update(['is_admin' => true]);
-
-        // Logger l'action critique
-        Log::critical("EMERGENCY RECOVERY: Utilisateur promu admin", [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        return back()->with('success', "✅ {$user->name} ({$user->email}) a été promu administrateur.");
     }
 
     /**
@@ -127,22 +154,30 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->input('secret_token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return redirect()->route('emergency.recovery', ['token' => $request->get('token')])
+                ->with('error', 'Token invalide');
         }
 
-        $user = User::findOrFail($userId);
-        Auth::login($user);
+        try {
+            $user = User::findOrFail($userId);
+            Auth::login($user);
 
-        // Logger l'action critique
-        Log::critical("EMERGENCY RECOVERY: Connexion directe", [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            // Logger l'action critique
+            Log::critical("EMERGENCY RECOVERY: Connexion directe", [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
-        return redirect()->route('dashboard')
-            ->with('success', "Vous êtes connecté en tant que {$user->name}.");
+            return redirect()->route('dashboard')
+                ->with('success', "Vous êtes connecté en tant que {$user->name}.");
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la connexion dans emergency recovery: " . $e->getMessage());
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('error', 'Erreur lors de la connexion : ' . $e->getMessage());
+        }
     }
 
     /**
