@@ -40,8 +40,21 @@ class CheckTrustedDevice
             'verification.verify',
         ];
 
+        // Ignorer aussi les routes d'API et broadcasting
+        $excludedPaths = [
+            '/broadcasting/auth',
+            '/api/',
+        ];
+
         if (in_array($request->route()?->getName(), $excludedRoutes)) {
             return $next($request);
+        }
+
+        // Vérifier si le chemin est dans les exclusions
+        foreach ($excludedPaths as $path) {
+            if (str_starts_with($request->path(), ltrim($path, '/'))) {
+                return $next($request);
+            }
         }
 
         $ipAddress = $request->ip();

@@ -50,6 +50,16 @@ function getPusher() {
         // Gestion des erreurs de connexion
         pusherInstance.connection.bind('error', (err) => {
             console.error('❌ Erreur de connexion Pusher:', err);
+            if (err.error) {
+                console.error('   Code:', err.error.code);
+                console.error('   Message:', err.error.data?.message || err.error.message);
+            }
+        });
+        
+        pusherInstance.connection.bind('authorization_error', (data) => {
+            console.error('❌ Erreur d\'autorisation Pusher:', data);
+            console.error('   Status:', data.status);
+            console.error('   Message:', data.message);
         });
         
         pusherInstance.connection.bind('connected', () => {
