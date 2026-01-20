@@ -453,7 +453,7 @@
                                 <a href="{{ url('/') }}">Site web</a>
                                 <a href="{{ route('legal.confidentialite') }}">Confidentialité</a>
                                 <a href="{{ route('legal.cgu') }}">CGU</a>
-                                <a href="{{ route('contact.show') }}">Contact</a>
+                                <a href="{{ url('/contact') }}">Contact</a>
                             </div>
                             
                             <p style="margin-top: 20px; font-size: 12px; color: #9ca3af;">
