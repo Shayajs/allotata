@@ -225,7 +225,12 @@ class StockController extends Controller
                 ],
                 'timestamp' => time() * 1000,
             ];
-            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            $logPath = base_path('.cursor/debug.log');
+            $logDir = dirname($logPath);
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0755, true);
+            }
+            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
         } catch (\Exception $e) {}
         // #endregion
 
@@ -254,7 +259,12 @@ class StockController extends Controller
                 ],
                 'timestamp' => time() * 1000,
             ];
-            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            $logPath = base_path('.cursor/debug.log');
+            $logDir = dirname($logPath);
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0755, true);
+            }
+            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
         } catch (\Exception $e) {}
         // #endregion
 

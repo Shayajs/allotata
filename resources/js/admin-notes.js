@@ -85,6 +85,18 @@ function notesEditor(noteId) {
                 ],
             });
             
+            // Appliquer le thème initial
+            this.updateTheme();
+            
+            // Observer les changements de thème
+            const observer = new MutationObserver(() => {
+                this.updateTheme();
+            });
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            
             // Écouter les changements
             this.simplemde.codemirror.on('change', () => {
                 this.noteContent = this.simplemde.value();
@@ -101,6 +113,30 @@ function notesEditor(noteId) {
             
             // Écouter les événements WebSocket
             this.initWebSocket();
+        },
+        
+        updateTheme() {
+            // Détecter si on est en mode sombre
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            if (this.simplemde && this.simplemde.codemirror) {
+                // Mettre à jour le thème CodeMirror
+                const wrapper = this.simplemde.codemirror.getWrapperElement();
+                const editor = wrapper.querySelector('.CodeMirror');
+                
+                if (isDark) {
+                    editor.classList.add('cm-s-material');
+                    editor.style.backgroundColor = '#1e293b';
+                    editor.style.color = '#e2e8f0';
+                } else {
+                    editor.classList.remove('cm-s-material');
+                    editor.style.backgroundColor = '#ffffff';
+                    editor.style.color = '#1e293b';
+                }
+                
+                // Rafraîchir l'éditeur pour appliquer les changements
+                this.simplemde.codemirror.refresh();
+            }
         },
         
         initWebSocket() {
