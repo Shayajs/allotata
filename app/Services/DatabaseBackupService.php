@@ -164,7 +164,7 @@ class DatabaseBackupService
     /**
      * Restaurer une sauvegarde depuis un fichier
      */
-    public function restoreBackup($filepath, $confirm = false)
+    public function restoreBackup($filepath, $confirm = false, $progressFile = null)
     {
         if (!$confirm) {
             throw new Exception("La restauration nécessite une confirmation explicite.");
@@ -181,12 +181,68 @@ class DatabaseBackupService
                 throw new Exception("Le driver de base de données {$config['driver']} n'est pas supporté.");
             }
 
+            // Créer un fichier de progression si fourni
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'starting',
+                    'message' => 'Démarrage de la restauration...',
+                    'progress' => 0,
+                ]));
+            }
+
+            // Vérifier que le fichier contient des données
+            $fileSize = filesize($filepath);
+            $sample = file_get_contents($filepath, false, null, 0, min(50000, $fileSize));
+            
+            $hasData = (strpos($sample, 'INSERT') !== false || strpos($sample, 'VALUES') !== false);
+            $hasStructure = (strpos($sample, 'CREATE TABLE') !== false);
+            
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'analyzing',
+                    'message' => 'Analyse du fichier de sauvegarde...',
+                    'has_data' => $hasData,
+                    'has_structure' => $hasStructure,
+                    'file_size' => $fileSize,
+                    'progress' => 5,
+                ]));
+            }
+
+            if (!$hasStructure && !$hasData) {
+                throw new Exception("Le fichier de sauvegarde semble vide ou invalide.");
+            }
+
             // Désactiver les contraintes de clés étrangères temporairement
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'restoring',
+                    'message' => 'Restauration en cours...',
+                    'progress' => 10,
+                ]));
+            }
 
             // Construire la commande mysql pour restaurer
             // Utiliser --password= pour éviter l'invite interactive si le mot de passe est vide
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
+            
+            // Lire le fichier pour estimer la progression
+            $fileSize = filesize($filepath);
+            $estimatedProgress = 10; // Début à 10%
+            
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'restoring',
+                    'message' => 'Importation des données en cours...',
+                    'progress' => $estimatedProgress,
+                    'file_size' => $fileSize,
+                ]));
+            }
+
+            // Exécuter la commande mysql pour restaurer
+            // Note: mysql lit le fichier ligne par ligne, donc on ne peut pas vraiment suivre la progression
+            // Mais on peut estimer en fonction de la taille du fichier
             $command = sprintf(
                 'mysql --host=%s --port=%s --user=%s %s %s < %s 2>&1',
                 escapeshellarg($config['host']),
@@ -197,25 +253,115 @@ class DatabaseBackupService
                 escapeshellarg($filepath)
             );
 
-            // Exécuter la commande
+            // Mettre à jour la progression avant l'exécution
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'restoring',
+                    'message' => 'Importation des données... (cela peut prendre plusieurs minutes)',
+                    'progress' => 30,
+                ]));
+            }
+
+            // Exécuter la commande et capturer la sortie
             exec($command, $output, $returnCode);
+            
+            // Mettre à jour la progression après l'exécution
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'restoring',
+                    'message' => 'Importation terminée, vérification en cours...',
+                    'progress' => 70,
+                ]));
+            }
 
             // Réactiver les contraintes de clés étrangères
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'verifying',
+                    'message' => 'Vérification des données importées...',
+                    'progress' => 90,
+                ]));
+            }
+
+            // Vérifier que des données ont été importées
+            $tables = DB::select("SHOW TABLES");
+            $totalRows = 0;
+            $tableDetails = [];
+            
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'counting',
+                    'message' => 'Comptage des données importées...',
+                    'progress' => 85,
+                ]));
+            }
+            
+            foreach ($tables as $table) {
+                $tableName = array_values((array)$table)[0];
+                try {
+                    $count = DB::table($tableName)->count();
+                    $totalRows += $count;
+                    if ($count > 0) {
+                        $tableDetails[] = [
+                            'name' => $tableName,
+                            'rows' => $count,
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    // Ignorer les erreurs de comptage
+                }
+            }
+
             if ($returnCode !== 0) {
                 $error = implode("\n", $output);
+                if ($progressFile) {
+                    file_put_contents($progressFile, json_encode([
+                        'status' => 'error',
+                        'message' => 'Erreur lors de la restauration',
+                        'error' => $error,
+                        'progress' => 0,
+                    ]));
+                }
                 throw new Exception("Erreur lors de la restauration: {$error}");
             }
 
-            Log::info("Sauvegarde restaurée avec succès depuis: {$filepath}");
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'completed',
+                    'message' => '✅ Restauration terminée avec succès !',
+                    'total_tables' => count($tables),
+                    'total_rows' => $totalRows,
+                    'tables_with_data' => count($tableDetails),
+                    'table_details' => array_slice($tableDetails, 0, 10), // Premières 10 tables avec données
+                    'progress' => 100,
+                ]));
+            }
+
+            Log::info("Sauvegarde restaurée avec succès depuis: {$filepath}", [
+                'total_tables' => count($tables),
+                'total_rows' => $totalRows,
+            ]);
 
             return [
                 'success' => true,
                 'message' => 'Base de données restaurée avec succès',
+                'total_tables' => count($tables),
+                'total_rows' => $totalRows,
+                'tables_with_data' => count($tableDetails),
+                'table_details' => array_slice($tableDetails, 0, 10),
             ];
         } catch (Exception $e) {
             Log::error("Erreur lors de la restauration: " . $e->getMessage());
+            if ($progressFile && file_exists($progressFile)) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'error',
+                    'message' => 'Erreur lors de la restauration',
+                    'error' => $e->getMessage(),
+                    'progress' => 0,
+                ]));
+            }
             throw $e;
         }
     }

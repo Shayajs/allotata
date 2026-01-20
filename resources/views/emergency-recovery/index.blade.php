@@ -203,14 +203,14 @@
         <div class="section">
             <h2>📦 Importer et restaurer une sauvegarde</h2>
             
-            <form method="POST" action="{{ request()->fullUrl() }}" enctype="multipart/form-data" style="margin-bottom: 20px;">
+            <form id="importBackupForm" method="POST" action="{{ request()->fullUrl() }}" enctype="multipart/form-data" style="margin-bottom: 20px;" onsubmit="handleImportBackup(event, '{{ $token }}')">
                 @csrf
                 <input type="hidden" name="secret_token" value="{{ $token }}">
                 <input type="hidden" name="action" value="import_backup">
                 
                 <div class="form-group">
                     <label>Fichier de sauvegarde (.sql ou .sql.gz)</label>
-                    <input type="file" name="backup_file" accept=".sql,.gz" required>
+                    <input type="file" name="backup_file" accept=".sql,.gz" required id="backupFileInput">
                 </div>
                 
                 <button type="submit">Importer la sauvegarde</button>
@@ -234,13 +234,12 @@
                         <td>{{ number_format($backup['size'] / 1024 / 1024, 2) }} MB</td>
                         <td>{{ \Carbon\Carbon::parse($backup['created_at'])->format('d/m/Y H:i') }}</td>
                         <td>
-                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;" onsubmit="return confirm('⚠️ ATTENTION: Cette action va remplacer TOUTE la base de données. Êtes-vous sûr ?');">
-                                @csrf
-                                <input type="hidden" name="secret_token" value="{{ $token }}">
-                                <input type="hidden" name="action" value="restore_backup">
-                                <input type="hidden" name="filename" value="{{ $backup['filename'] }}">
-                                <button type="submit" class="btn-small btn-danger">Restaurer</button>
-                            </form>
+                            <button 
+                                onclick="restoreBackupWithProgress('{{ $backup['filename'] }}', '{{ $token }}')" 
+                                class="btn-small btn-danger"
+                            >
+                                Restaurer
+                            </button>
                         </td>
                     </tr>
                     @endforeach
@@ -332,5 +331,246 @@
             </table>
         </div>
     </div>
+
+    <!-- Modale de progression de restauration -->
+    <div id="restoreProgressModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔄 Restauration en cours...</h3>
+            
+            <div id="restoreProgressContent">
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-400" id="progressMessage">Initialisation...</span>
+                        <span class="text-sm font-medium text-slate-900 dark:text-white" id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                        <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div id="progressDetails" class="mt-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-sm">
+                    <div class="space-y-2">
+                        <div id="progressStatus" class="text-slate-600 dark:text-slate-400">En attente...</div>
+                        <div id="progressStats" class="hidden space-y-1">
+                            <div><strong>Tables totales:</strong> <span id="totalTables">-</span></div>
+                            <div><strong>Tables avec données:</strong> <span id="tablesWithData">-</span></div>
+                            <div><strong>Lignes totales:</strong> <span id="totalRows">-</span></div>
+                            <div id="tableDetailsList" class="mt-2 max-h-40 overflow-y-auto"></div>
+                        </div>
+                        <div id="progressInfo" class="text-xs text-slate-500 dark:text-slate-500 mt-2">
+                            <div id="hasDataInfo"></div>
+                            <div id="hasStructureInfo"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="progressError" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
+                    <p class="text-red-800 dark:text-red-300 font-medium" id="errorMessage"></p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button 
+                    id="closeProgressModal" 
+                    onclick="closeRestoreProgressModal()" 
+                    class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors hidden"
+                >
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let restoreProgressInterval = null;
+        let currentProgressId = null;
+
+        function restoreBackupWithProgress(filename, token) {
+            if (!confirm('⚠️ ATTENTION: Cette action va remplacer TOUTE la base de données. Êtes-vous sûr ?')) {
+                return;
+            }
+            
+            if (!confirm('⚠️ DERNIÈRE CONFIRMATION: Voulez-vous vraiment restaurer cette sauvegarde ? Toutes les données actuelles seront PERDUES.')) {
+                return;
+            }
+
+            // Afficher la modale
+            document.getElementById('restoreProgressModal').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressMessage').textContent = 'Démarrage de la restauration...';
+            document.getElementById('progressError').classList.add('hidden');
+            document.getElementById('closeProgressModal').classList.add('hidden');
+            document.getElementById('progressStats').classList.add('hidden');
+
+            // Démarrer la restauration
+            const formData = new FormData();
+            formData.append('secret_token', token);
+            formData.append('action', 'restore_backup');
+            formData.append('filename', filename);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            fetch('{{ request()->fullUrl() }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.progress_id) {
+                    currentProgressId = data.progress_id;
+                    startProgressPolling(data.progress_id, token);
+                } else {
+                    showError(data.message || 'Erreur lors du démarrage de la restauration');
+                }
+            })
+            .catch(error => {
+                showError('Erreur: ' + error.message);
+            });
+        }
+
+        function startProgressPolling(progressId, token) {
+            const progressUrl = `{{ request()->fullUrl() }}/progress/${progressId}?token=${encodeURIComponent(token)}`;
+            
+            restoreProgressInterval = setInterval(() => {
+                fetch(progressUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateProgress(data);
+                        
+                        if (data.status === 'completed' || data.status === 'error') {
+                            clearInterval(restoreProgressInterval);
+                            
+                            if (data.status === 'completed') {
+                                document.getElementById('progressBar').style.width = '100%';
+                                document.getElementById('progressPercent').textContent = '100%';
+                                document.getElementById('progressMessage').textContent = '✅ ' + (data.message || 'Restauration terminée !');
+                                
+                                if (data.total_tables) {
+                                    document.getElementById('totalTables').textContent = data.total_tables;
+                                    document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
+                                    document.getElementById('progressStats').classList.remove('hidden');
+                                }
+                                
+                                document.getElementById('closeProgressModal').classList.remove('hidden');
+                            } else {
+                                showError(data.error || data.message || 'Erreur lors de la restauration');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors du polling:', error);
+                    });
+            }, 500); // Polling toutes les 500ms
+        }
+
+        function updateProgress(data) {
+            const progress = data.progress || 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = progress + '%';
+            document.getElementById('progressMessage').textContent = data.message || 'En cours...';
+            document.getElementById('progressStatus').textContent = data.message || 'En cours...';
+            
+            // Afficher les informations sur les données
+            if (data.has_data !== undefined) {
+                const hasDataEl = document.getElementById('hasDataInfo');
+                if (hasDataEl) {
+                    hasDataEl.textContent = data.has_data ? '✅ Données détectées dans le fichier' : '⚠️ Aucune donnée détectée';
+                    hasDataEl.className = data.has_data ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400';
+                }
+            }
+            
+            if (data.has_structure !== undefined) {
+                const hasStructEl = document.getElementById('hasStructureInfo');
+                if (hasStructEl) {
+                    hasStructEl.textContent = data.has_structure ? '✅ Structure détectée' : '⚠️ Aucune structure détectée';
+                }
+            }
+            
+            // Afficher les statistiques finales
+            if (data.total_tables) {
+                document.getElementById('totalTables').textContent = data.total_tables;
+                document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
+                if (data.tables_with_data) {
+                    document.getElementById('tablesWithData').textContent = data.tables_with_data;
+                }
+                
+                // Afficher les détails des tables
+                if (data.table_details && data.table_details.length > 0) {
+                    const detailsList = document.getElementById('tableDetailsList');
+                    if (detailsList) {
+                        detailsList.innerHTML = '<div class="font-medium mb-1">Exemples de tables avec données:</div>' +
+                            data.table_details.map(t => 
+                                `<div class="text-xs">• ${t.name}: ${number_format(t.rows)} ligne(s)</div>`
+                            ).join('');
+                    }
+                }
+                
+                document.getElementById('progressStats').classList.remove('hidden');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('progressError').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('closeProgressModal').classList.remove('hidden');
+        }
+
+        function closeRestoreProgressModal() {
+            if (restoreProgressInterval) {
+                clearInterval(restoreProgressInterval);
+                restoreProgressInterval = null;
+            }
+            document.getElementById('restoreProgressModal').classList.add('hidden');
+            currentProgressId = null;
+            
+            // Recharger la page pour voir les changements
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+
+        function handleImportBackup(event, token) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Afficher la modale
+            document.getElementById('restoreProgressModal').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressMessage').textContent = 'Import du fichier...';
+            document.getElementById('progressError').classList.add('hidden');
+            document.getElementById('closeProgressModal').classList.add('hidden');
+            document.getElementById('progressStats').classList.add('hidden');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('progressPercent').textContent = '100%';
+                    document.getElementById('progressMessage').textContent = '✅ ' + (data.message || 'Fichier importé avec succès');
+                    document.getElementById('closeProgressModal').classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Erreur lors de l\'import');
+                }
+            })
+            .catch(error => {
+                showError('Erreur: ' + error.message);
+            });
+        }
+
+        function number_format(number) {
+            return new Intl.NumberFormat('fr-FR').format(number);
+        }
+    </script>
 </body>
 </html>
