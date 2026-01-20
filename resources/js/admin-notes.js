@@ -103,7 +103,13 @@ function notesEditor(noteId) {
             
             // Observer les changements de thème
             const observer = new MutationObserver(() => {
-                this.updateTheme();
+                // Vérifier que SimpleMDE est prêt avant de mettre à jour le thème
+                if (this.simplemde && this.simplemde.codemirror) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:mutation-observer',message:'mutation observer triggered updateTheme',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'E'})}).catch(()=>{});
+                    // #endregion
+                    this.updateTheme();
+                }
             });
             observer.observe(document.documentElement, {
                 attributes: true,

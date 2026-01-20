@@ -141,6 +141,9 @@ class StockController extends Controller
                 }
             }
 
+            // Invalider le cache de l'entreprise publique pour que les nouveaux produits/images soient visibles
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $slug);
+
             return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'stock'])
                 ->with('success', $message);
         } catch (\Exception $e) {
@@ -173,6 +176,9 @@ class StockController extends Controller
             ->firstOrFail();
 
         $produit->delete();
+
+        // Invalider le cache de l'entreprise publique
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $slug);
 
         return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'stock'])
             ->with('success', 'Le produit a été supprimé.');
@@ -309,6 +315,9 @@ class StockController extends Controller
 
         $image->update(['est_couverture' => true]);
 
+        // Invalider le cache de l'entreprise publique
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $slug);
+
         return response()->json([
             'success' => true,
             'message' => 'Image de couverture mise à jour.',
@@ -363,6 +372,9 @@ class StockController extends Controller
                 $premiereImage->update(['est_couverture' => true]);
             }
         }
+
+        // Invalider le cache de l'entreprise publique
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $slug);
 
         return response()->json([
             'success' => true,
