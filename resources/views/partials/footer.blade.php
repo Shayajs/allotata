@@ -2,9 +2,17 @@
     <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
-                <h3 class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent mb-4">
-                    Allo Tata
-                </h3>
+                @php
+                    use App\Helpers\SiteHelper;
+                    $logoUrl = SiteHelper::getLogo('transparent');
+                @endphp
+                @if($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="{{ SiteHelper::getSiteName() }}" class="h-8 w-auto mb-4" style="max-height: 40px;">
+                @else
+                    <h3 class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent mb-4">
+                        {{ SiteHelper::getSiteName() }}
+                    </h3>
+                @endif
                 <p class="text-slate-500">
                     La plateforme de gestion complète pour les micro-entreprises à succès.
                 </p>

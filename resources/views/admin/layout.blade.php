@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Administration') - Allo Tata</title>
+    @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -27,11 +28,17 @@
         <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky {{ session('original_admin_id') ? 'top-[52px]' : 'top-0' }} h-[calc(100vh-{{ session('original_admin_id') ? '52px' : '0px' }})] overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                    </svg>
-                    <span>Allo Tata Admin</span>
+                <a href="{{ route('admin.index') }}" class="flex items-center gap-2 text-xl font-bold">
+                    @php
+                        use App\Helpers\SiteHelper;
+                        $logoUrl = SiteHelper::getLogo('transparent');
+                    @endphp
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto dark:hidden" style="max-height: 32px;">
+                        <img src="{{ SiteHelper::getLogo('dark') ?? $logoUrl }}" alt="Allo Tata" class="h-8 w-auto hidden dark:block" style="max-height: 32px;">
+                    @else
+                        <span class="bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">Allo Tata Admin</span>
+                    @endif
                 </a>
             </div>
 

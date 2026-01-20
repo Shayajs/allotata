@@ -34,9 +34,18 @@
         <!-- Header du drawer -->
         <div class="pb-4 mb-4 border-b border-slate-200 dark:border-slate-700">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                    Allo Tata
-                </span>
+                @php
+                    use App\Helpers\SiteHelper;
+                    $logoUrl = SiteHelper::getLogo('transparent');
+                @endphp
+                @if($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-6 w-auto dark:hidden">
+                    <img src="{{ SiteHelper::getLogo('dark') ?? $logoUrl }}" alt="Allo Tata" class="h-6 w-auto hidden dark:block">
+                @else
+                    <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                        Allo Tata
+                    </span>
+                @endif
                 <button onclick="closeBurgerMenu('{{ $uniqueId }}')" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
