@@ -140,10 +140,62 @@
                         required
                         class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
-                        <option value="Coiffeuse" {{ $entreprise->type_activite == 'Coiffeuse' ? 'selected' : '' }}>Coiffure / Tressage</option>
-                        <option value="Cuisinière" {{ $entreprise->type_activite == 'Cuisinière' ? 'selected' : '' }}>Restauration / Traiteur</option>
-                        <option value="Esthéticienne" {{ $entreprise->type_activite == 'Esthéticienne' ? 'selected' : '' }}>Soins esthétiques</option>
-                        <option value="Autre" {{ $entreprise->type_activite == 'Autre' ? 'selected' : '' }}>Autre</option>
+                        <optgroup label="Beauté & Bien-être">
+                            <option value="Coiffeuse" {{ $entreprise->type_activite == 'Coiffeuse' ? 'selected' : '' }}>Coiffure / Tressage</option>
+                            <option value="Esthéticienne" {{ $entreprise->type_activite == 'Esthéticienne' ? 'selected' : '' }}>Soins esthétiques</option>
+                            <option value="Massage" {{ $entreprise->type_activite == 'Massage' ? 'selected' : '' }}>Massage / Relaxation</option>
+                            <option value="Onglerie" {{ $entreprise->type_activite == 'Onglerie' ? 'selected' : '' }}>Onglerie / Manucure</option>
+                            <option value="Maquillage" {{ $entreprise->type_activite == 'Maquillage' ? 'selected' : '' }}>Maquillage professionnel</option>
+                            <option value="Barbier" {{ $entreprise->type_activite == 'Barbier' ? 'selected' : '' }}>Barbier</option>
+                        </optgroup>
+                        <optgroup label="Restauration & Alimentation">
+                            <option value="Restauration" {{ $entreprise->type_activite == 'Restauration' ? 'selected' : '' }}>Restauration</option>
+                            <option value="Cuisinière" {{ $entreprise->type_activite == 'Cuisinière' ? 'selected' : '' }}>Traiteur / Cuisine à domicile</option>
+                            <option value="Pâtisserie" {{ $entreprise->type_activite == 'Pâtisserie' ? 'selected' : '' }}>Pâtisserie / Boulangerie</option>
+                            <option value="Catering" {{ $entreprise->type_activite == 'Catering' ? 'selected' : '' }}>Catering / Événements</option>
+                        </optgroup>
+                        <optgroup label="Photo & Vidéo">
+                            <option value="Photographie" {{ $entreprise->type_activite == 'Photographie' ? 'selected' : '' }}>Photographie</option>
+                            <option value="Vidéographie" {{ $entreprise->type_activite == 'Vidéographie' ? 'selected' : '' }}>Vidéographie</option>
+                            <option value="Photographe_Mariage" {{ $entreprise->type_activite == 'Photographe_Mariage' ? 'selected' : '' }}>Photographe de mariage</option>
+                            <option value="Studio_Photo" {{ $entreprise->type_activite == 'Studio_Photo' ? 'selected' : '' }}>Studio photo</option>
+                        </optgroup>
+                        <optgroup label="Éducation & Formation">
+                            <option value="Cours_Particuliers" {{ $entreprise->type_activite == 'Cours_Particuliers' ? 'selected' : '' }}>Cours particuliers</option>
+                            <option value="Formation" {{ $entreprise->type_activite == 'Formation' ? 'selected' : '' }}>Formation professionnelle</option>
+                            <option value="Soutien_Scolaire" {{ $entreprise->type_activite == 'Soutien_Scolaire' ? 'selected' : '' }}>Soutien scolaire</option>
+                            <option value="Langues" {{ $entreprise->type_activite == 'Langues' ? 'selected' : '' }}>Cours de langues</option>
+                        </optgroup>
+                        <optgroup label="Services à domicile">
+                            <option value="Ménage" {{ $entreprise->type_activite == 'Ménage' ? 'selected' : '' }}>Ménage / Aide à domicile</option>
+                            <option value="Repassage" {{ $entreprise->type_activite == 'Repassage' ? 'selected' : '' }}>Repassage</option>
+                            <option value="Garde_Enfants" {{ $entreprise->type_activite == 'Garde_Enfants' ? 'selected' : '' }}>Garde d'enfants / Baby-sitting</option>
+                            <option value="Assistant_Virtuel" {{ $entreprise->type_activite == 'Assistant_Virtuel' ? 'selected' : '' }}>Assistant(e) virtuel(le)</option>
+                        </optgroup>
+                        <optgroup label="Bricolage & Rénovation">
+                            <option value="Peinture" {{ $entreprise->type_activite == 'Peinture' ? 'selected' : '' }}>Peinture / Rénovation</option>
+                            <option value="Plomberie" {{ $entreprise->type_activite == 'Plomberie' ? 'selected' : '' }}>Plomberie</option>
+                            <option value="Électricité" {{ $entreprise->type_activite == 'Électricité' ? 'selected' : '' }}>Électricité</option>
+                            <option value="Menuiserie" {{ $entreprise->type_activite == 'Menuiserie' ? 'selected' : '' }}>Menuiserie</option>
+                        </optgroup>
+                        <optgroup label="Événements">
+                            <option value="Organisation_Événements" {{ $entreprise->type_activite == 'Organisation_Événements' ? 'selected' : '' }}>Organisation d'événements</option>
+                            <option value="Animation" {{ $entreprise->type_activite == 'Animation' ? 'selected' : '' }}>Animation / DJ</option>
+                            <option value="Décoration" {{ $entreprise->type_activite == 'Décoration' ? 'selected' : '' }}>Décoration événementielle</option>
+                        </optgroup>
+                        <optgroup label="Santé & Sport">
+                            <option value="Coach_Sportif" {{ $entreprise->type_activite == 'Coach_Sportif' ? 'selected' : '' }}>Coach sportif / Fitness</option>
+                            <option value="Yoga" {{ $entreprise->type_activite == 'Yoga' ? 'selected' : '' }}>Yoga / Pilates</option>
+                            <option value="Nutritionniste" {{ $entreprise->type_activite == 'Nutritionniste' ? 'selected' : '' }}>Nutritionniste / Diététicien</option>
+                        </optgroup>
+                        <optgroup label="Mode & Création">
+                            <option value="Couture" {{ $entreprise->type_activite == 'Couture' ? 'selected' : '' }}>Couture / Retouches</option>
+                            <option value="Styliste" {{ $entreprise->type_activite == 'Styliste' ? 'selected' : '' }}>Styliste</option>
+                            <option value="Accessoires" {{ $entreprise->type_activite == 'Accessoires' ? 'selected' : '' }}>Création d'accessoires</option>
+                        </optgroup>
+                        <optgroup label="Autres">
+                            <option value="Autre" {{ $entreprise->type_activite == 'Autre' ? 'selected' : '' }}>Autre</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>

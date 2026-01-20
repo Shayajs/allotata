@@ -578,24 +578,23 @@ class AdminController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Sauvegarder l'ID de l'utilisateur avant la suppression
-        $userId = $user->id;
-
-        // Logger l'action AVANT la suppression pour éviter l'erreur de contrainte
+        // Logger l'action avant d'archiver
         \App\Models\SecurityLog::log(
-            $userId,
+            $user->id,
             'admin_account_archived',
             $request->ip(),
             $request->userAgent(),
             null,
-            ['admin_id' => auth()->id(), 'reason' => $request->input('reason'), 'archived_user_id' => $userId],
+            ['admin_id' => auth()->id(), 'reason' => $request->input('reason'), 'archived_user_id' => $user->id],
             'high',
             false,
             "Compte archivé par l'administrateur : " . ($request->input('reason') ?? 'Aucune raison spécifiée')
         );
 
-        // Archiver l'utilisateur (soft delete)
-        $user->delete();
+        // Archiver l'utilisateur en changeant son statut (pas de suppression physique)
+        $user->update([
+            'statut_compte' => 'supprime',
+        ]);
 
         return redirect()->route('admin.users.index')->with('success', 'Utilisateur archivé avec succès.');
     }
