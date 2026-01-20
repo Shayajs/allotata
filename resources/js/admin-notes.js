@@ -276,7 +276,7 @@ function notesEditor(noteId) {
             }
 
             try {
-                // Extraire la valeur brute (pas le Proxy Alpine) et forcer en string
+                // Extraire la valeur brute (pas le Proxy Alpine) et forcer en string primitive
                 const rawNoteId = this.noteId || this.noteIdString;
                 const noteIdStr = String(rawNoteId).trim();
                 
@@ -285,8 +285,15 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Construire le nom du canal directement en string
-                const channelName = 'note.' + noteIdStr;
+                // Construire le nom du canal et forcer la conversion en string primitive
+                // Utiliser String() explicitement pour éviter les Proxy Alpine.js
+                const cleanChannelName = String('note.' + noteIdStr).trim();
+                
+                // Vérification de sécurité : s'assurer que c'est bien une string primitive
+                if (typeof cleanChannelName !== 'string') {
+                    console.error('❌ Erreur: cleanChannelName n\'est pas une string:', typeof cleanChannelName, cleanChannelName);
+                    return;
+                }
                 
                 // Vérifier que echo existe avant d'appeler join
                 if (!this.echo || typeof this.echo.join !== 'function') {
@@ -294,9 +301,10 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Créer le Presence Channel - Echo.join attend une string primitive
-                this.channel = this.echo.join(channelName);
-                console.log('🔌 Canal Presence créé:', channelName);
+                // Créer le Presence Channel - Echo.join attend une string primitive (pas un Proxy)
+                // La conversion String() garantit qu'on passe une valeur primitive
+                this.channel = this.echo.join(cleanChannelName);
+                console.log('🔌 Canal Presence créé:', cleanChannelName, 'type:', typeof cleanChannelName);
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
