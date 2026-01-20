@@ -24,3 +24,7 @@ Homestead.yaml
 Thumbs.db
 compose.yaml
 composer.*
+nginx.conf
+docker-compose.yaml
+vite.config.js
+npm/
