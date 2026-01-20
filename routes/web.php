@@ -852,6 +852,10 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
     $userId = $request->input('user_id');
     $filename = $request->input('filename');
     
+    // Vérifier si c'est une requête AJAX/JSON (pour les actions qui nécessitent du JSON)
+    $isJsonRequest = $request->wantsJson() || $request->expectsJson() || 
+                     in_array($action, ['import_backup', 'restore_backup']);
+    
     if ($action === 'create_admin') {
         return $controller->createAdmin($request);
     } elseif ($action === 'promote' && $userId) {
@@ -862,6 +866,14 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
         return $controller->importBackup($request);
     } elseif ($action === 'restore_backup' && $filename) {
         return $controller->restoreBackup($request, $filename);
+    }
+    
+    // Retourner du JSON si c'est une requête JSON, sinon HTML
+    if ($isJsonRequest) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Action invalide',
+        ], 400);
     }
     
     return back()->with('error', 'Action invalide');

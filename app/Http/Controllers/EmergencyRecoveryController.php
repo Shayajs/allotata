@@ -152,12 +152,23 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->input('secret_token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé',
+            ], 403);
         }
 
-        $request->validate([
-            'backup_file' => 'required|file|mimes:sql,gz|max:102400', // Max 100MB
-        ]);
+        try {
+            $request->validate([
+                'backup_file' => 'required|file|mimes:sql,gz|max:102400', // Max 100MB
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         try {
             $file = $request->file('backup_file');
@@ -216,7 +227,10 @@ class EmergencyRecoveryController extends Controller
         } catch (\Exception $e) {
             Log::error("Erreur lors de l'import de sauvegarde dans emergency recovery: " . $e->getMessage());
             
-            return back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'import: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -228,7 +242,10 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->input('secret_token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé',
+            ], 403);
         }
 
         try {
@@ -252,54 +269,42 @@ class EmergencyRecoveryController extends Controller
                 'progress' => 0,
             ]));
             
-            // Démarrer la restauration en arrière-plan (non-bloquant)
-            // Utiliser un processus en arrière-plan pour ne pas bloquer la requête
-            $command = sprintf(
-                'php %s artisan db:restore-background %s %s > /dev/null 2>&1 &',
-                base_path(),
-                escapeshellarg($filepath),
-                escapeshellarg($progressFile)
-            );
-            
-            // Alternative: exécuter directement mais avec mise à jour du fichier de progression
-            // Pour l'instant, on exécute directement mais avec suivi
-            try {
-                $result = $this->backupService->restoreBackup($filepath, true, $progressFile);
+            // Exécuter la restauration avec suivi de progression
+            $result = $this->backupService->restoreBackup($filepath, true, $progressFile);
 
-                // Logger l'action critique
-                Log::critical("EMERGENCY RECOVERY: Base de données restaurée", [
-                    'filename' => $filename,
-                    'ip' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                    'total_tables' => $result['total_tables'] ?? 0,
-                    'total_rows' => $result['total_rows'] ?? 0,
-                ]);
+            // Logger l'action critique
+            Log::critical("EMERGENCY RECOVERY: Base de données restaurée", [
+                'filename' => $filename,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'total_tables' => $result['total_tables'] ?? 0,
+                'total_rows' => $result['total_rows'] ?? 0,
+            ]);
 
-                return response()->json([
-                    'success' => true,
-                    'message' => '✅ Base de données restaurée avec succès !',
-                    'progress_id' => $progressId,
-                    'total_tables' => $result['total_tables'] ?? 0,
-                    'total_rows' => $result['total_rows'] ?? 0,
-                ]);
-            } catch (\Exception $e) {
-                // Mettre à jour le fichier de progression en cas d'erreur
-                if (file_exists($progressFile)) {
-                    file_put_contents($progressFile, json_encode([
-                        'status' => 'error',
-                        'message' => 'Erreur lors de la restauration',
-                        'error' => $e->getMessage(),
-                        'progress' => 0,
-                    ]));
-                }
-                throw $e;
-            }
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Base de données restaurée avec succès !',
+                'progress_id' => $progressId,
+                'total_tables' => $result['total_tables'] ?? 0,
+                'total_rows' => $result['total_rows'] ?? 0,
+            ]);
         } catch (\Exception $e) {
+            // Mettre à jour le fichier de progression en cas d'erreur
+            if (isset($progressFile) && file_exists($progressFile)) {
+                file_put_contents($progressFile, json_encode([
+                    'status' => 'error',
+                    'message' => 'Erreur lors de la restauration',
+                    'error' => $e->getMessage(),
+                    'progress' => 0,
+                ]));
+            }
+            
             Log::error("Erreur lors de la restauration dans emergency recovery: " . $e->getMessage());
             
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la restauration: ' . $e->getMessage(),
+                'progress_id' => $progressId ?? null,
             ], 500);
         }
     }
@@ -312,7 +317,10 @@ class EmergencyRecoveryController extends Controller
         // Vérifier le token secret
         $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
         if ($request->get('token') !== $secretToken) {
-            abort(403, 'Unauthorized');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Non autorisé',
+            ], 403);
         }
 
         $progressFile = storage_path('app/backups/database/' . $progressId . '.progress.json');

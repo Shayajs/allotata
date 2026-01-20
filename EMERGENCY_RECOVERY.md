@@ -44,20 +44,44 @@ https://votre-domaine.com/emergency-recovery-[hash-aléatoire]?token=[votre-toke
 
 ### Comment obtenir l'URL complète
 
-Exécutez cette commande pour obtenir l'URL exacte :
+**Méthode recommandée :** Utilisez la commande Artisan dédiée :
 
 ```bash
+# En ligne de commande (sans Docker)
+php artisan emergency:url
+
+# Avec Docker
+sudo docker exec laravel_app php artisan emergency:url
+```
+
+**Méthode alternative :** Via Tinker
+
+```bash
+# Sans Docker
 php artisan tinker
+
+# Avec Docker
+sudo docker exec laravel_app php artisan tinker
 ```
 
 Puis :
 ```php
-$hash = md5(config('app.key') . 'emergency');
+$hash = md5(config('app.key') . 'emergency-recovery-allotata');
 $token = env('EMERGENCY_RECOVERY_TOKEN');
 echo "URL: " . url("/emergency-recovery-{$hash}?token={$token}");
 ```
 
-**OU** créez une commande Artisan pour l'afficher :
+**OU** utilisez la commande Artisan dédiée :
+
+```bash
+# En ligne de commande (sans Docker)
+php artisan emergency:url
+
+# Avec Docker
+sudo docker exec laravel_app php artisan emergency:url
+```
+
+**OU** listez les routes :
 
 ```bash
 php artisan route:list | grep emergency
@@ -135,7 +159,9 @@ Vérifiez que :
 ### L'URL ne fonctionne pas
 
 Vérifiez que :
-- La route est bien enregistrée : `php artisan route:list | grep emergency`
+- La route est bien enregistrée : 
+  - Sans Docker : `php artisan route:list | grep emergency`
+  - Avec Docker : `sudo docker exec laravel_app php artisan route:list | grep emergency`
 - Le hash correspond à votre `APP_KEY`
 - Aucun middleware ne bloque l'accès
 
