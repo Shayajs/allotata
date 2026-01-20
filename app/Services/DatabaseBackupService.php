@@ -197,12 +197,45 @@ class DatabaseBackupService
             $hasData = (strpos($sample, 'INSERT') !== false || strpos($sample, 'VALUES') !== false);
             $hasStructure = (strpos($sample, 'CREATE TABLE') !== false);
             
+            // Vérifier si la sauvegarde contient des utilisateurs
+            $hasUsers = false;
+            $userCount = 0;
+            $hasDeleteOrTruncate = false;
+            if ($hasData) {
+                // Lire plus de contenu pour chercher la table users et les commandes destructives
+                $largerSample = file_get_contents($filepath, false, null, 0, min(200000, $fileSize));
+                
+                // Vérifier les commandes destructives
+                if (preg_match('/(DELETE\s+FROM|TRUNCATE\s+TABLE|DROP\s+TABLE)\s+[^;]*users?/i', $largerSample)) {
+                    $hasDeleteOrTruncate = true;
+                    Log::warning("La sauvegarde contient des commandes DELETE/TRUNCATE/DROP sur la table users");
+                }
+                
+                // Chercher les INSERT dans la table users
+                if (preg_match('/INSERT[^;]*INTO[^`]*`?users?`?[^;]*VALUES[^;]*/i', $largerSample, $matches)) {
+                    $hasUsers = true;
+                    // Compter approximativement le nombre d'utilisateurs
+                    $userCount = substr_count($matches[0], 'VALUES') + substr_count($matches[0], '),(');
+                }
+            }
+            
             if ($progressFile) {
+                $analysisMessage = 'Analyse du fichier de sauvegarde...';
+                if ($hasStructure && !$hasUsers && !$hasDeleteOrTruncate) {
+                    $analysisMessage .= ' ⚠️ Aucun utilisateur détecté dans la sauvegarde.';
+                }
+                if ($hasDeleteOrTruncate) {
+                    $analysisMessage .= ' ⚠️ ATTENTION: Commandes destructives détectées !';
+                }
+                
                 file_put_contents($progressFile, json_encode([
                     'status' => 'analyzing',
-                    'message' => 'Analyse du fichier de sauvegarde...',
+                    'message' => $analysisMessage,
                     'has_data' => $hasData,
                     'has_structure' => $hasStructure,
+                    'has_users' => $hasUsers,
+                    'has_destructive_commands' => $hasDeleteOrTruncate,
+                    'estimated_user_count' => $userCount,
                     'file_size' => $fileSize,
                     'progress' => 5,
                 ]));
@@ -210,6 +243,16 @@ class DatabaseBackupService
 
             if (!$hasStructure && !$hasData) {
                 throw new Exception("Le fichier de sauvegarde semble vide ou invalide.");
+            }
+            
+            // Avertir si la sauvegarde ne contient pas d'utilisateurs
+            if ($hasStructure && !$hasUsers && !$hasDeleteOrTruncate) {
+                Log::warning("Restauration d'une sauvegarde qui ne semble pas contenir d'utilisateurs. Les utilisateurs existants devraient être préservés grâce à INSERT IGNORE.");
+            }
+            
+            // Avertir si des commandes destructives sont présentes
+            if ($hasDeleteOrTruncate) {
+                Log::critical("Restauration d'une sauvegarde contenant des commandes DELETE/TRUNCATE/DROP. Les données existantes pourraient être supprimées !");
             }
 
             // Désactiver les contraintes de clés étrangères temporairement
@@ -289,6 +332,7 @@ class DatabaseBackupService
             $tables = DB::select("SHOW TABLES");
             $totalRows = 0;
             $tableDetails = [];
+            $usersCount = 0;
             
             if ($progressFile) {
                 file_put_contents($progressFile, json_encode([
@@ -309,6 +353,10 @@ class DatabaseBackupService
                             'rows' => $count,
                         ];
                     }
+                    // Compter spécifiquement les utilisateurs
+                    if (strtolower($tableName) === 'users') {
+                        $usersCount = $count;
+                    }
                 } catch (\Exception $e) {
                     // Ignorer les erreurs de comptage
                 }
@@ -328,11 +376,17 @@ class DatabaseBackupService
             }
 
             if ($progressFile) {
+                $message = '✅ Restauration terminée avec succès !';
+                if ($usersCount === 0) {
+                    $message .= ' ⚠️ ATTENTION: Aucun utilisateur trouvé dans la base de données après restauration.';
+                }
+                
                 file_put_contents($progressFile, json_encode([
                     'status' => 'completed',
-                    'message' => '✅ Restauration terminée avec succès !',
+                    'message' => $message,
                     'total_tables' => count($tables),
                     'total_rows' => $totalRows,
+                    'users_count' => $usersCount,
                     'tables_with_data' => count($tableDetails),
                     'table_details' => array_slice($tableDetails, 0, 10), // Premières 10 tables avec données
                     'progress' => 100,
@@ -344,11 +398,17 @@ class DatabaseBackupService
                 'total_rows' => $totalRows,
             ]);
 
+            $message = 'Base de données restaurée avec succès';
+            if ($usersCount === 0) {
+                $message .= '. ⚠️ ATTENTION: Aucun utilisateur trouvé dans la base de données.';
+            }
+            
             return [
                 'success' => true,
-                'message' => 'Base de données restaurée avec succès',
+                'message' => $message,
                 'total_tables' => count($tables),
                 'total_rows' => $totalRows,
+                'users_count' => $usersCount,
                 'tables_with_data' => count($tableDetails),
                 'table_details' => array_slice($tableDetails, 0, 10),
             ];

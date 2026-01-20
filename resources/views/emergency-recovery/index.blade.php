@@ -463,13 +463,39 @@
                             if (data.status === 'completed') {
                                 document.getElementById('progressBar').style.width = '100%';
                                 document.getElementById('progressPercent').textContent = '100%';
-                                document.getElementById('progressMessage').textContent = '✅ ' + (data.message || 'Restauration terminée !');
+                                
+                                let message = '✅ ' + (data.message || 'Restauration terminée !');
+                                if (data.users_count !== undefined && data.users_count === 0) {
+                                    message = '⚠️ ' + message + ' Aucun utilisateur trouvé !';
+                                }
+                                document.getElementById('progressMessage').textContent = message;
                                 
                                 if (data.total_tables) {
                                     document.getElementById('totalTables').textContent = data.total_tables;
                                     document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
                                     if (data.tables_with_data) {
                                         document.getElementById('tablesWithData').textContent = data.tables_with_data;
+                                    }
+                                    if (data.users_count !== undefined) {
+                                        // Afficher le nombre d'utilisateurs dans les stats
+                                        const statsEl = document.getElementById('progressStats');
+                                        if (statsEl && !statsEl.querySelector('#usersCountInfo')) {
+                                            const usersInfo = document.createElement('div');
+                                            usersInfo.id = 'usersCountInfo';
+                                            usersInfo.innerHTML = '<strong>Utilisateurs:</strong> <span id="usersCount">' + data.users_count + '</span>';
+                                            if (data.users_count === 0) {
+                                                usersInfo.className = 'text-red-600 dark:text-red-400 font-bold';
+                                            }
+                                            statsEl.appendChild(usersInfo);
+                                        } else if (statsEl) {
+                                            const usersCountEl = document.getElementById('usersCount');
+                                            if (usersCountEl) {
+                                                usersCountEl.textContent = data.users_count;
+                                                if (data.users_count === 0) {
+                                                    usersCountEl.parentElement.className = 'text-red-600 dark:text-red-400 font-bold';
+                                                }
+                                            }
+                                        }
                                     }
                                     document.getElementById('progressStats').classList.remove('hidden');
                                 }
