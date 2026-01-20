@@ -53,25 +53,46 @@
             </div>
         </div>
         
-        <details class="mt-4">
-            <summary class="cursor-pointer text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                Voir le détail des tables
+        <details class="mt-4" open>
+            <summary class="cursor-pointer text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium">
+                📊 Détail des tables et données
             </summary>
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700/50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Table</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Lignes</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Taille</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">📝 Lignes (données)</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">💾 Taille</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($dbInfo['tables'] as $table)
-                        <tr>
-                            <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">{{ $table['name'] }}</td>
-                            <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ number_format($table['rows']) }}</td>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <td class="px-4 py-3 text-sm font-mono text-slate-900 dark:text-white">{{ $table['name'] }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                @if($table['rows'] > 0)
+                                    <span class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        {{ number_format($table['rows']) }} ligne(s)
+                                    </span>
+                                @else
+                                    <span class="text-slate-400 dark:text-slate-500">Vide</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ number_format($table['size_mb'], 2) }} MB</td>
+                            <td class="px-4 py-3 text-sm">
+                                <button 
+                                    onclick="viewTableData('{{ $table['name'] }}')" 
+                                    class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                                    title="Voir les données"
+                                >
+                                    Voir données
+                                </button>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -243,6 +264,12 @@
 
 @push('scripts')
 <script>
+    function viewTableData(tableName) {
+        // Ouvrir une nouvelle fenêtre avec les données de la table
+        const url = `{{ route('admin.database.info') }}?table=${encodeURIComponent(tableName)}`;
+        window.open(url, '_blank', 'width=1200,height=800');
+    }
+
     function createBackup() {
         document.getElementById('backupModal').classList.remove('hidden');
     }

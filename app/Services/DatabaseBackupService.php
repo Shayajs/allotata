@@ -41,32 +41,56 @@ class DatabaseBackupService
             $filepath = $this->backupPath . '/' . $filename;
 
             // Construire la commande mysqldump
-            // Options importantes :
+            // Options importantes pour récupération d'urgence :
             // --single-transaction : Pour une sauvegarde cohérente sans verrous
             // --routines : Inclure les procédures stockées et fonctions
             // --triggers : Inclure les triggers
-            // --add-drop-table : Supprimer les tables avant de les recréer (pour restauration propre)
+            // --insert-ignore : Utiliser INSERT IGNORE pour éviter les erreurs de doublons
             // --complete-insert : INSERT complets avec noms de colonnes (plus sûr pour restauration)
-            // --extended-insert : INSERT optimisés (plus rapide, mais moins lisible)
+            // --extended-insert : INSERT optimisés (plus rapide)
             // --lock-tables=false : Pas de verrous (déjà géré par --single-transaction)
+            // --skip-add-drop-table : Ne pas ajouter DROP TABLE (on utilisera CREATE TABLE IF NOT EXISTS)
             // Par défaut, mysqldump inclut TOUTES les données (structure + données + relations)
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
+            
+            // Créer un fichier temporaire pour le dump brut
+            $tempFile = $filepath . '.tmp';
+            
+            // D'abord, créer le dump avec structure et données
             $command = sprintf(
-                'mysqldump --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers --add-drop-table --complete-insert --extended-insert --lock-tables=false %s > %s 2>&1',
+                'mysqldump --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers --insert-ignore --complete-insert --extended-insert --lock-tables=false --skip-add-drop-table %s > %s 2>&1',
                 escapeshellarg($config['host']),
                 escapeshellarg($config['port']),
                 escapeshellarg($config['username']),
                 $passwordArg,
                 escapeshellarg($config['database']),
-                escapeshellarg($filepath)
+                escapeshellarg($tempFile)
             );
-
+            
             // Exécuter la commande
             exec($command, $output, $returnCode);
-
-            if ($returnCode !== 0 || !file_exists($filepath)) {
+            
+            if ($returnCode !== 0 || !file_exists($tempFile)) {
                 $error = implode("\n", $output);
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
                 throw new Exception("Erreur lors de la création de la sauvegarde: {$error}");
+            }
+            
+            // Modifier le fichier pour utiliser CREATE TABLE IF NOT EXISTS
+            $content = file_get_contents($tempFile);
+            
+            // Remplacer CREATE TABLE par CREATE TABLE IF NOT EXISTS
+            // Pattern: CREATE TABLE `nom_table` ( ou CREATE TABLE nom_table (
+            $content = preg_replace('/CREATE TABLE\s+(`?)([^\s`\(]+)(`?)\s*\(/i', 'CREATE TABLE IF NOT EXISTS $1$2$3 (', $content);
+            
+            // Écrire le fichier modifié
+            file_put_contents($filepath, $content);
+            
+            // Supprimer le fichier temporaire
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
             }
 
             // Vérifier que le fichier n'est pas vide
@@ -77,13 +101,18 @@ class DatabaseBackupService
 
             // Vérifier que le fichier contient bien des données (INSERT statements)
             $fileContent = file_get_contents($filepath, false, null, 0, 10000); // Lire les 10 premiers KB
-            if (strpos($fileContent, 'INSERT INTO') === false && strpos($fileContent, 'INSERT') === false) {
+            if (strpos($fileContent, 'INSERT IGNORE INTO') === false && strpos($fileContent, 'INSERT') === false) {
                 // Le fichier pourrait ne contenir que la structure, vérifier plus en profondeur
                 $fullContent = file_get_contents($filepath);
                 if (strpos($fullContent, 'INSERT') === false && strpos($fullContent, 'VALUES') === false) {
                     Log::warning("La sauvegarde semble ne contenir que la structure, pas de données détectées");
                     // Ne pas échouer, car certaines bases peuvent être vides
                 }
+            }
+            
+            // Vérifier que CREATE TABLE IF NOT EXISTS est bien présent
+            if (strpos($fileContent, 'CREATE TABLE IF NOT EXISTS') === false && strpos($fullContent ?? $fileContent, 'CREATE TABLE IF NOT EXISTS') === false) {
+                Log::warning("CREATE TABLE IF NOT EXISTS non détecté dans la sauvegarde, vérifiez le fichier");
             }
 
             // Créer un fichier de métadonnées
@@ -345,6 +374,52 @@ class DatabaseBackupService
             ];
         } catch (Exception $e) {
             Log::error("Erreur lors de la récupération des informations de la base de données: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Récupérer les données d'une table spécifique
+     */
+    public function getTableData($tableName, $page = 1, $perPage = 50)
+    {
+        try {
+            $config = config("database.connections.{$this->connection}");
+            
+            // Vérifier que la table existe
+            $tableExists = DB::selectOne("
+                SELECT COUNT(*) as count 
+                FROM information_schema.TABLES 
+                WHERE table_schema = ? AND table_name = ?
+            ", [$config['database'], $tableName]);
+            
+            if (!$tableExists || $tableExists->count == 0) {
+                throw new Exception("La table {$tableName} n'existe pas");
+            }
+            
+            // Compter le total de lignes
+            $total = DB::table($tableName)->count();
+            
+            // Récupérer les données paginées
+            $offset = ($page - 1) * $perPage;
+            $data = DB::table($tableName)
+                ->limit($perPage)
+                ->offset($offset)
+                ->get();
+            
+            // Récupérer les colonnes de la table
+            $columns = DB::select("SHOW COLUMNS FROM `{$tableName}`");
+            
+            return [
+                'data' => $data,
+                'columns' => $columns,
+                'total' => $total,
+                'page' => $page,
+                'perPage' => $perPage,
+                'totalPages' => ceil($total / $perPage),
+            ];
+        } catch (Exception $e) {
+            Log::error("Erreur lors de la récupération des données de la table {$tableName}: " . $e->getMessage());
             throw $e;
         }
     }

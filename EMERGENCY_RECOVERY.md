@@ -78,6 +78,14 @@ php artisan route:list | grep emergency
 - Connexion immédiate sans mot de passe
 - Utile pour tester ou récupérer l'accès
 
+### 4. Importer et restaurer une sauvegarde
+- Import de fichiers `.sql` ou `.sql.gz`
+- Restauration complète de la base de données
+- **Sécurité intégrée** :
+  - ✅ `CREATE TABLE IF NOT EXISTS` : Évite les erreurs si les tables existent
+  - ✅ `INSERT IGNORE` : Ignore les doublons sans erreur
+  - ✅ Pas de suppression des tables existantes
+
 ## Sécurité
 
 ### Mesures de protection
