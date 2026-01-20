@@ -15,6 +15,7 @@
             background: #1a1a1a;
             color: #e0e0e0;
             padding: 20px;
+            padding-bottom: 100px; /* Espace pour la barre de progression fixe */
             line-height: 1.6;
         }
         .container {
@@ -98,6 +99,83 @@
         .btn-small {
             padding: 6px 12px;
             font-size: 12px;
+        }
+        
+        /* Barre de progression fixe en bas */
+        #fixedProgressBar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2a2a2a;
+            border-top: 2px solid #4ecdc4;
+            padding: 15px 20px;
+            z-index: 1000;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
+            display: none;
+        }
+        
+        #fixedProgressBar.active {
+            display: block;
+        }
+        
+        .fixed-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .fixed-progress-title {
+            font-weight: bold;
+            color: #4ecdc4;
+            font-size: 14px;
+        }
+        
+        .fixed-progress-close {
+            background: #ff6b6b;
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .fixed-progress-close:hover {
+            background: #ff5252;
+        }
+        
+        .fixed-progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #1f1f1f;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .fixed-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .fixed-progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        @media (max-width: 768px) {
+            #fixedProgressBar {
+                padding: 12px 15px;
+            }
+            body {
+                padding-bottom: 120px;
+            }
         }
         table {
             width: 100%;
@@ -332,6 +410,28 @@
         </div>
     </div>
 
+    <!-- Barre de progression fixe en bas de l'écran -->
+    <div id="fixedProgressBar" class="hidden">
+        <div class="fixed-progress-header">
+            <div class="fixed-progress-title">
+                <span id="fixedProgressTitle">🔄 Restauration en cours...</span>
+            </div>
+            <button class="fixed-progress-close" onclick="closeFixedProgressBar()" id="fixedProgressCloseBtn" style="display: none;">
+                ✕ Fermer
+            </button>
+        </div>
+        <div class="fixed-progress-bar-container">
+            <div class="fixed-progress-bar-fill" id="fixedProgressBarFill"></div>
+        </div>
+        <div class="fixed-progress-info">
+            <span id="fixedProgressMessage">Initialisation...</span>
+            <span id="fixedProgressPercent">0%</span>
+        </div>
+        <div id="fixedProgressDetails" style="margin-top: 8px; font-size: 11px; color: #888; display: none;">
+            <div id="fixedProgressStats"></div>
+        </div>
+    </div>
+
     <!-- Modale de progression de restauration -->
     <div id="restoreProgressModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4">
@@ -394,14 +494,8 @@
                 return;
             }
 
-            // Afficher la modale
-            document.getElementById('restoreProgressModal').classList.remove('hidden');
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('progressPercent').textContent = '0%';
-            document.getElementById('progressMessage').textContent = 'Démarrage de la restauration...';
-            document.getElementById('progressError').classList.add('hidden');
-            document.getElementById('closeProgressModal').classList.add('hidden');
-            document.getElementById('progressStats').classList.add('hidden');
+            // Afficher la modale ET la barre fixe
+            showProgress('Démarrage de la restauration...', 0);
 
             // Démarrer la restauration
             const formData = new FormData();
@@ -439,6 +533,69 @@
             });
         }
 
+        function showProgress(message, percent) {
+            // Afficher la modale
+            document.getElementById('restoreProgressModal').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressMessage').textContent = message;
+            document.getElementById('progressError').classList.add('hidden');
+            document.getElementById('closeProgressModal').classList.add('hidden');
+            document.getElementById('progressStats').classList.add('hidden');
+            
+            // Afficher la barre fixe
+            const fixedBar = document.getElementById('fixedProgressBar');
+            fixedBar.classList.remove('hidden');
+            fixedBar.classList.add('active');
+            document.getElementById('fixedProgressBarFill').style.width = percent + '%';
+            document.getElementById('fixedProgressPercent').textContent = percent + '%';
+            document.getElementById('fixedProgressMessage').textContent = message;
+            document.getElementById('fixedProgressCloseBtn').style.display = 'none';
+        }
+        
+        function updateFixedProgress(data) {
+            const progress = data.progress || 0;
+            const message = data.message || 'En cours...';
+            
+            // Mettre à jour la barre fixe
+            document.getElementById('fixedProgressBarFill').style.width = progress + '%';
+            document.getElementById('fixedProgressPercent').textContent = progress + '%';
+            document.getElementById('fixedProgressMessage').textContent = message;
+            
+            // Mettre à jour le titre si nécessaire
+            if (data.status === 'completed') {
+                document.getElementById('fixedProgressTitle').textContent = '✅ Restauration terminée';
+                document.getElementById('fixedProgressCloseBtn').style.display = 'block';
+            } else if (data.status === 'error') {
+                document.getElementById('fixedProgressTitle').textContent = '❌ Erreur';
+                document.getElementById('fixedProgressCloseBtn').style.display = 'block';
+            }
+            
+            // Afficher les stats si disponibles
+            if (data.total_tables) {
+                let statsHtml = `Tables: ${data.total_tables} | Lignes: ${number_format(data.total_rows || 0)}`;
+                if (data.users_count !== undefined) {
+                    statsHtml += ` | Utilisateurs: ${data.users_count}`;
+                    if (data.users_count === 0) {
+                        statsHtml += ' ⚠️';
+                    }
+                }
+                document.getElementById('fixedProgressStats').textContent = statsHtml;
+                document.getElementById('fixedProgressDetails').style.display = 'block';
+            }
+        }
+        
+        function closeFixedProgressBar() {
+            const fixedBar = document.getElementById('fixedProgressBar');
+            fixedBar.classList.add('hidden');
+            fixedBar.classList.remove('active');
+            
+            // Recharger la page après un court délai
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        }
+        
         function startProgressPolling(progressId, token) {
             const progressUrl = `{{ request()->fullUrl() }}/progress/${progressId}?token=${encodeURIComponent(token)}`;
             
@@ -456,6 +613,7 @@
                     })
                     .then(data => {
                         updateProgress(data);
+                        updateFixedProgress(data);
                         
                         if (data.status === 'completed' || data.status === 'error') {
                             clearInterval(restoreProgressInterval);
@@ -571,12 +729,8 @@
                 restoreProgressInterval = null;
             }
             document.getElementById('restoreProgressModal').classList.add('hidden');
+            closeFixedProgressBar();
             currentProgressId = null;
-            
-            // Recharger la page pour voir les changements
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
         }
 
         function handleImportBackup(event, token) {
@@ -588,14 +742,8 @@
             // Obtenir l'URL de manière sûre
             const formAction = form.getAttribute('action') || form.action || '{{ request()->fullUrl() }}';
             
-            // Afficher la modale
-            document.getElementById('restoreProgressModal').classList.remove('hidden');
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('progressPercent').textContent = '0%';
-            document.getElementById('progressMessage').textContent = 'Import du fichier...';
-            document.getElementById('progressError').classList.add('hidden');
-            document.getElementById('closeProgressModal').classList.add('hidden');
-            document.getElementById('progressStats').classList.add('hidden');
+            // Afficher la modale ET la barre fixe
+            showProgress('Import du fichier...', 0);
 
             fetch(formAction, {
                 method: 'POST',
@@ -613,10 +761,18 @@
             })
             .then(data => {
                 if (data.success) {
+                    // Mettre à jour la modale
                     document.getElementById('progressBar').style.width = '100%';
                     document.getElementById('progressPercent').textContent = '100%';
                     document.getElementById('progressMessage').textContent = '✅ ' + (data.message || 'Fichier importé avec succès');
                     document.getElementById('closeProgressModal').classList.remove('hidden');
+                    
+                    // Mettre à jour la barre fixe
+                    updateFixedProgress({
+                        progress: 100,
+                        message: '✅ ' + (data.message || 'Fichier importé avec succès'),
+                        status: 'completed'
+                    });
                     
                     setTimeout(() => {
                         location.reload();
@@ -629,6 +785,11 @@
                         errorMessage = errorMessage + (errorList ? ' : ' + errorList : '');
                     }
                     showError(errorMessage);
+                    updateFixedProgress({
+                        progress: 0,
+                        message: errorMessage,
+                        status: 'error'
+                    });
                 }
             })
             .catch(error => {
