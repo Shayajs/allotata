@@ -111,16 +111,72 @@
             Actions rapides
         </h2>
         
-        <div class="flex flex-wrap gap-3">
-            <button 
-                onclick="createBackup()" 
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Créer une sauvegarde
-            </button>
+        <div class="space-y-4">
+            <!-- Formulaire de création de sauvegarde -->
+            <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Créer une sauvegarde</h3>
+                
+                <div class="space-y-3">
+                    <!-- Type de sauvegarde -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Type de sauvegarde
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                <input type="radio" name="backup_type" value="all" checked class="mr-3 text-green-600 focus:ring-green-500">
+                                <div>
+                                    <div class="font-medium text-slate-900 dark:text-white">📦 Tout</div>
+                                    <div class="text-xs text-slate-600 dark:text-slate-400">Structure + Données</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                <input type="radio" name="backup_type" value="structure" class="mr-3 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <div class="font-medium text-slate-900 dark:text-white">🏗️ Structure</div>
+                                    <div class="text-xs text-slate-600 dark:text-slate-400">Tables uniquement</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                <input type="radio" name="backup_type" value="data" class="mr-3 text-purple-600 focus:ring-purple-500">
+                                <div>
+                                    <div class="font-medium text-slate-900 dark:text-white">💾 Données</div>
+                                    <div class="text-xs text-slate-600 dark:text-slate-400">Données uniquement</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="backup_description" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Description (optionnelle)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="backup_description" 
+                            placeholder="Ex: Sauvegarde avant migration"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <!-- Bouton de création -->
+                    <button 
+                        onclick="createBackup()" 
+                        class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Créer la sauvegarde
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Autres actions -->
+            <div class="flex flex-wrap gap-3">
             
             <label class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,6 +221,7 @@
                 <thead class="bg-slate-50 dark:bg-slate-700/50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Fichier</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Description</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Taille</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date de création</th>
@@ -177,8 +234,30 @@
                         <td class="px-4 py-3 text-sm font-mono text-slate-900 dark:text-white">
                             {{ $backup['filename'] }}
                         </td>
+                        <td class="px-4 py-3 text-sm">
+                            @php
+                                // Déterminer le type depuis le nom du fichier ou les métadonnées
+                                $type = $backup['type'] ?? 'all';
+                                if (strpos($backup['filename'], 'backup_full_') !== false) {
+                                    $type = 'all';
+                                } elseif (strpos($backup['filename'], 'backup_structure_') !== false) {
+                                    $type = 'structure';
+                                } elseif (strpos($backup['filename'], 'backup_data_') !== false) {
+                                    $type = 'data';
+                                }
+                                $typeLabels = [
+                                    'all' => ['label' => '📦 Tout', 'color' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'],
+                                    'structure' => ['label' => '🏗️ Structure', 'color' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'],
+                                    'data' => ['label' => '💾 Données', 'color' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'],
+                                ];
+                                $typeInfo = $typeLabels[$type] ?? $typeLabels['all'];
+                            @endphp
+                            <span class="px-2 py-1 text-xs font-medium rounded {{ $typeInfo['color'] }}">
+                                {{ $typeInfo['label'] }}
+                            </span>
+                        </td>
                         <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                            {{ $backup['description'] ?? 'Aucune description' }}
+                            {{ $backup['description'] ?? '-' }}
                         </td>
                         <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                             {{ number_format($backup['size'] / 1024 / 1024, 2) }} MB
@@ -271,49 +350,50 @@
     }
 
     function createBackup() {
-        document.getElementById('backupModal').classList.remove('hidden');
-    }
-
-    function closeBackupModal() {
-        document.getElementById('backupModal').classList.add('hidden');
-        document.getElementById('backupDescription').value = '';
-    }
-
-    async function submitBackup(event) {
-        event.preventDefault();
+        // Récupérer le type de sauvegarde sélectionné
+        const backupType = document.querySelector('input[name="backup_type"]:checked')?.value || 'all';
+        const description = document.getElementById('backup_description')?.value || '';
         
-        const description = document.getElementById('backupDescription').value;
-        const button = event.target.querySelector('button[type="submit"]');
-        const originalText = button.textContent;
-        
+        // Afficher un indicateur de chargement
+        const button = event?.target || document.querySelector('button[onclick="createBackup()"]');
+        const originalText = button.innerHTML;
         button.disabled = true;
-        button.textContent = 'Création en cours...';
+        button.innerHTML = '<svg class="animate-spin w-4 h-4 inline-block mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Création en cours...';
         
-        try {
-            const response = await fetch('{{ route("admin.database.backup") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ description })
-            });
-            
-            const data = await response.json();
+        const typeNames = {
+            'all': 'complète (structure + données)',
+            'structure': 'structure seule',
+            'data': 'données seules'
+        };
+        
+        fetch('{{ route("admin.database.create") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                type: backupType,
+                description: description || null
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            button.disabled = false;
+            button.innerHTML = originalText;
             
             if (data.success) {
-                alert('Sauvegarde créée avec succès !');
+                alert('✅ Sauvegarde ' + typeNames[backupType] + ' créée avec succès !');
                 location.reload();
             } else {
-                alert('Erreur: ' + data.message);
-                button.disabled = false;
-                button.textContent = originalText;
+                alert('❌ Erreur: ' + data.message);
             }
-        } catch (error) {
-            alert('Erreur lors de la création de la sauvegarde: ' + error.message);
+        })
+        .catch(error => {
             button.disabled = false;
-            button.textContent = originalText;
-        }
+            button.innerHTML = originalText;
+            alert('❌ Erreur lors de la création de la sauvegarde: ' + error.message);
+        });
     }
 
     async function restoreBackup(filename) {
