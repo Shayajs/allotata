@@ -8,43 +8,44 @@ import { EditorState, ChangeSet } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
-import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-// Instance Echo globale
-let echoInstance = null;
+// Instance Pusher globale
+let pusherInstance = null;
 
-function getEcho() {
-    if (echoInstance) return echoInstance;
+function getPusher() {
+    if (pusherInstance) return pusherInstance;
     
     const key = window.PUSHER_APP_KEY;
     const cluster = window.PUSHER_APP_CLUSTER || 'mt1';
-    const csrf = document.querySelector('meta[name="csrf-token"]');
     
-    if (!key || !csrf) return null;
+    if (!key) {
+        console.error('PUSHER_APP_KEY non défini');
+        return null;
+    }
     
     try {
-        echoInstance = new Echo({
-            broadcaster: 'pusher',
-            key: key,
-            cluster: cluster,
+        pusherInstance = new Pusher(String(key), {
+            cluster: String(cluster),
             forceTLS: true,
             encrypted: true,
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
-                    'X-CSRF-TOKEN': csrf.content,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                 },
             },
         });
+        
+        console.log('✅ Pusher initialisé avec succès');
     } catch (e) {
-        console.error('Erreur initialisation Echo:', e);
+        console.error('❌ Erreur initialisation Pusher:', e);
         return null;
     }
     
-    return echoInstance;
+    return pusherInstance;
 }
 
 // Composant Alpine.js
@@ -73,8 +74,9 @@ function notesEditor(noteId) {
         isApplyingRemote: false,
         isHandlingRemoteChange: false,
         
-        echo: null,
+        pusher: null,
         channel: null,
+        presenceChannel: null,
         hasMasterKey: false, // Clé de sauvegarde Master
         userHeartbeats: {}, // Track des derniers heartbeats de chaque utilisateur { userId: timestamp }
         
@@ -215,29 +217,36 @@ function notesEditor(noteId) {
         },
 
         setupWebSocket() {
-            this.echo = getEcho();
-            if (!this.echo) {
-                console.warn('Pusher non disponible, mode polling activé');
+            this.pusher = getPusher();
+            if (!this.pusher) {
+                console.warn('⚠️ Pusher non disponible, mode polling activé');
                 return;
             }
 
             try {
-                // Utiliser join() pour un Presence Channel
-                // S'assurer que noteId est une chaîne pour le canal
+                // S'assurer que noteId est valide
                 if (!this.noteId || isNaN(this.noteId) || this.noteId <= 0) {
-                    console.error('Erreur: noteId invalide:', this.noteId);
+                    console.error('❌ Erreur: noteId invalide:', this.noteId);
                     return;
                 }
-                const channelName = `note.${this.noteIdString || String(this.noteId)}`;
-                this.channel = this.echo.join(channelName);
                 
-                // Attendre que le canal soit complètement joint avant de continuer
-                this.channel.subscribed(() => {
+                // Nom du canal Presence
+                const channelName = `presence-note.${this.noteIdString || String(this.noteId)}`;
+                console.log('🔌 Connexion au canal:', channelName);
+                
+                // Créer le canal Presence
+                this.presenceChannel = this.pusher.subscribe(channelName);
+                this.channel = this.presenceChannel; // Pour compatibilité avec le reste du code
+                
+                // Attendre que le canal soit complètement joint
+                this.presenceChannel.bind('pusher:subscription_succeeded', (members) => {
                     console.log('✅ Canal Presence joint avec succès:', channelName);
-                });
-                
-                // Utilisateurs déjà présents
-                this.channel.here((users) => {
+                    const users = Object.values(members.members || {}).map(member => ({
+                        id: member.id || member.user_id,
+                        name: member.name || member.user_info?.name || 'Utilisateur',
+                        ...member
+                    }));
+                    
                     console.log('👥 Utilisateurs présents:', users.length, users.map(u => ({ id: u.id, name: u.name })));
                     this.collaborators = users;
                     this.determineMaster(users);
@@ -245,8 +254,9 @@ function notesEditor(noteId) {
                     // Initialiser les heartbeats des utilisateurs présents
                     const now = Date.now();
                     users.forEach(user => {
-                        if (user.id !== window.currentUserId) {
-                            this.userHeartbeats[user.id] = now;
+                        const userId = Number(user.id);
+                        if (userId !== Number(window.currentUserId)) {
+                            this.userHeartbeats[userId] = now;
                         }
                     });
                     
@@ -257,69 +267,72 @@ function notesEditor(noteId) {
                 });
 
                 // Nouvel utilisateur rejoint
-                this.channel.joining((user) => {
-                    if (!this.collaborators.find(u => u.id === user.id)) {
+                this.presenceChannel.bind('pusher:member_added', (member) => {
+                    const user = {
+                        id: member.id || member.user_id,
+                        name: member.info?.name || member.name || 'Utilisateur',
+                        ...member
+                    };
+                    
+                    console.log('➕ Utilisateur rejoint:', user);
+                    if (!this.collaborators.find(u => Number(u.id) === Number(user.id))) {
                         this.collaborators.push(user);
                     }
-                    this.determineMaster([...this.collaborators, user]);
+                    this.determineMaster([...this.collaborators]);
                     
                     // Initialiser le heartbeat du nouvel utilisateur
-                    if (user.id !== window.currentUserId) {
-                        this.userHeartbeats[user.id] = Date.now();
+                    const userId = Number(user.id);
+                    if (userId !== Number(window.currentUserId)) {
+                        this.userHeartbeats[userId] = Date.now();
                     }
                 });
 
                 // Utilisateur part
-                this.channel.leaving((user) => {
-                    this.collaborators = this.collaborators.filter(u => u.id !== user.id);
-                    delete this.remoteCursors[user.id];
-                    delete this.userHeartbeats[user.id];
+                this.presenceChannel.bind('pusher:member_removed', (member) => {
+                    const userId = Number(member.id || member.user_id);
+                    console.log('➖ Utilisateur part:', userId);
+                    this.collaborators = this.collaborators.filter(u => Number(u.id) !== userId);
+                    delete this.remoteCursors[userId];
+                    delete this.userHeartbeats[userId];
                     this.determineMaster(this.collaborators);
                     this.drawCursors();
                 });
 
-                // Écouter les changements de texte (whisper - événements clients)
-                this.channel.listenForWhisper('text-change', (data) => {
+                // Écouter les changements de texte (client events - événements clients)
+                this.presenceChannel.bind('client-text-change', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
-                    console.log('📥 [Whisper] text-change reçu:', { senderId, currentId, from: data.from, to: data.to, insertLength: data.insert?.length });
+                    console.log('📥 [Client Event] text-change reçu:', { senderId, currentId, from: data.from, to: data.to, insertLength: data.insert?.length });
                     
                     if (senderId !== currentId) {
-                        console.log('✅ [Whisper] Application du changement de texte distant...');
+                        console.log('✅ [Client Event] Application du changement de texte distant...');
                         this.handleRemoteTextChange(data);
                     } else {
-                        console.log('⏭️ [Whisper] Changement ignoré (notre propre changement)');
+                        console.log('⏭️ [Client Event] Changement ignoré (notre propre changement)');
                     }
                 });
 
                 // Écouter les mouvements de curseur
-                this.channel.listenForWhisper('cursor-moved', (data) => {
+                this.presenceChannel.bind('client-cursor-moved', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
-                    console.log('📥 [Whisper] cursor-moved reçu:', { senderId, currentId, position: data.position });
+                    console.log('📥 [Client Event] cursor-moved reçu:', { senderId, currentId, position: data.position });
                     
                     if (senderId !== currentId) {
-                        console.log('✅ [Whisper] Application du mouvement de curseur distant...');
+                        console.log('✅ [Client Event] Application du mouvement de curseur distant...');
                         this.handleRemoteCursor(data);
                     } else {
-                        console.log('⏭️ [Whisper] Mouvement de curseur ignoré (notre propre mouvement)');
+                        console.log('⏭️ [Client Event] Mouvement de curseur ignoré (notre propre mouvement)');
                     }
                 });
 
-                // Écouter les heartbeats des autres utilisateurs (whisper)
-                this.channel.listenForWhisper('isAlive', (data) => {
+                // Écouter les heartbeats des autres utilisateurs
+                this.presenceChannel.bind('client-isAlive', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
                     
                     if (senderId !== currentId) {
                         this.userHeartbeats[senderId] = Date.now();
-                        
-                        // S'assurer que l'utilisateur est dans la liste des collaborateurs
-                        if (!this.collaborators.find(u => u.id === data.userId)) {
-                            // Ajouter l'utilisateur si on le connaît via Presence Channel
-                            // (normalement il devrait déjà être là, mais on peut avoir un cas limite)
-                            console.log('Utilisateur actif détecté via heartbeat:', data.userId);
-                        }
                         
                         // Si ce n'est pas nous qui sommes Master et que le Master actuel n'envoie plus de heartbeat
                         if (data.isMaster && !this.hasMasterKey) {
@@ -329,7 +342,8 @@ function notesEditor(noteId) {
                 });
 
                 // Écouter les changements de Master (événement serveur)
-                this.echo.listen('.master.changed', (data) => {
+                // Le nom de l'événement est défini par broadcastAs() = 'master.changed'
+                this.presenceChannel.bind('master.changed', (data) => {
                     console.log('🔄 Master changé:', data);
                     const masterUserId = Number(data.master_user_id);
                     const currentUserId = Number(window.currentUserId);
@@ -426,12 +440,12 @@ function notesEditor(noteId) {
                             timestamp: Number(Date.now()) // S'assurer que c'est un nombre
                         };
 
-                        // Envoyer via whisper (événement client-client, pas serveur)
+                        // Envoyer via client event (événement client-client, pas serveur)
                         try {
-                            console.log('📤 [Whisper] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
-                            this.channel.whisper('text-change', change);
+                            console.log('📤 [Client Event] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
+                            this.presenceChannel.trigger('client-text-change', change);
                         } catch (e) {
-                            console.error('❌ Erreur whisper text-change:', e);
+                            console.error('❌ Erreur client event text-change:', e);
                         }
                     });
                 }
@@ -613,7 +627,7 @@ function notesEditor(noteId) {
         },
 
         async updateCursor() {
-            if (!this.editorView || !this.channel) return;
+            if (!this.editorView || !this.presenceChannel) return;
             
             try {
                 const selection = this.editorView.state.selection.main;
@@ -632,8 +646,12 @@ function notesEditor(noteId) {
                     },
                     position: Number(pos) // S'assurer que c'est un nombre
                 };
-                console.log('📤 [Whisper] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
-                this.channel.whisper('cursor-moved', cursorData);
+                console.log('📤 [Client Event] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
+                try {
+                    this.presenceChannel.trigger('client-cursor-moved', cursorData);
+                } catch (e) {
+                    console.error('❌ Erreur client event cursor-moved:', e);
+                }
             } catch (e) {
                 console.error('Erreur updateCursor:', e);
             }
@@ -780,13 +798,17 @@ function notesEditor(noteId) {
             if (!this.channel) return;
 
             try {
-                // Envoyer via whisper aux autres clients (pour détection rapide)
+                // Envoyer via client event aux autres clients (pour détection rapide)
                 // S'assurer que toutes les valeurs sont des types primitifs valides
-                this.channel.whisper('isAlive', {
-                    userId: Number(window.currentUserId), // S'assurer que c'est un nombre
-                    isMaster: Boolean(this.hasMasterKey), // S'assurer que c'est un booléen
-                    timestamp: Number(Date.now()), // S'assurer que c'est un nombre
-                });
+                try {
+                    this.presenceChannel.trigger('client-isAlive', {
+                        userId: Number(window.currentUserId), // S'assurer que c'est un nombre
+                        isMaster: Boolean(this.hasMasterKey), // S'assurer que c'est un booléen
+                        timestamp: Number(Date.now()), // S'assurer que c'est un nombre
+                    });
+                } catch (e) {
+                    console.error('❌ Erreur client event isAlive:', e);
+                }
 
                 // Envoyer au serveur pour mettre à jour en base de données
                 const response = await fetch(`/admin/notes/${this.noteId}/heartbeat`, {

@@ -35,7 +35,7 @@ class MasterChanged implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('note.' . $this->note->id),
+            new PresenceChannel('presence-note.' . $this->note->id),
         ];
     }
 

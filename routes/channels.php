@@ -33,7 +33,8 @@ Broadcast::channel('kanban.{boardId}', function ($user) {
 });
 
 // Channels pour les Notes (Presence Channel pour la collaboration)
-Broadcast::channel('note.{noteId}', function ($user, $noteId) {
+// Pusher utilise le préfixe "presence-" pour les canaux de présence
+Broadcast::channel('presence-note.{noteId}', function ($user, $noteId) {
     // Seuls les admins peuvent accéder aux notes
     if (!($user->is_admin ?? false)) {
         return false;
@@ -51,8 +52,12 @@ Broadcast::channel('note.{noteId}', function ($user, $noteId) {
     // Retourner les données pour le Presence Channel
     return [
         'id' => $user->id,
+        'user_id' => $user->id, // Alias pour compatibilité
         'name' => $user->name,
         'email' => $user->email,
         'joined_at' => now()->timestamp, // Pour déterminer qui est le Master
+        'info' => [ // Info supplémentaire pour Pusher
+            'name' => $user->name,
+        ],
     ];
 });
