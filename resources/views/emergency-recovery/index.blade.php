@@ -596,7 +596,13 @@
                         location.reload();
                     }, 2000);
                 } else {
-                    showError(data.message || 'Erreur lors de l\'import');
+                    // Afficher les erreurs de validation si présentes
+                    let errorMessage = data.message || 'Erreur lors de l\'import';
+                    if (data.errors) {
+                        const errorList = Object.values(data.errors).flat().join(', ');
+                        errorMessage = errorMessage + (errorList ? ' : ' + errorList : '');
+                    }
+                    showError(errorMessage);
                 }
             })
             .catch(error => {
