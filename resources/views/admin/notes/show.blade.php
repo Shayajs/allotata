@@ -11,6 +11,73 @@
         min-height: 500px;
         font-size: 14px;
     }
+    
+    /* Mode clair (par défaut) */
+    .CodeMirror {
+        background-color: #ffffff;
+        color: #1e293b;
+        border: 1px solid #e2e8f0;
+    }
+    .CodeMirror-cursor {
+        border-left: 1px solid #1e293b;
+    }
+    .CodeMirror-selected {
+        background-color: #dbeafe;
+    }
+    .editor-toolbar {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .editor-toolbar button {
+        color: #475569;
+    }
+    .editor-toolbar button:hover {
+        background-color: #e2e8f0;
+        color: #1e293b;
+    }
+    .editor-toolbar button.active {
+        background-color: #cbd5e1;
+    }
+    
+    /* Mode sombre */
+    html.dark .CodeMirror {
+        background-color: #1e293b;
+        color: #e2e8f0;
+        border: 1px solid #334155;
+    }
+    html.dark .CodeMirror-cursor {
+        border-left: 1px solid #e2e8f0;
+    }
+    html.dark .CodeMirror-selected {
+        background-color: #334155;
+    }
+    html.dark .CodeMirror-gutters {
+        background-color: #0f172a;
+        border-right: 1px solid #334155;
+    }
+    html.dark .editor-toolbar {
+        background-color: #0f172a;
+        border-bottom: 1px solid #334155;
+    }
+    html.dark .editor-toolbar button {
+        color: #94a3b8;
+    }
+    html.dark .editor-toolbar button:hover {
+        background-color: #334155;
+        color: #e2e8f0;
+    }
+    html.dark .editor-toolbar button.active {
+        background-color: #475569;
+    }
+    html.dark .editor-preview {
+        background-color: #1e293b;
+        color: #e2e8f0;
+    }
+    html.dark .editor-preview-side {
+        background-color: #1e293b;
+        border-left: 1px solid #334155;
+    }
+    
     .collaborator-cursor {
         position: absolute;
         width: 2px;

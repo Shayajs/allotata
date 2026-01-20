@@ -240,7 +240,12 @@ class EntrepriseDashboardController extends Controller
                 ],
                 'timestamp' => time() * 1000,
             ];
-            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            $logPath = base_path('.cursor/debug.log');
+            $logDir = dirname($logPath);
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0755, true);
+            }
+            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
         } catch (\Exception $e) {}
         // #endregion
         
@@ -251,19 +256,26 @@ class EntrepriseDashboardController extends Controller
                 ->get();
             
             // #region agent log
-            $logData = [
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'B1',
-                'location' => 'EntrepriseDashboardController.php:' . __LINE__,
-                'message' => 'Produits chargés pour stock',
-                'data' => [
-                    'produits_count' => $produits->count(),
-                    'produits_actifs' => $produits->where('est_actif', true)->count(),
-                ],
-                'timestamp' => time() * 1000,
-            ];
-            file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            try {
+                $logData = [
+                    'sessionId' => 'debug-session',
+                    'runId' => 'run1',
+                    'hypothesisId' => 'B1',
+                    'location' => 'EntrepriseDashboardController.php:' . __LINE__,
+                    'message' => 'Produits chargés pour stock',
+                    'data' => [
+                        'produits_count' => $produits->count(),
+                        'produits_actifs' => $produits->where('est_actif', true)->count(),
+                    ],
+                    'timestamp' => time() * 1000,
+                ];
+                $logPath = base_path('.cursor/debug.log');
+                $logDir = dirname($logPath);
+                if (!is_dir($logDir)) {
+                    @mkdir($logDir, 0755, true);
+                }
+                @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
+            } catch (\Exception $e) {}
             // #endregion
         } else {
             // #region agent log
@@ -279,7 +291,12 @@ class EntrepriseDashboardController extends Controller
                     ],
                     'timestamp' => time() * 1000,
                 ];
-                @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+                $logPath = base_path('.cursor/debug.log');
+            $logDir = dirname($logPath);
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0755, true);
+            }
+            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
             } catch (\Exception $e) {}
             // #endregion
         }
