@@ -52,7 +52,7 @@ class PublicController extends Controller
                                   'stock:id,produit_id,quantite_disponible',
                                   'images:id,produit_id,image_path',
                                   'imageCouverture:id,produit_id,image_path',
-                                  'promotionActive:id,produit_id,reduction_pourcentage,date_debut,date_fin'
+                                  'promotionActive:id,produit_id,prix_promotion,date_debut,date_fin'
                               ]);
                     }
                 ])
