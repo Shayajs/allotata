@@ -339,8 +339,47 @@ class DatabaseBackupService
                 ]));
             }
 
+            // Logger la commande (sans le mot de passe)
+            $commandForLog = sprintf(
+                'mysql --host=%s --port=%s --user=%s [PASSWORD] %s < %s',
+                $config['host'],
+                $config['port'],
+                $config['username'],
+                $config['database'],
+                $reorganizedFile
+            );
+            Log::info("Exécution de la commande de restauration: {$commandForLog}");
+            
             // Exécuter la commande et capturer la sortie
             exec($command, $output, $returnCode);
+            
+            // Logger le résultat
+            Log::info("Résultat de la commande mysql", [
+                'return_code' => $returnCode,
+                'output' => implode("\n", $output),
+            ]);
+            
+            // Vérifier si la commande a réussi
+            if ($returnCode !== 0) {
+                $errorOutput = implode("\n", $output);
+                Log::error("Erreur lors de l'exécution de mysql: {$errorOutput}");
+                
+                // Nettoyer le fichier réorganisé
+                if ($reorganizedFile !== $filepath && file_exists($reorganizedFile)) {
+                    unlink($reorganizedFile);
+                }
+                
+                if ($progressFile) {
+                    file_put_contents($progressFile, json_encode([
+                        'status' => 'error',
+                        'message' => 'Erreur lors de l\'importation SQL',
+                        'error' => $errorOutput,
+                        'progress' => 0,
+                    ]));
+                }
+                
+                throw new Exception("Erreur lors de l'exécution de la commande mysql: {$errorOutput}");
+            }
             
             // Nettoyer le fichier réorganisé si c'était un fichier temporaire
             if ($reorganizedFile !== $filepath && file_exists($reorganizedFile)) {
@@ -559,6 +598,77 @@ class DatabaseBackupService
      */
     protected function reorganizeSqlFile($filepath)
     {
+        Log::info("Réorganisation du fichier SQL: {$filepath}");
+        
+        $content = file_get_contents($filepath);
+        $contentLength = strlen($content);
+        
+        Log::info("Taille du fichier SQL: {$contentLength} bytes");
+        
+        // Si le fichier est très petit, ne pas le modifier
+        if ($contentLength < 1000) {
+            Log::info("Fichier trop petit, pas de réorganisation nécessaire");
+            return $filepath;
+        }
+        
+        // Compter les INSERT et CREATE TABLE pour voir si on a des données
+        $insertCount = substr_count(strtoupper($content), 'INSERT');
+        $createCount = substr_count(strtoupper($content), 'CREATE TABLE');
+        
+        Log::info("Analyse du fichier SQL", [
+            'insert_count' => $insertCount,
+            'create_count' => $createCount,
+        ]);
+        
+        // Si le fichier ne contient que des INSERT (pas de structure), ne pas le modifier
+        // car les tables doivent déjà exister
+        if ($createCount === 0 && $insertCount > 0) {
+            Log::info("Fichier de données uniquement, pas de réorganisation nécessaire");
+            
+            // Mais on doit quand même désactiver les clés étrangères
+            $tempFile = $filepath . '.prepared.' . time();
+            $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $content . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
+            file_put_contents($tempFile, $preparedContent);
+            
+            Log::info("Fichier préparé avec FOREIGN_KEY_CHECKS: {$tempFile}");
+            return $tempFile;
+        }
+        
+        // Si pas d'INSERT, c'est un fichier de structure uniquement, ne pas modifier
+        if ($insertCount === 0) {
+            Log::info("Fichier de structure uniquement, pas de réorganisation nécessaire");
+            return $filepath;
+        }
+        
+        // Sinon, on a un fichier mixte (structure + données)
+        // Le fichier est probablement déjà dans le bon ordre (mysqldump le fait)
+        // On va juste s'assurer que FOREIGN_KEY_CHECKS est désactivé
+        
+        // Vérifier si FOREIGN_KEY_CHECKS est déjà présent
+        if (stripos($content, 'FOREIGN_KEY_CHECKS=0') !== false) {
+            Log::info("FOREIGN_KEY_CHECKS déjà présent dans le fichier, pas de modification");
+            return $filepath;
+        }
+        
+        // Ajouter FOREIGN_KEY_CHECKS au début et à la fin
+        $tempFile = $filepath . '.prepared.' . time();
+        $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $content . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
+        file_put_contents($tempFile, $preparedContent);
+        
+        Log::info("Fichier préparé avec FOREIGN_KEY_CHECKS: {$tempFile}", [
+            'original_size' => $contentLength,
+            'new_size' => strlen($preparedContent),
+        ]);
+        
+        return $tempFile;
+    }
+    
+    /**
+     * Ancienne méthode de réorganisation complète (conservée pour référence mais non utilisée)
+     * Cette méthode était trop agressive et pouvait corrompre le fichier SQL
+     */
+    protected function reorganizeSqlFileComplex($filepath)
+    {
         $content = file_get_contents($filepath);
         
         // Si le fichier est très petit, ne pas le modifier
@@ -609,7 +719,7 @@ class DatabaseBackupService
         }
         
         // Extraire les autres statements (SET, USE, LOCK, etc.)
-        preg_match_all('/(SET|USE|LOCK|UNLOCK|/\*|\*/|DROP|ALTER)[^;]*;/is', $content, $otherMatches);
+        preg_match_all('/(SET|USE|LOCK|UNLOCK|DROP|ALTER)[^;]*;/is', $content, $otherMatches);
         $otherStatements = $otherMatches[0] ?? [];
         
         // Si pas assez de contenu, ne pas réorganiser

@@ -3,115 +3,467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Récupération système</title>
+    <title>Récupération Système</title>
     <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #06b6d4;
+            --accent-hover: #22d3ee;
+            --danger: #ef4444;
+            --danger-hover: #f87171;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a1a;
-            color: #e0e0e0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
             padding: 20px;
-            padding-bottom: 100px; /* Espace pour la barre de progression fixe */
+            padding-bottom: 120px;
             line-height: 1.6;
         }
+        
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: #2a2a2a;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        h1 {
-            color: #ff6b6b;
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px var(--shadow);
+        }
+        
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
+        }
+        
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        /* Alert Banners */
+        .alert-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid;
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        
+        .alert-info {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: rgba(6, 182, 212, 0.3);
+            color: #22d3ee;
+        }
+        
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 30px var(--shadow);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Section Cards */
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .section:hover {
+            box-shadow: 0 8px 30px var(--shadow);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 24px;
+            background: linear-gradient(90deg, var(--bg-tertiary), transparent);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .section-icon {
             font-size: 24px;
         }
-        .warning {
-            background: #3a2a2a;
-            border-left: 4px solid #ff6b6b;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .section {
-            margin: 30px 0;
-            padding: 20px;
-            background: #1f1f1f;
-            border-radius: 6px;
-        }
-        .section h2 {
-            color: #4ecdc4;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        form {
-            margin: 15px 0;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #b0b0b0;
-            font-size: 14px;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            background: #1a1a1a;
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: #e0e0e0;
-            font-size: 14px;
-        }
-        input:focus {
-            outline: none;
-            border-color: #4ecdc4;
-        }
-        button {
-            background: #4ecdc4;
-            color: #1a1a1a;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
+        
+        .section-title {
+            font-size: 16px;
             font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .section-content {
+            padding: 24px;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
             font-size: 14px;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
-        button:hover {
-            background: #45b8b0;
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
         }
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* File Input */
+        .file-input-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            background: var(--bg-primary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-wrapper:hover {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.05);
+        }
+        
+        .file-input-wrapper.has-file {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-input-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        
+        .file-input-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .file-input-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        
+        .file-name {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--success);
+            display: none;
+        }
+        
+        .file-name.visible {
+            display: block;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        }
+        
         .btn-danger {
-            background: #ff6b6b;
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
         }
+        
         .btn-danger:hover {
-            background: #ff5252;
+            background: linear-gradient(135deg, var(--danger-hover), var(--danger));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
         }
-        .btn-small {
-            padding: 6px 12px;
+        
+        .btn-sm {
+            padding: 8px 16px;
             font-size: 12px;
         }
         
-        /* Barre de progression fixe en bas */
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-ghost:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover td {
+            background: rgba(6, 182, 212, 0.05);
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge-admin {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: white;
+        }
+        
+        .badge-user {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .badge-size {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+        
+        /* Backup List */
+        .backup-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .backup-item:hover {
+            border-color: var(--accent);
+        }
+        
+        .backup-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .backup-name {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+            word-break: break-all;
+            margin-bottom: 4px;
+        }
+        
+        .backup-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        .backup-actions {
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+        
+        /* Progress Bar Fixed */
         #fixedProgressBar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: #2a2a2a;
-            border-top: 2px solid #4ecdc4;
-            padding: 15px 20px;
+            background: var(--bg-secondary);
+            border-top: 2px solid var(--accent);
+            padding: 20px;
             z-index: 1000;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 -10px 40px var(--shadow);
             display: none;
         }
         
@@ -119,401 +471,783 @@
             display: block;
         }
         
-        .fixed-progress-header {
+        .progress-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
         
-        .fixed-progress-title {
-            font-weight: bold;
-            color: #4ecdc4;
+        .progress-title {
+            font-weight: 600;
+            color: var(--accent);
             font-size: 14px;
         }
         
-        .fixed-progress-close {
-            background: #ff6b6b;
-            border: none;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .fixed-progress-close:hover {
-            background: #ff5252;
-        }
-        
-        .fixed-progress-bar-container {
-            width: 100%;
+        .progress-bar-container {
             height: 8px;
-            background: #1f1f1f;
+            background: var(--bg-primary);
             border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         
-        .fixed-progress-bar-fill {
+        .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            background: linear-gradient(90deg, var(--accent), #a855f7);
+            border-radius: 4px;
             transition: width 0.3s ease;
             width: 0%;
         }
         
-        .fixed-progress-info {
+        .progress-info {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
-            color: #aaa;
+            color: var(--text-secondary);
         }
         
-        @media (max-width: 768px) {
-            #fixedProgressBar {
-                padding: 12px 15px;
-            }
-            body {
-                padding-bottom: 120px;
-            }
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #444;
-        }
-        th {
-            color: #4ecdc4;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        td {
-            font-size: 13px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .badge-admin {
-            background: #4ecdc4;
-            color: #1a1a1a;
-        }
-        .badge-user {
-            background: #666;
-            color: #e0e0e0;
-        }
-        .alert {
+        .progress-stats {
+            margin-top: 12px;
             padding: 12px;
-            border-radius: 4px;
-            margin: 15px 0;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            font-size: 12px;
+            display: none;
         }
-        .alert-success {
-            background: #2a4a2a;
-            border-left: 4px solid #4ecdc4;
-            color: #a0e0a0;
+        
+        .progress-stats.visible {
+            display: block;
         }
-        .alert-info {
-            background: #2a3a4a;
-            border-left: 4px solid #4ecdc4;
-            color: #a0c0e0;
-        }
-        .stats {
+        
+        .progress-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
         }
-        .stat-box {
-            background: #1f1f1f;
-            padding: 15px;
-            border-radius: 6px;
+        
+        .progress-stat {
             text-align: center;
         }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4ecdc4;
+        
+        .progress-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
         }
-        .stat-label {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
+        
+        .progress-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        
+        /* Verification Steps */
+        .verification-steps {
+            margin-top: 16px;
+        }
+        
+        .verification-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .verification-step.success {
+            color: var(--success);
+        }
+        
+        .verification-step.warning {
+            color: var(--warning);
+        }
+        
+        .verification-step.error {
+            color: var(--danger);
+        }
+        
+        .verification-step.pending {
+            color: var(--text-muted);
+        }
+        
+        .step-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .section-content {
+                padding: 16px;
+            }
+            
+            .backup-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .backup-actions {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .backup-actions .btn {
+                width: 100%;
+            }
+            
+            td, th {
+                padding: 10px 12px;
+            }
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔧 Récupération Système</h1>
-        
-        <div class="warning">
-            <strong>⚠️ Accès d'urgence uniquement</strong><br>
-            Toutes les actions sont enregistrées dans les logs système.
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">🔧</div>
+            <h1>Récupération Système</h1>
+            <p class="header-subtitle">Accès d'urgence sécurisé • Toutes les actions sont enregistrées</p>
         </div>
-
+        
+        <!-- Alerts -->
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert-banner alert-success">
+                <span class="alert-icon">✅</span>
+                <span>{{ session('success') }}</span>
+            </div>
         @endif
         
         @if(session('info'))
-            <div class="alert alert-info">{{ session('info') }}</div>
+            <div class="alert-banner alert-info">
+                <span class="alert-icon">ℹ️</span>
+                <span>{{ session('info') }}</span>
+            </div>
         @endif
         
         @if(session('error'))
-            <div class="alert" style="background: #4a2a2a; border-left: 4px solid #ff6b6b; color: #ffaaaa;">
-                {{ session('error') }}
+            <div class="alert-banner alert-error">
+                <span class="alert-icon">❌</span>
+                <span>{{ session('error') }}</span>
             </div>
         @endif
         
         @if($errors->any())
-            <div class="alert" style="background: #4a2a2a; border-left: 4px solid #ff6b6b; color: #ffaaaa;">
-                <ul style="margin: 0; padding-left: 20px;">
+            <div class="alert-banner alert-error">
+                <span class="alert-icon">❌</span>
+                <div>
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <div>{{ $error }}</div>
                     @endforeach
-                </ul>
+                </div>
             </div>
         @endif
+        
+        <div class="alert-banner alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <span>Mode urgence uniquement. Utilisez avec précaution.</span>
+        </div>
 
-        <div class="stats">
-            <div class="stat-box">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
                 <div class="stat-value">{{ $users->count() }}</div>
                 <div class="stat-label">Utilisateurs</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-card">
                 <div class="stat-value">{{ $adminCount }}</div>
-                <div class="stat-label">Administrateurs</div>
+                <div class="stat-label">Admins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ count($backups ?? []) }}</div>
+                <div class="stat-label">Sauvegardes</div>
             </div>
         </div>
 
-        <!-- Importer et restaurer une sauvegarde -->
+        <!-- Import & Restore Section -->
         <div class="section">
-            <h2>📦 Importer et restaurer une sauvegarde</h2>
-            
-            <form id="importBackupForm" method="POST" action="{{ request()->fullUrl() }}" enctype="multipart/form-data" style="margin-bottom: 20px;" onsubmit="handleImportBackup(event, '{{ $token }}')">
-                @csrf
-                <input type="hidden" name="secret_token" value="{{ $token }}">
-                <input type="hidden" name="action" value="import_backup">
-                
-                <div class="form-group">
-                    <label>Fichier de sauvegarde (.sql ou .sql.gz)</label>
-                    <input type="file" name="backup_file" accept=".sql,.gz" required id="backupFileInput">
-                </div>
-                
-                <button type="submit">Importer la sauvegarde</button>
-            </form>
+            <div class="section-header">
+                <span class="section-icon">📦</span>
+                <span class="section-title">Importer et Restaurer une Sauvegarde</span>
+            </div>
+            <div class="section-content">
+                <form id="importBackupForm" method="POST" action="{{ request()->fullUrl() }}" enctype="multipart/form-data" onsubmit="handleImportBackup(event, '{{ $token }}')">
+                    @csrf
+                    <input type="hidden" name="secret_token" value="{{ $token }}">
+                    <input type="hidden" name="action" value="import_backup">
+                    
+                    <div class="form-group">
+                        <div class="file-input-wrapper" id="fileDropZone">
+                            <input type="file" name="backup_file" accept=".sql,.gz" required id="backupFileInput" onchange="handleFileSelect(this)">
+                            <div class="file-input-icon">📁</div>
+                            <div class="file-input-text">Glissez un fichier ici ou cliquez pour sélectionner</div>
+                            <div class="file-input-hint">Formats acceptés : .sql, .sql.gz</div>
+                            <div class="file-name" id="fileName"></div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger" id="importBtn" disabled>
+                        <span>🔄</span>
+                        <span>Importer et Restaurer</span>
+                    </button>
+                    
+                    <p style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                        Cette action téléverse le fichier, vérifie son contenu, puis restaure la base de données.
+                    </p>
+                </form>
 
-            @if(isset($backups) && count($backups) > 0)
-            <h3 style="color: #4ecdc4; margin-top: 30px; margin-bottom: 15px;">Sauvegardes disponibles</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fichier</th>
-                        <th>Taille</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($backups as $backup)
-                    <tr>
-                        <td style="font-family: monospace; font-size: 12px;">{{ $backup['filename'] }}</td>
-                        <td>{{ number_format($backup['size'] / 1024 / 1024, 2) }} MB</td>
-                        <td>{{ \Carbon\Carbon::parse($backup['created_at'])->format('d/m/Y H:i') }}</td>
-                        <td>
-                            <button 
-                                onclick="restoreBackupWithProgress('{{ $backup['filename'] }}', '{{ $token }}')" 
-                                class="btn-small btn-danger"
-                            >
-                                Restaurer
-                            </button>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            @endif
+                @if(isset($backups) && count($backups) > 0)
+                    <div style="margin-top: 30px;">
+                        <h4 style="font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px;">
+                            Sauvegardes disponibles ({{ count($backups) }})
+                        </h4>
+                        
+                        @foreach($backups as $backup)
+                            <div class="backup-item">
+                                <div class="backup-info">
+                                    <div class="backup-name">{{ $backup['filename'] }}</div>
+                                    <div class="backup-meta">
+                                        <span class="badge badge-size">{{ number_format($backup['size'] / 1024 / 1024, 2) }} MB</span>
+                                        <span>{{ \Carbon\Carbon::parse($backup['created_at'])->format('d/m/Y H:i') }}</span>
+                                    </div>
+                                </div>
+                                <div class="backup-actions">
+                                    <button 
+                                        onclick="restoreBackupWithProgress('{{ $backup['filename'] }}', '{{ $token }}')" 
+                                        class="btn btn-danger btn-sm"
+                                    >
+                                        Restaurer
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="empty-state" style="margin-top: 30px;">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Aucune sauvegarde disponible</p>
+                    </div>
+                @endif
+            </div>
         </div>
 
-        <!-- Créer un nouvel admin -->
+        <!-- Create Admin Section -->
         <div class="section">
-            <h2>Créer un nouveau compte administrateur</h2>
-            <form method="POST" action="{{ request()->fullUrl() }}">
-                @csrf
-                <input type="hidden" name="secret_token" value="{{ $token }}">
-                <input type="hidden" name="action" value="create_admin">
-                
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" name="name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Mot de passe</label>
-                    <input type="password" name="password" required minlength="8">
-                </div>
-                
-                <div class="form-group">
-                    <label>Confirmer le mot de passe</label>
-                    <input type="password" name="password_confirmation" required minlength="8">
-                </div>
-                
-                <button type="submit">Créer le compte admin</button>
-            </form>
+            <div class="section-header">
+                <span class="section-icon">👤</span>
+                <span class="section-title">Créer un Administrateur</span>
+            </div>
+            <div class="section-content">
+                <form method="POST" action="{{ request()->fullUrl() }}">
+                    @csrf
+                    <input type="hidden" name="secret_token" value="{{ $token }}">
+                    <input type="hidden" name="action" value="create_admin">
+                    
+                    <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label">Nom</label>
+                            <input type="text" name="name" class="form-input" required placeholder="Jean Dupont">
+                        </div>
+                        
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-input" required placeholder="admin@exemple.fr">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 16px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label">Mot de passe</label>
+                            <input type="password" name="password" class="form-input" required minlength="8" placeholder="••••••••">
+                        </div>
+                        
+                        <div class="form-group" style="margin: 0;">
+                            <label class="form-label">Confirmer</label>
+                            <input type="password" name="password_confirmation" class="form-input" required minlength="8" placeholder="••••••••">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">
+                            <span>➕</span>
+                            <span>Créer le compte</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
-        <!-- Liste des utilisateurs -->
+        <!-- Users List Section -->
         <div class="section">
-            <h2>Utilisateurs existants</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($users as $user)
-                    <tr>
-                        <td>{{ $user->id }}</td>
-                        <td>{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
-                        <td>
-                            @if($user->is_admin)
-                                <span class="badge badge-admin">Admin</span>
-                            @else
-                                <span class="badge badge-user">User</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if(!$user->is_admin)
-                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
-                                @csrf
-                                <input type="hidden" name="secret_token" value="{{ $token }}">
-                                <input type="hidden" name="action" value="promote">
-                                <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                <button type="submit" class="btn-small">Promouvoir admin</button>
-                            </form>
-                            @endif
-                            
-                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
-                                @csrf
-                                <input type="hidden" name="secret_token" value="{{ $token }}">
-                                <input type="hidden" name="action" value="login_as">
-                                <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                <button type="submit" class="btn-small">Se connecter</button>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div class="section-header">
+                <span class="section-icon">👥</span>
+                <span class="section-title">Utilisateurs ({{ $users->count() }})</span>
+            </div>
+            <div class="section-content" style="padding: 0;">
+                @if($users->count() > 0)
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($users as $user)
+                                <tr>
+                                    <td style="color: var(--text-muted);">#{{ $user->id }}</td>
+                                    <td>{{ $user->name }}</td>
+                                    <td style="font-family: monospace; font-size: 12px;">{{ $user->email }}</td>
+                                    <td>
+                                        @if($user->is_admin)
+                                            <span class="badge badge-admin">Admin</span>
+                                        @else
+                                            <span class="badge badge-user">User</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            @if(!$user->is_admin)
+                                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="secret_token" value="{{ $token }}">
+                                                <input type="hidden" name="action" value="promote">
+                                                <input type="hidden" name="user_id" value="{{ $user->id }}">
+                                                <button type="submit" class="btn btn-ghost btn-sm">⬆️ Promouvoir</button>
+                                            </form>
+                                            @endif
+                                            
+                                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="secret_token" value="{{ $token }}">
+                                                <input type="hidden" name="action" value="login_as">
+                                                <input type="hidden" name="user_id" value="{{ $user->id }}">
+                                                <button type="submit" class="btn btn-primary btn-sm">🔑 Connexion</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👻</div>
+                        <p>Aucun utilisateur dans la base de données</p>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
-    <!-- Barre de progression fixe en bas de l'écran -->
-    <div id="fixedProgressBar" class="hidden">
-        <div class="fixed-progress-header">
-            <div class="fixed-progress-title">
-                <span id="fixedProgressTitle">🔄 Restauration en cours...</span>
+    <!-- Fixed Progress Bar -->
+    <div id="fixedProgressBar">
+        <div class="progress-header">
+            <div class="progress-title" id="progressTitle">
+                <span class="animate-spin" style="display: inline-block;">⏳</span>
+                <span id="progressTitleText">Restauration en cours...</span>
             </div>
-            <button class="fixed-progress-close" onclick="closeFixedProgressBar()" id="fixedProgressCloseBtn" style="display: none;">
+            <button class="btn btn-ghost btn-sm" onclick="closeProgressBar()" id="closeProgressBtn" style="display: none;">
                 ✕ Fermer
             </button>
         </div>
-        <div class="fixed-progress-bar-container">
-            <div class="fixed-progress-bar-fill" id="fixedProgressBarFill"></div>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
         </div>
-        <div class="fixed-progress-info">
-            <span id="fixedProgressMessage">Initialisation...</span>
-            <span id="fixedProgressPercent">0%</span>
+        
+        <div class="progress-info">
+            <span id="progressMessage">Initialisation...</span>
+            <span id="progressPercent">0%</span>
         </div>
-        <div id="fixedProgressDetails" style="margin-top: 8px; font-size: 11px; color: #888; display: none;">
-            <div id="fixedProgressStats"></div>
-        </div>
-    </div>
-
-    <!-- Modale de progression de restauration -->
-    <div id="restoreProgressModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-2xl w-full mx-4">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔄 Restauration en cours...</h3>
-            
-            <div id="restoreProgressContent">
-                <div class="mb-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-slate-600 dark:text-slate-400" id="progressMessage">Initialisation...</span>
-                        <span class="text-sm font-medium text-slate-900 dark:text-white" id="progressPercent">0%</span>
-                    </div>
-                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                        <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <div id="progressDetails" class="mt-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-sm">
-                    <div class="space-y-2">
-                        <div id="progressStatus" class="text-slate-600 dark:text-slate-400">En attente...</div>
-                        <div id="progressStats" class="hidden space-y-1">
-                            <div><strong>Tables totales:</strong> <span id="totalTables">-</span></div>
-                            <div><strong>Tables avec données:</strong> <span id="tablesWithData">-</span></div>
-                            <div><strong>Lignes totales:</strong> <span id="totalRows">-</span></div>
-                            <div id="tableDetailsList" class="mt-2 max-h-40 overflow-y-auto"></div>
-                        </div>
-                        <div id="progressInfo" class="text-xs text-slate-500 dark:text-slate-500 mt-2">
-                            <div id="hasDataInfo"></div>
-                            <div id="hasStructureInfo"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="progressError" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-700 rounded-lg">
-                    <p class="text-red-800 dark:text-red-300 font-medium" id="errorMessage"></p>
-                </div>
+        
+        <!-- Verification Steps -->
+        <div class="verification-steps" id="verificationSteps">
+            <div class="verification-step pending" id="step-upload">
+                <span class="step-icon">⏳</span>
+                <span>Téléversement du fichier</span>
             </div>
-            
-            <div class="mt-6 flex justify-end">
-                <button 
-                    id="closeProgressModal" 
-                    onclick="closeRestoreProgressModal()" 
-                    class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors hidden"
-                >
-                    Fermer
-                </button>
+            <div class="verification-step pending" id="step-analyze">
+                <span class="step-icon">⏳</span>
+                <span>Analyse du contenu</span>
+            </div>
+            <div class="verification-step pending" id="step-structure">
+                <span class="step-icon">⏳</span>
+                <span>Vérification de la structure</span>
+            </div>
+            <div class="verification-step pending" id="step-data">
+                <span class="step-icon">⏳</span>
+                <span>Vérification des données</span>
+            </div>
+            <div class="verification-step pending" id="step-users">
+                <span class="step-icon">⏳</span>
+                <span>Vérification des utilisateurs</span>
+            </div>
+            <div class="verification-step pending" id="step-restore">
+                <span class="step-icon">⏳</span>
+                <span>Restauration de la base de données</span>
+            </div>
+            <div class="verification-step pending" id="step-verify">
+                <span class="step-icon">⏳</span>
+                <span>Vérification finale</span>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="progress-stats" id="progressStats">
+            <div class="progress-stats-grid">
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="statTables">-</div>
+                    <div class="progress-stat-label">Tables</div>
+                </div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="statRows">-</div>
+                    <div class="progress-stat-label">Lignes</div>
+                </div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="statUsers">-</div>
+                    <div class="progress-stat-label">Utilisateurs</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let restoreProgressInterval = null;
+        let progressInterval = null;
         let currentProgressId = null;
 
-        function restoreBackupWithProgress(filename, token) {
-            if (!confirm('⚠️ ATTENTION: Cette action va remplacer TOUTE la base de données. Êtes-vous sûr ?')) {
+        // File input handling
+        function handleFileSelect(input) {
+            const wrapper = document.getElementById('fileDropZone');
+            const fileName = document.getElementById('fileName');
+            const importBtn = document.getElementById('importBtn');
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                wrapper.classList.add('has-file');
+                fileName.textContent = '📄 ' + file.name + ' (' + formatBytes(file.size) + ')';
+                fileName.classList.add('visible');
+                importBtn.disabled = false;
+            } else {
+                wrapper.classList.remove('has-file');
+                fileName.classList.remove('visible');
+                importBtn.disabled = true;
+            }
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showProgress(message, percent) {
+            const bar = document.getElementById('fixedProgressBar');
+            bar.classList.add('active');
+            
+            document.getElementById('progressBarFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressMessage').textContent = message;
+            document.getElementById('closeProgressBtn').style.display = 'none';
+            
+            // Reset verification steps
+            document.querySelectorAll('.verification-step').forEach(step => {
+                step.className = 'verification-step pending';
+                step.querySelector('.step-icon').textContent = '⏳';
+            });
+        }
+        
+        function updateStep(stepId, status, customText) {
+            const step = document.getElementById('step-' + stepId);
+            if (!step) return;
+            
+            step.className = 'verification-step ' + status;
+            const icon = step.querySelector('.step-icon');
+            
+            if (status === 'success') {
+                icon.textContent = '✅';
+            } else if (status === 'warning') {
+                icon.textContent = '⚠️';
+            } else if (status === 'error') {
+                icon.textContent = '❌';
+            } else if (status === 'loading') {
+                icon.textContent = '🔄';
+                icon.classList.add('animate-spin');
+            } else {
+                icon.textContent = '⏳';
+                icon.classList.remove('animate-spin');
+            }
+            
+            if (customText) {
+                step.querySelector('span:last-child').textContent = customText;
+            }
+        }
+        
+        function updateProgress(data) {
+            const progress = data.progress || 0;
+            document.getElementById('progressBarFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = progress + '%';
+            document.getElementById('progressMessage').textContent = data.message || 'En cours...';
+            
+            // Update verification steps based on status
+            if (data.status === 'analyzing' || progress >= 5) {
+                updateStep('upload', 'success');
+                updateStep('analyze', 'loading');
+            }
+            
+            if (progress >= 10) {
+                updateStep('analyze', 'success');
+                
+                if (data.has_structure !== undefined) {
+                    updateStep('structure', data.has_structure ? 'success' : 'warning', 
+                        data.has_structure ? 'Structure détectée' : 'Aucune structure détectée');
+                }
+                
+                if (data.has_data !== undefined) {
+                    updateStep('data', data.has_data ? 'success' : 'warning',
+                        data.has_data ? 'Données détectées' : 'Aucune donnée détectée');
+                }
+                
+                if (data.has_users !== undefined) {
+                    updateStep('users', data.has_users ? 'success' : 'warning',
+                        data.has_users ? 'Utilisateurs détectés (~' + (data.estimated_user_count || '?') + ')' : 'Aucun utilisateur détecté');
+                }
+            }
+            
+            if (progress >= 15) {
+                updateStep('restore', 'loading');
+            }
+            
+            if (progress >= 70) {
+                updateStep('restore', 'success');
+                updateStep('verify', 'loading');
+            }
+            
+            if (data.status === 'completed' || progress >= 100) {
+                updateStep('verify', 'success');
+                document.getElementById('progressTitleText').textContent = 'Restauration terminée !';
+                document.querySelector('#progressTitle .animate-spin').textContent = '✅';
+                document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+                
+                // Show stats
+                if (data.total_tables) {
+                    document.getElementById('statTables').textContent = data.total_tables;
+                    document.getElementById('statRows').textContent = formatNumber(data.total_rows || 0);
+                    document.getElementById('statUsers').textContent = data.users_count !== undefined ? data.users_count : '-';
+                    document.getElementById('progressStats').classList.add('visible');
+                    
+                    // Warning if no users
+                    if (data.users_count === 0) {
+                        document.getElementById('statUsers').style.color = 'var(--danger)';
+                        updateStep('users', 'error', 'Aucun utilisateur trouvé après restauration !');
+                    }
+                }
+            }
+            
+            if (data.status === 'error') {
+                document.getElementById('progressTitleText').textContent = 'Erreur lors de la restauration';
+                document.querySelector('#progressTitle .animate-spin').textContent = '❌';
+                document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+                updateStep('restore', 'error');
+            }
+        }
+        
+        function closeProgressBar() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            document.getElementById('fixedProgressBar').classList.remove('active');
+            
+            // Reload after a short delay
+            setTimeout(() => location.reload(), 500);
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('fr-FR').format(num);
+        }
+
+        function handleImportBackup(event, token) {
+            event.preventDefault();
+            
+            if (!confirm('⚠️ ATTENTION\n\nCette action va importer et restaurer la sauvegarde.\nToutes les données actuelles seront REMPLACÉES.\n\nContinuer ?')) {
                 return;
             }
             
-            if (!confirm('⚠️ DERNIÈRE CONFIRMATION: Voulez-vous vraiment restaurer cette sauvegarde ? Toutes les données actuelles seront PERDUES.')) {
+            if (!confirm('🔴 DERNIÈRE CONFIRMATION\n\nVoulez-vous vraiment restaurer cette sauvegarde ?\nCette action est irréversible.')) {
+                return;
+            }
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const formAction = form.getAttribute('action') || form.action;
+            
+            // Show progress
+            showProgress('Étape 1: Téléversement du fichier...', 0);
+            updateStep('upload', 'loading');
+
+            fetch(formAction, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Réponse non-JSON reçue du serveur.');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.filename) {
+                    updateStep('upload', 'success');
+                    updateStep('analyze', 'loading');
+                    
+                    document.getElementById('progressMessage').textContent = 'Étape 2: Analyse et restauration...';
+                    document.getElementById('progressBarFill').style.width = '15%';
+                    document.getElementById('progressPercent').textContent = '15%';
+                    
+                    // Update analysis info
+                    if (data.has_structure !== undefined) {
+                        updateStep('structure', data.has_structure ? 'success' : 'warning',
+                            data.has_structure ? 'Structure détectée' : 'Aucune structure');
+                    }
+                    if (data.has_data !== undefined) {
+                        updateStep('data', data.has_data ? 'success' : 'warning',
+                            data.has_data ? 'Données détectées' : 'Aucune donnée');
+                    }
+                    
+                    // Start restore
+                    return restoreAfterImport(data.filename, token);
+                } else {
+                    let errorMessage = data.message || 'Erreur lors du téléversement';
+                    if (data.errors) {
+                        const errorList = Object.values(data.errors).flat().join(', ');
+                        errorMessage = errorMessage + (errorList ? ' : ' + errorList : '');
+                    }
+                    updateStep('upload', 'error');
+                    document.getElementById('progressMessage').textContent = errorMessage;
+                    document.getElementById('progressTitleText').textContent = 'Erreur';
+                    document.querySelector('#progressTitle .animate-spin').textContent = '❌';
+                    document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                    document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                updateStep('upload', 'error');
+                document.getElementById('progressMessage').textContent = 'Erreur: ' + error.message;
+                document.getElementById('progressTitleText').textContent = 'Erreur';
+                document.querySelector('#progressTitle .animate-spin').textContent = '❌';
+                document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+            });
+        }
+        
+        function restoreAfterImport(filename, token) {
+            const restoreFormData = new FormData();
+            restoreFormData.append('secret_token', token);
+            restoreFormData.append('action', 'restore_backup');
+            restoreFormData.append('filename', filename);
+            restoreFormData.append('_token', '{{ csrf_token() }}');
+
+            return fetch('{{ request()->fullUrl() }}', {
+                method: 'POST',
+                body: restoreFormData
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Réponse non-JSON reçue.');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.progress_id) {
+                    currentProgressId = data.progress_id;
+                    startProgressPolling(data.progress_id, token);
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la restauration');
+                }
+            });
+        }
+
+        function restoreBackupWithProgress(filename, token) {
+            if (!confirm('⚠️ ATTENTION\n\nCette action va restaurer la sauvegarde.\nToutes les données actuelles seront REMPLACÉES.\n\nContinuer ?')) {
+                return;
+            }
+            
+            if (!confirm('🔴 DERNIÈRE CONFIRMATION\n\nVoulez-vous vraiment restaurer cette sauvegarde ?\nCette action est irréversible.')) {
                 return;
             }
 
-            // Afficher la modale ET la barre fixe
             showProgress('Démarrage de la restauration...', 0);
+            updateStep('upload', 'success', 'Fichier déjà présent');
+            updateStep('analyze', 'loading');
 
-            // Démarrer la restauration
             const formData = new FormData();
             formData.append('secret_token', token);
             formData.append('action', 'restore_backup');
@@ -525,12 +1259,10 @@
                 body: formData
             })
             .then(response => {
-                // Vérifier si la réponse est du JSON
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
-                        console.error('Réponse HTML reçue au lieu de JSON:', text.substring(0, 500));
-                        throw new Error('Réponse non-JSON reçue. Le serveur a peut-être renvoyé une page d\'erreur HTML.');
+                        throw new Error('Réponse non-JSON reçue.');
                     });
                 }
                 return response.json();
@@ -540,283 +1272,76 @@
                     currentProgressId = data.progress_id;
                     startProgressPolling(data.progress_id, token);
                 } else {
-                    showError(data.message || 'Erreur lors du démarrage de la restauration');
+                    throw new Error(data.message || 'Erreur lors du démarrage');
                 }
             })
             .catch(error => {
-                console.error('Erreur lors de la restauration:', error);
-                showError('Erreur: ' + error.message);
+                console.error('Erreur:', error);
+                document.getElementById('progressMessage').textContent = 'Erreur: ' + error.message;
+                document.getElementById('progressTitleText').textContent = 'Erreur';
+                document.querySelector('#progressTitle .animate-spin').textContent = '❌';
+                document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                document.getElementById('closeProgressBtn').style.display = 'inline-flex';
             });
-        }
-
-        function showProgress(message, percent) {
-            // Afficher la modale
-            document.getElementById('restoreProgressModal').classList.remove('hidden');
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressPercent').textContent = percent + '%';
-            document.getElementById('progressMessage').textContent = message;
-            document.getElementById('progressError').classList.add('hidden');
-            document.getElementById('closeProgressModal').classList.add('hidden');
-            document.getElementById('progressStats').classList.add('hidden');
-            
-            // Afficher la barre fixe
-            const fixedBar = document.getElementById('fixedProgressBar');
-            fixedBar.classList.remove('hidden');
-            fixedBar.classList.add('active');
-            document.getElementById('fixedProgressBarFill').style.width = percent + '%';
-            document.getElementById('fixedProgressPercent').textContent = percent + '%';
-            document.getElementById('fixedProgressMessage').textContent = message;
-            document.getElementById('fixedProgressCloseBtn').style.display = 'none';
-        }
-        
-        function updateFixedProgress(data) {
-            const progress = data.progress || 0;
-            const message = data.message || 'En cours...';
-            
-            // Mettre à jour la barre fixe
-            document.getElementById('fixedProgressBarFill').style.width = progress + '%';
-            document.getElementById('fixedProgressPercent').textContent = progress + '%';
-            document.getElementById('fixedProgressMessage').textContent = message;
-            
-            // Mettre à jour le titre si nécessaire
-            if (data.status === 'completed') {
-                document.getElementById('fixedProgressTitle').textContent = '✅ Restauration terminée';
-                document.getElementById('fixedProgressCloseBtn').style.display = 'block';
-            } else if (data.status === 'error') {
-                document.getElementById('fixedProgressTitle').textContent = '❌ Erreur';
-                document.getElementById('fixedProgressCloseBtn').style.display = 'block';
-            }
-            
-            // Afficher les stats si disponibles
-            if (data.total_tables) {
-                let statsHtml = `Tables: ${data.total_tables} | Lignes: ${number_format(data.total_rows || 0)}`;
-                if (data.users_count !== undefined) {
-                    statsHtml += ` | Utilisateurs: ${data.users_count}`;
-                    if (data.users_count === 0) {
-                        statsHtml += ' ⚠️';
-                    }
-                }
-                document.getElementById('fixedProgressStats').textContent = statsHtml;
-                document.getElementById('fixedProgressDetails').style.display = 'block';
-            }
-        }
-        
-        function closeFixedProgressBar() {
-            const fixedBar = document.getElementById('fixedProgressBar');
-            fixedBar.classList.add('hidden');
-            fixedBar.classList.remove('active');
-            
-            // Recharger la page après un court délai
-            setTimeout(() => {
-                location.reload();
-            }, 500);
         }
         
         function startProgressPolling(progressId, token) {
             const progressUrl = `{{ request()->fullUrl() }}/progress/${progressId}?token=${encodeURIComponent(token)}`;
             
-            restoreProgressInterval = setInterval(() => {
+            progressInterval = setInterval(() => {
                 fetch(progressUrl)
                     .then(response => {
-                        // Vérifier si la réponse est du JSON
                         const contentType = response.headers.get('content-type');
                         if (!contentType || !contentType.includes('application/json')) {
-                            return response.text().then(text => {
-                                throw new Error('Réponse non-JSON lors du polling');
-                            });
+                            throw new Error('Réponse non-JSON');
                         }
                         return response.json();
                     })
                     .then(data => {
                         updateProgress(data);
-                        updateFixedProgress(data);
                         
                         if (data.status === 'completed' || data.status === 'error') {
-                            clearInterval(restoreProgressInterval);
-                            
-                            if (data.status === 'completed') {
-                                document.getElementById('progressBar').style.width = '100%';
-                                document.getElementById('progressPercent').textContent = '100%';
-                                
-                                let message = '✅ ' + (data.message || 'Restauration terminée !');
-                                if (data.users_count !== undefined && data.users_count === 0) {
-                                    message = '⚠️ ' + message + ' Aucun utilisateur trouvé !';
-                                }
-                                document.getElementById('progressMessage').textContent = message;
-                                
-                                if (data.total_tables) {
-                                    document.getElementById('totalTables').textContent = data.total_tables;
-                                    document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
-                                    if (data.tables_with_data) {
-                                        document.getElementById('tablesWithData').textContent = data.tables_with_data;
-                                    }
-                                    if (data.users_count !== undefined) {
-                                        // Afficher le nombre d'utilisateurs dans les stats
-                                        const statsEl = document.getElementById('progressStats');
-                                        if (statsEl && !statsEl.querySelector('#usersCountInfo')) {
-                                            const usersInfo = document.createElement('div');
-                                            usersInfo.id = 'usersCountInfo';
-                                            usersInfo.innerHTML = '<strong>Utilisateurs:</strong> <span id="usersCount">' + data.users_count + '</span>';
-                                            if (data.users_count === 0) {
-                                                usersInfo.className = 'text-red-600 dark:text-red-400 font-bold';
-                                            }
-                                            statsEl.appendChild(usersInfo);
-                                        } else if (statsEl) {
-                                            const usersCountEl = document.getElementById('usersCount');
-                                            if (usersCountEl) {
-                                                usersCountEl.textContent = data.users_count;
-                                                if (data.users_count === 0) {
-                                                    usersCountEl.parentElement.className = 'text-red-600 dark:text-red-400 font-bold';
-                                                }
-                                            }
-                                        }
-                                    }
-                                    document.getElementById('progressStats').classList.remove('hidden');
-                                }
-                                
-                                document.getElementById('closeProgressModal').classList.remove('hidden');
-                            } else {
-                                showError(data.error || data.message || 'Erreur lors de la restauration');
-                            }
+                            clearInterval(progressInterval);
+                            progressInterval = null;
                         }
                     })
                     .catch(error => {
-                        console.error('Erreur lors du polling:', error);
-                        // Ne pas arrêter le polling pour une erreur temporaire
+                        console.error('Polling error:', error);
                     });
-            }, 500); // Polling toutes les 500ms
+            }, 500);
         }
 
-        function updateProgress(data) {
-            const progress = data.progress || 0;
-            document.getElementById('progressBar').style.width = progress + '%';
-            document.getElementById('progressPercent').textContent = progress + '%';
-            document.getElementById('progressMessage').textContent = data.message || 'En cours...';
-            document.getElementById('progressStatus').textContent = data.message || 'En cours...';
-            
-            // Afficher les informations sur les données
-            if (data.has_data !== undefined) {
-                const hasDataEl = document.getElementById('hasDataInfo');
-                if (hasDataEl) {
-                    hasDataEl.textContent = data.has_data ? '✅ Données détectées dans le fichier' : '⚠️ Aucune donnée détectée';
-                    hasDataEl.className = data.has_data ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400';
-                }
-            }
-            
-            if (data.has_structure !== undefined) {
-                const hasStructEl = document.getElementById('hasStructureInfo');
-                if (hasStructEl) {
-                    hasStructEl.textContent = data.has_structure ? '✅ Structure détectée' : '⚠️ Aucune structure détectée';
-                }
-            }
-            
-            // Afficher les statistiques finales
-            if (data.total_tables) {
-                document.getElementById('totalTables').textContent = data.total_tables;
-                document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
-                if (data.tables_with_data) {
-                    document.getElementById('tablesWithData').textContent = data.tables_with_data;
-                }
-                
-                // Afficher les détails des tables
-                if (data.table_details && data.table_details.length > 0) {
-                    const detailsList = document.getElementById('tableDetailsList');
-                    if (detailsList) {
-                        detailsList.innerHTML = '<div class="font-medium mb-1">Exemples de tables avec données:</div>' +
-                            data.table_details.map(t => 
-                                `<div class="text-xs">• ${t.name}: ${number_format(t.rows)} ligne(s)</div>`
-                            ).join('');
-                    }
-                }
-                
-                document.getElementById('progressStats').classList.remove('hidden');
-            }
-        }
-
-        function showError(message) {
-            document.getElementById('progressError').classList.remove('hidden');
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('closeProgressModal').classList.remove('hidden');
-        }
-
-        function closeRestoreProgressModal() {
-            if (restoreProgressInterval) {
-                clearInterval(restoreProgressInterval);
-                restoreProgressInterval = null;
-            }
-            document.getElementById('restoreProgressModal').classList.add('hidden');
-            closeFixedProgressBar();
-            currentProgressId = null;
-        }
-
-        function handleImportBackup(event, token) {
-            event.preventDefault();
-            
-            const form = event.target;
-            const formData = new FormData(form);
-            
-            // Obtenir l'URL de manière sûre
-            const formAction = form.getAttribute('action') || form.action || '{{ request()->fullUrl() }}';
-            
-            // Afficher la modale ET la barre fixe
-            showProgress('Import du fichier...', 0);
-
-            fetch(formAction, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                // Vérifier si la réponse est du JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    return response.text().then(text => {
-                        throw new Error('Réponse non-JSON reçue. Le serveur a peut-être renvoyé une page d\'erreur HTML.');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Mettre à jour la modale
-                    document.getElementById('progressBar').style.width = '100%';
-                    document.getElementById('progressPercent').textContent = '100%';
-                    document.getElementById('progressMessage').textContent = '✅ ' + (data.message || 'Fichier importé avec succès');
-                    document.getElementById('closeProgressModal').classList.remove('hidden');
-                    
-                    // Mettre à jour la barre fixe
-                    updateFixedProgress({
-                        progress: 100,
-                        message: '✅ ' + (data.message || 'Fichier importé avec succès'),
-                        status: 'completed'
-                    });
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    // Afficher les erreurs de validation si présentes
-                    let errorMessage = data.message || 'Erreur lors de l\'import';
-                    if (data.errors) {
-                        const errorList = Object.values(data.errors).flat().join(', ');
-                        errorMessage = errorMessage + (errorList ? ' : ' + errorList : '');
-                    }
-                    showError(errorMessage);
-                    updateFixedProgress({
-                        progress: 0,
-                        message: errorMessage,
-                        status: 'error'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Erreur lors de l\'import:', error);
-                showError('Erreur: ' + error.message);
+        // Drag and drop
+        const dropZone = document.getElementById('fileDropZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
             });
-        }
-
-        function number_format(number) {
-            return new Intl.NumberFormat('fr-FR').format(number);
-        }
+        });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.style.borderColor = 'var(--accent)';
+                dropZone.style.background = 'rgba(6, 182, 212, 0.1)';
+            });
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.style.borderColor = '';
+                dropZone.style.background = '';
+            });
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                document.getElementById('backupFileInput').files = files;
+                handleFileSelect(document.getElementById('backupFileInput'));
+            }
+        });
     </script>
 </body>
 </html>
