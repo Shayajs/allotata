@@ -281,10 +281,31 @@ function notesEditor(noteId) {
                     return;
                 }
                 
+                // Gestion des erreurs de souscription
+                this.presenceChannel.bind('pusher:subscription_error', (status, error) => {
+                    console.error('❌ Erreur de souscription au canal:', status, error);
+                    this.isChannelSubscribed = false;
+                    // Essayer de se reconnecter après un délai
+                    setTimeout(() => {
+                        console.log('🔄 Tentative de reconnexion...');
+                        if (this.pusher && this.pusher.connection.state === 'connected') {
+                            this.presenceChannel = this.pusher.subscribe(String(channelName));
+                        }
+                    }, 3000);
+                });
+                
                 // Attendre que le canal soit complètement joint AVANT toute action
                 this.presenceChannel.bind('pusher:subscription_succeeded', (members) => {
                     console.log('✅ Canal Presence souscrit avec succès:', channelName);
+                    console.log('✅ Canal prêt pour les événements client');
                     this.isChannelSubscribed = true; // Marquer comme souscrit
+                    
+                    // Vérification supplémentaire de l'état du canal
+                    if (this.presenceChannel && this.presenceChannel.subscribed) {
+                        console.log('✅ Vérification: canal.subscribed = true');
+                    } else {
+                        console.warn('⚠️ Attention: canal.subscribed = false malgré subscription_succeeded');
+                    }
                     
                     const users = Object.values(members.members || {}).map(member => ({
                         id: member.id || member.user_id,
@@ -694,10 +715,9 @@ function notesEditor(noteId) {
                 const currentUser = this.collaborators.find(u => u.id === window.currentUserId);
                 const userName = currentUser?.name || 'Utilisateur';
                 
-                // Envoyer via whisper (pas besoin du serveur pour le curseur)
-                // Vérifier que le canal est souscrit avant d'envoyer
-                if (!this.isChannelSubscribed) {
-                    console.warn('⚠️ Canal non encore souscrit, skip cursor-moved');
+                // Vérification déjà faite au début de la fonction, mais double-check pour sécurité
+                if (!this.isChannelSubscribed || !this.presenceChannel) {
+                    console.warn('⚠️ Canal non disponible ou non souscrit, skip cursor-moved');
                     return;
                 }
                 
@@ -847,6 +867,14 @@ function notesEditor(noteId) {
                 clearInterval(this.heartbeatTimer);
             }
 
+            // Vérifier que le canal est prêt avant de démarrer
+            if (!this.isChannelSubscribed) {
+                console.warn('⚠️ startHeartbeat: canal non encore souscrit, attente...');
+                // Réessayer dans 1 seconde
+                setTimeout(() => this.startHeartbeat(), 1000);
+                return;
+            }
+
             // Envoyer immédiatement le premier heartbeat
             this.sendHeartbeat();
 
@@ -908,6 +936,14 @@ function notesEditor(noteId) {
         startHeartbeatCheck() {
             if (this.heartbeatCheckTimer) {
                 clearInterval(this.heartbeatCheckTimer);
+            }
+
+            // Vérifier que le canal est prêt avant de démarrer
+            if (!this.isChannelSubscribed) {
+                console.warn('⚠️ startHeartbeatCheck: canal non encore souscrit, attente...');
+                // Réessayer dans 1 seconde
+                setTimeout(() => this.startHeartbeatCheck(), 1000);
+                return;
             }
 
             // Vérifier toutes les 3 secondes
