@@ -622,7 +622,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/essais-gratuits/{essai}/prolonger', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'prolonger'])->name('essais-gratuits.prolonger');
     Route::get('/essais-gratuits/export', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'export'])->name('essais-gratuits.export');
     Route::get('/essais-gratuits/stats', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'statsApi'])->name('essais-gratuits.stats');
+    
+    // Gestion des sauvegardes de base de données
+    Route::get('/database', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'index'])->name('database.index');
+    Route::post('/database/backup', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'create'])->name('database.backup');
+    Route::get('/database/backup/{filename}/download', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'download'])->name('database.download');
+    Route::post('/database/backup/{filename}/restore', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'restore'])->name('database.restore');
+    Route::delete('/database/backup/{filename}', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'destroy'])->name('database.destroy');
+    Route::get('/database/info', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'getDatabaseInfo'])->name('database.info');
+    Route::post('/database/clean', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'clean'])->name('database.clean');
+    Route::post('/database/import', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'import'])->name('database.import');
 });
+
+// Route publique pour sauvegarde automatique (protégée par token)
+// Utilisable depuis Docker/cron externe
+Route::get('/autosave', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'autoBackup'])->name('database.autosave');
+Route::post('/autosave', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'autoBackup'])->name('database.autosave.post');
 
 // Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)
 Route::get('/run-error-notifications-migration', function () {
@@ -821,3 +836,26 @@ Route::get('/test-email', function() {
 
 // Route de debug temporaire
 require __DIR__ . '/debug_temp.php';
+
+// ⚠️ ROUTE DE SECOURS D'URGENCE - À GARDER SECRÈTE
+// Chemin aléatoire pour éviter la découverte accidentelle
+// Format: /emergency-recovery-[hash-aléatoire]?token=[token-secret]
+// Le hash est généré à partir de APP_KEY pour être unique à chaque installation
+$emergencyHash = substr(md5(config('app.key') . 'emergency-recovery-allotata'), 0, 16);
+Route::get("/emergency-recovery-{$emergencyHash}", [\App\Http\Controllers\EmergencyRecoveryController::class, 'index'])->name('emergency.recovery');
+Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
+    $controller = app(\App\Http\Controllers\EmergencyRecoveryController::class);
+    
+    $action = $request->input('action');
+    $userId = $request->input('user_id');
+    
+    if ($action === 'create_admin') {
+        return $controller->createAdmin($request);
+    } elseif ($action === 'promote' && $userId) {
+        return $controller->promoteToAdmin($request, $userId);
+    } elseif ($action === 'login_as' && $userId) {
+        return $controller->loginAs($request, $userId);
+    }
+    
+    return back()->with('error', 'Action invalide');
+});

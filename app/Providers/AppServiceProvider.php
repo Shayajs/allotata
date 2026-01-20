@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Mail\Events\MessageSent;
 
 class AppServiceProvider extends ServiceProvider
@@ -55,5 +56,16 @@ class AppServiceProvider extends ServiceProvider
 
         // Enregistrer le listener pour logger les emails envoyés
         Event::listen(MessageSent::class, LogEmailSent::class);
+
+        // Personnaliser la durée du cookie "remember me" pour qu'il corresponde à la durée de session
+        // Par défaut, Laravel utilise 2 semaines (20160 minutes), on l'étend à 10 ans (5256000 minutes)
+        Auth::extend('session', function ($app, $name, array $config) {
+            return new \App\Auth\CustomSessionGuard(
+                $name,
+                Auth::createUserProvider($config['provider'] ?? null),
+                $app['session.store'],
+                $app['request']
+            );
+        });
     }
 }
