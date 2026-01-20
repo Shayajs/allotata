@@ -100,15 +100,17 @@ function getEcho() {
 
 // Composant Alpine.js
 function notesEditor(noteId) {
-    // Convertir noteId en nombre, mais le garder comme string pour les canaux
-    const noteIdNum = parseInt(noteId, 10);
+    // Forcer la conversion en string primitive immédiatement (évite les Proxy Alpine)
+    const noteIdStr = String(noteId || '').trim();
+    const noteIdNum = parseInt(noteIdStr, 10);
+    
     if (isNaN(noteIdNum) || noteIdNum <= 0) {
-        console.error('Erreur: noteId invalide:', noteId);
+        console.error('Erreur: noteId invalide:', noteId, 'converti en:', noteIdStr);
     }
     
     return {
         noteId: noteIdNum,
-        noteIdString: String(noteIdNum), // Version string pour les canaux
+        noteIdString: noteIdStr, // Version string primitive (pas de Proxy)
         noteTitle: '',
         saveStatus: 'idle',
         
@@ -274,24 +276,17 @@ function notesEditor(noteId) {
             }
 
             try {
-                // S'assurer que noteId est valide
-                if (!this.noteId || isNaN(this.noteId) || this.noteId <= 0) {
-                    console.error('❌ Erreur: noteId invalide:', this.noteId, typeof this.noteId);
+                // Extraire la valeur brute (pas le Proxy Alpine) et forcer en string
+                const rawNoteId = this.noteId || this.noteIdString;
+                const noteIdStr = String(rawNoteId).trim();
+                
+                if (!noteIdStr || noteIdStr === 'NaN' || noteIdStr === 'null' || noteIdStr === 'undefined' || isNaN(parseInt(noteIdStr, 10))) {
+                    console.error('❌ Erreur: noteId invalide pour le canal:', noteIdStr, typeof rawNoteId);
                     return;
                 }
                 
-                // IMPORTANT: Utiliser Echo.join() pour créer un Presence Channel
-                // Echo ajoute automatiquement le préfixe "presence-" et gère l'authentification
-                // S'assurer que le channelName est bien une string valide
-                const noteIdForChannel = this.noteIdString || String(this.noteId);
-                if (!noteIdForChannel || noteIdForChannel === 'NaN' || noteIdForChannel === 'null' || noteIdForChannel === 'undefined') {
-                    console.error('❌ Erreur: noteIdString invalide pour le canal:', noteIdForChannel);
-                    return;
-                }
-                
-                const channelName = `note.${noteIdForChannel}`;
-                console.log('🔌 Connexion au canal Presence via Echo.join():', channelName, 'type:', typeof channelName);
-                console.log('   Echo instance:', this.echo, 'type:', typeof this.echo);
+                // Construire le nom du canal directement en string
+                const channelName = 'note.' + noteIdStr;
                 
                 // Vérifier que echo existe avant d'appeler join
                 if (!this.echo || typeof this.echo.join !== 'function') {
@@ -299,9 +294,9 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Créer le Presence Channel avec Echo.join() (pas subscribe() qui crée un canal public)
-                // S'assurer que channelName est bien une string
-                this.channel = this.echo.join(String(channelName));
+                // Créer le Presence Channel - Echo.join attend une string primitive
+                this.channel = this.echo.join(channelName);
+                console.log('🔌 Canal Presence créé:', channelName);
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
