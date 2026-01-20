@@ -1,10 +1,17 @@
 // Media Library Manager
 class MediaLibrary {
     constructor() {
-        this.currentFolder = '/';
-        this.currentType = '';
-        this.searchTerm = '';
-        this.currentPage = 1;
+        // Lire les paramètres GET de l'URL pour restaurer l'état
+        const urlParams = new URLSearchParams(window.location.search);
+        const folderFromUrl = urlParams.get('folder');
+        const pageFromUrl = urlParams.get('page');
+        const typeFromUrl = urlParams.get('type');
+        const searchFromUrl = urlParams.get('search');
+        
+        this.currentFolder = folderFromUrl || '/';
+        this.currentType = typeFromUrl || '';
+        this.searchTerm = searchFromUrl || '';
+        this.currentPage = pageFromUrl ? parseInt(pageFromUrl) : 1;
         this.selectedFile = null;
         this.onSelectCallback = null;
         
@@ -26,8 +33,73 @@ class MediaLibrary {
 
     init() {
         this.bindEvents();
+        this.restoreFiltersFromUrl();
         this.loadFiles();
         this.loadFolderTree();
+        
+        // Initialiser l'état du navigateur pour le premier chargement
+        this.updateUrl(true); // true = replaceState au lieu de pushState
+        
+        // Gérer le bouton retour du navigateur
+        window.addEventListener('popstate', (event) => {
+            if (event.state) {
+                this.currentFolder = event.state.folder || '/';
+                this.currentPage = event.state.page || 1;
+                this.currentType = event.state.type || '';
+                this.searchTerm = event.state.search || '';
+                this.restoreFiltersFromUrl();
+                this.loadFiles();
+                this.loadFolderTree();
+            }
+        });
+    }
+    
+    // Restaurer les valeurs des filtres depuis l'URL
+    restoreFiltersFromUrl() {
+        const typeFilter = document.getElementById('media-type-filter');
+        if (typeFilter && this.currentType) {
+            typeFilter.value = this.currentType;
+        }
+        
+        const searchInput = document.getElementById('media-search');
+        if (searchInput && this.searchTerm) {
+            searchInput.value = this.searchTerm;
+        }
+    }
+    
+    // Mettre à jour l'URL avec les paramètres actuels
+    updateUrl(replace = false) {
+        const params = new URLSearchParams();
+        
+        if (this.currentFolder && this.currentFolder !== '/') {
+            params.set('folder', this.currentFolder);
+        }
+        if (this.currentPage > 1) {
+            params.set('page', this.currentPage.toString());
+        }
+        if (this.currentType) {
+            params.set('type', this.currentType);
+        }
+        if (this.searchTerm) {
+            params.set('search', this.searchTerm);
+        }
+        
+        const newUrl = params.toString() 
+            ? `${window.location.pathname}?${params.toString()}`
+            : window.location.pathname;
+        
+        const state = {
+            folder: this.currentFolder,
+            page: this.currentPage,
+            type: this.currentType,
+            search: this.searchTerm
+        };
+        
+        if (replace) {
+            history.replaceState(state, '', newUrl);
+        } else {
+            history.pushState(state, '', newUrl);
+        }
     }
 
     bindEvents() {
@@ -41,6 +113,7 @@ class MediaLibrary {
                     this.searchTerm = e.target.value;
                     this.currentPage = 1;
                     this.loadFiles();
+                    this.updateUrl();
                 }, 300);
             });
         }
@@ -78,6 +151,7 @@ class MediaLibrary {
                 this.currentType = e.target.value;
                 this.currentPage = 1;
                 this.loadFiles();
+                this.updateUrl();
             });
         }
 
@@ -277,26 +351,31 @@ class MediaLibrary {
 
     renderFilePreview(file, url) {
         if (file.type === 'image') {
-            return `<img src="${url}" alt="${this.escapeHtml(file.name)}" class="w-full h-full object-cover">`;
+            return `<img src="${url}" alt="${this.escapeHtml(file.name)}" class="w-full h-full object-cover" loading="lazy" onload="this.classList.add('loaded')">`;
         } else if (file.type === 'video') {
-            // Utiliser la miniature si elle existe
+            // Utiliser la miniature personnalisée si elle existe
             const thumbnailUrl = file.thumbnail_path ? `/media/${file.thumbnail_path}` : null;
             if (thumbnailUrl) {
                 return `
-                    <img src="${thumbnailUrl}" alt="Miniature" class="w-full h-full object-cover">
+                    <img src="${thumbnailUrl}" alt="Miniature" class="w-full h-full object-cover" loading="lazy" onload="this.classList.add('loaded')">
                     <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-12 h-12 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     </div>
                 `;
             } else {
+                // Générer une miniature automatique en utilisant la vidéo elle-même
+                // Le #t=0.5 force le navigateur à charger la frame à 0.5 seconde
+                const videoId = `video-preview-${file.id}`;
                 return `
-                    <video class="w-full h-full object-cover" preload="metadata">
-                        <source src="${url}" type="${file.mime_type}">
+                    <video id="${videoId}" class="w-full h-full object-cover" preload="metadata" muted playsinline
+                           onloadeddata="this.currentTime = 0.5;"
+                           onseeked="this.dataset.ready = 'true';">
+                        <source src="${url}#t=0.5" type="${file.mime_type}">
                     </video>
-                    <div class="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                        <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <svg class="w-12 h-12 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     </div>
@@ -307,9 +386,9 @@ class MediaLibrary {
             const thumbnailUrl = file.thumbnail_path ? `/media/${file.thumbnail_path}` : null;
             if (thumbnailUrl) {
                 return `
-                    <img src="${thumbnailUrl}" alt="Miniature" class="w-full h-full object-cover">
+                    <img src="${thumbnailUrl}" alt="Miniature" class="w-full h-full object-cover" loading="lazy" onload="this.classList.add('loaded')">
                     <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                        <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-12 h-12 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
                         </svg>
                     </div>
@@ -412,11 +491,12 @@ class MediaLibrary {
     }
 
     navigateToFolder(folder, isModal = false) {
-        this.currentFolder = folder === '/' ? '/' : `/${folder}`;
+        this.currentFolder = folder === '/' ? '/' : (folder.startsWith('/') ? folder : `/${folder}`);
         this.currentPage = 1;
         this.loadFiles(isModal);
         if (!isModal) {
             this.loadFolderTree();
+            this.updateUrl();
         }
     }
 
@@ -1138,6 +1218,9 @@ class MediaLibrary {
         if (page < 1) return;
         this.currentPage = page;
         this.loadFiles(isModal);
+        if (!isModal) {
+            this.updateUrl();
+        }
     }
 
     formatFileSize(bytes) {
