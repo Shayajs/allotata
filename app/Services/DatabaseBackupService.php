@@ -41,10 +41,18 @@ class DatabaseBackupService
             $filepath = $this->backupPath . '/' . $filename;
 
             // Construire la commande mysqldump
-            // Utiliser --password= pour éviter l'invite interactive si le mot de passe est vide
+            // Options importantes :
+            // --single-transaction : Pour une sauvegarde cohérente sans verrous
+            // --routines : Inclure les procédures stockées et fonctions
+            // --triggers : Inclure les triggers
+            // --add-drop-table : Supprimer les tables avant de les recréer (pour restauration propre)
+            // --complete-insert : INSERT complets avec noms de colonnes (plus sûr pour restauration)
+            // --extended-insert : INSERT optimisés (plus rapide, mais moins lisible)
+            // --lock-tables=false : Pas de verrous (déjà géré par --single-transaction)
+            // Par défaut, mysqldump inclut TOUTES les données (structure + données + relations)
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
             $command = sprintf(
-                'mysqldump --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers %s > %s 2>&1',
+                'mysqldump --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers --add-drop-table --complete-insert --extended-insert --lock-tables=false %s > %s 2>&1',
                 escapeshellarg($config['host']),
                 escapeshellarg($config['port']),
                 escapeshellarg($config['username']),
@@ -65,6 +73,17 @@ class DatabaseBackupService
             if (filesize($filepath) === 0) {
                 unlink($filepath);
                 throw new Exception("La sauvegarde est vide. Vérifiez les permissions et les identifiants de la base de données.");
+            }
+
+            // Vérifier que le fichier contient bien des données (INSERT statements)
+            $fileContent = file_get_contents($filepath, false, null, 0, 10000); // Lire les 10 premiers KB
+            if (strpos($fileContent, 'INSERT INTO') === false && strpos($fileContent, 'INSERT') === false) {
+                // Le fichier pourrait ne contenir que la structure, vérifier plus en profondeur
+                $fullContent = file_get_contents($filepath);
+                if (strpos($fullContent, 'INSERT') === false && strpos($fullContent, 'VALUES') === false) {
+                    Log::warning("La sauvegarde semble ne contenir que la structure, pas de données détectées");
+                    // Ne pas échouer, car certaines bases peuvent être vides
+                }
             }
 
             // Créer un fichier de métadonnées
