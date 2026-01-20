@@ -866,3 +866,6 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
     
     return back()->with('error', 'Action invalide');
 });
+
+// Route pour obtenir la progression de la restauration
+Route::get("/emergency-recovery-{$emergencyHash}/progress/{progressId}", [\App\Http\Controllers\EmergencyRecoveryController::class, 'getRestoreProgress'])->name('emergency.recovery.progress');
