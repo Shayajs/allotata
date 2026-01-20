@@ -58,17 +58,20 @@ class DatabaseBackupService
             $commonOptions = '--single-transaction --routines --triggers --lock-tables=false --skip-add-drop-table';
             
             // Options selon le type
+            // --replace : Utilise REPLACE INTO au lieu de INSERT
+            //             Si une ligne existe déjà (même clé unique/primaire), elle est remplacée
+            //             Évite les doublons tout en gardant les données à jour
             if ($type === 'structure') {
                 // Structure seule : pas de données
                 $dumpOptions = '--no-data';
             } elseif ($type === 'data') {
                 // Données seules : pas de structure CREATE TABLE
-                // --skip-triggers : Éviter les triggers pendant l'import des données
-                $dumpOptions = '--no-create-info --insert-ignore --complete-insert --extended-insert --skip-triggers';
+                // --replace : Remplace les lignes existantes si même clé unique
+                $dumpOptions = '--no-create-info --replace --complete-insert --extended-insert --skip-triggers';
             } else {
                 // Tout : structure + données
-                // --skip-triggers : Éviter les triggers pendant l'import (on les réactivera après)
-                $dumpOptions = '--insert-ignore --complete-insert --extended-insert --skip-triggers';
+                // --replace : Remplace les lignes existantes si même clé unique
+                $dumpOptions = '--replace --complete-insert --extended-insert --skip-triggers';
             }
             
             // Créer un fichier temporaire pour le dump brut
@@ -619,14 +622,27 @@ class DatabaseBackupService
             'create_count' => $createCount,
         ]);
         
+        // Convertir INSERT IGNORE INTO en REPLACE INTO pour éviter les problèmes de doublons
+        // REPLACE INTO remplace la ligne si elle existe déjà (même clé unique)
+        $modifiedContent = $content;
+        
+        // Remplacer INSERT IGNORE INTO par REPLACE INTO
+        $modifiedContent = preg_replace('/INSERT\s+IGNORE\s+INTO/i', 'REPLACE INTO', $modifiedContent);
+        
+        // Compter les modifications
+        $replaceCount = substr_count(strtoupper($modifiedContent), 'REPLACE INTO');
+        if ($replaceCount > 0) {
+            Log::info("Conversion des INSERT: {$replaceCount} REPLACE INTO dans le fichier");
+        }
+        
         // Si le fichier ne contient que des INSERT (pas de structure), ne pas le modifier
         // car les tables doivent déjà exister
         if ($createCount === 0 && $insertCount > 0) {
-            Log::info("Fichier de données uniquement, pas de réorganisation nécessaire");
+            Log::info("Fichier de données uniquement");
             
-            // Mais on doit quand même désactiver les clés étrangères
+            // Désactiver les clés étrangères et utiliser le contenu modifié
             $tempFile = $filepath . '.prepared.' . time();
-            $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $content . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
+            $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $modifiedContent . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
             file_put_contents($tempFile, $preparedContent);
             
             Log::info("Fichier préparé avec FOREIGN_KEY_CHECKS: {$tempFile}");
@@ -641,22 +657,24 @@ class DatabaseBackupService
         
         // Sinon, on a un fichier mixte (structure + données)
         // Le fichier est probablement déjà dans le bon ordre (mysqldump le fait)
-        // On va juste s'assurer que FOREIGN_KEY_CHECKS est désactivé
+        
+        // Créer un fichier temporaire avec le contenu modifié
+        $tempFile = $filepath . '.prepared.' . time();
         
         // Vérifier si FOREIGN_KEY_CHECKS est déjà présent
-        if (stripos($content, 'FOREIGN_KEY_CHECKS=0') !== false) {
-            Log::info("FOREIGN_KEY_CHECKS déjà présent dans le fichier, pas de modification");
-            return $filepath;
+        if (stripos($modifiedContent, 'FOREIGN_KEY_CHECKS=0') !== false) {
+            // Juste écrire le contenu modifié
+            file_put_contents($tempFile, $modifiedContent);
+        } else {
+            // Ajouter FOREIGN_KEY_CHECKS au début et à la fin
+            $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $modifiedContent . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
+            file_put_contents($tempFile, $preparedContent);
         }
         
-        // Ajouter FOREIGN_KEY_CHECKS au début et à la fin
-        $tempFile = $filepath . '.prepared.' . time();
-        $preparedContent = "SET FOREIGN_KEY_CHECKS=0;\n\n" . $content . "\n\nSET FOREIGN_KEY_CHECKS=1;\n";
-        file_put_contents($tempFile, $preparedContent);
-        
-        Log::info("Fichier préparé avec FOREIGN_KEY_CHECKS: {$tempFile}", [
+        Log::info("Fichier préparé: {$tempFile}", [
             'original_size' => $contentLength,
-            'new_size' => strlen($preparedContent),
+            'new_size' => filesize($tempFile),
+            'replace_count' => $replaceCount,
         ]);
         
         return $tempFile;
