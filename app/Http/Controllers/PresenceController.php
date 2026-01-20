@@ -14,6 +14,7 @@ class PresenceController extends Controller
     public function __construct(PresenceService $presenceService)
     {
         $this->presenceService = $presenceService;
+        $this->middleware('auth');
     }
 
     /**
