@@ -41,14 +41,43 @@
         </section>
 
         <section class="space-y-4">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">5. Modification des CGU</h2>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">5. Trackers de visite et données de navigation</h2>
+            <p class="text-slate-600 dark:text-slate-400">
+                Dans le cadre de l'amélioration continue de nos services et pour simplifier le travail des professionnels utilisant notre plateforme, Allo Tata utilise des trackers de visite sur les pages publiques des entreprises.
+            </p>
+            <p class="text-slate-600 dark:text-slate-400">
+                Ces trackers permettent de collecter des données anonymisées concernant la navigation des visiteurs sur les pages publiques des entreprises, notamment :
+            </p>
+            <ul class="list-disc list-inside text-slate-600 dark:text-slate-400 space-y-2 ml-4">
+                <li>Le nombre de visites sur les pages publiques des entreprises</li>
+                <li>La durée de visite sur chaque page</li>
+                <li>Les services et produits consultés</li>
+                <li>Le temps entre la visite et la prise de rendez-vous (lorsqu'une réservation est effectuée)</li>
+                <li>Les statistiques de rebond et d'exploration des pages</li>
+            </ul>
+            <p class="text-slate-600 dark:text-slate-400">
+                Ces données sont utilisées exclusivement pour fournir des statistiques aux professionnels leur permettant d'améliorer leur activité et d'optimiser leur présence en ligne. Les données collectées ne sont pas utilisées à des fins commerciales ou publicitaires par Allo Tata.
+            </p>
+            <p class="text-slate-600 dark:text-slate-400">
+                Conformément au Règlement Général sur la Protection des Données (RGPD), l'utilisation de ces trackers est soumise à votre consentement explicite. Vous pouvez à tout moment accepter ou refuser ces trackers via la bannière de cookies lors de votre première visite, ou modifier votre préférence dans les paramètres de votre compte dans la section "Confidentialité".
+            </p>
+            <p class="text-slate-600 dark:text-slate-400">
+                Pour les utilisateurs non connectés, le consentement est géré via un mécanisme de cookies stocké localement. Pour les utilisateurs connectés, le consentement est enregistré dans votre profil et peut être modifié à tout moment. Le refus des trackers n'affecte pas votre capacité à utiliser les services du site.
+            </p>
+            <p class="text-slate-600 dark:text-slate-400">
+                Les données collectées sont stockées de manière sécurisée et ne sont accessibles qu'aux professionnels propriétaires des pages concernées. Pour plus d'informations sur le traitement de vos données personnelles, consultez notre <a href="{{ route('legal.confidentialite') }}" class="text-green-600 dark:text-green-400 hover:underline">Politique de Confidentialité</a>.
+            </p>
+        </section>
+
+        <section class="space-y-4">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">6. Modification des CGU</h2>
             <p class="text-slate-600 dark:text-slate-400">
                 L'éditeur se réserve la possibilité de modifier, à tout moment et sans préavis, les présentes conditions d'utilisation afin de les adapter aux évolutions du site et/ou de son exploitation.
             </p>
         </section>
 
         <section class="space-y-4">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">6. Droit applicable</h2>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">7. Droit applicable</h2>
             <p class="text-slate-600 dark:text-slate-400">
                 Tant le présent site que les modalités et conditions de son utilisation sont régis par le droit français, quel que soit le lieu d'utilisation. En cas de contestation éventuelle, et après l'échec de toute tentative de recherche d'une solution amiable, les tribunaux français seront seuls compétents pour connaître de ce litige.
             </p>

@@ -67,7 +67,7 @@ class StockController extends Controller
         try {
             $imageService = app(ImageService::class);
             
-            if ($request->has('produit_id') && !empty($request->produit_id)) {
+            if ($request->filled('produit_id') && is_numeric($request->produit_id)) {
                 $produit = Produit::where('id', $request->produit_id)
                     ->where('entreprise_id', $entreprise->id)
                     ->firstOrFail();

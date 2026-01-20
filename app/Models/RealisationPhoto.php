@@ -10,6 +10,8 @@ class RealisationPhoto extends Model
     protected $fillable = [
         'entreprise_id',
         'avis_id',
+        'service_avis_id',
+        'produit_avis_id',
         'photo_path',
         'titre',
         'description',
@@ -34,5 +36,21 @@ class RealisationPhoto extends Model
     public function avis(): BelongsTo
     {
         return $this->belongsTo(Avis::class);
+    }
+
+    /**
+     * Relation avec l'avis de service
+     */
+    public function serviceAvis(): BelongsTo
+    {
+        return $this->belongsTo(ServiceAvis::class);
+    }
+
+    /**
+     * Relation avec l'avis de produit
+     */
+    public function produitAvis(): BelongsTo
+    {
+        return $this->belongsTo(ProduitAvis::class);
     }
 }

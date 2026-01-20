@@ -284,6 +284,19 @@
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Recettes</span>
                         </button>
 
+                        <!-- Statistiques -->
+                        <button 
+                            onclick="showTab('statistiques')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'statistiques' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="statistiques"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Statistiques</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Statistiques</span>
+                        </button>
+
                         <!-- Outils -->
                         <button 
                             onclick="showTab('outils')"
@@ -316,6 +329,19 @@
                                 <span class="xl:ml-auto px-2 py-0.5 text-xs bg-green-500 text-white rounded-full">{{ $messagesNonLus }}</span>
                             @endif
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Messagerie</span>
+                        </button>
+
+                        <!-- Fidélisation -->
+                        <button 
+                            onclick="showTab('fidelisation')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'fidelisation' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="fidelisation"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Fidélisation</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Fidélisation</span>
                         </button>
 
                         <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
@@ -384,6 +410,28 @@
                             @include('entreprise.dashboard.tabs.finances')
                         </div>
 
+                        <!-- Onglet Statistiques -->
+                        <div id="tab-statistiques" class="tab-content {{ $activeTab !== 'statistiques' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.statistiques', [
+                                'entreprise' => $entreprise,
+                                'stats' => $statsStatistiques ?? [
+                                    'total_visites' => 0,
+                                    'visites_exploration' => 0,
+                                    'visites_rapides' => 0,
+                                    'reservations' => 0,
+                                    'taux_conversion' => 0,
+                                    'temps_moyen_avant_reservation' => 0,
+                                    'evolution_visites' => [],
+                                    'repartition_pages' => ['accueil' => 0, 'agenda' => 0, 'store' => 0],
+                                    'temps_moyen_par_page' => ['accueil' => 0, 'agenda' => 0, 'store' => 0],
+                                    'taux_rebond' => 0
+                                ],
+                                'visiteursSansReservation' => $visiteursSansReservation ?? collect([]),
+                                'topServices' => $topServices ?? [],
+                                'topProduits' => $topProduits ?? []
+                            ])
+                        </div>
+
                         <!-- Onglet Outils -->
                         <div id="tab-outils" class="tab-content {{ $activeTab !== 'outils' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.outils')
@@ -392,6 +440,11 @@
                         <!-- Onglet Messagerie -->
                         <div id="tab-messagerie" class="tab-content {{ $activeTab !== 'messagerie' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.messagerie-liste')
+                        </div>
+
+                        <!-- Onglet Fidélisation -->
+                        <div id="tab-fidelisation" class="tab-content {{ $activeTab !== 'fidelisation' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.fidelisation')
                         </div>
 
                         <!-- Onglet Abonnements -->

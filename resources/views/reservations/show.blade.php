@@ -18,8 +18,11 @@
                         Allo Tata
                     </a>
                     <div class="flex items-center gap-4">
-                        <a href="{{ route('reservations.index', $entreprise->slug) }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
-                            ← Retour
+                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'reservations']) }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Retour
                         </a>
                     </div>
                 </div>

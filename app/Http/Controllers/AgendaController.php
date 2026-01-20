@@ -288,7 +288,7 @@ class AgendaController extends Controller
         try {
             $imageService = app(ImageService::class);
             
-            if ($request->has('type_service_id') && !empty($request->type_service_id)) {
+            if ($request->filled('type_service_id') && is_numeric($request->type_service_id)) {
                 $typeService = TypeService::where('id', $request->type_service_id)
                     ->where('entreprise_id', $entreprise->id)
                     ->firstOrFail();

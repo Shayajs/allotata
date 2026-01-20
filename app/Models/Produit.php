@@ -116,4 +116,37 @@ class Produit extends Model
         // Si en attente de commandes, toujours disponible
         return true;
     }
+
+    /**
+     * Relation : Un produit peut avoir plusieurs avis
+     */
+    public function produitAvis(): HasMany
+    {
+        return $this->hasMany(ProduitAvis::class)->where('est_approuve', true)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relation : Tous les avis (y compris non approuvés) - pour l'admin
+     */
+    public function tousProduitAvis(): HasMany
+    {
+        return $this->hasMany(ProduitAvis::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Calcule la note moyenne du produit
+     */
+    public function getNoteMoyenneAttribute(): float
+    {
+        $noteMoyenne = $this->produitAvis()->avg('note');
+        return $noteMoyenne ? round($noteMoyenne, 1) : 0;
+    }
+
+    /**
+     * Compte le nombre total d'avis
+     */
+    public function getNombreAvisAttribute(): int
+    {
+        return $this->produitAvis()->count();
+    }
 }

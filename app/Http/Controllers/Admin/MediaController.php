@@ -29,10 +29,18 @@ class MediaController extends Controller
 
         $query = MediaFile::query();
 
-        // Filtrer par dossier
+        // Normaliser le chemin du dossier (comme dans upload)
+        $normalizedFolder = null;
         if ($folder && $folder !== '/') {
-            $query->where('folder_path', $folder);
+            $normalizedFolder = trim($folder, '/');
+        }
+
+        // Filtrer par dossier
+        if ($normalizedFolder) {
+            // Comparer avec la valeur normalisée (sans slash au début/fin)
+            $query->where('folder_path', $normalizedFolder);
         } else {
+            // Rechercher les fichiers à la racine (folder_path est null ou vide)
             $query->where(function($q) {
                 $q->whereNull('folder_path')->orWhere('folder_path', '');
             });
@@ -63,6 +71,18 @@ class MediaController extends Controller
         // Organiser les dossiers en arborescence
         $folderTree = $this->buildFolderTree($folders);
 
+        // Retourner le dossier normalisé pour cohérence avec l'upload
+        $returnFolder = $normalizedFolder ? '/' . $normalizedFolder : '/';
+        
+        // Log pour déboguer
+        \Log::debug('Liste des fichiers demandée', [
+            'folder_param' => $folder,
+            'normalized_folder' => $normalizedFolder,
+            'return_folder' => $returnFolder,
+            'files_count' => count($files->items()),
+            'total' => $files->total(),
+        ]);
+        
         return response()->json([
             'files' => $files->items(),
             'pagination' => [
@@ -72,7 +92,7 @@ class MediaController extends Controller
                 'total' => $files->total(),
             ],
             'folder_tree' => $folderTree,
-            'current_folder' => $folder,
+            'current_folder' => $returnFolder,
         ]);
     }
 
@@ -139,14 +159,14 @@ class MediaController extends Controller
             $folder = $request->get('folder', '/');
             $description = $request->get('description');
 
-            // Normaliser le chemin du dossier
-            if ($folder === '/' || empty($folder)) {
-                $folderPath = null;
-                $storageFolder = 'media';
-            } else {
-                $folderPath = trim($folder, '/');
-                $storageFolder = 'media/' . $folderPath;
+            // Normaliser le chemin du dossier (identique à la méthode list)
+            $normalizedFolder = null;
+            if ($folder && $folder !== '/') {
+                $normalizedFolder = trim($folder, '/');
             }
+            
+            $folderPath = $normalizedFolder; // null pour la racine
+            $storageFolder = $normalizedFolder ? 'media/' . $normalizedFolder : 'media';
 
             // Générer un nom unique pour le fichier
             $originalName = $file->getClientOriginalName();
@@ -234,10 +254,20 @@ class MediaController extends Controller
                 'uploaded_by' => auth()->id(),
             ]);
 
+            // Log pour déboguer
+            \Log::info('Fichier uploadé avec succès', [
+                'file_id' => $mediaFile->id,
+                'file_name' => $mediaFile->name,
+                'folder_path' => $mediaFile->folder_path,
+                'normalized_folder' => $normalizedFolder,
+                'storage_folder' => $storageFolder,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'file' => $mediaFile->load('uploader'),
                 'url' => url('/media/' . $path),
+                'folder_path' => $mediaFile->folder_path, // Retourner le folder_path pour debug
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Les erreurs de validation sont déjà gérées plus haut

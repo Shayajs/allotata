@@ -530,6 +530,25 @@ class SettingsController extends Controller
             ->with('success', 'Préférences de notifications mises à jour.');
     }
 
+    /**
+     * Mettre à jour les préférences de confidentialité
+     */
+    public function updateConfidentialite(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'tracking_consent' => ['nullable', 'boolean'],
+        ]);
+
+        // Par défaut à true si non fourni (slider activé par défaut)
+        $user->update([
+            'tracking_consent' => $validated['tracking_consent'] ?? true,
+        ]);
+
+        return redirect()->route('settings.index', ['tab' => 'confidentialite'])
+            ->with('success', 'Vos préférences de confidentialité ont été mises à jour.');
+    }
 
     /**
      * Archiver (supprimer) une entreprise

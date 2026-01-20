@@ -276,6 +276,14 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs visites
+     */
+    public function visites()
+    {
+        return $this->hasMany(EntrepriseVisite::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string

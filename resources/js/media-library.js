@@ -113,8 +113,11 @@ class MediaLibrary {
         if (emptyEl) emptyEl.classList.add('hidden');
 
         try {
+            // Normaliser le dossier pour la requête (sans slash au début sauf si c'est la racine)
+            const folderParam = this.currentFolder === '/' ? '/' : this.currentFolder;
+            
             const params = new URLSearchParams({
-                folder: this.currentFolder,
+                folder: folderParam,
                 page: this.currentPage,
             });
 
@@ -122,7 +125,7 @@ class MediaLibrary {
             if (this.searchTerm) params.append('search', this.searchTerm);
 
             const url = `/admin/api/media/list?${params}`;
-            console.log('Chargement des fichiers depuis:', url, 'Dossier:', this.currentFolder);
+            console.log('Chargement des fichiers depuis:', url, 'Dossier:', this.currentFolder, 'Param folder:', folderParam);
             
             const response = await fetch(url);
             
@@ -131,16 +134,23 @@ class MediaLibrary {
             }
             
             const data = await response.json();
-            console.log('Fichiers reçus:', data.files?.length || 0, 'fichiers');
+            console.log('Fichiers reçus:', data.files?.length || 0, 'fichiers', 'Dossier courant serveur:', data.current_folder);
+            
+            // Vérifier si le dossier courant du serveur diffère de celui attendu
+            if (data.current_folder && this.currentFolder && data.current_folder !== this.currentFolder && data.current_folder !== this.currentFolder.replace(/^\//, '')) {
+                console.warn('Incohérence de dossier:', 'Attendu:', this.currentFolder, 'Reçu du serveur:', data.current_folder);
+            }
 
             if (loadingEl) loadingEl.classList.add('hidden');
 
             if (data.files && data.files.length > 0) {
+                console.log('Affichage de', data.files.length, 'fichiers');
                 this.renderFiles(data.files, isModal);
                 if (!isModal) {
                     this.renderPagination(data.pagination, isModal);
                 }
             } else {
+                console.log('Aucun fichier trouvé pour le dossier:', this.currentFolder);
                 if (gridEl) gridEl.innerHTML = '';
                 if (emptyEl) emptyEl.classList.remove('hidden');
                 if (!isModal) {
@@ -476,6 +486,11 @@ class MediaLibrary {
                             if (data.success) {
                                 uploaded++;
                                 console.log('Upload réussi:', data.file);
+                                console.log('Fichier uploadé dans le dossier:', data.file?.folder_path ?? 'racine', 'URL:', data.url);
+                                // Vérifier que le dossier du fichier correspond au dossier upload
+                                if (data.file?.folder_path && uploadFolder !== '/' && uploadFolder !== '/' + data.file.folder_path) {
+                                    console.warn('Incohérence de dossier:', 'Attendu:', uploadFolder, 'Reçu:', data.file.folder_path);
+                                }
                             } else {
                                 errors++;
                                 const errorMsg = data.error || data.message || 'Erreur inconnue';
@@ -527,6 +542,7 @@ class MediaLibrary {
                             console.log('Rechargement des fichiers après upload...', 'Dossier upload:', uploadFolder, 'Dossier courant:', this.currentFolder);
                             // S'assurer qu'on est dans le bon dossier (celui où on a uploadé)
                             if (this.currentFolder !== uploadFolder) {
+                                console.log('Changement de dossier:', this.currentFolder, '->', uploadFolder);
                                 this.currentFolder = uploadFolder;
                                 this.updateBreadcrumb(uploadFolder);
                             }
@@ -536,9 +552,17 @@ class MediaLibrary {
                             const typeFilter = document.getElementById('media-type-filter');
                             if (typeFilter) typeFilter.value = '';
                             this.currentType = '';
+                            // Réinitialiser la recherche pour voir tous les fichiers
+                            const searchInput = document.getElementById('media-search');
+                            if (searchInput) {
+                                this.searchTerm = '';
+                                searchInput.value = '';
+                            }
+                            // Recharger les fichiers
+                            console.log('Rechargement forcé après upload dans le dossier:', this.currentFolder);
                             this.loadFiles();
                             this.loadFolderTree();
-                        }, 500);
+                        }, 800); // Augmenter le délai pour laisser le temps au serveur de finaliser
                     }
                 });
 

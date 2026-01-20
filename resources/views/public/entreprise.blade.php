@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $entreprise->nom }} - Allo Tata</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.theme-script')
@@ -591,20 +592,34 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                         Services proposés
                     </h2>
-                    @if($entreprise->prix_negociables)
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs sm:text-sm font-medium rounded-full border border-orange-200 dark:border-orange-800">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    <div class="flex items-center gap-2">
+                        @if($entreprise->prix_negociables)
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs sm:text-sm font-medium rounded-full border border-orange-200 dark:border-orange-800">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                Prix négociables
+                            </span>
+                        @endif
+                        <a 
+                            href="{{ route('public.services', $entreprise->slug) }}"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white text-xs sm:text-sm font-semibold rounded-lg transition"
+                        >
+                            Voir tous les services
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
-                            Prix négociables
-                        </span>
-                    @endif
+                        </a>
+                    </div>
                 </div>
                 <div class="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($services as $service)
                         <div 
                             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:border-green-300 dark:hover:border-green-700 group"
                             onclick="openServiceDetailModal({{ $loop->index }})"
+                            data-service-id="{{ $service->id }}"
+                            data-service-nom="{{ $service->nom }}"
+                            data-tracking-service="true"
                         >
                             <!-- Image de couverture ou première image -->
                             @php
@@ -992,7 +1007,7 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                         Produits
                     </h2>
-                    <a href="{{ route('public.store', $entreprise->slug) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-xs sm:text-sm font-semibold rounded-lg transition">
+                    <a href="{{ route('public.produits', $entreprise->slug) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-xs sm:text-sm font-semibold rounded-lg transition">
                         Voir tous les produits
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -1008,7 +1023,13 @@
                             $promotion = $produit->promotionActive()->first();
                             $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
                         @endphp
-                        <a href="{{ route('public.store', $entreprise->slug) }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all hover:border-green-300 dark:hover:border-green-700 group">
+                        <a 
+                            href="{{ route('public.store', $entreprise->slug) }}" 
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all hover:border-green-300 dark:hover:border-green-700 group"
+                            data-produit-id="{{ $produit->id }}"
+                            data-produit-nom="{{ $produit->nom }}"
+                            data-tracking-produit="true"
+                        >
                             @if($imageAffichee)
                                 <div class="relative h-36 sm:h-48 w-full overflow-hidden">
                                     <img 
@@ -1288,6 +1309,9 @@
                 @endif
             </div>
         </div>
+    <!-- Script de tracking des visites -->
+    @vite('resources/js/tracking-visite.js')
+
     <!-- Padding en bas pour éviter que le contenu soit masqué par le bouton fixe -->
     <div class="h-20 lg:hidden"></div>
 </body>

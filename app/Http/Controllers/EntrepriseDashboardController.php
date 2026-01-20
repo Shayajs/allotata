@@ -112,6 +112,19 @@ class EntrepriseDashboardController extends Controller
         // ===== Données pour l'onglet Messagerie =====
         $conversations = $this->getConversations($entreprise);
 
+        // ===== Données pour l'onglet Statistiques =====
+        $statsStatistiques = [];
+        $visiteursSansReservation = collect([]);
+        $topServices = [];
+        $topProduits = [];
+        if ($activeTab === 'statistiques') {
+            $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController();
+            $statsStatistiques = $statsController->calculerStatistiques($entreprise);
+            $visiteursSansReservation = \App\Models\EntrepriseVisite::visiteursSansReservation($entreprise->id, 30);
+            $topServices = $statsController->getTopServices($entreprise->id, 30);
+            $topProduits = $statsController->getTopProduits($entreprise->id, 30);
+        }
+
         // ===== Données pour l'onglet Équipe (multi-personnes) =====
         $membresAvecStats = collect([]);
         $invitationsEnCours = collect([]);
@@ -218,6 +231,38 @@ class EntrepriseDashboardController extends Controller
                 ->get();
         }
 
+        // ===== Données pour l'onglet Fidélisation =====
+        $fidelisationData = [
+            'norme_quartier' => 0,
+            'clients' => [],
+        ];
+        $fidelisationClientsARisque = [
+            'norme_quartier' => 0,
+            'clients' => [],
+        ];
+        $fidelisationStats = [
+            'norme_quartier' => 0,
+            'stats' => [],
+        ];
+        if ($activeTab === 'fidelisation') {
+            $fidelisationService = app(\App\Services\FidelisationService::class);
+            
+            // Données pour l'onglet Clients réguliers
+            $filters = [
+                'search' => $request->get('fidelisation_search'),
+                'statut' => $request->get('fidelisation_statut'),
+                'sort' => $request->get('fidelisation_sort', 'plus_present'),
+            ];
+            $fidelisationData = $fidelisationService->getClientsReguliers($entreprise, $filters);
+            
+            // Données pour l'onglet Clients à risque
+            $joursSansReservation = $request->get('fidelisation_jours_risque', 90);
+            $fidelisationClientsARisque = $fidelisationService->getClientsARisque($entreprise, $joursSansReservation);
+            
+            // Données pour l'onglet Statistiques
+            $fidelisationStats = $fidelisationService->getStatistiques($entreprise);
+        }
+
         // ===== Données pour l'onglet Abonnements (Prix dynamiques) =====
         $subscriptionPrices = [
             'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois'],
@@ -279,6 +324,10 @@ class EntrepriseDashboardController extends Controller
             // Stats
             'stats' => $stats,
             'reservationsEnAttente' => $reservationsEnAttente,
+            'statsStatistiques' => $statsStatistiques,
+            'visiteursSansReservation' => $visiteursSansReservation,
+            'topServices' => $topServices,
+            'topProduits' => $topProduits,
             // Agenda
             'horaires' => $horaires,
             'typesServices' => $typesServices,
@@ -299,6 +348,10 @@ class EntrepriseDashboardController extends Controller
             'subscriptionPrices' => $subscriptionPrices,
             // Stock
             'produits' => $produits,
+            // Fidélisation
+            'fidelisationData' => $fidelisationData,
+            'fidelisationClientsARisque' => $fidelisationClientsARisque,
+            'fidelisationStats' => $fidelisationStats,
         ]);
     }
 

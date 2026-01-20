@@ -151,6 +151,14 @@ Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('publi
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');
 Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation'])->name('public.reservation.store');
 Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
+Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
+Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
+
+// API de tracking (accessible sans authentification)
+Route::prefix('api/tracking/visite')->group(function() {
+    Route::post('/duree', [\App\Http\Controllers\TrackingController::class, 'mettreAJourDuree'])->name('api.tracking.visite.duree');
+    Route::post('/clic', [\App\Http\Controllers\TrackingController::class, 'enregistrerClic'])->name('api.tracking.visite.clic');
+});
 
 // Réservation publique (accessible via lien partagé)
 Route::get("/r/{hash}", [PublicController::class, 'showReservation'])->name('public.reservation.show');
@@ -250,6 +258,14 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::get('/{membre}/statistiques', [MembreGestionController::class, 'getStatistiques'])->name('statistiques');
     });
     
+    // Statistiques des visites
+    Route::prefix('m/{slug}')->name('entreprise.statistiques.')->group(function() {
+        Route::get('/statistiques', [\App\Http\Controllers\EntrepriseStatistiqueController::class, 'index'])->name('index');
+        Route::get('/statistiques/api', [\App\Http\Controllers\EntrepriseStatistiqueController::class, 'apiStats'])->name('api');
+        Route::post('/statistiques/contacter', [\App\Http\Controllers\EntrepriseStatistiqueController::class, 'contacterVisiteur'])->name('contacter');
+        Route::post('/statistiques/proposer-prix', [\App\Http\Controllers\EntrepriseStatistiqueController::class, 'proposerPrixPersonnalise'])->name('proposer-prix');
+    });
+    
     // Gestion des réservations (pour les gérants)
     Route::get('/m/{slug}/reservations', [ReservationController::class, 'index'])->name('reservations.index');
     // Routes spécifiques AVANT la route {id} pour éviter les conflits
@@ -283,6 +299,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
     Route::post('/settings/error-notifications', [SettingsController::class, 'updateErrorNotifications'])->name('settings.error-notifications.update');
+    Route::post('/settings/confidentialite', [SettingsController::class, 'updateConfidentialite'])->name('settings.confidentialite.update');
     
     // Sécurité
     Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
@@ -393,6 +410,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Gestion des finances globales
     Route::get('/finances', [AdminController::class, 'finances'])->name('finances.index');
+    
+    // Statistiques détaillées admin
+    Route::get('/statistiques', [\App\Http\Controllers\AdminStatistiqueController::class, 'index'])->name('statistiques.index');
+    Route::get('/api/statistiques', [\App\Http\Controllers\AdminStatistiqueController::class, 'api'])->name('statistiques.api');
+    Route::get('/statistiques/export', [\App\Http\Controllers\AdminStatistiqueController::class, 'export'])->name('statistiques.export');
     
     // Gestion des utilisateurs
     Route::get('/users', [AdminController::class, 'users'])->name('users.index');

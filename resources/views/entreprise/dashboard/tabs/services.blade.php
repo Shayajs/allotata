@@ -43,8 +43,15 @@
         </div>
 
         @if($typesServices && $typesServices->count() > 0)
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach($typesServices as $service)
+            @php
+                $servicesCount = $typesServices->count();
+                $showExpandButton = $servicesCount > 10;
+                $initialServices = $typesServices->take(10);
+                $remainingServices = $typesServices->skip(10);
+            @endphp
+            
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="services-list-initial">
+                @foreach($initialServices as $service)
                     <div class="p-5 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg transition-shadow {{ $service->est_actif ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-700/50 opacity-75' }}">
                         <div class="flex items-start justify-between mb-3">
                             <div>
@@ -96,6 +103,103 @@
                     </div>
                 @endforeach
             </div>
+            
+            @if($showExpandButton)
+                <div id="services-list-expanded" class="hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                    @foreach($remainingServices as $service)
+                        <div class="p-5 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg transition-shadow {{ $service->est_actif ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-700/50 opacity-75' }}">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h4>
+                                    @if($service->images->count() > 0)
+                                        <span class="text-xs text-slate-500 dark:text-slate-400">📷 {{ $service->images->count() }} image(s)</span>
+                                    @endif
+                                </div>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $service->est_actif ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }}">
+                                    {{ $service->est_actif ? 'Actif' : 'Inactif' }}
+                                </span>
+                            </div>
+                            @if($service->description)
+                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">{{ $service->description }}</p>
+                            @endif
+                            <div class="flex items-center gap-4 text-sm mb-4">
+                                <span class="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    {{ $service->duree_minutes }} min
+                                </span>
+                                <span class="flex items-center gap-1 font-bold text-green-600 dark:text-green-400">
+                                    {{ number_format($service->prix, 0, ',', ' ') }} €
+                                </span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button 
+                                    onclick="editServiceFromButton(this)"
+                                    data-service-id="{{ $service->id }}"
+                                    data-service-nom="{{ addslashes($service->nom) }}"
+                                    data-service-description="{{ addslashes($service->description ?? '') }}"
+                                    data-service-duree="{{ $service->duree_minutes }}"
+                                    data-service-prix="{{ $service->prix }}"
+                                    data-service-actif="{{ $service->est_actif ? 'true' : 'false' }}"
+                                    data-service-images="{{ base64_encode(json_encode($service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
+                                    class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
+                                >
+                                    Modifier
+                                </button>
+                                <form action="{{ route('agenda.service.delete', [$entreprise->slug, $service->id]) }}" method="POST" onsubmit="return confirm('Supprimer ce service ?');" class="flex-1">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-full px-3 py-2 text-sm font-medium bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-400 rounded-lg transition">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button 
+                        id="services-expand-button"
+                        onclick="toggleServicesExpand()"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition-all"
+                    >
+                        <span id="services-expand-text">Voir plus ({{ $remainingServices->count() }} autres)</span>
+                        <svg id="services-expand-icon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <script>
+                    function toggleServicesExpand() {
+                        const expandedList = document.getElementById('services-list-expanded');
+                        const expandButton = document.getElementById('services-expand-button');
+                        const expandText = document.getElementById('services-expand-text');
+                        const expandIcon = document.getElementById('services-expand-icon');
+                        
+                        if (expandedList.classList.contains('hidden')) {
+                            expandedList.classList.remove('hidden');
+                            expandedList.style.opacity = '0';
+                            setTimeout(() => {
+                                expandedList.style.transition = 'opacity 0.3s ease-in-out';
+                                expandedList.style.opacity = '1';
+                            }, 10);
+                            expandText.textContent = 'Voir moins';
+                            expandIcon.classList.add('rotate-180');
+                        } else {
+                            expandedList.style.transition = 'opacity 0.3s ease-in-out';
+                            expandedList.style.opacity = '0';
+                            setTimeout(() => {
+                                expandedList.classList.add('hidden');
+                            }, 300);
+                            expandText.textContent = 'Voir plus ({{ $remainingServices->count() }} autres)';
+                            expandIcon.classList.remove('rotate-180');
+                        }
+                    }
+                </script>
+            @endif
         @else
             <div class="text-center py-12 text-slate-500 dark:text-slate-400">
                 <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

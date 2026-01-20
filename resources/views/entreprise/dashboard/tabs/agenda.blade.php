@@ -100,6 +100,28 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Liste des réservations triées par date -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-500 px-4 sm:px-6 py-4">
+                    <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        Prochaines réservations
+                    </h3>
+                </div>
+                <div class="p-4 sm:p-6">
+                    <div id="reservations-list" class="space-y-3">
+                        <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+                            <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p class="text-sm sm:text-base">Chargement des réservations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- Contenu de l'onglet Paramètres -->
@@ -387,10 +409,15 @@
         }
 
         // Initialiser le calendrier si on affiche l'onglet réservations
-        if (subtabName === 'reservations' && typeof renderCalendar === 'function') {
-            setTimeout(() => {
-                renderCalendar();
-            }, 100);
+        if (subtabName === 'reservations') {
+            if (typeof renderCalendar === 'function') {
+                setTimeout(() => {
+                    renderCalendar();
+                }, 100);
+            } else {
+                // Si le calendrier n'est pas encore initialisé, charger au moins les réservations pour la liste
+                loadReservations();
+            }
         }
     }
 
@@ -400,6 +427,8 @@
     // Données PHP
     const horaires = @json($horaires);
     const reservationsUrl = '{{ route("agenda.reservations", $entreprise->slug, false) }}';
+    const entrepriseSlug = '{{ $entreprise->slug }}';
+    const reservationShowBaseUrl = '{{ url("/m/" . $entreprise->slug . "/reservations") }}';
     
     // État
     let currentWeekOffset = 0;
@@ -448,8 +477,10 @@
         try {
             const response = await fetch(reservationsUrl);
             reservations = await response.json();
+            renderReservationsList();
         } catch (error) {
             reservations = [];
+            renderReservationsList();
         }
     }
     
@@ -756,6 +787,127 @@
         }
     });
     
+    // Fonction pour afficher la liste des réservations triées
+    function renderReservationsList() {
+        const container = document.getElementById('reservations-list');
+        if (!container) return;
+
+        if (!reservations || reservations.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <p class="text-sm sm:text-base">Aucune réservation</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Trier les réservations par date (croissante - les plus proches en haut)
+        const sortedReservations = [...reservations].sort((a, b) => {
+            const dateA = new Date(a.start);
+            const dateB = new Date(b.start);
+            return dateA - dateB;
+        });
+
+        // Filtrer uniquement les réservations futures ou récentes (7 derniers jours)
+        const now = new Date();
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const filteredReservations = sortedReservations.filter(res => {
+            const resDate = new Date(res.start);
+            return resDate >= sevenDaysAgo;
+        });
+
+        if (filteredReservations.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <p class="text-sm sm:text-base">Aucune réservation à venir</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filteredReservations.map(res => {
+            const props = res.extendedProps || {};
+            const startDate = new Date(res.start);
+            const isPast = startDate < now;
+            const isToday = startDate.toDateString() === now.toDateString();
+            
+            // Formater la date
+            const dateStr = startDate.toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: startDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+            });
+            const timeStr = startDate.toTimeString().substring(0, 5);
+            
+            // Couleur selon le statut
+            const colorClass = statutColors[props.statut] || statutColors['en_attente'];
+            const statutLabel = statutLabels[props.statut] || props.statut;
+            
+            // Badge pour indiquer si c'est aujourd'hui ou passé
+            let dateBadge = '';
+            if (isToday) {
+                dateBadge = '<span class="px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Aujourd\'hui</span>';
+            } else if (isPast) {
+                dateBadge = '<span class="px-2 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full">Passé</span>';
+            }
+
+            const reservationUrl = `${reservationShowBaseUrl}/${res.id}`;
+
+            return `
+                <a 
+                    href="${reservationUrl}"
+                    class="block w-full p-4 rounded-xl border-l-4 ${colorClass} hover:shadow-md transition-all text-left ${isPast ? 'opacity-75' : ''} cursor-pointer"
+                >
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <span class="text-xs font-bold">${statutLabel}</span>
+                                ${dateBadge}
+                            </div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base mb-1 truncate">
+                                ${props.type_service || res.title}
+                            </h4>
+                            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                <span class="font-semibold">${props.client || 'Client'}</span>
+                                ${props.membre ? ` • ${props.membre}` : ''}
+                            </p>
+                            <div class="flex items-center gap-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex-wrap">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    ${dateStr}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    ${timeStr}
+                                </span>
+                                ${props.duree ? `<span>${props.duree} min</span>` : ''}
+                                ${props.prix ? `<span class="font-semibold text-green-600 dark:text-green-400">${props.prix} €</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+    }
+
     // Ne pas initialiser le calendrier au chargement, seulement quand on clique sur l'onglet Réservations
     // renderCalendar();
 </script>

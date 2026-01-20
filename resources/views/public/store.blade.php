@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Boutique - {{ $entreprise->nom }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite('resources/js/tracking-visite.js')
     @include('partials.theme-script')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
@@ -62,6 +64,9 @@
                         <div 
                             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:border-green-300 dark:hover:border-green-700 group"
                             onclick="openProduitModal({{ $loop->index }})"
+                            data-produit-id="{{ $produit->id }}"
+                            data-produit-nom="{{ $produit->nom }}"
+                            data-tracking-produit="true"
                         >
                             @if($imageAffichee)
                                 <div class="relative h-48 w-full overflow-hidden">

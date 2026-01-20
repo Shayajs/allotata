@@ -63,4 +63,37 @@ class TypeService extends Model
     {
         return $this->hasOne(ServiceImage::class)->where('est_couverture', true);
     }
+
+    /**
+     * Relation : Un type de service peut avoir plusieurs avis
+     */
+    public function serviceAvis(): HasMany
+    {
+        return $this->hasMany(ServiceAvis::class)->where('est_approuve', true)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relation : Tous les avis (y compris non approuvés) - pour l'admin
+     */
+    public function tousServiceAvis(): HasMany
+    {
+        return $this->hasMany(ServiceAvis::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Calcule la note moyenne du service
+     */
+    public function getNoteMoyenneAttribute(): float
+    {
+        $noteMoyenne = $this->serviceAvis()->avg('note');
+        return $noteMoyenne ? round($noteMoyenne, 1) : 0;
+    }
+
+    /**
+     * Compte le nombre total d'avis
+     */
+    public function getNombreAvisAttribute(): int
+    {
+        return $this->serviceAvis()->count();
+    }
 }

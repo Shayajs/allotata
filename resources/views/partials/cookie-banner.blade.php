@@ -4,6 +4,7 @@
             <div class="flex-1 text-center sm:text-left">
                 <p class="text-slate-600 dark:text-slate-300 text-sm">
                     Nous utilisons des cookies pour optimiser votre expérience, analyser notre trafic et sécuriser nos services.
+                    Nous utilisons également des <strong>trackers de visite</strong> pour aider les professionnels (Tata) à améliorer et simplifier leurs activités en leur fournissant des statistiques anonymisées sur les visites de leur page publique.
                     Pour en savoir plus, consultez notre 
                     <a href="{{ route('legal.cookies') }}" class="text-green-600 dark:text-green-400 font-medium hover:underline">Politique relative aux cookies</a>.
                 </p>
@@ -53,6 +54,24 @@
         // Gestion du clic sur "J'accepte"
         document.getElementById('cookie-accept').addEventListener('click', function() {
             localStorage.setItem('allo_tata_cookie_consent', 'accepted');
+            
+            // Si l'utilisateur est connecté, mettre à jour le consentement en base de données
+            @auth
+                fetch('{{ route("settings.confidentialite.update") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tracking_consent: true
+                    })
+                }).catch(error => {
+                    console.debug('Erreur lors de la mise à jour du consentement:', error);
+                });
+            @endauth
+            
             hideBanner();
         });
 

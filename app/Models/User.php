@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'abonnement_manuel_date_debut',
         'abonnement_manuel_montant',
         'notifications_erreurs_actives',
+        'tracking_consent',
         'telephone',
         'bio',
         'date_naissance',
@@ -79,6 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'abonnement_manuel_date_debut' => 'date',
             'abonnement_manuel_montant' => 'decimal:2',
             'notifications_erreurs_actives' => 'boolean',
+            'tracking_consent' => 'boolean',
             'date_naissance' => 'date',
             'a2f_enabled' => 'boolean',
             'google2fa_enabled' => 'boolean',
@@ -124,6 +126,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function avis()
     {
         return $this->hasMany(Avis::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs avis sur des services
+     */
+    public function serviceAvis()
+    {
+        return $this->hasMany(ServiceAvis::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs avis sur des produits
+     */
+    public function produitAvis()
+    {
+        return $this->hasMany(ProduitAvis::class);
     }
 
     /**

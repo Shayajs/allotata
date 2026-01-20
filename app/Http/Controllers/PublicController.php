@@ -6,6 +6,7 @@ use App\Models\Entreprise;
 use App\Models\Reservation;
 use App\Models\TypeService;
 use App\Models\Notification;
+use App\Models\EntrepriseVisite;
 use App\Mail\ReservationConfirmationEmail;
 use App\Mail\ReservationCancelledEmail;
 use Illuminate\Http\Request;
@@ -16,6 +17,18 @@ class PublicController extends Controller
 {
     public function show($slug)
     {
+        // Enregistrer la visite (de manière asynchrone pour ne pas bloquer)
+        // Seulement si l'utilisateur a consenti au tracking
+        try {
+            $user = Auth::user();
+            $entreprise = Entreprise::where('slug', $slug)->first();
+            if ($entreprise && ($user === null || ($user && ($user->tracking_consent ?? true)))) {
+                EntrepriseVisite::enregistrerVisite($entreprise, 'accueil', $user);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+        }
+
         // Cache de 10 minutes pour les pages publiques d'entreprise
         $cacheKey = "entreprise_public_{$slug}";
         $entreprise = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($slug) {
@@ -127,6 +140,17 @@ class PublicController extends Controller
      */
     public function agenda($slug)
     {
+        // Enregistrer la visite (seulement si consentement)
+        try {
+            $user = Auth::user();
+            $entreprise = Entreprise::where('slug', $slug)->first();
+            if ($entreprise && ($user === null || ($user && ($user->tracking_consent ?? true)))) {
+                EntrepriseVisite::enregistrerVisite($entreprise, 'agenda', $user);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+        }
+
         $entreprise = Entreprise::where('slug', $slug)
             ->with(['typesServices' => function($query) {
                 $query->where('est_actif', true);
@@ -315,6 +339,17 @@ class PublicController extends Controller
      */
     public function store($slug)
     {
+        // Enregistrer la visite (seulement si consentement)
+        try {
+            $user = Auth::user();
+            $entreprise = Entreprise::where('slug', $slug)->first();
+            if ($entreprise && ($user === null || ($user && ($user->tracking_consent ?? true)))) {
+                EntrepriseVisite::enregistrerVisite($entreprise, 'store', $user);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+        }
+
         $entreprise = Entreprise::where('slug', $slug)
             ->with(['produits' => function($query) {
                 $query->where('est_actif', true)
@@ -343,6 +378,109 @@ class PublicController extends Controller
         });
 
         return view('public.store', [
+            'entreprise' => $entreprise,
+            'slug' => $slug,
+            'produits' => $produits,
+            'isOwner' => $isOwner,
+        ]);
+    }
+
+    /**
+     * Afficher la page dédiée aux services
+     */
+    public function services($slug)
+    {
+        // Enregistrer la visite (seulement si consentement)
+        try {
+            $user = Auth::user();
+            $entreprise = Entreprise::where('slug', $slug)->first();
+            if ($entreprise && ($user === null || ($user && ($user->tracking_consent ?? true)))) {
+                EntrepriseVisite::enregistrerVisite($entreprise, 'services', $user);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+        }
+
+        $entreprise = Entreprise::where('slug', $slug)
+            ->with(['typesServices' => function($query) {
+                $query->where('est_actif', true)
+                      ->with(['images', 'imageCouverture', 'serviceAvis' => function($q) {
+                          $q->with(['user:id,name', 'photos']);
+                      }]);
+            }])
+            ->with('realisationPhotos')
+            ->firstOrFail();
+
+        // Recharger le user avec toutes ses colonnes pour vérifier l'abonnement
+        if ($entreprise->user_id) {
+            $entreprise->unsetRelation('user');
+            $entreprise->load('user');
+        }
+
+        // Vérifier si l'entreprise a un abonnement actif (via son gérant)
+        $user = Auth::user();
+        $isOwner = $user && $user->id === $entreprise->user_id;
+        
+        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+            abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
+        }
+
+        $typesServices = $entreprise->typesServices;
+
+        return view('public.services', [
+            'entreprise' => $entreprise,
+            'slug' => $slug,
+            'typesServices' => $typesServices,
+            'isOwner' => $isOwner,
+        ]);
+    }
+
+    /**
+     * Afficher la page dédiée aux produits
+     */
+    public function produits($slug)
+    {
+        // Enregistrer la visite (seulement si consentement)
+        try {
+            $user = Auth::user();
+            $entreprise = Entreprise::where('slug', $slug)->first();
+            if ($entreprise && ($user === null || ($user && ($user->tracking_consent ?? true)))) {
+                EntrepriseVisite::enregistrerVisite($entreprise, 'produits', $user);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+        }
+
+        $entreprise = Entreprise::where('slug', $slug)
+            ->with(['produits' => function($query) {
+                $query->where('est_actif', true)
+                      ->with(['stock', 'images', 'imageCouverture', 'promotionActive', 'produitAvis' => function($q) {
+                          $q->with(['user:id,name', 'photos']);
+                      }]);
+            }])
+            ->with('realisationPhotos')
+            ->firstOrFail();
+
+        // Recharger le user avec toutes ses colonnes pour vérifier l'abonnement
+        if ($entreprise->user_id) {
+            $entreprise->unsetRelation('user');
+            $entreprise->load('user');
+        }
+
+        // Vérifier si l'entreprise a un abonnement actif (via son gérant)
+        $user = Auth::user();
+        $isOwner = $user && $user->id === $entreprise->user_id;
+        
+        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+            abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
+        }
+
+        // Filtrer uniquement les produits disponibles
+        $produits = $entreprise->produits->filter(function($produit) {
+            return $produit->estDisponible();
+        });
+
+        return view('public.produits', [
             'entreprise' => $entreprise,
             'slug' => $slug,
             'produits' => $produits,
@@ -456,6 +594,25 @@ class PublicController extends Controller
             'type_service' => $typeService->nom,
             'statut' => 'en_attente', // En attente de confirmation par la tata
         ]);
+
+        // Marquer la visite comme ayant passé une commande (seulement si consentement)
+        try {
+            $user = Auth::user();
+            if ($user === null || ($user && ($user->tracking_consent ?? true))) {
+                $sessionId = \Illuminate\Support\Facades\Session::getId();
+                $visite = EntrepriseVisite::where('entreprise_id', $entreprise->id)
+                    ->where('session_id', $sessionId)
+                    ->where('a_passe_commande', false)
+                    ->latest()
+                    ->first();
+                
+                if ($visite) {
+                    $visite->marquerReservation();
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Erreur lors du marquage de réservation dans visite: ' . $e->getMessage());
+        }
 
         // Créer une notification pour le gérant
         $gerant = $entreprise->user;

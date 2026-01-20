@@ -149,6 +149,19 @@
                             <span class="hidden xl:inline">Préférences</span>
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Préférences</span>
                         </button>
+
+                        <!-- Confidentialité -->
+                        <button 
+                            onclick="showTab('confidentialite')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                            data-tab="confidentialite"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Confidentialité</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Confidentialité</span>
+                        </button>
                     </nav>
                 </aside>
 
@@ -1008,6 +1021,67 @@
                             @include('partials.settings.subscription-tab')
                         </div>
                     @endif
+
+                    <!-- Onglet Confidentialité -->
+                    <div id="tab-confidentialite" class="tab-content hidden">
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Confidentialité</h2>
+                        
+                        <form action="{{ route('settings.confidentialite.update') }}" method="POST" class="space-y-6">
+                            @csrf
+                            
+                            <!-- Consentement aux trackers -->
+                            <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <div class="flex items-start justify-between gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                            Tracker de visites
+                                        </h3>
+                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                            En acceptant les trackers, vous aidez les professionnels (Tata) à améliorer et simplifier leurs activités. 
+                                            Ces statistiques anonymisées leur permettent de mieux comprendre les besoins de leurs clients et d'optimiser leurs services.
+                                        </p>
+                                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                                            <p class="text-sm text-blue-800 dark:text-blue-400">
+                                                <strong>🔒 Données collectées :</strong> Les trackers enregistrent uniquement des données anonymes (durée de visite, pages consultées, services/produits cliqués). 
+                                                Aucune donnée personnelle identifiable n'est collectée sans votre consentement explicite.
+                                            </p>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-500 mb-4">
+                                            En conformité avec le RGPD, vous pouvez à tout moment modifier votre préférence. 
+                                            <a href="{{ route('legal.confidentialite') }}" class="text-green-600 dark:text-green-400 hover:underline">En savoir plus sur notre politique de confidentialité</a>.
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <div class="flex-1">
+                                        <label class="text-base font-medium text-slate-900 dark:text-white cursor-pointer" for="tracking-consent">
+                                            Autoriser le tracking des visites pour améliorer les services des Tata
+                                        </label>
+                                    </div>
+                                    <div class="ml-4">
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                id="tracking-consent"
+                                                name="tracking_consent" 
+                                                value="1"
+                                                {{ old('tracking_consent', $user->tracking_consent ?? true) ? 'checked' : '' }}
+                                                class="sr-only peer"
+                                            >
+                                            <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
+                                    Enregistrer les modifications
+                                </button>
+                            </div>
+                        </form>
+                    </div>
 
                     <!-- Onglet Préférences -->
                     <div id="tab-preferences" class="tab-content hidden">
