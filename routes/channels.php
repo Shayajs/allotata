@@ -32,7 +32,7 @@ Broadcast::channel('kanban.{boardId}', function ($user) {
     return $user->is_admin ?? false;
 });
 
-// Channels pour les Notes (canaux privés)
+// Channels pour les Notes (Presence Channel pour la collaboration)
 Broadcast::channel('note.{noteId}', function ($user, $noteId) {
     // Seuls les admins peuvent accéder aux notes
     if (!($user->is_admin ?? false)) {
@@ -40,7 +40,19 @@ Broadcast::channel('note.{noteId}', function ($user, $noteId) {
     }
     
     // Vérifier que l'utilisateur est collaborateur de la note
-    return \App\Models\NoteCollaborator::where('note_id', $noteId)
+    $isCollaborator = \App\Models\NoteCollaborator::where('note_id', $noteId)
         ->where('user_id', $user->id)
         ->exists();
+    
+    if (!$isCollaborator) {
+        return false;
+    }
+    
+    // Retourner les données pour le Presence Channel
+    return [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'joined_at' => now()->timestamp, // Pour déterminer qui est le Master
+    ];
 });

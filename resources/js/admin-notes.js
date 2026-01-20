@@ -1,10 +1,10 @@
 /**
  * Éditeur de notes collaboratif - CodeMirror 6
- * Architecture V1 : Coloration syntaxique + Curseurs en temps réel
+ * Architecture Master/Slave : Synchronisation par frappes de touches
  */
 
 import { EditorView } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { EditorState, ChangeSet } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -54,27 +54,26 @@ function notesEditor(noteId) {
         noteTitle: '',
         saveStatus: 'idle',
         
-        editor: null,
         editorView: null,
-        
+        collaborators: [],
         remoteCursors: {},
         userColors: {},
-        collaborators: [],
         
         saveTimer: null,
         cursorTimer: null,
         isApplyingRemote: false,
+        isHandlingRemoteChange: false,
+        
         echo: null,
         channel: null,
-
+        hasMasterKey: false, // Clé de sauvegarde Master
+        
         init() {
-            // Récupérer le titre
             const titleInput = this.$el.querySelector('input[type="text"]');
             if (titleInput) {
                 this.noteTitle = titleInput.value || '';
             }
             
-            // Initialiser après le tick
             this.$nextTick(() => {
                 this.setupEditor();
                 this.setupWebSocket();
@@ -88,14 +87,10 @@ function notesEditor(noteId) {
                 return;
             }
 
-            // Contenu initial
             const initialContent = window.noteContent || '';
-            
-            // Détecter le thème
             const isDark = document.documentElement.classList.contains('dark');
 
             try {
-                // Créer l'état de l'éditeur
                 const state = EditorState.create({
                     doc: initialContent,
                     extensions: [
@@ -104,16 +99,14 @@ function notesEditor(noteId) {
                         isDark ? oneDark : [],
                         EditorView.updateListener.of((update) => {
                             if (update.docChanged && !this.isApplyingRemote) {
-                                const content = update.state.doc.toString();
-                                this.queueSave(content);
+                                // Capturer les changements individuels
+                                this.handleLocalChange(update);
                                 this.queueCursorUpdate();
                                 this.drawCursors();
                             }
                         }),
                         EditorView.theme({
-                            '&': {
-                                height: '100%',
-                            },
+                            '&': { height: '100%' },
                             '.cm-scroller': {
                                 fontFamily: "'Fira Code', 'Monaco', 'Menlo', monospace",
                             },
@@ -121,25 +114,18 @@ function notesEditor(noteId) {
                     ],
                 });
 
-                // Créer la vue
                 this.editorView = new EditorView({
                     state: state,
                     parent: container,
                 });
 
-                this.editor = this.editorView.state;
-
-                // Mettre à jour les curseurs lors du scroll
                 const scrollEl = this.editorView.scrollDOM;
                 if (scrollEl) {
-                    scrollEl.addEventListener('scroll', () => {
-                        this.drawCursors();
-                    });
+                    scrollEl.addEventListener('scroll', () => this.drawCursors());
                 }
 
-                // Observer le thème
                 const themeObserver = new MutationObserver(() => {
-                    // CodeMirror 6 gère mieux les thèmes, mais on peut ajouter une logique ici si besoin
+                    // Gestion thème si besoin
                 });
                 themeObserver.observe(document.documentElement, {
                     attributes: true,
@@ -153,48 +139,156 @@ function notesEditor(noteId) {
 
         setupWebSocket() {
             this.echo = getEcho();
-            if (!this.echo) return;
+            if (!this.echo) {
+                console.warn('Pusher non disponible, mode polling activé');
+                return;
+            }
 
             try {
-                this.channel = this.echo.private(`note.${this.noteId}`);
+                // Utiliser join() pour un Presence Channel
+                this.channel = this.echo.join(`note.${this.noteId}`);
                 
+                // Utilisateurs déjà présents
+                this.channel.here((users) => {
+                    this.collaborators = users;
+                    this.determineMaster(users);
+                });
+
+                // Nouvel utilisateur rejoint
+                this.channel.joining((user) => {
+                    if (!this.collaborators.find(u => u.id === user.id)) {
+                        this.collaborators.push(user);
+                    }
+                    this.determineMaster([...this.collaborators, user]);
+                });
+
+                // Utilisateur part
+                this.channel.leaving((user) => {
+                    this.collaborators = this.collaborators.filter(u => u.id !== user.id);
+                    delete this.remoteCursors[user.id];
+                    this.determineMaster(this.collaborators);
+                    this.drawCursors();
+                });
+
+                // Écouter les changements de texte (whisper - événements clients)
+                this.channel.listenForWhisper('text-change', (data) => {
+                    if (data.userId !== window.currentUserId) {
+                        this.handleRemoteTextChange(data);
+                    }
+                });
+
                 // Écouter les mouvements de curseur
-                this.channel.listen('.cursor.moved', (data) => {
-                    if (data.user && data.user.id !== window.currentUserId && data.cursor) {
-                        this.handleRemoteCursor(data.user, data.cursor);
+                this.channel.listenForWhisper('cursor-moved', (data) => {
+                    if (data.userId !== window.currentUserId) {
+                        this.handleRemoteCursor(data);
                     }
                 });
-                
-                // Écouter les mises à jour de contenu (pour voir les modifications en temps réel)
-                this.channel.listen('.content.updated', (data) => {
-                    if (data.user && data.user.id !== window.currentUserId && data.note) {
-                        this.handleRemoteContent(data.note.contenu_markdown);
-                    }
-                });
-                
-                // Utilisateurs qui rejoignent
-                this.channel.listen('.user.joined', (data) => {
-                    if (data.user && !this.collaborators.find(c => c.id === data.user.id)) {
-                        this.collaborators.push(data.user);
-                    }
-                });
-                
-                // Utilisateurs qui partent
-                this.channel.listen('.user.left', (data) => {
-                    if (data.user) {
-                        this.collaborators = this.collaborators.filter(c => c.id !== data.user.id);
-                        delete this.remoteCursors[data.user.id];
-                        this.drawCursors();
-                    }
-                });
-                
+
+                console.log('Collaboration en temps réel activée (Master/Slave)');
+
             } catch (e) {
                 console.error('Erreur WebSocket:', e);
             }
         },
 
-        // Sauvegarde avec délai (pas via Pusher)
+        // Déterminer qui est le Master (premier arrivé)
+        determineMaster(users) {
+            if (!users || users.length === 0) {
+                this.hasMasterKey = false;
+                return;
+            }
+
+            // Trier par joined_at (timestamp)
+            const sorted = users.sort((a, b) => (a.joined_at || 0) - (b.joined_at || 0));
+            const master = sorted[0];
+            
+            this.hasMasterKey = master.id === window.currentUserId;
+            
+            if (this.hasMasterKey) {
+                console.log('💾 Vous êtes le Master (sauvegarde activée)');
+            }
+        },
+
+        // Gérer les changements locaux (envoyer via whisper)
+        handleLocalChange(update) {
+            if (!this.channel || this.isHandlingRemoteChange) return;
+
+            // Extraire les changements de la transaction
+            update.transactions.forEach(tr => {
+                if (tr.changes && !tr.annotation('remote')) {
+                    const changes = tr.changes;
+                    
+                    // Parcourir les changements individuels
+                    changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+                        const change = {
+                            userId: window.currentUserId,
+                            from: fromA,
+                            to: toA,
+                            insert: inserted.toString(),
+                            timestamp: Date.now()
+                        };
+
+                        // Envoyer via whisper (événement client-client, pas serveur)
+                        try {
+                            this.channel.whisper('text-change', change);
+                        } catch (e) {
+                            console.error('Erreur whisper:', e);
+                        }
+                    });
+                }
+            });
+
+            // Si on a la clé Master, programmer la sauvegarde
+            if (this.hasMasterKey) {
+                const content = update.state.doc.toString();
+                this.queueSave(content);
+            }
+        },
+
+        // Appliquer un changement distant
+        handleRemoteTextChange(data) {
+            if (!this.editorView) return;
+
+            this.isApplyingRemote = true;
+
+            try {
+                const state = this.editorView.state;
+                const changes = ChangeSet.of({
+                    from: data.from,
+                    to: data.to || data.from,
+                    insert: data.insert || ''
+                });
+
+                const transaction = state.update({
+                    changes: changes,
+                    annotations: [EditorState.transactionMeta.of({ remote: true })]
+                });
+
+                this.editorView.dispatch(transaction);
+            } catch (e) {
+                console.error('Erreur application changement distant:', e);
+            }
+
+            this.isApplyingRemote = false;
+            this.drawCursors();
+        },
+
+        // Gérer le curseur distant
+        handleRemoteCursor(data) {
+            if (data.user && data.position !== undefined) {
+                this.remoteCursors[data.userId] = {
+                    user: data.user,
+                    position: data.position,
+                    time: Date.now()
+                };
+                this.drawCursors();
+            }
+        },
+
+        // Sauvegarde (uniquement si Master)
         queueSave(content) {
+            if (!this.hasMasterKey) return;
+
             clearTimeout(this.saveTimer);
             this.saveStatus = 'saving';
             
@@ -203,8 +297,12 @@ function notesEditor(noteId) {
             }, 2000);
         },
 
-        // Sauvegarde HTTP
         async saveContent(content) {
+            if (!this.hasMasterKey) {
+                this.saveStatus = 'idle';
+                return;
+            }
+
             if (!content && this.editorView) {
                 content = this.editorView.state.doc.toString();
             }
@@ -236,7 +334,6 @@ function notesEditor(noteId) {
             }
         },
 
-        // Mise à jour du titre
         async updateTitle() {
             try {
                 await fetch(`/admin/notes/${this.noteId}`, {
@@ -252,90 +349,30 @@ function notesEditor(noteId) {
             }
         },
 
-        // Mise à jour du curseur (pour les autres utilisateurs)
         queueCursorUpdate() {
             clearTimeout(this.cursorTimer);
             this.cursorTimer = setTimeout(() => this.updateCursor(), 200);
         },
 
         async updateCursor() {
-            if (!this.editorView) return;
+            if (!this.editorView || !this.channel) return;
             
             try {
                 const selection = this.editorView.state.selection.main;
                 const pos = selection.head;
                 
-                // Envoyer seulement la position, pas le contenu
-                await fetch(`/admin/notes/${this.noteId}/cursor`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                // Envoyer via whisper (pas besoin du serveur pour le curseur)
+                this.channel.whisper('cursor-moved', {
+                    userId: window.currentUserId,
+                    user: {
+                        id: window.currentUserId,
+                        name: document.body.dataset.userName || 'Utilisateur'
                     },
-                    body: JSON.stringify({ position: pos })
+                    position: pos
                 });
             } catch (e) {
-                // Ignorer silencieusement
+                // Ignorer
             }
-        },
-
-        // Gérer le curseur d'un autre utilisateur
-        handleRemoteCursor(user, cursor) {
-            this.remoteCursors[user.id] = {
-                user: user,
-                position: cursor.position || 0,
-                time: Date.now()
-            };
-            this.drawCursors();
-        },
-
-        // Appliquer le contenu modifié par un autre utilisateur (temps réel)
-        handleRemoteContent(content) {
-            if (!this.editorView) return;
-
-            this.isApplyingRemote = true;
-
-            // Sauvegarder la position du curseur et du scroll
-            const selection = this.editorView.state.selection.main;
-            const scrollPos = this.editorView.scrollDOM.scrollTop;
-
-            try {
-                // Appliquer le nouveau contenu
-                const transaction = this.editorView.state.update({
-                    changes: {
-                        from: 0,
-                        to: this.editorView.state.doc.length,
-                        insert: content
-                    }
-                });
-
-                this.editorView.dispatch(transaction);
-
-                // Restaurer la position du curseur si possible
-                try {
-                    const newSelection = selection.head > content.length 
-                        ? { anchor: content.length, head: content.length }
-                        : selection;
-                    this.editorView.dispatch({
-                        selection: newSelection
-                    });
-                } catch (e) {
-                    // Ignorer si la position n'est plus valide
-                }
-
-                // Restaurer la position de scroll
-                if (scrollPos !== undefined) {
-                    this.editorView.scrollDOM.scrollTop = scrollPos;
-                }
-
-            } catch (e) {
-                console.error('Erreur application contenu distant:', e);
-            }
-
-            this.isApplyingRemote = false;
-            
-            // Redessiner les curseurs
-            this.drawCursors();
         },
 
         // Dessiner les curseurs distants
@@ -345,10 +382,8 @@ function notesEditor(noteId) {
             const view = this.editorView;
             const scrollEl = view.scrollDOM || view.dom;
             
-            // Nettoyer les curseurs existants
             scrollEl.querySelectorAll('.collaborator-cursor').forEach(el => el.remove());
 
-            // Nettoyer les curseurs expirés (5 secondes)
             const now = Date.now();
             Object.keys(this.remoteCursors).forEach(userId => {
                 if (now - this.remoteCursors[userId].time > 5000) {
@@ -356,27 +391,23 @@ function notesEditor(noteId) {
                 }
             });
 
-            // Dessiner chaque curseur
             Object.values(this.remoteCursors).forEach(cursorData => {
                 try {
                     const pos = cursorData.position;
-                    const coords = view.coordsAtPos(pos, 1); // 'window' pour les coordonnées absolues
+                    const coords = view.coordsAtPos(pos, 1);
                     
                     if (!coords) return;
 
-                    // Vérifier si le curseur est visible
                     const scrollInfo = view.scrollDOM.getBoundingClientRect();
                     if (coords.top < scrollInfo.top || coords.top > scrollInfo.bottom) {
-                        return; // Curseur hors de la zone visible
+                        return;
                     }
 
                     const color = this.getUserColor(cursorData.user.id);
                     const lineHeight = coords.bottom - coords.top || 20;
 
-                    // Créer le curseur
                     const cursorEl = document.createElement('div');
                     cursorEl.className = 'collaborator-cursor';
-                    cursorEl.dataset.userId = cursorData.user.id;
                     cursorEl.style.cssText = `
                         position: absolute;
                         width: 2px;
@@ -388,11 +419,8 @@ function notesEditor(noteId) {
                         margin-left: -1px;
                         pointer-events: auto;
                     `;
-
-                    // Ajouter la goutte (via ::before en CSS)
                     cursorEl.style.setProperty('--cursor-color', color);
 
-                    // Tag avec le nom (apparaît au hover)
                     const nameTag = document.createElement('div');
                     nameTag.className = 'collaborator-name-tag';
                     nameTag.textContent = cursorData.user.name || 'Utilisateur';
@@ -404,12 +432,11 @@ function notesEditor(noteId) {
                     scrollEl.appendChild(cursorEl);
 
                 } catch (e) {
-                    console.debug('Erreur rendu curseur:', e);
+                    // Ignorer
                 }
             });
         },
 
-        // Couleur pour un utilisateur
         getUserColor(userId) {
             if (!userId) return '#3b82f6';
             if (this.userColors[userId]) return this.userColors[userId];
@@ -424,7 +451,6 @@ function notesEditor(noteId) {
             return color;
         },
 
-        // Style pour avatar collaborateur
         getCollaboratorColor(userId) {
             if (!userId) return {};
             const color = this.getUserColor(userId);
@@ -435,10 +461,13 @@ function notesEditor(noteId) {
             };
         },
 
-        // Getters pour le statut
         get saveStatusText() {
-            if (this.saveStatus === 'saving') return 'Sauvegarde...';
-            if (this.saveStatus === 'saved') return 'Sauvegardé';
+            if (this.hasMasterKey) {
+                if (this.saveStatus === 'saving') return 'Sauvegarde...';
+                if (this.saveStatus === 'saved') return 'Sauvegardé';
+            } else {
+                return 'En lecture seule';
+            }
             return '';
         },
 
