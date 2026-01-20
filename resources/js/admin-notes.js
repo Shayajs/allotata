@@ -19,38 +19,79 @@ let echoInstance = null;
 function getEcho() {
     if (echoInstance) return echoInstance;
     
-    const key = window.PUSHER_APP_KEY;
-    const cluster = window.PUSHER_APP_CLUSTER || 'mt1';
+    // S'assurer que toutes les valeurs sont des strings valides
+    let key = window.PUSHER_APP_KEY;
+    let cluster = window.PUSHER_APP_CLUSTER || 'mt1';
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     
-    if (!key) {
-        console.error('❌ PUSHER_APP_KEY non défini');
+    // Vérifier que la clé existe et n'est pas vide
+    if (!key || key === '' || key === 'null' || key === 'undefined' || typeof key !== 'string') {
+        console.error('❌ PUSHER_APP_KEY non défini ou invalide:', key, 'type:', typeof key);
         return null;
     }
     
-    if (!csrfToken) {
+    // Convertir explicitement en string et vérifier
+    const keyStr = String(key).trim();
+    const clusterStr = String(cluster).trim();
+    const csrfTokenStr = String(csrfToken).trim();
+    
+    if (!keyStr || keyStr === '' || keyStr.length < 10) {
+        console.error('❌ PUSHER_APP_KEY est vide ou trop court après conversion:', keyStr.length, 'caractères');
+        return null;
+    }
+    
+    // Vérifier que cluster est valide
+    if (!clusterStr || clusterStr === '') {
+        console.error('❌ PUSHER_APP_CLUSTER est invalide:', clusterStr);
+        return null;
+    }
+    
+    if (!csrfTokenStr) {
         console.warn('⚠️ CSRF token non trouvé, l\'authentification peut échouer');
     }
     
+    // Vérifier que Echo et Pusher sont disponibles
+    if (typeof Echo === 'undefined') {
+        console.error('❌ Laravel Echo n\'est pas chargé');
+        return null;
+    }
+    
+    if (typeof Pusher === 'undefined' && typeof window.Pusher === 'undefined') {
+        console.error('❌ Pusher n\'est pas chargé');
+        return null;
+    }
+    
     try {
+        // Utiliser Pusher directement si disponible via window
+        const PusherClient = window.Pusher || Pusher;
+        
         echoInstance = new Echo({
             broadcaster: 'pusher',
-            key: String(key),
-            cluster: String(cluster),
-            forceTLS: true,
-            encrypted: true,
-            authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
+            client: new PusherClient(keyStr, {
+                cluster: clusterStr,
+                forceTLS: true,
+                encrypted: true,
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': csrfTokenStr,
+                        'Accept': 'application/json',
+                    },
                 },
-            },
+            }),
         });
         
-        console.log('✅ Laravel Echo initialisé avec succès');
+        console.log('✅ Laravel Echo initialisé avec succès', { key: keyStr.substring(0, 10) + '...', cluster: clusterStr });
     } catch (e) {
         console.error('❌ Erreur initialisation Echo:', e);
+        console.error('   Détails:', { 
+            keyType: typeof key, 
+            clusterType: typeof cluster, 
+            keyLength: keyStr?.length,
+            cluster: clusterStr,
+            echoAvailable: typeof Echo !== 'undefined',
+            pusherAvailable: typeof Pusher !== 'undefined' || typeof window.Pusher !== 'undefined'
+        });
         return null;
     }
     
@@ -235,17 +276,32 @@ function notesEditor(noteId) {
             try {
                 // S'assurer que noteId est valide
                 if (!this.noteId || isNaN(this.noteId) || this.noteId <= 0) {
-                    console.error('❌ Erreur: noteId invalide:', this.noteId);
+                    console.error('❌ Erreur: noteId invalide:', this.noteId, typeof this.noteId);
                     return;
                 }
                 
                 // IMPORTANT: Utiliser Echo.join() pour créer un Presence Channel
                 // Echo ajoute automatiquement le préfixe "presence-" et gère l'authentification
-                const channelName = `note.${this.noteIdString || String(this.noteId)}`;
-                console.log('🔌 Connexion au canal Presence via Echo.join():', channelName);
+                // S'assurer que le channelName est bien une string valide
+                const noteIdForChannel = this.noteIdString || String(this.noteId);
+                if (!noteIdForChannel || noteIdForChannel === 'NaN' || noteIdForChannel === 'null' || noteIdForChannel === 'undefined') {
+                    console.error('❌ Erreur: noteIdString invalide pour le canal:', noteIdForChannel);
+                    return;
+                }
+                
+                const channelName = `note.${noteIdForChannel}`;
+                console.log('🔌 Connexion au canal Presence via Echo.join():', channelName, 'type:', typeof channelName);
+                console.log('   Echo instance:', this.echo, 'type:', typeof this.echo);
+                
+                // Vérifier que echo existe avant d'appeler join
+                if (!this.echo || typeof this.echo.join !== 'function') {
+                    console.error('❌ Erreur: echo.join n\'est pas une fonction', { echo: this.echo, join: typeof this.echo?.join });
+                    return;
+                }
                 
                 // Créer le Presence Channel avec Echo.join() (pas subscribe() qui crée un canal public)
-                this.channel = this.echo.join(channelName);
+                // S'assurer que channelName est bien une string
+                this.channel = this.echo.join(String(channelName));
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
