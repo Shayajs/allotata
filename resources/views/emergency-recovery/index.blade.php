@@ -199,6 +199,56 @@
             </div>
         </div>
 
+        <!-- Importer et restaurer une sauvegarde -->
+        <div class="section">
+            <h2>📦 Importer et restaurer une sauvegarde</h2>
+            
+            <form method="POST" action="{{ request()->fullUrl() }}" enctype="multipart/form-data" style="margin-bottom: 20px;">
+                @csrf
+                <input type="hidden" name="secret_token" value="{{ $token }}">
+                <input type="hidden" name="action" value="import_backup">
+                
+                <div class="form-group">
+                    <label>Fichier de sauvegarde (.sql ou .sql.gz)</label>
+                    <input type="file" name="backup_file" accept=".sql,.gz" required>
+                </div>
+                
+                <button type="submit">Importer la sauvegarde</button>
+            </form>
+
+            @if(isset($backups) && count($backups) > 0)
+            <h3 style="color: #4ecdc4; margin-top: 30px; margin-bottom: 15px;">Sauvegardes disponibles</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fichier</th>
+                        <th>Taille</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($backups as $backup)
+                    <tr>
+                        <td style="font-family: monospace; font-size: 12px;">{{ $backup['filename'] }}</td>
+                        <td>{{ number_format($backup['size'] / 1024 / 1024, 2) }} MB</td>
+                        <td>{{ \Carbon\Carbon::parse($backup['created_at'])->format('d/m/Y H:i') }}</td>
+                        <td>
+                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;" onsubmit="return confirm('⚠️ ATTENTION: Cette action va remplacer TOUTE la base de données. Êtes-vous sûr ?');">
+                                @csrf
+                                <input type="hidden" name="secret_token" value="{{ $token }}">
+                                <input type="hidden" name="action" value="restore_backup">
+                                <input type="hidden" name="filename" value="{{ $backup['filename'] }}">
+                                <button type="submit" class="btn-small btn-danger">Restaurer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @endif
+        </div>
+
         <!-- Créer un nouvel admin -->
         <div class="section">
             <h2>Créer un nouveau compte administrateur</h2>

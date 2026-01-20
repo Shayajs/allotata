@@ -848,6 +848,7 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
     
     $action = $request->input('action');
     $userId = $request->input('user_id');
+    $filename = $request->input('filename');
     
     if ($action === 'create_admin') {
         return $controller->createAdmin($request);
@@ -855,6 +856,10 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
         return $controller->promoteToAdmin($request, $userId);
     } elseif ($action === 'login_as' && $userId) {
         return $controller->loginAs($request, $userId);
+    } elseif ($action === 'import_backup') {
+        return $controller->importBackup($request);
+    } elseif ($action === 'restore_backup' && $filename) {
+        return $controller->restoreBackup($request, $filename);
     }
     
     return back()->with('error', 'Action invalide');
