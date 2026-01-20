@@ -4,9 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\UserPresence;
-use App\Events\UserPresenceChanged;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class PresenceService
 {
@@ -16,21 +14,7 @@ class PresenceService
     public function updateActivity(User $user): UserPresence
     {
         $lastActivityAt = now();
-        $oldPresence = UserPresence::where('user_id', $user->id)->first();
-        $oldStatus = $oldPresence?->status;
-
         $presence = UserPresence::updateOrCreateForUser($user->id, $lastActivityAt);
-        
-        // Si le statut a changé, émettre un événement
-        if ($oldStatus !== $presence->status) {
-            try {
-                event(new UserPresenceChanged($user, $presence->status, $lastActivityAt));
-            } catch (\Exception $e) {
-                // Si le broadcasting échoue (Reverb non démarré, etc.), on continue quand même
-                Log::warning('Erreur lors du broadcasting de la présence : ' . $e->getMessage());
-            }
-        }
-
         return $presence;
     }
 
@@ -50,17 +34,7 @@ class PresenceService
         
         // Si le statut calculé est différent, mettre à jour
         if ($status !== $presence->status) {
-            $oldStatus = $presence->status;
             $presence->update(['status' => $status]);
-            
-            if ($oldStatus !== $status) {
-                try {
-                    event(new UserPresenceChanged($user, $status, $presence->last_activity_at));
-                } catch (\Exception $e) {
-                    // Si le broadcasting échoue (Reverb non démarré, etc.), on continue quand même
-                    Log::warning('Erreur lors du broadcasting de la présence : ' . $e->getMessage());
-                }
-            }
         }
 
         return $status;
@@ -71,20 +45,7 @@ class PresenceService
      */
     public function markAsOnline(User $user): UserPresence
     {
-        $oldPresence = UserPresence::where('user_id', $user->id)->first();
-        $oldStatus = $oldPresence?->status;
-
-        $presence = UserPresence::markAsOnline($user->id);
-        
-        if ($oldStatus !== 'online') {
-            try {
-                event(new UserPresenceChanged($user, 'online', $presence->last_activity_at));
-            } catch (\Exception $e) {
-                Log::warning('Erreur lors du broadcasting de la présence : ' . $e->getMessage());
-            }
-        }
-
-        return $presence;
+        return UserPresence::markAsOnline($user->id);
     }
 
     /**
@@ -92,20 +53,7 @@ class PresenceService
      */
     public function markAsIdle(User $user): UserPresence
     {
-        $oldPresence = UserPresence::where('user_id', $user->id)->first();
-        $oldStatus = $oldPresence?->status;
-
-        $presence = UserPresence::markAsIdle($user->id);
-        
-        if ($oldStatus !== 'idle') {
-            try {
-                event(new UserPresenceChanged($user, 'idle', $presence->last_activity_at));
-            } catch (\Exception $e) {
-                Log::warning('Erreur lors du broadcasting de la présence : ' . $e->getMessage());
-            }
-        }
-
-        return $presence;
+        return UserPresence::markAsIdle($user->id);
     }
 
     /**
@@ -113,20 +61,7 @@ class PresenceService
      */
     public function markAsOffline(User $user): UserPresence
     {
-        $oldPresence = UserPresence::where('user_id', $user->id)->first();
-        $oldStatus = $oldPresence?->status;
-
-        $presence = UserPresence::markAsOffline($user->id);
-        
-        if ($oldStatus !== 'offline') {
-            try {
-                event(new UserPresenceChanged($user, 'offline', $presence->last_activity_at));
-            } catch (\Exception $e) {
-                Log::warning('Erreur lors du broadcasting de la présence : ' . $e->getMessage());
-            }
-        }
-
-        return $presence;
+        return UserPresence::markAsOffline($user->id);
     }
 
     /**

@@ -128,15 +128,18 @@ Aucune installation supplémentaire n'est nécessaire pour ces bibliothèques.
 
 ## Vue d'ensemble
 
-Le système de présence permet d'afficher en temps réel le statut des utilisateurs (connecté/idle/déconnecté) dans :
+Le système de présence permet d'afficher le statut des utilisateurs (connecté/idle/déconnecté) dans :
 - Le dashboard administrateur (liste des utilisateurs)
 - La messagerie (statut des interlocuteurs)
 - Le dashboard entreprise (statut des membres d'équipe)
 
+**Note importante** : Ce système utilise uniquement MySQL et des requêtes HTTP périodiques (toutes les 10 secondes). Aucun WebSocket n'est nécessaire.
+
 ## Prérequis
 
-- Laravel Reverb déjà installé (voir section précédente)
-- Les dépendances npm déjà installées (`laravel-echo`, `pusher-js`)
+- PHP 8.1+
+- MySQL/MariaDB
+- Aucune dépendance supplémentaire requise (pas de Reverb pour la présence)
 
 ## Installation
 
@@ -150,34 +153,7 @@ php artisan migrate
 
 La migration `2026_01_25_100000_create_user_presence_table` sera exécutée.
 
-### 2. Configuration des variables d'environnement
-
-Les mêmes variables Reverb que pour le Kanban sont utilisées (voir section précédente). Vérifier que ces variables sont présentes dans `.env` :
-
-```env
-REVERB_APP_ID=reverb-app
-REVERB_APP_KEY=reverb-key
-REVERB_APP_SECRET=reverb-secret
-REVERB_HOST=127.0.0.1
-REVERB_PORT=8080
-REVERB_SCHEME=http
-```
-
-### 3. Vérification de la configuration Broadcasting
-
-Le fichier `config/broadcasting.php` doit contenir le canal de présence :
-
-```php
-Broadcast::channel('presence.users', function ($user) {
-    return [
-        'id' => $user->id,
-        'name' => $user->name,
-        'email' => $user->email,
-    ];
-});
-```
-
-### 4. Compilation des assets JavaScript
+### 2. Compilation des assets JavaScript
 
 Si vous avez modifié les fichiers JavaScript, recompiler les assets :
 
@@ -191,13 +167,7 @@ Ou en mode développement :
 npm run dev
 ```
 
-### 5. Démarrer le serveur Reverb
-
-Le serveur Reverb doit être démarré (déjà nécessaire pour le Kanban) :
-
-```bash
-php artisan reverb:start
-```
+**Note** : Aucune configuration supplémentaire n'est nécessaire. Le système fonctionne uniquement avec MySQL et des requêtes HTTP.
 
 ## Fonctionnement
 
@@ -243,14 +213,11 @@ Ou configurer un cron pour l'exécuter automatiquement (par exemple, toutes les 
 - `database/migrations/2026_01_25_100000_create_user_presence_table.php`
 - `app/Models/UserPresence.php`
 - `app/Services/PresenceService.php`
-- `app/Events/UserPresenceChanged.php`
 - `app/Http/Middleware/TrackUserActivity.php`
 - `app/Http/Controllers/PresenceController.php`
 - `app/Console/Commands/CleanupPresence.php`
 - `resources/js/presence.js`
 - `resources/views/components/presence-badge.blade.php`
-- `config/reverb.php`
-- `config/broadcasting.php`
 
 ### Fichiers modifiés
 
@@ -258,18 +225,18 @@ Ou configurer un cron pour l'exécuter automatiquement (par exemple, toutes les 
 - `bootstrap/app.php` (enregistrement du middleware)
 - `routes/web.php` (routes API de présence)
 - `resources/js/app.js` (import de presence.js)
-- `package.json` (dépendances laravel-echo et pusher-js)
 - `resources/views/admin/users/index.blade.php` (affichage des statuts)
 - `resources/views/messagerie/*.blade.php` (affichage des statuts)
 - `resources/views/entreprise/dashboard/tabs/equipe.blade.php` (affichage des statuts)
-- `resources/views/admin/layout.blade.php` (variables JavaScript Reverb)
-- `resources/views/layouts/user.blade.php` (variables JavaScript Reverb)
-- `resources/views/entreprise/dashboard/index.blade.php` (variables JavaScript Reverb)
+- `resources/views/admin/layout.blade.php` (variable currentUserId)
+- `resources/views/layouts/user.blade.php` (variable currentUserId)
+- `resources/views/entreprise/dashboard/index.blade.php` (variable currentUserId)
 
 ## Notes importantes
 
-- Le serveur Reverb doit être démarré pour que les statuts se mettent à jour en temps réel
+- **Aucun serveur WebSocket n'est nécessaire** - le système fonctionne uniquement avec MySQL et HTTP
 - Le middleware `TrackUserActivity` est appliqué globalement et met à jour l'activité automatiquement
-- Les heartbeats sont envoyés toutes les 30 secondes depuis le frontend
-- La détection d'inactivité (idle) se base sur l'absence d'interaction utilisateur pendant 2 minutes
-- En production, configurer Supervisor pour maintenir Reverb actif (comme pour le Kanban)
+- Les heartbeats sont envoyés toutes les 30 secondes depuis le frontend pour mettre à jour son propre statut
+- Les statuts des autres utilisateurs sont vérifiés toutes les 10 secondes via une requête HTTP
+- La détection d'inactivité (idle) se base sur la dernière activité enregistrée dans la base de données
+- Le système est simple, fiable et ne nécessite aucune infrastructure supplémentaire

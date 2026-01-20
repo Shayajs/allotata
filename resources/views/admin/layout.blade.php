@@ -6,12 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Administration') - Allo Tata</title>
     <script>
-        // Configuration Reverb pour la présence en temps réel
-        window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
-        window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
-        window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.2") }}';
-        window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
-        window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
+        // Configuration Pusher pour la collaboration en temps réel
+        // Pusher est un service WebSocket hébergé, beaucoup plus simple que Reverb
+        window.PUSHER_APP_KEY = '{{ env("PUSHER_APP_KEY", "") }}';
+        window.PUSHER_APP_CLUSTER = '{{ env("PUSHER_APP_CLUSTER", "mt1") }}';
         window.currentUserId = {{ auth()->id() ?? 'null' }};
     </script>
     @include('partials.favicon')

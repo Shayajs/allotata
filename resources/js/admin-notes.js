@@ -1,52 +1,51 @@
-// Importer Echo et Pusher
+// Importer Echo et Pusher pour la collaboration en temps réel
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-// Configuration de Laravel Echo avec Reverb
+// Configuration de Laravel Echo avec Pusher
 window.Pusher = Pusher;
 
-// Initialiser Echo si nécessaire
+// Initialiser Echo avec Pusher (service WebSocket hébergé, beaucoup plus simple que Reverb)
 function initEchoIfNeeded() {
     if (typeof window.Echo !== 'undefined') {
         return window.Echo;
     }
     
-    if (Echo && Pusher) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (!csrfToken) {
-            return null;
-        }
-        
-        const reverbAppId = window.REVERB_APP_ID || 'reverb-app';
-        const reverbKey = window.REVERB_APP_KEY || 'reverb-key';
-        const reverbHost = window.REVERB_HOST || window.location.hostname;
-        const reverbPort = window.REVERB_PORT || '8080';
-        const reverbScheme = window.REVERB_SCHEME || (window.location.protocol === 'https:' ? 'https' : 'http');
-        
-        try {
-            window.Echo = new Echo({
-                broadcaster: 'reverb',
-                key: reverbKey,
-                wsHost: reverbHost,
-                wsPort: reverbPort,
-                wssPort: reverbPort,
-                forceTLS: reverbScheme === 'https',
-                enabledTransports: ['ws', 'wss'],
-                authEndpoint: '/broadcasting/auth',
-                auth: {
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken.content,
-                    },
-                },
-            });
-            return window.Echo;
-        } catch (error) {
-            console.error('Erreur lors de l\'initialisation d\'Echo:', error);
-            return null;
-        }
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        console.warn('CSRF token non trouvé, Echo ne peut pas être initialisé');
+        return null;
     }
     
-    return null;
+    // Récupérer les variables Pusher depuis window (définies dans le layout)
+    const pusherKey = window.PUSHER_APP_KEY;
+    const pusherCluster = window.PUSHER_APP_CLUSTER || 'mt1';
+    
+    if (!pusherKey) {
+        console.warn('PUSHER_APP_KEY non défini, collaboration en temps réel désactivée');
+        return null;
+    }
+    
+    try {
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: pusherKey,
+            cluster: pusherCluster,
+            forceTLS: true,
+            encrypted: true,
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken.content,
+                },
+            },
+        });
+        
+        return window.Echo;
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation d\'Echo avec Pusher:', error);
+        return null;
+    }
 }
 
 // Configuration Alpine.js pour l'éditeur de notes collaboratives
@@ -65,29 +64,39 @@ function notesEditor(noteId) {
         init() {
             // Initialiser le contenu depuis le textarea si disponible
             const editorEl = document.getElementById('note-editor');
-            if (editorEl && editorEl.value) {
+            if (!editorEl) {
+                console.error('Élément note-editor non trouvé');
+                return;
+            }
+            
+            // S'assurer que noteContent a une valeur par défaut
+            if (!this.noteContent && editorEl.value) {
                 this.noteContent = editorEl.value;
+            }
+            if (!this.noteContent) {
+                this.noteContent = '';
             }
             
             // Initialiser SimpleMDE
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:before-simplemde',message:'about to create SimpleMDE',data:{editorElExists:!!editorEl,editorElId:editorEl?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-            // #endregion
-            
-            this.simplemde = new SimpleMDE({
-                element: editorEl,
-                initialValue: this.noteContent || '',
-                spellChecker: false,
-                placeholder: 'Commencez à écrire votre note...',
-                toolbar: [
-                    'bold', 'italic', 'strikethrough', '|',
-                    'heading-1', 'heading-2', 'heading-3', '|',
-                    'code', 'quote', 'unordered-list', 'ordered-list', '|',
-                    'link', 'image', 'table', '|',
-                    'preview', 'side-by-side', 'fullscreen', '|',
-                    'guide'
-                ],
-            });
+            try {
+                this.simplemde = new SimpleMDE({
+                    element: editorEl,
+                    initialValue: this.noteContent || '',
+                    spellChecker: false,
+                    placeholder: 'Commencez à écrire votre note...',
+                    toolbar: [
+                        'bold', 'italic', 'strikethrough', '|',
+                        'heading-1', 'heading-2', 'heading-3', '|',
+                        'code', 'quote', 'unordered-list', 'ordered-list', '|',
+                        'link', 'image', 'table', '|',
+                        'preview', 'side-by-side', 'fullscreen', '|',
+                        'guide'
+                    ],
+                });
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation de SimpleMDE:', error);
+                return;
+            }
             
             // #region agent log
             fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:after-simplemde',message:'SimpleMDE created',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror),wrapperExists:!!(this.simplemde?.codemirror?.getWrapperElement?.())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -195,27 +204,76 @@ function notesEditor(noteId) {
         },
         
         initWebSocket() {
-            // Initialiser Echo si nécessaire
+            // Initialiser Echo avec Pusher pour la collaboration en temps réel
             const echo = initEchoIfNeeded();
             if (!echo) {
-                console.warn('Echo n\'est pas disponible, les mises à jour en temps réel ne fonctionneront pas');
+                // Pas de Pusher configuré, utiliser polling HTTP simple à la place
+                this.initPolling();
                 return;
             }
             
-            // Écouter les événements de broadcasting
-            echo.private(`note.${this.noteId}`)
-                .listen('.content.updated', (e) => {
-                    this.handleContentUpdated(e);
-                })
-                .listen('.cursor.moved', (e) => {
-                    this.handleCursorMoved(e);
-                })
-                .listen('.user.joined', (e) => {
-                    this.handleUserJoined(e);
-                })
-                .listen('.user.left', (e) => {
-                    this.handleUserLeft(e);
-                });
+            try {
+                // Écouter les événements de broadcasting en temps réel
+                    
+                // Écouter les événements de broadcasting en temps réel
+                echo.private(`note.${this.noteId}`)
+                    .listen('.content.updated', (e) => {
+                        this.handleContentUpdated(e);
+                    })
+                    .listen('.cursor.moved', (e) => {
+                        this.handleCursorMoved(e);
+                    })
+                    .listen('.user.joined', (e) => {
+                        this.handleUserJoined(e);
+                    })
+                    .listen('.user.left', (e) => {
+                        this.handleUserLeft(e);
+                    });
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation des listeners WebSocket:', error);
+                // En cas d'erreur, utiliser polling
+                this.initPolling();
+            }
+        },
+        
+        // Polling HTTP simple pour récupérer les mises à jour si WebSocket n'est pas disponible
+        initPolling() {
+            console.warn('Collaboration en temps réel désactivée. Utilisation du polling HTTP (délai de 3 secondes)');
+            // Poll toutes les 3 secondes pour les mises à jour
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`/admin/notes/${this.noteId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.note && data.note.contenu_markdown !== this.noteContent) {
+                            // Contenu mis à jour par un autre utilisateur
+                            const currentCursor = this.simplemde?.codemirror?.getCursor();
+                            this.noteContent = data.note.contenu_markdown;
+                            if (this.simplemde) {
+                                this.simplemde.value(this.noteContent);
+                                if (currentCursor) {
+                                    // Restaurer la position du curseur si possible
+                                    try {
+                                        this.simplemde.codemirror.setCursor(currentCursor);
+                                    } catch (e) {
+                                        // Ignorer si la position n'est plus valide
+                                    }
+                                }
+                            }
+                            this.updatePreview();
+                        }
+                    }
+                } catch (error) {
+                    // Ignorer les erreurs de polling
+                }
+            }, 3000);
         },
         
         debouncedSave() {
