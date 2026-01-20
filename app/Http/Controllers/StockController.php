@@ -206,12 +206,60 @@ class StockController extends Controller
         $maxOrdre = ProduitImage::where('produit_id', $produit->id)->max('ordre') ?? 0;
         $estCouverture = ProduitImage::where('produit_id', $produit->id)->count() === 0;
 
+        // #region agent log
+        try {
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'StockController.php:' . __LINE__,
+                'message' => 'Avant création image produit',
+                'data' => [
+                    'produit_id' => $produit->id,
+                    'entreprise_id' => $entreprise->id,
+                    'slug' => $slug,
+                    'est_actif' => $produit->est_actif,
+                    'gestion_stock' => $produit->gestion_stock,
+                    'stock_quantite' => $produit->stock ? $produit->stock->quantite_disponible : null,
+                    'images_count_before' => $produit->images()->count(),
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
+
         $produitImage = ProduitImage::create([
             'produit_id' => $produit->id,
             'image_path' => $imagePath,
             'est_couverture' => $estCouverture,
             'ordre' => $maxOrdre + 1,
         ]);
+
+        // #region agent log
+        try {
+            $produit->refresh();
+            $produit->load(['stock', 'images', 'imageCouverture']);
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'StockController.php:' . __LINE__,
+                'message' => 'Après création image produit',
+                'data' => [
+                    'produit_id' => $produit->id,
+                    'images_count_after' => $produit->images()->count(),
+                    'est_disponible' => $produit->estDisponible(),
+                    'a_image_couverture' => $produit->imageCouverture ? true : false,
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
+
+        // Invalider le cache de l'entreprise publique
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $slug);
 
         return response()->json([
             'success' => true,

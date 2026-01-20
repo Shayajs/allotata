@@ -8,6 +8,15 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <script>
+            // Configuration Reverb pour la présence en temps réel
+            window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
+            window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
+            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.1") }}';
+            window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
+            window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
+            window.currentUserId = {{ auth()->id() ?? 'null' }};
+        </script>
         @include('partials.theme-script')
     </head>
     <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen">
@@ -41,14 +50,18 @@
             <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-6 mb-6">
                 <div class="flex items-center gap-4">
                     @if(isset($isGerant) && $isGerant)
-                        <div class="relative">
+                        <div class="relative" data-user-id="{{ $conversation->user->id }}">
                             <x-avatar :user="$conversation->user" size="2xl" class="shadow-lg" />
-                            <div class="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-3 border-white dark:border-slate-800"></div>
+                            <div class="absolute bottom-0 right-0">
+                                <x-presence-badge :user="$conversation->user" size="md" />
+                            </div>
                         </div>
                         <div class="flex-1">
-                            <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                                {{ $conversation->user->name }}
-                            </h1>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {{ $conversation->user->name }}
+                                </h1>
+                            </div>
                             <p class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>

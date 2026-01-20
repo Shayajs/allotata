@@ -97,6 +97,7 @@
             <thead class="bg-slate-50 dark:bg-slate-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Nom</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Statut</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Email</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Email vérifié</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Rôles</th>
@@ -109,11 +110,14 @@
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 @forelse($users as $user)
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-user-id="{{ $user->id }}">
                             <div class="flex items-center gap-3">
                                 <x-avatar :user="$user" size="sm" />
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->name }}</div>
                             </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <x-presence-badge :user="$user" size="md" />
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</div>
@@ -213,7 +217,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
+                        <td colspan="9" class="px-6 py-4 text-center text-slate-500 dark:text-slate-400">
                             Aucun utilisateur trouvé
                         </td>
                     </tr>

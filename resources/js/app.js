@@ -1,5 +1,6 @@
 import './bootstrap';
 import './address-autocomplete';
+import './presence';
 
 // Charger les scripts des blocs de cours uniquement sur les pages de cours
 // Doit être fait après le DOMContentLoaded car le contenu est généré dynamiquement

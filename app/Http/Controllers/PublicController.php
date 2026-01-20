@@ -487,10 +487,70 @@ class PublicController extends Controller
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
+        // #region agent log
+        try {
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'PublicController.php:' . __LINE__,
+                'message' => 'Avant filtrage produits',
+                'data' => [
+                    'slug' => $slug,
+                    'produits_total' => $entreprise->produits->count(),
+                    'produits_actifs' => $entreprise->produits->where('est_actif', true)->count(),
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
+
         // Filtrer uniquement les produits disponibles
         $produits = $entreprise->produits->filter(function($produit) {
-            return $produit->estDisponible();
+            $estDisponible = $produit->estDisponible();
+            
+            // #region agent log
+            if (!$estDisponible) {
+                $logData = [
+                    'sessionId' => 'debug-session',
+                    'runId' => 'run1',
+                    'hypothesisId' => 'B2',
+                    'location' => 'PublicController.php:' . __LINE__,
+                    'message' => 'Produit filtré (non disponible)',
+                    'data' => [
+                        'produit_id' => $produit->id,
+                        'nom' => $produit->nom,
+                        'est_actif' => $produit->est_actif,
+                        'gestion_stock' => $produit->gestion_stock,
+                        'stock_quantite' => $produit->stock ? $produit->stock->quantite_disponible : null,
+                        'images_count' => $produit->images->count(),
+                    ],
+                    'timestamp' => time() * 1000,
+                ];
+                file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            }
+            // #endregion
+            
+            return $estDisponible;
         });
+
+        // #region agent log
+        try {
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'PublicController.php:' . __LINE__,
+                'message' => 'Après filtrage produits',
+                'data' => [
+                    'produits_disponibles' => $produits->count(),
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
 
         return view('public.produits', [
             'entreprise' => $entreprise,

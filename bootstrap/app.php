@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.trusted.device' => \App\Http\Middleware\CheckTrustedDevice::class,
             'lesson.accessible' => \App\Http\Middleware\EnsureLessonAccessible::class,
         ]);
+
+        // Middleware global pour tracker l'activité utilisateur
+        $middleware->append(\App\Http\Middleware\TrackUserActivity::class);
         
         // Exception CSRF pour les webhooks Stripe
         $middleware->validateCsrfTokens(except: [

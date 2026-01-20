@@ -14,23 +14,29 @@ export default defineConfig({
                 'resources/js/course-lesson-editor.js',
                 'resources/js/media-library.js',
                 'resources/js/course-blocks.js',
-                'resources/js/tracking-visite.js'
+                'resources/js/tracking-visite.js',
+                'resources/js/admin-kanban.js',
+                'resources/js/admin-notes.js'
             ],
             refresh: true,
         }),
         tailwindcss(),
     ],
-    server: {
-        host: '127.0.0.2',
-        port: 5173,
-        strictPort: false,
-        hmr: {
+    // Configuration serveur uniquement en mode développement
+    // Pour la production, utilisez vite.config.js.server
+    ...(process.env.NODE_ENV !== 'production' ? {
+        server: {
             host: '127.0.0.2',
-            protocol: 'http',
             port: 5173,
+            strictPort: false,
+            hmr: {
+                host: '127.0.0.2',
+                protocol: 'http',
+                port: 5173,
+            },
+            watch: {
+                ignored: ['**/storage/framework/views/**'],
+            },
         },
-        watch: {
-            ignored: ['**/storage/framework/views/**'],
-        },
-    },
+    } : {}),
 });
