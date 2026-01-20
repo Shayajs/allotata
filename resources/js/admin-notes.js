@@ -295,10 +295,6 @@ function notesEditor(noteId) {
                     console.error('❌ Erreur: echo.join n\'est pas une fonction', { echo: this.echo, join: typeof this.echo?.join });
                     return;
                 }
-            } catch (e) {
-                console.error("💥 Crash lors de la création du canal :", e.message);
-                return;
-            }
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
@@ -370,6 +366,7 @@ function notesEditor(noteId) {
                 console.log('Collaboration en temps réel activée (Master/Slave) - En attente de souscription...');
 
             } catch (e) {
+                console.error("💥 Crash lors de la création du canal :", e.message);
                 console.error('Erreur WebSocket:', e);
             }
         },
