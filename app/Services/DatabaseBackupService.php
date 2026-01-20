@@ -53,6 +53,8 @@ class DatabaseBackupService
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
             
             // Options communes
+            // Note: mysqldump génère déjà les tables dans un ordre qui respecte les dépendances
+            // On réorganisera le fichier lors de la restauration pour garantir l'ordre
             $commonOptions = '--single-transaction --routines --triggers --lock-tables=false --skip-add-drop-table';
             
             // Options selon le type
@@ -61,10 +63,12 @@ class DatabaseBackupService
                 $dumpOptions = '--no-data';
             } elseif ($type === 'data') {
                 // Données seules : pas de structure CREATE TABLE
-                $dumpOptions = '--no-create-info --insert-ignore --complete-insert --extended-insert';
+                // --skip-triggers : Éviter les triggers pendant l'import des données
+                $dumpOptions = '--no-create-info --insert-ignore --complete-insert --extended-insert --skip-triggers';
             } else {
                 // Tout : structure + données
-                $dumpOptions = '--insert-ignore --complete-insert --extended-insert';
+                // --skip-triggers : Éviter les triggers pendant l'import (on les réactivera après)
+                $dumpOptions = '--insert-ignore --complete-insert --extended-insert --skip-triggers';
             }
             
             // Créer un fichier temporaire pour le dump brut
@@ -279,9 +283,20 @@ class DatabaseBackupService
 
             if ($progressFile) {
                 file_put_contents($progressFile, json_encode([
+                    'status' => 'reorganizing',
+                    'message' => 'Réorganisation du fichier SQL pour respecter l\'ordre des dépendances...',
+                    'progress' => 10,
+                ]));
+            }
+
+            // Réorganiser le fichier SQL pour respecter l'ordre des dépendances
+            $reorganizedFile = $this->reorganizeSqlFile($filepath);
+            
+            if ($progressFile) {
+                file_put_contents($progressFile, json_encode([
                     'status' => 'restoring',
                     'message' => 'Restauration en cours...',
-                    'progress' => 10,
+                    'progress' => 15,
                 ]));
             }
 
@@ -290,8 +305,8 @@ class DatabaseBackupService
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
             
             // Lire le fichier pour estimer la progression
-            $fileSize = filesize($filepath);
-            $estimatedProgress = 10; // Début à 10%
+            $fileSize = filesize($reorganizedFile);
+            $estimatedProgress = 15; // Début à 15%
             
             if ($progressFile) {
                 file_put_contents($progressFile, json_encode([
@@ -312,7 +327,7 @@ class DatabaseBackupService
                 escapeshellarg($config['username']),
                 $passwordArg,
                 escapeshellarg($config['database']),
-                escapeshellarg($filepath)
+                escapeshellarg($reorganizedFile)
             );
 
             // Mettre à jour la progression avant l'exécution
@@ -326,6 +341,11 @@ class DatabaseBackupService
 
             // Exécuter la commande et capturer la sortie
             exec($command, $output, $returnCode);
+            
+            // Nettoyer le fichier réorganisé si c'était un fichier temporaire
+            if ($reorganizedFile !== $filepath && file_exists($reorganizedFile)) {
+                unlink($reorganizedFile);
+            }
             
             // Mettre à jour la progression après l'exécution
             if ($progressFile) {
@@ -530,6 +550,239 @@ class DatabaseBackupService
         });
 
         return $backups;
+    }
+
+    /**
+     * Réorganiser un fichier SQL pour respecter l'ordre des dépendances
+     * - D'abord toutes les structures (CREATE TABLE) dans le bon ordre
+     * - Ensuite toutes les données (INSERT) dans le bon ordre (tables référencées en premier)
+     */
+    protected function reorganizeSqlFile($filepath)
+    {
+        $content = file_get_contents($filepath);
+        
+        // Si le fichier est très petit, ne pas le modifier
+        if (strlen($content) < 1000) {
+            return $filepath;
+        }
+        
+        // Séparer le contenu en sections
+        $structureStatements = [];
+        $dataStatements = [];
+        $otherStatements = [];
+        
+        // Extraire les CREATE TABLE (avec ou sans IF NOT EXISTS)
+        preg_match_all('/CREATE TABLE (IF NOT EXISTS )?[^;]+;/is', $content, $createMatches);
+        $structureStatements = $createMatches[0] ?? [];
+        
+        // Extraire les INSERT (avec ou sans IGNORE)
+        // Pattern amélioré pour gérer les INSERT multi-lignes avec VALUES multiples
+        // On capture tout jusqu'au point-virgule, même sur plusieurs lignes
+        preg_match_all('/INSERT\s+(?:IGNORE\s+)?INTO[^;]*(?:VALUES[^;]*)?;/is', $content, $insertMatches);
+        $dataStatements = $insertMatches[0] ?? [];
+        
+        // Si on n'a pas trouvé beaucoup d'INSERT, essayer un pattern plus large
+        if (count($dataStatements) < 5 && strpos($content, 'INSERT') !== false) {
+            // Essayer de capturer les INSERT qui peuvent être sur plusieurs lignes
+            $lines = explode("\n", $content);
+            $currentInsert = '';
+            $inInsert = false;
+            
+            foreach ($lines as $line) {
+                if (preg_match('/INSERT\s+(?:IGNORE\s+)?INTO/i', $line)) {
+                    $inInsert = true;
+                    $currentInsert = $line;
+                } elseif ($inInsert) {
+                    $currentInsert .= "\n" . $line;
+                    if (strpos($line, ';') !== false) {
+                        $dataStatements[] = $currentInsert;
+                        $currentInsert = '';
+                        $inInsert = false;
+                    }
+                }
+            }
+            
+            // Ajouter le dernier INSERT si pas terminé
+            if ($inInsert && !empty($currentInsert)) {
+                $dataStatements[] = $currentInsert . ';';
+            }
+        }
+        
+        // Extraire les autres statements (SET, USE, LOCK, etc.)
+        preg_match_all('/(SET|USE|LOCK|UNLOCK|/\*|\*/|DROP|ALTER)[^;]*;/is', $content, $otherMatches);
+        $otherStatements = $otherMatches[0] ?? [];
+        
+        // Si pas assez de contenu, ne pas réorganiser
+        if (count($structureStatements) === 0 && count($dataStatements) === 0) {
+            return $filepath;
+        }
+        
+        // Créer un fichier temporaire réorganisé
+        $reorganizedFile = $filepath . '.reorganized.' . time();
+        $reorganizedContent = '';
+        
+        // 1. Ajouter les statements de configuration en premier (USE, SET, etc.)
+        foreach ($otherStatements as $stmt) {
+            $stmtUpper = strtoupper($stmt);
+            if (stripos($stmtUpper, 'USE ') !== false || 
+                stripos($stmtUpper, 'SET ') !== false ||
+                stripos($stmtUpper, 'LOCK') !== false ||
+                stripos($stmtUpper, 'UNLOCK') !== false) {
+                $reorganizedContent .= trim($stmt) . "\n";
+            }
+        }
+        
+        // 2. Désactiver les clés étrangères
+        $reorganizedContent .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+        
+        // 3. Ajouter toutes les structures (CREATE TABLE) dans l'ordre original
+        // mysqldump génère déjà dans le bon ordre
+        foreach ($structureStatements as $stmt) {
+            $reorganizedContent .= trim($stmt) . "\n\n";
+        }
+        
+        // 4. Ajouter toutes les données (INSERT) dans le bon ordre
+        // Trier les INSERT pour mettre les tables référencées en premier
+        $sortedData = $this->sortInsertsByDependencies($dataStatements);
+        foreach ($sortedData as $stmt) {
+            $reorganizedContent .= trim($stmt) . "\n";
+        }
+        
+        // 5. Réactiver les clés étrangères
+        $reorganizedContent .= "\nSET FOREIGN_KEY_CHECKS=1;\n";
+        
+        // Écrire le fichier réorganisé
+        file_put_contents($reorganizedFile, $reorganizedContent);
+        
+        Log::info("Fichier SQL réorganisé pour respecter l'ordre des dépendances", [
+            'original' => $filepath,
+            'reorganized' => $reorganizedFile,
+            'structures' => count($structureStatements),
+            'inserts' => count($dataStatements),
+        ]);
+        
+        return $reorganizedFile;
+    }
+    
+    /**
+     * Trier les INSERT par dépendances (tables référencées en premier)
+     * L'ordre est crucial : les tables qui sont référencées par d'autres doivent être remplies en premier
+     * 
+     * Stratégie :
+     * 1. Tables système et de configuration en premier
+     * 2. Tables utilisateurs et authentification
+     * 3. Tables de référence (catégories, types, etc.)
+     * 4. Tables métier de base
+     * 5. Tables de relations et jointures
+     * 6. Tables de logs et historique
+     */
+    protected function sortInsertsByDependencies($insertStatements)
+    {
+        if (empty($insertStatements)) {
+            return [];
+        }
+        
+        // Grouper les INSERT par table
+        $insertsByTable = [];
+        $tableNames = [];
+        
+        foreach ($insertStatements as $insert) {
+            // Extraire le nom de la table (gérer les backticks et les formats variés)
+            // Pattern: INSERT [IGNORE] INTO `table` ou INSERT [IGNORE] INTO table
+            if (preg_match('/INSERT\s+(?:IGNORE\s+)?INTO\s+[`]?([^\s`\(]+)[`]?/i', $insert, $matches)) {
+                $tableName = strtolower(trim($matches[1]));
+                if (!isset($insertsByTable[$tableName])) {
+                    $insertsByTable[$tableName] = [];
+                    $tableNames[] = $tableName;
+                }
+                $insertsByTable[$tableName][] = $insert;
+            } else {
+                // Si on ne peut pas extraire le nom, garder l'ordre original
+                if (!isset($insertsByTable['_unknown'])) {
+                    $insertsByTable['_unknown'] = [];
+                }
+                $insertsByTable['_unknown'][] = $insert;
+            }
+        }
+        
+        // Ordre de priorité : tables qui sont généralement référencées par d'autres
+        // Ces tables doivent être remplies EN PREMIER pour éviter les erreurs de clés étrangères
+        $priorityOrder = [
+            // Niveau 1: Tables système (souvent référencées mais ne référencent rien)
+            'migrations',
+            'settings', 'config', 'configuration',
+            'database_backups',
+            
+            // Niveau 2: Tables utilisateurs et authentification (référencées par beaucoup de tables)
+            'users', 'user',
+            'roles', 'role',
+            'permissions', 'permission',
+            'model_has_permissions', 'model_has_roles',
+            'personal_access_tokens',
+            
+            // Niveau 3: Tables de référence/catégories (souvent référencées)
+            'categories', 'category',
+            'types', 'type',
+            'status', 'statuses',
+            'countries', 'country',
+            'cities', 'city',
+            
+            // Niveau 4: Tables métier de base (peuvent référencer les niveaux précédents)
+            'entreprises', 'entreprise',
+            'services', 'service',
+            'produits', 'produit',
+            'reservations', 'reservation',
+            
+            // Niveau 5: Tables de relations (référencent plusieurs tables)
+            'entreprise_membres', 'entreprise_membre',
+            'user_entreprises', 'user_entreprise',
+            'reservation_services', 'reservation_service',
+        ];
+        
+        $sorted = [];
+        $processed = [];
+        
+        // 1. Ajouter les tables prioritaires dans l'ordre défini
+        foreach ($priorityOrder as $priorityTable) {
+            foreach ($tableNames as $tableName) {
+                // Correspondance exacte ou partielle (pour gérer les pluriels et variations)
+                $isMatch = ($tableName === $priorityTable) ||
+                          (strpos($tableName, $priorityTable) !== false) ||
+                          (strpos($priorityTable, $tableName) !== false);
+                
+                if ($isMatch && !isset($processed[$tableName])) {
+                    $sorted = array_merge($sorted, $insertsByTable[$tableName]);
+                    $processed[$tableName] = true;
+                    Log::debug("Table prioritaire ajoutée: {$tableName}");
+                }
+            }
+        }
+        
+        // 2. Ajouter les autres tables dans l'ordre alphabétique
+        // (pour avoir un ordre déterministe et reproductible)
+        $remainingTables = array_diff($tableNames, array_keys($processed));
+        sort($remainingTables);
+        
+        foreach ($remainingTables as $tableName) {
+            if (!isset($processed[$tableName])) {
+                $sorted = array_merge($sorted, $insertsByTable[$tableName]);
+                Log::debug("Table ajoutée (ordre alphabétique): {$tableName}");
+            }
+        }
+        
+        // 3. Ajouter les INSERT non identifiés à la fin
+        if (isset($insertsByTable['_unknown'])) {
+            $sorted = array_merge($sorted, $insertsByTable['_unknown']);
+            Log::warning("INSERT non identifiés ajoutés à la fin du fichier réorganisé");
+        }
+        
+        Log::info("INSERT réorganisés", [
+            'total' => count($insertStatements),
+            'tables_prioritaires' => count($processed),
+            'tables_autres' => count($remainingTables),
+        ]);
+        
+        return $sorted;
     }
 
     /**
