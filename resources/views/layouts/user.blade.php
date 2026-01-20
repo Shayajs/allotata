@@ -28,8 +28,7 @@
                                 $logoUrl = SiteHelper::getLogo('transparent');
                             @endphp
                             @if($logoUrl)
-                                <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto dark:hidden" style="max-height: 32px;">
-                                <img src="{{ SiteHelper::getLogo('dark') ?? $logoUrl }}" alt="Allo Tata" class="h-8 w-auto hidden dark:block" style="max-height: 32px;">
+                                <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto" style="max-height: 32px;">
                             @else
                                 <span class="bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">Allo Tata</span>
                             @endif

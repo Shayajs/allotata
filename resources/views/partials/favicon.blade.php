@@ -5,12 +5,74 @@
     $logoDark = SiteHelper::getFavicon('dark');
 @endphp
 
-@if($logoLight)
-    <link rel="icon" type="image/png" href="{{ $logoLight }}" media="(prefers-color-scheme: light)">
-@endif
-@if($logoDark)
-    <link rel="icon" type="image/png" href="{{ $logoDark }}" media="(prefers-color-scheme: dark)">
-@endif
-@if($logoLight)
+@if($logoLight && $logoDark)
+    <!-- Favicon avec support dynamique du thème -->
+    <link rel="icon" type="image/png" href="{{ $logoLight }}" id="site-favicon">
+    
+    <script>
+        (function() {
+            const faviconLight = '{{ $logoLight }}';
+            const faviconDark = '{{ $logoDark }}';
+            
+            // Fonction pour mettre à jour le favicon selon le thème
+            function updateFavicon() {
+                const html = document.documentElement;
+                const isDark = html.classList.contains('dark');
+                const faviconLink = document.getElementById('site-favicon');
+                
+                if (faviconLink) {
+                    const newHref = isDark ? faviconDark : faviconLight;
+                    // Ajouter un timestamp pour forcer le rafraîchissement
+                    faviconLink.href = newHref + '?t=' + Date.now();
+                }
+            }
+            
+            // Mettre à jour au chargement (après que le thème soit appliqué)
+            function initFavicon() {
+                // Attendre un peu pour que le thème soit appliqué
+                setTimeout(updateFavicon, 50);
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initFavicon);
+            } else {
+                initFavicon();
+            }
+            
+            // Observer les changements de classe sur html
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        updateFavicon();
+                    }
+                });
+            });
+            
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            
+            // Intercepter les fonctions de toggle du thème
+            if (typeof window.toggleTheme === 'function') {
+                const originalToggleTheme = window.toggleTheme;
+                window.toggleTheme = function() {
+                    originalToggleTheme();
+                    setTimeout(updateFavicon, 100);
+                };
+            }
+            
+            if (typeof window.applyTheme === 'function') {
+                const originalApplyTheme = window.applyTheme;
+                window.applyTheme = function() {
+                    originalApplyTheme();
+                    setTimeout(updateFavicon, 100);
+                };
+            }
+        })();
+    </script>
+@elseif($logoLight)
     <link rel="icon" type="image/png" href="{{ $logoLight }}">
+@elseif($logoDark)
+    <link rel="icon" type="image/png" href="{{ $logoDark }}">
 @endif

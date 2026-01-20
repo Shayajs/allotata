@@ -1,7 +1,8 @@
 @php
     use App\Helpers\SiteHelper;
     
-    $type = $type ?? 'auto';
+    // Par défaut, utiliser le logo transparent pour l'affichage sur le site
+    $type = $type ?? 'transparent';
     $class = $class ?? '';
     $alt = $alt ?? SiteHelper::getSiteName();
     $width = $width ?? null;
