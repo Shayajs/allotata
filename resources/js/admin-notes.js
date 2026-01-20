@@ -8,36 +8,37 @@ import { EditorState, ChangeSet } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
+import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-// Instance Pusher globale
-let pusherInstance = null;
+// Instance Echo globale
+let echoInstance = null;
 
-function getPusher() {
-    if (pusherInstance) return pusherInstance;
+function getEcho() {
+    if (echoInstance) return echoInstance;
     
     const key = window.PUSHER_APP_KEY;
     const cluster = window.PUSHER_APP_CLUSTER || 'mt1';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     
     if (!key) {
-        console.error('PUSHER_APP_KEY non défini');
+        console.error('❌ PUSHER_APP_KEY non défini');
         return null;
     }
     
+    if (!csrfToken) {
+        console.warn('⚠️ CSRF token non trouvé, l\'authentification peut échouer');
+    }
+    
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        
-        if (!csrfToken) {
-            console.warn('⚠️ CSRF token non trouvé, l\'authentification peut échouer');
-        }
-        
-        pusherInstance = new Pusher(String(key), {
+        echoInstance = new Echo({
+            broadcaster: 'pusher',
+            key: String(key),
             cluster: String(cluster),
             forceTLS: true,
             encrypted: true,
-            enabledTransports: ['ws', 'wss'],
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
@@ -47,36 +48,13 @@ function getPusher() {
             },
         });
         
-        // Gestion des erreurs de connexion
-        pusherInstance.connection.bind('error', (err) => {
-            console.error('❌ Erreur de connexion Pusher:', err);
-            if (err.error) {
-                console.error('   Code:', err.error.code);
-                console.error('   Message:', err.error.data?.message || err.error.message);
-            }
-        });
-        
-        pusherInstance.connection.bind('authorization_error', (data) => {
-            console.error('❌ Erreur d\'autorisation Pusher:', data);
-            console.error('   Status:', data.status);
-            console.error('   Message:', data.message);
-        });
-        
-        pusherInstance.connection.bind('connected', () => {
-            console.log('✅ Pusher connecté avec succès');
-        });
-        
-        pusherInstance.connection.bind('disconnected', () => {
-            console.warn('⚠️ Pusher déconnecté');
-        });
-        
-        console.log('✅ Instance Pusher créée avec succès');
+        console.log('✅ Laravel Echo initialisé avec succès');
     } catch (e) {
-        console.error('❌ Erreur initialisation Pusher:', e);
+        console.error('❌ Erreur initialisation Echo:', e);
         return null;
     }
     
-    return pusherInstance;
+    return echoInstance;
 }
 
 // Composant Alpine.js
@@ -105,9 +83,8 @@ function notesEditor(noteId) {
         isApplyingRemote: false,
         isHandlingRemoteChange: false,
         
-        pusher: null,
+        echo: null,
         channel: null,
-        presenceChannel: null,
         isChannelSubscribed: false, // Flag pour vérifier si le canal est souscrit
         hasMasterKey: false, // Clé de sauvegarde Master
         userHeartbeats: {}, // Track des derniers heartbeats de chaque utilisateur { userId: timestamp }
@@ -249,9 +226,9 @@ function notesEditor(noteId) {
         },
 
         setupWebSocket() {
-            this.pusher = getPusher();
-            if (!this.pusher) {
-                console.warn('⚠️ Pusher non disponible, mode polling activé');
+            this.echo = getEcho();
+            if (!this.echo) {
+                console.warn('⚠️ Laravel Echo non disponible, mode polling activé');
                 return;
             }
 
@@ -262,122 +239,16 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Nom du canal Presence - S'assurer que c'est une string valide
-                const noteIdStr = String(this.noteIdString || this.noteId || '');
-                if (!noteIdStr || noteIdStr === 'NaN' || noteIdStr === '0') {
-                    console.error('❌ Erreur: noteId invalide pour le canal:', noteIdStr);
-                    return;
-                }
+                // IMPORTANT: Utiliser Echo.join() pour créer un Presence Channel
+                // Echo ajoute automatiquement le préfixe "presence-" et gère l'authentification
+                const channelName = `note.${this.noteIdString || String(this.noteId)}`;
+                console.log('🔌 Connexion au canal Presence via Echo.join():', channelName);
                 
-                // IMPORTANT: Ne pas ajouter le préfixe "presence-" ici, Pusher le fait automatiquement
-                // pour les Presence Channels. Utiliser juste "note.{id}"
-                const channelName = `note.${noteIdStr}`;
-                console.log('🔌 Connexion au canal Presence:', channelName, typeof channelName);
-                
-                // Créer le canal Presence - s'assurer que le nom est une string
-                try {
-                    this.presenceChannel = this.pusher.subscribe(String(channelName));
-                    this.channel = this.presenceChannel; // Pour compatibilité avec le reste du code
-                } catch (e) {
-                    console.error('❌ Erreur lors de la souscription au canal:', e, channelName);
-                    return;
-                }
-                
-                // Gestion des erreurs de souscription
-                this.presenceChannel.bind('pusher:subscription_error', (status, error) => {
-                    console.error('❌ Erreur de souscription au canal:', status, error);
-                    console.error('   Type:', error?.type);
-                    console.error('   Status:', status);
-                    console.error('   Error data:', error?.error);
-                    
-                    if (status === 403) {
-                        console.error('🔐 Erreur 403: Problème d\'authentification');
-                        console.error('   Vérifiez que:');
-                        console.error('   1. Vous êtes bien authentifié (connecté)');
-                        console.error('   2. Vous êtes admin (is_admin = true)');
-                        console.error('   3. Vous êtes collaborateur de la note');
-                        console.error('   4. Consultez storage/logs/laravel.log pour plus de détails');
-                    }
-                    
-                    this.isChannelSubscribed = false;
-                });
-                
-                // Attendre que le canal soit complètement joint AVANT toute action
-                this.presenceChannel.bind('pusher:subscription_succeeded', (members) => {
-                    console.log('✅ Canal Presence souscrit avec succès:', channelName);
-                    console.log('✅ Canal prêt pour les événements client');
-                    this.isChannelSubscribed = true; // Marquer comme souscrit
-                    
-                    // Vérification supplémentaire de l'état du canal
-                    if (this.presenceChannel && this.presenceChannel.subscribed) {
-                        console.log('✅ Vérification: canal.subscribed = true');
-                    } else {
-                        console.warn('⚠️ Attention: canal.subscribed = false malgré subscription_succeeded');
-                    }
-                    
-                    const users = Object.values(members.members || {}).map(member => ({
-                        id: member.id || member.user_id,
-                        name: member.name || member.user_info?.name || 'Utilisateur',
-                        ...member
-                    }));
-                    
-                    console.log('👥 Utilisateurs présents:', users.length, users.map(u => ({ id: u.id, name: u.name })));
-                    this.collaborators = users;
-                    this.determineMaster(users);
-                    
-                    // Initialiser les heartbeats des utilisateurs présents
-                    const now = Date.now();
-                    users.forEach(user => {
-                        const userId = Number(user.id);
-                        if (userId !== Number(window.currentUserId)) {
-                            this.userHeartbeats[userId] = now;
-                        }
-                    });
-                    
-                    // Démarrer le heartbeat maintenant que nous sommes connectés
-                    this.startHeartbeat();
-                    this.startHeartbeatCheck();
-                    
-                    // Redessiner les curseurs après l'initialisation
-                    this.$nextTick(() => {
-                        this.drawCursors();
-                    });
-                });
+                // Créer le Presence Channel avec Echo.join() (pas subscribe() qui crée un canal public)
+                this.channel = this.echo.join(channelName);
 
-                // Nouvel utilisateur rejoint
-                this.presenceChannel.bind('pusher:member_added', (member) => {
-                    const user = {
-                        id: member.id || member.user_id,
-                        name: member.info?.name || member.name || 'Utilisateur',
-                        ...member
-                    };
-                    
-                    console.log('➕ Utilisateur rejoint:', user);
-                    if (!this.collaborators.find(u => Number(u.id) === Number(user.id))) {
-                        this.collaborators.push(user);
-                    }
-                    this.determineMaster([...this.collaborators]);
-                    
-                    // Initialiser le heartbeat du nouvel utilisateur
-                    const userId = Number(user.id);
-                    if (userId !== Number(window.currentUserId)) {
-                        this.userHeartbeats[userId] = Date.now();
-                    }
-                });
-
-                // Utilisateur part
-                this.presenceChannel.bind('pusher:member_removed', (member) => {
-                    const userId = Number(member.id || member.user_id);
-                    console.log('➖ Utilisateur part:', userId);
-                    this.collaborators = this.collaborators.filter(u => Number(u.id) !== userId);
-                    delete this.remoteCursors[userId];
-                    delete this.userHeartbeats[userId];
-                    this.determineMaster(this.collaborators);
-                    this.drawCursors();
-                });
-
-                // Écouter les changements de texte (client events - événements clients)
-                this.presenceChannel.bind('client-text-change', (data) => {
+                // Écouter les changements de texte (whisper - événements clients)
+                this.channel.listenForWhisper('text-change', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
                     console.log('📥 [Client Event] text-change reçu:', { senderId, currentId, from: data.from, to: data.to, insertLength: data.insert?.length });
@@ -391,7 +262,7 @@ function notesEditor(noteId) {
                 });
 
                 // Écouter les mouvements de curseur
-                this.presenceChannel.bind('client-cursor-moved', (data) => {
+                this.channel.listenForWhisper('cursor-moved', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
                     console.log('📥 [Client Event] cursor-moved reçu:', { senderId, currentId, position: data.position });
@@ -405,7 +276,7 @@ function notesEditor(noteId) {
                 });
 
                 // Écouter les heartbeats des autres utilisateurs
-                this.presenceChannel.bind('client-isAlive', (data) => {
+                this.channel.listenForWhisper('isAlive', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
                     
@@ -421,7 +292,7 @@ function notesEditor(noteId) {
 
                 // Écouter les changements de Master (événement serveur)
                 // Le nom de l'événement est défini par broadcastAs() = 'master.changed'
-                this.presenceChannel.bind('master.changed', (data) => {
+                this.echo.listen('.master.changed', (data) => {
                     console.log('🔄 Master changé:', data);
                     const masterUserId = Number(data.master_user_id);
                     const currentUserId = Number(window.currentUserId);
@@ -441,8 +312,7 @@ function notesEditor(noteId) {
                     }
                 });
 
-                // Ne pas démarrer le heartbeat ici, attendre subscription_succeeded
-                // this.startHeartbeat() sera appelé dans subscription_succeeded
+                // Le heartbeat sera démarré dans .here() callback
 
                 console.log('Collaboration en temps réel activée (Master/Slave) - En attente de souscription...');
 
@@ -492,7 +362,7 @@ function notesEditor(noteId) {
 
         // Gérer les changements locaux (envoyer via client event)
         handleLocalChange(update) {
-            if (!this.presenceChannel || !this.isChannelSubscribed) {
+            if (!this.channel || !this.isChannelSubscribed) {
                 console.warn('⚠️ handleLocalChange: canal non disponible ou non souscrit');
                 return;
             }
@@ -525,8 +395,8 @@ function notesEditor(noteId) {
                         }
                         
                         try {
-                            console.log('📤 [Client Event] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
-                            this.presenceChannel.trigger('client-text-change', change);
+                            console.log('📤 [Whisper] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
+                            this.channel.whisper('text-change', change);
                         } catch (e) {
                             console.error('❌ Erreur client event text-change:', e);
                         }
@@ -710,7 +580,7 @@ function notesEditor(noteId) {
         },
 
         async updateCursor() {
-            if (!this.editorView || !this.presenceChannel || !this.isChannelSubscribed) {
+            if (!this.editorView || !this.channel || !this.isChannelSubscribed) {
                 console.warn('⚠️ updateCursor: canal non disponible ou non souscrit');
                 return;
             }
@@ -724,7 +594,7 @@ function notesEditor(noteId) {
                 const userName = currentUser?.name || 'Utilisateur';
                 
                 // Vérification déjà faite au début de la fonction, mais double-check pour sécurité
-                if (!this.isChannelSubscribed || !this.presenceChannel) {
+                if (!this.isChannelSubscribed || !this.channel) {
                     console.warn('⚠️ Canal non disponible ou non souscrit, skip cursor-moved');
                     return;
                 }
@@ -737,9 +607,9 @@ function notesEditor(noteId) {
                     },
                     position: Number(pos) // S'assurer que c'est un nombre
                 };
-                console.log('📤 [Client Event] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
+                console.log('📤 [Whisper] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
                 try {
-                    this.presenceChannel.trigger('client-cursor-moved', cursorData);
+                    this.channel.whisper('cursor-moved', cursorData);
                 } catch (e) {
                     console.error('❌ Erreur client event cursor-moved:', e);
                 }
@@ -906,7 +776,7 @@ function notesEditor(noteId) {
                 // Envoyer via client event aux autres clients (pour détection rapide)
                 // S'assurer que toutes les valeurs sont des types primitifs valides
                 try {
-                    this.presenceChannel.trigger('client-isAlive', {
+                    this.channel.whisper('isAlive', {
                         userId: Number(window.currentUserId), // S'assurer que c'est un nombre
                         isMaster: Boolean(this.hasMasterKey), // S'assurer que c'est un booléen
                         timestamp: Number(Date.now()), // S'assurer que c'est un nombre
