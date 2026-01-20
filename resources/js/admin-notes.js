@@ -284,14 +284,20 @@ function notesEditor(noteId) {
                 // Gestion des erreurs de souscription
                 this.presenceChannel.bind('pusher:subscription_error', (status, error) => {
                     console.error('❌ Erreur de souscription au canal:', status, error);
+                    console.error('   Type:', error?.type);
+                    console.error('   Status:', status);
+                    console.error('   Error data:', error?.error);
+                    
+                    if (status === 403) {
+                        console.error('🔐 Erreur 403: Problème d\'authentification');
+                        console.error('   Vérifiez que:');
+                        console.error('   1. Vous êtes bien authentifié (connecté)');
+                        console.error('   2. Vous êtes admin (is_admin = true)');
+                        console.error('   3. Vous êtes collaborateur de la note');
+                        console.error('   4. Consultez storage/logs/laravel.log pour plus de détails');
+                    }
+                    
                     this.isChannelSubscribed = false;
-                    // Essayer de se reconnecter après un délai
-                    setTimeout(() => {
-                        console.log('🔄 Tentative de reconnexion...');
-                        if (this.pusher && this.pusher.connection.state === 'connected') {
-                            this.presenceChannel = this.pusher.subscribe(String(channelName));
-                        }
-                    }, 3000);
                 });
                 
                 // Attendre que le canal soit complètement joint AVANT toute action
