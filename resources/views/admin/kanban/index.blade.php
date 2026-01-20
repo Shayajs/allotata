@@ -216,8 +216,27 @@
     </div>
 </div>
 
-@push('scripts')
+@push('head-scripts')
 @vite(['resources/js/admin-kanban.js'])
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+    // S'assurer que kanbanData est enregistré avec Alpine.js après le chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        function registerKanbanData() {
+            if (window.Alpine && window.kanbanData) {
+                window.Alpine.data('kanbanData', window.kanbanData);
+            } else if (window.kanbanData) {
+                // Si Alpine n'est pas encore chargé, attendre
+                document.addEventListener('alpine:init', function() {
+                    window.Alpine.data('kanbanData', window.kanbanData);
+                });
+            } else {
+                // Si le script n'est pas encore chargé, réessayer
+                setTimeout(registerKanbanData, 100);
+            }
+        }
+        registerKanbanData();
+    });
+</script>
 @endpush
 @endsection
