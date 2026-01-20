@@ -28,16 +28,16 @@
         <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky {{ session('original_admin_id') ? 'top-[52px]' : 'top-0' }} h-[calc(100vh-{{ session('original_admin_id') ? '52px' : '0px' }})] overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-2 text-xl font-bold">
+                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 text-xl font-bold">
                     @php
                         use App\Helpers\SiteHelper;
                         $logoUrl = SiteHelper::getLogo('transparent');
+                        $siteName = SiteHelper::getSiteName();
                     @endphp
                     @if($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto" style="max-height: 32px;">
-                    @else
-                        <span class="bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">Allo Tata Admin</span>
+                        <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-8 w-auto hidden sm:block" style="max-height: 32px;">
                     @endif
+                    <span class="bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">{{ $siteName }} Admin</span>
                 </a>
             </div>
 

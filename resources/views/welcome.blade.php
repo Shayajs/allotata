@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Allo Tata - Plateforme de gestion pour entrepreneurs</title>
+        @include('partials.favicon')
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -73,9 +74,24 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center">
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                            Allo Tata
-                        </h1>
+                        <a href="{{ route('home') }}" class="flex items-center gap-3">
+                            @php
+                                use App\Helpers\SiteHelper;
+                                $logoUrl = SiteHelper::getLogo('transparent');
+                                $siteName = SiteHelper::getSiteName();
+                            @endphp
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-8 w-auto md:h-10">
+                            @endif
+                            <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent hidden sm:block">
+                                {{ $siteName }}
+                            </h1>
+                            @if(!$logoUrl)
+                                <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                                    {{ $siteName }}
+                                </h1>
+                            @endif
+                        </a>
                     </div>
                     <div class="flex items-center gap-4">
             @if (Route::has('login'))
@@ -117,9 +133,17 @@
                 <div class="text-center">
                     <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6">
                         <span class="block text-slate-900 dark:text-white">Concentrez-vous sur l'essentiel,</span>
-                        <span class="block animate-gradient">
-                            Allo Tata
+                        <span class="block flex items-center justify-center gap-4 flex-wrap">
+                            @php
+                                $logoUrl = SiteHelper::getLogo('transparent');
+                            @endphp
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-12 sm:h-16 md:h-20 lg:h-24 w-auto hidden sm:block">
+                            @endif
+                            <span class="animate-gradient">
+                                Allo Tata
                             </span>
+                        </span>
                         <span class="block text-slate-900 dark:text-white">simplifie votre quotidien artisanal.</span>
                     </h1>
                     <p class="text-xl sm:text-2xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10">
