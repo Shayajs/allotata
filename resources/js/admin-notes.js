@@ -231,8 +231,14 @@ function notesEditor(noteId) {
                 const channelName = `note.${this.noteIdString || String(this.noteId)}`;
                 this.channel = this.echo.join(channelName);
                 
+                // Attendre que le canal soit complètement joint avant de continuer
+                this.channel.subscribed(() => {
+                    console.log('✅ Canal Presence joint avec succès:', channelName);
+                });
+                
                 // Utilisateurs déjà présents
                 this.channel.here((users) => {
+                    console.log('👥 Utilisateurs présents:', users.length, users.map(u => ({ id: u.id, name: u.name })));
                     this.collaborators = users;
                     this.determineMaster(users);
                     
@@ -274,22 +280,39 @@ function notesEditor(noteId) {
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
-                    if (data.userId !== window.currentUserId) {
+                    const senderId = Number(data.userId);
+                    const currentId = Number(window.currentUserId);
+                    console.log('📥 [Whisper] text-change reçu:', { senderId, currentId, from: data.from, to: data.to, insertLength: data.insert?.length });
+                    
+                    if (senderId !== currentId) {
+                        console.log('✅ [Whisper] Application du changement de texte distant...');
                         this.handleRemoteTextChange(data);
+                    } else {
+                        console.log('⏭️ [Whisper] Changement ignoré (notre propre changement)');
                     }
                 });
 
                 // Écouter les mouvements de curseur
                 this.channel.listenForWhisper('cursor-moved', (data) => {
-                    if (data.userId !== window.currentUserId) {
+                    const senderId = Number(data.userId);
+                    const currentId = Number(window.currentUserId);
+                    console.log('📥 [Whisper] cursor-moved reçu:', { senderId, currentId, position: data.position });
+                    
+                    if (senderId !== currentId) {
+                        console.log('✅ [Whisper] Application du mouvement de curseur distant...');
                         this.handleRemoteCursor(data);
+                    } else {
+                        console.log('⏭️ [Whisper] Mouvement de curseur ignoré (notre propre mouvement)');
                     }
                 });
 
                 // Écouter les heartbeats des autres utilisateurs (whisper)
                 this.channel.listenForWhisper('isAlive', (data) => {
-                    if (data.userId !== window.currentUserId) {
-                        this.userHeartbeats[data.userId] = Date.now();
+                    const senderId = Number(data.userId);
+                    const currentId = Number(window.currentUserId);
+                    
+                    if (senderId !== currentId) {
+                        this.userHeartbeats[senderId] = Date.now();
                         
                         // S'assurer que l'utilisateur est dans la liste des collaborateurs
                         if (!this.collaborators.find(u => u.id === data.userId)) {
@@ -378,7 +401,15 @@ function notesEditor(noteId) {
 
         // Gérer les changements locaux (envoyer via whisper)
         handleLocalChange(update) {
-            if (!this.channel || this.isHandlingRemoteChange) return;
+            if (!this.channel) {
+                console.warn('⚠️ handleLocalChange: canal non disponible');
+                return;
+            }
+            
+            if (this.isHandlingRemoteChange) {
+                console.log('⏭️ handleLocalChange: changement distant en cours, ignoré');
+                return;
+            }
 
             // Extraire les changements de la transaction
             update.transactions.forEach(tr => {
@@ -397,9 +428,10 @@ function notesEditor(noteId) {
 
                         // Envoyer via whisper (événement client-client, pas serveur)
                         try {
+                            console.log('📤 [Whisper] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
                             this.channel.whisper('text-change', change);
                         } catch (e) {
-                            console.error('Erreur whisper text-change:', e);
+                            console.error('❌ Erreur whisper text-change:', e);
                         }
                     });
                 }
@@ -417,16 +449,31 @@ function notesEditor(noteId) {
 
         // Appliquer un changement distant
         handleRemoteTextChange(data) {
-            if (!this.editorView) return;
+            if (!this.editorView) {
+                console.warn('⚠️ handleRemoteTextChange: editorView n\'est pas disponible');
+                return;
+            }
+
+            if (this.isApplyingRemote) {
+                console.warn('⚠️ handleRemoteTextChange: déjà en train d\'appliquer un changement distant');
+                return;
+            }
 
             this.isApplyingRemote = true;
+            this.isHandlingRemoteChange = true;
 
             try {
                 const state = this.editorView.state;
+                const from = Number(data.from) || 0;
+                const to = Number(data.to) || Number(data.from) || 0;
+                const insert = String(data.insert || '');
+                
+                console.log(`🔄 [handleRemoteTextChange] Application: from=${from}, to=${to}, insert="${insert.substring(0, 20)}..."`);
+                
                 const changes = ChangeSet.of({
-                    from: data.from,
-                    to: data.to || data.from,
-                    insert: data.insert || ''
+                    from: from,
+                    to: to,
+                    insert: insert
                 });
 
                 const transaction = state.update({
@@ -435,35 +482,49 @@ function notesEditor(noteId) {
                 });
 
                 this.editorView.dispatch(transaction);
+                console.log('✅ [handleRemoteTextChange] Changement appliqué avec succès');
             } catch (e) {
-                console.error('Erreur application changement distant:', e);
+                console.error('❌ Erreur application changement distant:', e);
             }
 
             this.isApplyingRemote = false;
-            this.drawCursors();
+            this.isHandlingRemoteChange = false;
+            
+            // Redessiner les curseurs après le changement
+            this.$nextTick(() => {
+                this.drawCursors();
+            });
         },
 
         // Gérer le curseur distant
         handleRemoteCursor(data) {
-            if (data.userId !== window.currentUserId && data.position !== undefined) {
+            const senderId = Number(data.userId);
+            const currentId = Number(window.currentUserId);
+            const position = Number(data.position);
+            
+            if (senderId !== currentId && position !== undefined && !isNaN(position)) {
                 // Trouver les données utilisateur depuis les collaborateurs ou utiliser celles fournies
-                const collaborator = this.collaborators.find(u => u.id === data.userId);
+                const collaborator = this.collaborators.find(u => Number(u.id) === senderId);
                 const userData = data.user || collaborator || {
-                    id: data.userId,
-                    name: `Utilisateur ${data.userId}`
+                    id: senderId,
+                    name: `Utilisateur ${senderId}`
                 };
                 
-                this.remoteCursors[data.userId] = {
+                this.remoteCursors[senderId] = {
                     user: userData,
-                    userId: data.userId,
-                    position: data.position,
+                    userId: senderId,
+                    position: position,
                     time: Date.now()
                 };
+                
+                console.log(`✅ [handleRemoteCursor] Curseur mis à jour pour utilisateur ${senderId} à la position ${position}`);
                 
                 // Redessiner immédiatement
                 this.$nextTick(() => {
                     this.drawCursors();
                 });
+            } else {
+                console.log(`⏭️ [handleRemoteCursor] Ignoré: senderId=${senderId}, currentId=${currentId}, position=${position}`);
             }
         },
 
@@ -563,14 +624,16 @@ function notesEditor(noteId) {
                 const userName = currentUser?.name || 'Utilisateur';
                 
                 // Envoyer via whisper (pas besoin du serveur pour le curseur)
-                this.channel.whisper('cursor-moved', {
+                const cursorData = {
                     userId: Number(window.currentUserId), // S'assurer que c'est un nombre
                     user: {
                         id: Number(window.currentUserId),
                         name: String(userName || 'Utilisateur') // S'assurer que c'est une string
                     },
                     position: Number(pos) // S'assurer que c'est un nombre
-                });
+                };
+                console.log('📤 [Whisper] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
+                this.channel.whisper('cursor-moved', cursorData);
             } catch (e) {
                 console.error('Erreur updateCursor:', e);
             }
