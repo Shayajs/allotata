@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use HTMLPurifier;
-use HTMLPurifier_Config;
-
 class HtmlPurifierService
 {
     private static ?HTMLPurifier $purifier = null;
@@ -16,12 +13,23 @@ class HtmlPurifierService
     public static function purify(string $dirty): string
     {
         try {
+            // Vérifier que HTMLPurifier est disponible
+            if (!class_exists(\HTMLPurifier::class)) {
+                \Log::error('HTMLPurifier n\'est pas installé sur le serveur. Exécutez: composer install');
+                // Retourner le HTML original si HTMLPurifier n'est pas disponible
+                // en mode production pour éviter de casser le site
+                if (config('app.debug')) {
+                    throw new \Exception('HTMLPurifier n\'est pas installé. Exécutez: composer require ezyang/htmlpurifier');
+                }
+                return $dirty;
+            }
+            
             // Réinitialiser l'instance pour prendre en compte la nouvelle configuration
             // (nécessaire si la config a changé après la première utilisation)
             self::$purifier = null;
             
             if (self::$purifier === null) {
-                self::$purifier = new HTMLPurifier(self::getConfig());
+                self::$purifier = new \HTMLPurifier(self::getConfig());
             }
 
             $purified = self::$purifier->purify($dirty);
@@ -49,6 +57,10 @@ class HtmlPurifierService
             ]);
             // En cas d'erreur, retourner le HTML original (non échappé) plutôt que de l'échapper
             // car c'est du HTML valide qui devrait passer
+            // En production, ne pas faire planter le site si HTMLPurifier a un problème
+            if (config('app.debug')) {
+                throw $e;
+            }
             return $dirty;
         }
     }
@@ -122,9 +134,13 @@ class HtmlPurifierService
      * Configuration de HTML Purifier
      * Permet iframes mais nettoie les scripts malveillants
      */
-    private static function getConfig(): HTMLPurifier_Config
+    private static function getConfig()
     {
-        $config = HTMLPurifier_Config::createDefault();
+        // Vérifier que HTMLPurifier_Config est disponible
+        if (!class_exists(\HTMLPurifier_Config::class)) {
+            throw new \Exception('HTMLPurifier_Config n\'est pas installé. Exécutez: composer require ezyang/htmlpurifier');
+        }
+        $config = \HTMLPurifier_Config::createDefault();
         
         // Permettre les éléments HTML de base
         // Ajout de style avec gradient pour AlloTata
