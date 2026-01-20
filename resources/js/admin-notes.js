@@ -49,8 +49,15 @@ function getEcho() {
 
 // Composant Alpine.js
 function notesEditor(noteId) {
+    // Convertir noteId en nombre, mais le garder comme string pour les canaux
+    const noteIdNum = parseInt(noteId, 10);
+    if (isNaN(noteIdNum) || noteIdNum <= 0) {
+        console.error('Erreur: noteId invalide:', noteId);
+    }
+    
     return {
-        noteId: parseInt(noteId),
+        noteId: noteIdNum,
+        noteIdString: String(noteIdNum), // Version string pour les canaux
         noteTitle: '',
         saveStatus: 'idle',
         
@@ -78,8 +85,13 @@ function notesEditor(noteId) {
             }
             
             // Initialiser hasMasterKey depuis la base de données si disponible
-            if (window.noteMasterUserId) {
-                this.hasMasterKey = window.noteMasterUserId === window.currentUserId;
+            if (window.noteMasterUserId && window.noteMasterUserId !== null) {
+                const masterUserId = Number(window.noteMasterUserId);
+                const currentUserId = Number(window.currentUserId);
+                this.hasMasterKey = masterUserId === currentUserId;
+                console.log(`🔍 [init] Master en DB: ${masterUserId}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
+            } else {
+                console.log('🔍 [init] Pas de Master défini en DB, sera déterminé lors du join du canal');
             }
             
             // Initialiser notre propre heartbeat
@@ -211,7 +223,13 @@ function notesEditor(noteId) {
 
             try {
                 // Utiliser join() pour un Presence Channel
-                this.channel = this.echo.join(`note.${this.noteId}`);
+                // S'assurer que noteId est une chaîne pour le canal
+                if (!this.noteId || isNaN(this.noteId) || this.noteId <= 0) {
+                    console.error('Erreur: noteId invalide:', this.noteId);
+                    return;
+                }
+                const channelName = `note.${this.noteIdString || String(this.noteId)}`;
+                this.channel = this.echo.join(channelName);
                 
                 // Utilisateurs déjà présents
                 this.channel.here((users) => {
@@ -290,10 +308,19 @@ function notesEditor(noteId) {
                 // Écouter les changements de Master (événement serveur)
                 this.echo.listen('.master.changed', (data) => {
                     console.log('🔄 Master changé:', data);
-                    window.noteMasterUserId = data.master_user_id; // Mettre à jour la référence globale
-                    this.hasMasterKey = data.master_user_id === window.currentUserId;
-                    if (this.hasMasterKey) {
+                    const masterUserId = Number(data.master_user_id);
+                    const currentUserId = Number(window.currentUserId);
+                    window.noteMasterUserId = masterUserId; // Mettre à jour la référence globale
+                    
+                    const wasMaster = this.hasMasterKey;
+                    this.hasMasterKey = masterUserId === currentUserId;
+                    
+                    console.log(`🔍 [master.changed] Master: ${masterUserId}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
+                    
+                    if (this.hasMasterKey && !wasMaster) {
                         console.log('💾 Vous êtes maintenant le Master');
+                    } else if (!this.hasMasterKey && wasMaster) {
+                        console.log(`💾 Vous n'êtes plus le Master. Nouveau Master: ${data.master_user_name || data.master_user_id}`);
                     } else {
                         console.log(`💾 Le Master est maintenant: ${data.master_user_name || data.master_user_id}`);
                     }
@@ -314,15 +341,20 @@ function notesEditor(noteId) {
         determineMaster(users) {
             if (!users || users.length === 0) {
                 this.hasMasterKey = false;
+                console.log('⚠️ Aucun utilisateur présent, hasMasterKey = false');
                 return;
             }
 
+            const currentUserId = Number(window.currentUserId);
+            
             // Si un master_user_id est défini en base de données, l'utiliser en priorité
-            if (window.noteMasterUserId) {
-                const masterInUsers = users.find(u => u.id === window.noteMasterUserId);
+            if (window.noteMasterUserId && window.noteMasterUserId !== null) {
+                const masterUserId = Number(window.noteMasterUserId);
+                const masterInUsers = users.find(u => Number(u.id) === masterUserId);
                 if (masterInUsers) {
                     const wasMaster = this.hasMasterKey;
-                    this.hasMasterKey = window.noteMasterUserId === window.currentUserId;
+                    this.hasMasterKey = masterUserId === currentUserId;
+                    console.log(`🔍 [determineMaster] Master en DB: ${masterUserId}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
                     if (this.hasMasterKey && !wasMaster) {
                         console.log('💾 Vous êtes le Master (défini en base de données)');
                     }
@@ -335,7 +367,9 @@ function notesEditor(noteId) {
             const master = sorted[0];
             
             const wasMaster = this.hasMasterKey;
-            this.hasMasterKey = master.id === window.currentUserId;
+            this.hasMasterKey = Number(master.id) === currentUserId;
+            
+            console.log(`🔍 [determineMaster] Premier arrivé: ${master.id}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
             
             if (this.hasMasterKey && !wasMaster) {
                 console.log('💾 Vous êtes le Master (premier arrivé)');
@@ -354,18 +388,18 @@ function notesEditor(noteId) {
                     // Parcourir les changements individuels
                     changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
                         const change = {
-                            userId: window.currentUserId,
-                            from: fromA,
-                            to: toA,
-                            insert: inserted.toString(),
-                            timestamp: Date.now()
+                            userId: Number(window.currentUserId), // S'assurer que c'est un nombre
+                            from: Number(fromA), // S'assurer que c'est un nombre
+                            to: Number(toA), // S'assurer que c'est un nombre
+                            insert: String(inserted.toString() || ''), // S'assurer que c'est une string
+                            timestamp: Number(Date.now()) // S'assurer que c'est un nombre
                         };
 
                         // Envoyer via whisper (événement client-client, pas serveur)
                         try {
                             this.channel.whisper('text-change', change);
                         } catch (e) {
-                            console.error('Erreur whisper:', e);
+                            console.error('Erreur whisper text-change:', e);
                         }
                     });
                 }
@@ -374,7 +408,10 @@ function notesEditor(noteId) {
             // Si on a la clé Master, programmer la sauvegarde
             if (this.hasMasterKey) {
                 const content = update.state.doc.toString();
+                console.log('💾 [Master] Changement détecté, sauvegarde programmée...');
                 this.queueSave(content);
+            } else {
+                console.log('⚠️ [Slave] Changement détecté mais pas Master, pas de sauvegarde. hasMasterKey:', this.hasMasterKey);
             }
         },
 
@@ -432,10 +469,14 @@ function notesEditor(noteId) {
 
         // Sauvegarde (uniquement si Master)
         queueSave(content) {
-            if (!this.hasMasterKey) return;
+            if (!this.hasMasterKey) {
+                console.warn('⚠️ queueSave appelé mais hasMasterKey est false');
+                return;
+            }
 
             clearTimeout(this.saveTimer);
             this.saveStatus = 'saving';
+            console.log('💾 [Master] Sauvegarde programmée dans 2 secondes...');
             
             this.saveTimer = setTimeout(() => {
                 this.saveContent(content);
@@ -444,6 +485,7 @@ function notesEditor(noteId) {
 
         async saveContent(content) {
             if (!this.hasMasterKey) {
+                console.warn('⚠️ saveContent appelé mais hasMasterKey est false');
                 this.saveStatus = 'idle';
                 return;
             }
@@ -451,6 +493,14 @@ function notesEditor(noteId) {
             if (!content && this.editorView) {
                 content = this.editorView.state.doc.toString();
             }
+
+            if (!content) {
+                console.warn('⚠️ saveContent: pas de contenu à sauvegarder');
+                this.saveStatus = 'idle';
+                return;
+            }
+
+            console.log('💾 [Master] Sauvegarde en cours...', { noteId: this.noteId, contentLength: content.length });
 
             try {
                 const res = await fetch(`/admin/notes/${this.noteId}`, {
@@ -464,6 +514,7 @@ function notesEditor(noteId) {
 
                 const data = await res.json();
                 if (data.success) {
+                    console.log('✅ [Master] Sauvegarde réussie');
                     this.saveStatus = 'saved';
                     setTimeout(() => {
                         if (this.saveStatus === 'saved') {
@@ -471,10 +522,11 @@ function notesEditor(noteId) {
                         }
                     }, 2000);
                 } else {
+                    console.error('❌ [Master] Sauvegarde échouée:', data);
                     this.saveStatus = 'idle';
                 }
             } catch (e) {
-                console.error('Erreur sauvegarde:', e);
+                console.error('❌ [Master] Erreur sauvegarde:', e);
                 this.saveStatus = 'idle';
             }
         },
@@ -512,12 +564,12 @@ function notesEditor(noteId) {
                 
                 // Envoyer via whisper (pas besoin du serveur pour le curseur)
                 this.channel.whisper('cursor-moved', {
-                    userId: window.currentUserId,
+                    userId: Number(window.currentUserId), // S'assurer que c'est un nombre
                     user: {
-                        id: window.currentUserId,
-                        name: userName
+                        id: Number(window.currentUserId),
+                        name: String(userName || 'Utilisateur') // S'assurer que c'est une string
                     },
-                    position: pos
+                    position: Number(pos) // S'assurer que c'est un nombre
                 });
             } catch (e) {
                 console.error('Erreur updateCursor:', e);
@@ -666,10 +718,11 @@ function notesEditor(noteId) {
 
             try {
                 // Envoyer via whisper aux autres clients (pour détection rapide)
+                // S'assurer que toutes les valeurs sont des types primitifs valides
                 this.channel.whisper('isAlive', {
-                    userId: window.currentUserId,
-                    isMaster: this.hasMasterKey,
-                    timestamp: Date.now(),
+                    userId: Number(window.currentUserId), // S'assurer que c'est un nombre
+                    isMaster: Boolean(this.hasMasterKey), // S'assurer que c'est un booléen
+                    timestamp: Number(Date.now()), // S'assurer que c'est un nombre
                 });
 
                 // Envoyer au serveur pour mettre à jour en base de données
