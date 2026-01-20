@@ -231,7 +231,21 @@ class AuthController extends Controller
         }
 
         // Tentative de connexion
-        if ($user && Auth::attempt($credentials, $request->boolean('remember'))) {
+        // Note: On gère le cas où le CookieJar n'est pas disponible
+        $remember = $request->boolean('remember');
+        $attemptSucceeded = false;
+        try {
+            $attemptSucceeded = $user && Auth::attempt($credentials, $remember);
+        } catch (\RuntimeException $e) {
+            // Si le CookieJar n'est pas disponible, réessayer sans remember me
+            if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
+                $attemptSucceeded = $user && Auth::attempt($credentials, false);
+            } else {
+                throw $e;
+            }
+        }
+        
+        if ($attemptSucceeded) {
             // Vérifier si l'email est vérifié
             if (!$user->hasVerifiedEmail()) {
                 // Logger la tentative
