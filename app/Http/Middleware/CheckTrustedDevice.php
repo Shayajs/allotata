@@ -72,8 +72,16 @@ class CheckTrustedDevice
             $request->session()->put('two_factor_remember', false);
             $request->session()->put('a2f_redirect_url', $request->fullUrl());
 
-            // Déconnecter temporairement
-            Auth::logout();
+            // Déconnecter temporairement (avec gestion du CookieJar manquant)
+            try {
+                Auth::logout();
+            } catch (\RuntimeException $e) {
+                if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
+                    $request->session()->forget('login_web_' . sha1(Auth::getDefaultDriver()));
+                } else {
+                    throw $e;
+                }
+            }
             $request->session()->regenerateToken();
 
             // Logger l'événement

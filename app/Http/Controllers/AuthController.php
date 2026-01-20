@@ -271,7 +271,7 @@ class AuthController extends Controller
                 $request->session()->put('pending_verification_email', $user->email);
                 
                 // Déconnecter et rediriger vers le sas
-                Auth::logout();
+                $this->safeLogout($request);
                 $request->session()->regenerateToken(); // Régénérer le token CSRF mais garder les données de session
 
                 return redirect()->route('verification.required')
@@ -290,7 +290,7 @@ class AuthController extends Controller
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
                     
                     // Déconnecter temporairement (sera reconnecté après vérification A2F)
-                    Auth::logout();
+                    $this->safeLogout($request);
                     $request->session()->regenerateToken();
                     
                     // Logger la tentative
@@ -322,7 +322,7 @@ class AuthController extends Controller
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
                     
                     // Déconnecter temporairement (sera reconnecté après vérification A2F)
-                    Auth::logout();
+                    $this->safeLogout($request);
                     $request->session()->regenerateToken();
                     
                     // Logger la tentative
@@ -474,10 +474,28 @@ class AuthController extends Controller
             );
         }
 
-        Auth::logout();
+        $this->safeLogout($request);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+    
+    /**
+     * Déconnexion robuste qui gère le cas où le CookieJar n'est pas disponible
+     */
+    private function safeLogout(Request $request): void
+    {
+        try {
+            Auth::logout();
+        } catch (\RuntimeException $e) {
+            // Si le CookieJar n'est pas disponible, forcer la déconnexion via session
+            if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
+                // Vider manuellement l'utilisateur de la session
+                $request->session()->forget('login_web_' . sha1(Auth::getDefaultDriver()));
+            } else {
+                throw $e;
+            }
+        }
     }
 }
