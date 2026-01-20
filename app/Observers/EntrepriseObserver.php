@@ -29,5 +29,10 @@ class EntrepriseObserver
                 );
             }
         }
+
+        // Si le statut de vérification a changé, invalider le cache public
+        if ($entreprise->isDirty('est_verifiee')) {
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+        }
     }
 }
