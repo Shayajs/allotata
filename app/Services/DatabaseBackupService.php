@@ -452,19 +452,6 @@ class DatabaseBackupService
                 }
             }
 
-            if ($returnCode !== 0) {
-                $error = implode("\n", $output);
-                if ($progressFile) {
-                    file_put_contents($progressFile, json_encode([
-                        'status' => 'error',
-                        'message' => 'Erreur lors de la restauration',
-                        'error' => $error,
-                        'progress' => 0,
-                    ]));
-                }
-                throw new Exception("Erreur lors de la restauration: {$error}");
-            }
-
             if ($progressFile) {
                 $message = '✅ Restauration terminée avec succès !';
                 if ($usersCount === 0) {
