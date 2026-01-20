@@ -276,62 +276,37 @@ function notesEditor(noteId) {
             }
 
             try {
-                // On extrait la valeur la plus simple possible
-                const rawId = this.noteId || this.noteIdString;
-                const cleanId = String(rawId).replace(/[^0-9]/g, ''); // On ne garde que les chiffres
+                const r = String(this.noteId || this.noteIdString).trim();
+                const s = "note." + r;
 
-                if (!cleanId) {
-                    console.error("❌ ID de note manquant");
-                    return;
-                }
-
-                const channelName = "note." + cleanId;
+                // --- ÉTAPE CRUCIALE ---
+                // On crée le canal dans une constante LOCALE, pas dans this.channel (Alpine Proxy)
+                const localChannel = this.echo.join(s);
                 
-                // On appelle Echo en s'assurant que l'objet est bien là
-                if (this.echo && typeof this.echo.join === 'function') {
-                    this.channel = this.echo.join(channelName);
-                    console.log("🚀 Succès : Connexion au canal", channelName);
-                } else {
-                    console.error('❌ Erreur: echo.join n\'est pas une fonction', { echo: this.echo, join: typeof this.echo?.join });
-                    return;
-                }
+                console.log("🚀 Succès : Connexion au canal local", s);
 
-                // Écouter les changements de texte (whisper - événements clients)
-                this.channel.listenForWhisper('text-change', (data) => {
+                // On attache les écouteurs sur l'objet BRUT
+                localChannel.listenForWhisper(String("text-change"), (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
-                    console.log('📥 [Client Event] text-change reçu:', { senderId, currentId, from: data.from, to: data.to, insertLength: data.insert?.length });
-                    
                     if (senderId !== currentId) {
-                        console.log('✅ [Client Event] Application du changement de texte distant...');
                         this.handleRemoteTextChange(data);
-                    } else {
-                        console.log('⏭️ [Client Event] Changement ignoré (notre propre changement)');
                     }
                 });
 
-                // Écouter les mouvements de curseur
-                this.channel.listenForWhisper('cursor-moved', (data) => {
+                localChannel.listenForWhisper(String("cursor-moved"), (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
-                    console.log('📥 [Client Event] cursor-moved reçu:', { senderId, currentId, position: data.position });
-                    
                     if (senderId !== currentId) {
-                        console.log('✅ [Client Event] Application du mouvement de curseur distant...');
                         this.handleRemoteCursor(data);
-                    } else {
-                        console.log('⏭️ [Client Event] Mouvement de curseur ignoré (notre propre mouvement)');
                     }
                 });
 
-                // Écouter les heartbeats des autres utilisateurs
-                this.channel.listenForWhisper('isAlive', (data) => {
+                localChannel.listenForWhisper(String("isAlive"), (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
-                    
                     if (senderId !== currentId) {
                         this.userHeartbeats[senderId] = Date.now();
-                        
                         // Si ce n'est pas nous qui sommes Master et que le Master actuel n'envoie plus de heartbeat
                         if (data.isMaster && !this.hasMasterKey) {
                             this.checkAndTransferMasterIfNeeded();
@@ -340,34 +315,82 @@ function notesEditor(noteId) {
                 });
 
                 // Écouter les changements de Master (événement serveur)
-                // Le nom de l'événement est défini par broadcastAs() = 'master.changed'
                 this.echo.listen('.master.changed', (data) => {
                     console.log('🔄 Master changé:', data);
                     const masterUserId = Number(data.master_user_id);
                     const currentUserId = Number(window.currentUserId);
-                    window.noteMasterUserId = masterUserId; // Mettre à jour la référence globale
+                    window.noteMasterUserId = masterUserId;
                     
                     const wasMaster = this.hasMasterKey;
                     this.hasMasterKey = masterUserId === currentUserId;
-                    
-                    console.log(`🔍 [master.changed] Master: ${masterUserId}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
                     
                     if (this.hasMasterKey && !wasMaster) {
                         console.log('💾 Vous êtes maintenant le Master');
                     } else if (!this.hasMasterKey && wasMaster) {
                         console.log(`💾 Vous n'êtes plus le Master. Nouveau Master: ${data.master_user_name || data.master_user_id}`);
-                    } else {
-                        console.log(`💾 Le Master est maintenant: ${data.master_user_name || data.master_user_id}`);
                     }
                 });
 
-                // Le heartbeat sera démarré dans .here() callback
+                // Attendre que le canal soit complètement joint
+                localChannel.here((users) => {
+                    console.log('✅ Canal Presence souscrit avec succès');
+                    this.isChannelSubscribed = true;
+                    
+                    console.log('👥 Utilisateurs présents:', users.length);
+                    this.collaborators = users;
+                    this.determineMaster(users);
+                    
+                    // Initialiser les heartbeats des utilisateurs présents
+                    const now = Date.now();
+                    users.forEach(user => {
+                        const userId = Number(user.id);
+                        if (userId !== Number(window.currentUserId)) {
+                            this.userHeartbeats[userId] = now;
+                        }
+                    });
+                    
+                    // Démarrer le heartbeat maintenant que nous sommes connectés
+                    this.startHeartbeat();
+                    this.startHeartbeatCheck();
+                    
+                    // Redessiner les curseurs après l'initialisation
+                    this.$nextTick(() => {
+                        this.drawCursors();
+                    });
+                });
 
+                localChannel.joining((user) => {
+                    console.log('➕ Utilisateur rejoint:', user);
+                    if (!this.collaborators.find(u => Number(u.id) === Number(user.id))) {
+                        this.collaborators.push(user);
+                    }
+                    this.determineMaster([...this.collaborators]);
+                    
+                    const userId = Number(user.id);
+                    if (userId !== Number(window.currentUserId)) {
+                        this.userHeartbeats[userId] = Date.now();
+                    }
+                });
+
+                localChannel.leaving((user) => {
+                    const userId = Number(user.id);
+                    console.log('➖ Utilisateur part:', userId);
+                    this.collaborators = this.collaborators.filter(u => Number(u.id) !== userId);
+                    delete this.remoteCursors[userId];
+                    delete this.userHeartbeats[userId];
+                    this.determineMaster(this.collaborators);
+                    this.drawCursors();
+                });
+
+                // Une fois que tout est prêt, on l'assigne à this si on en a besoin ailleurs
+                // Mais idéalement, on garde une référence non réactive
+                window.activeNoteChannel = localChannel; 
+                this.channel = localChannel; 
+
+                console.log("✅ Écouteurs attachés sans crash.");
                 console.log('Collaboration en temps réel activée (Master/Slave) - En attente de souscription...');
-
-            } catch (e) {
-                console.error("💥 Crash lors de la création du canal :", e.message);
-                console.error('Erreur WebSocket:', e);
+            } catch (i) {
+                console.error("💥 Erreur fatale WebSocket:", i);
             }
         },
 
