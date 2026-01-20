@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class EmergencyRecoveryController extends Controller
@@ -158,15 +159,30 @@ class EmergencyRecoveryController extends Controller
             ], 403);
         }
 
-        try {
-            $request->validate([
-                'backup_file' => 'required|file|mimes:sql,gz|max:102400', // Max 100MB
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        // Validation personnalisée pour accepter .sql et .gz par extension
+        $validator = Validator::make($request->all(), [
+            'backup_file' => [
+                'required',
+                'file',
+                'max:102400', // Max 100MB
+                function ($attribute, $value, $fail) {
+                    if ($value) {
+                        $extension = strtolower($value->getClientOriginalExtension());
+                        $allowedExtensions = ['sql', 'gz'];
+                        
+                        if (!in_array($extension, $allowedExtensions)) {
+                            $fail('Le fichier doit être un fichier .sql ou .gz');
+                        }
+                    }
+                },
+            ],
+        ]);
+        
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur de validation',
-                'errors' => $e->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
