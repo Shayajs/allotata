@@ -27,14 +27,37 @@ class DatabaseBackupController extends Controller
         try {
             $backups = $this->backupService->listBackups();
             $dbInfo = $this->backupService->getDatabaseInfo();
+            
+            // Déterminer quels types de sauvegardes sont disponibles
+            $availableTypes = ['all' => true, 'structure' => true, 'data' => true];
+            
+            // Vérifier si toutes les sauvegardes ont le même type (anciennes sauvegardes)
+            if (count($backups) > 0) {
+                $backupTypes = array_unique(array_map(function($backup) {
+                    return $backup['type'] ?? 'all';
+                }, $backups));
+                
+                // Si toutes les sauvegardes sont du même type ET que ce n'est pas "all", griser les autres
+                // (car "all" contient structure + data, donc on peut toujours créer les autres)
+                if (count($backupTypes) === 1) {
+                    $onlyType = reset($backupTypes);
+                    if ($onlyType !== 'all') {
+                        // Si toutes les sauvegardes sont "structure" ou "data" uniquement, griser les autres
+                        foreach ($availableTypes as $type => $value) {
+                            $availableTypes[$type] = ($type === $onlyType || $type === 'all');
+                        }
+                    }
+                }
+            }
         } catch (\Exception $e) {
             $backups = [];
             $dbInfo = null;
+            $availableTypes = ['all' => true, 'structure' => true, 'data' => true];
             $error = 'Erreur lors du chargement des informations: ' . $e->getMessage();
             Log::error("Erreur dans DatabaseBackupController::index: " . $e->getMessage());
         }
 
-        return view('admin.database.index', compact('backups', 'dbInfo', 'error'));
+        return view('admin.database.index', compact('backups', 'dbInfo', 'error', 'availableTypes'));
     }
 
     /**

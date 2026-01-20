@@ -123,30 +123,58 @@
                             Type de sauvegarde
                         </label>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                                <input type="radio" name="backup_type" value="all" checked class="mr-3 text-green-600 focus:ring-green-500">
+                            @php
+                                $availableTypes = $availableTypes ?? ['all' => true, 'structure' => true, 'data' => true];
+                            @endphp
+                            
+                            <label class="flex items-center p-3 border-2 rounded-lg transition-colors {{ $availableTypes['all'] ?? true ? 'border-slate-300 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50' : 'border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed' }}">
+                                <input 
+                                    type="radio" 
+                                    name="backup_type" 
+                                    value="all" 
+                                    {{ ($availableTypes['all'] ?? true) ? 'checked' : 'disabled' }}
+                                    class="mr-3 text-green-600 focus:ring-green-500 {{ ($availableTypes['all'] ?? true) ? '' : 'cursor-not-allowed' }}"
+                                >
                                 <div>
-                                    <div class="font-medium text-slate-900 dark:text-white">📦 Tout</div>
-                                    <div class="text-xs text-slate-600 dark:text-slate-400">Structure + Données</div>
+                                    <div class="font-medium {{ ($availableTypes['all'] ?? true) ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500' }}">📦 Tout</div>
+                                    <div class="text-xs {{ ($availableTypes['all'] ?? true) ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500' }}">Structure + Données</div>
                                 </div>
                             </label>
                             
-                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                                <input type="radio" name="backup_type" value="structure" class="mr-3 text-blue-600 focus:ring-blue-500">
+                            <label class="flex items-center p-3 border-2 rounded-lg transition-colors {{ $availableTypes['structure'] ?? true ? 'border-slate-300 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50' : 'border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed' }}">
+                                <input 
+                                    type="radio" 
+                                    name="backup_type" 
+                                    value="structure" 
+                                    {{ ($availableTypes['structure'] ?? true) ? '' : 'disabled' }}
+                                    class="mr-3 text-blue-600 focus:ring-blue-500 {{ ($availableTypes['structure'] ?? true) ? '' : 'cursor-not-allowed' }}"
+                                >
                                 <div>
-                                    <div class="font-medium text-slate-900 dark:text-white">🏗️ Structure</div>
-                                    <div class="text-xs text-slate-600 dark:text-slate-400">Tables uniquement</div>
+                                    <div class="font-medium {{ ($availableTypes['structure'] ?? true) ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500' }}">🏗️ Structure</div>
+                                    <div class="text-xs {{ ($availableTypes['structure'] ?? true) ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500' }}">Tables uniquement</div>
                                 </div>
                             </label>
                             
-                            <label class="flex items-center p-3 border-2 border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
-                                <input type="radio" name="backup_type" value="data" class="mr-3 text-purple-600 focus:ring-purple-500">
+                            <label class="flex items-center p-3 border-2 rounded-lg transition-colors {{ $availableTypes['data'] ?? true ? 'border-slate-300 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50' : 'border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed' }}">
+                                <input 
+                                    type="radio" 
+                                    name="backup_type" 
+                                    value="data" 
+                                    {{ ($availableTypes['data'] ?? true) ? '' : 'disabled' }}
+                                    class="mr-3 text-purple-600 focus:ring-purple-500 {{ ($availableTypes['data'] ?? true) ? '' : 'cursor-not-allowed' }}"
+                                >
                                 <div>
-                                    <div class="font-medium text-slate-900 dark:text-white">💾 Données</div>
-                                    <div class="text-xs text-slate-600 dark:text-slate-400">Données uniquement</div>
+                                    <div class="font-medium {{ ($availableTypes['data'] ?? true) ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500' }}">💾 Données</div>
+                                    <div class="text-xs {{ ($availableTypes['data'] ?? true) ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400 dark:text-slate-500' }}">Données uniquement</div>
                                 </div>
                             </label>
                         </div>
+                        
+                        @if(isset($availableTypes) && (!($availableTypes['all'] ?? true) || !($availableTypes['structure'] ?? true) || !($availableTypes['data'] ?? true)))
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                            ℹ️ Certaines options sont désactivées car vos anciennes sauvegardes n'ont qu'un seul type. Créez de nouvelles sauvegardes pour activer toutes les options.
+                        </p>
+                        @endif
                     </div>
                     
                     <!-- Description -->
@@ -366,7 +394,7 @@
             'data': 'données seules'
         };
         
-        fetch('{{ route("admin.database.create") }}', {
+        fetch('{{ route("admin.database.backup") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

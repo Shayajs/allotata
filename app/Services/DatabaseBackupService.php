@@ -478,6 +478,32 @@ class DatabaseBackupService
                     $metadata = array_merge($metadata, $savedMetadata);
                 }
             }
+            
+            // Détecter le type depuis le nom du fichier si non présent dans les métadonnées
+            if (!isset($metadata['type'])) {
+                if (strpos($filename, 'backup_full_') !== false || strpos($filename, 'backup_') === 0 && strpos($filename, 'backup_full_') === false && strpos($filename, 'backup_structure_') === false && strpos($filename, 'backup_data_') === false) {
+                    // Ancien format ou format "full" - analyser le contenu
+                    $sample = file_get_contents($filepath, false, null, 0, min(100000, filesize($filepath)));
+                    $hasData = (strpos($sample, 'INSERT') !== false || strpos($sample, 'VALUES') !== false);
+                    $hasStructure = (strpos($sample, 'CREATE TABLE') !== false);
+                    
+                    if ($hasStructure && $hasData) {
+                        $metadata['type'] = 'all';
+                    } elseif ($hasStructure && !$hasData) {
+                        $metadata['type'] = 'structure';
+                    } elseif (!$hasStructure && $hasData) {
+                        $metadata['type'] = 'data';
+                    } else {
+                        $metadata['type'] = 'all'; // Par défaut
+                    }
+                } elseif (strpos($filename, 'backup_structure_') !== false) {
+                    $metadata['type'] = 'structure';
+                } elseif (strpos($filename, 'backup_data_') !== false) {
+                    $metadata['type'] = 'data';
+                } else {
+                    $metadata['type'] = 'all'; // Par défaut pour les anciennes sauvegardes
+                }
+            }
 
             // Récupérer depuis la base de données si disponible
             try {
