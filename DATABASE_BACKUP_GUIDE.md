@@ -4,12 +4,20 @@
 
 Ce système permet de gérer complètement les sauvegardes et restaurations de votre base de données depuis l'interface d'administration.
 
+**⚠️ IMPORTANT : Les sauvegardes incluent TOUT :**
+- ✅ **Structure complète** : Toutes les tables, colonnes, index, contraintes
+- ✅ **TOUTES les données** : Tous les enregistrements de toutes les tables
+- ✅ **Relations** : Clés étrangères et contraintes
+- ✅ **Routines** : Procédures stockées et fonctions
+- ✅ **Triggers** : Tous les triggers de la base de données
+
 ## Fonctionnalités
 
 ### Sauvegardes manuelles
 - Création de sauvegardes à la demande depuis l'interface admin
 - Ajout d'une description pour chaque sauvegarde
 - Sauvegarde complète avec structure, données et relations
+- **Vérification automatique** que les données sont bien présentes dans la sauvegarde
 
 ### Sauvegardes automatiques
 - Configuration via cron pour des sauvegardes régulières
@@ -194,6 +202,45 @@ chmod 755 storage/app/backups/database/
 3. **Rotation des sauvegardes** : Configurez le nettoyage automatique pour éviter de remplir le disque
 
 4. **Surveillance** : Vérifiez régulièrement que les sauvegardes automatiques fonctionnent correctement
+
+## Vérification des sauvegardes
+
+### Vérifier qu'une sauvegarde contient bien des données
+
+Utilisez le script de vérification :
+
+```bash
+./verify-backup-data.sh storage/app/backups/database/backup_2026-01-25_14-30-00.sql
+```
+
+Ce script vérifie :
+- ✅ La présence de la structure (CREATE TABLE)
+- ✅ La présence des données (INSERT INTO)
+- ✅ Les routines et triggers
+- ✅ La taille du fichier
+
+### Vérification manuelle
+
+Ouvrez le fichier de sauvegarde et vérifiez qu'il contient :
+- Des instructions `CREATE TABLE` (structure)
+- Des instructions `INSERT INTO` (données)
+- Des instructions `CREATE PROCEDURE/FUNCTION` (routines)
+- Des instructions `CREATE TRIGGER` (triggers)
+
+**Exemple de contenu d'une sauvegarde complète :**
+```sql
+-- Structure
+CREATE TABLE `users` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  ...
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Données
+INSERT INTO `users` (`id`, `name`, `email`, ...) VALUES
+(1, 'John Doe', 'john@example.com', ...),
+(2, 'Jane Smith', 'jane@example.com', ...);
+```
 
 ## Dépannage
 
