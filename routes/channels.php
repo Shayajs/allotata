@@ -32,7 +32,7 @@ Broadcast::channel('kanban.{boardId}', function ($user) {
     return $user->is_admin ?? false;
 });
 
-// Channels pour les Notes
+// Channels pour les Notes (canaux privés)
 Broadcast::channel('note.{noteId}', function ($user, $noteId) {
     // Seuls les admins peuvent accéder aux notes
     if (!($user->is_admin ?? false)) {

@@ -1,447 +1,414 @@
-// Importer Echo et Pusher pour la collaboration en temps réel
+/**
+ * Éditeur de notes collaboratif - CodeMirror 6
+ * Architecture V1 : Coloration syntaxique + Curseurs en temps réel
+ */
+
+import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { basicSetup } from 'codemirror';
+import { markdown } from '@codemirror/lang-markdown';
+import { oneDark } from '@codemirror/theme-one-dark';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-// Configuration de Laravel Echo avec Pusher
 window.Pusher = Pusher;
 
-// Initialiser Echo avec Pusher (service WebSocket hébergé, beaucoup plus simple que Reverb)
-function initEchoIfNeeded() {
-    if (typeof window.Echo !== 'undefined') {
-        return window.Echo;
-    }
+// Instance Echo globale
+let echoInstance = null;
+
+function getEcho() {
+    if (echoInstance) return echoInstance;
     
-    const csrfToken = document.querySelector('meta[name="csrf-token"]');
-    if (!csrfToken) {
-        console.warn('CSRF token non trouvé, Echo ne peut pas être initialisé');
-        return null;
-    }
+    const key = window.PUSHER_APP_KEY;
+    const cluster = window.PUSHER_APP_CLUSTER || 'mt1';
+    const csrf = document.querySelector('meta[name="csrf-token"]');
     
-    // Récupérer les variables Pusher depuis window (définies dans le layout)
-    const pusherKey = window.PUSHER_APP_KEY;
-    const pusherCluster = window.PUSHER_APP_CLUSTER || 'mt1';
-    
-    if (!pusherKey) {
-        console.warn('PUSHER_APP_KEY non défini, collaboration en temps réel désactivée');
-        return null;
-    }
+    if (!key || !csrf) return null;
     
     try {
-        window.Echo = new Echo({
+        echoInstance = new Echo({
             broadcaster: 'pusher',
-            key: pusherKey,
-            cluster: pusherCluster,
+            key: key,
+            cluster: cluster,
             forceTLS: true,
             encrypted: true,
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
-                    'X-CSRF-TOKEN': csrfToken.content,
+                    'X-CSRF-TOKEN': csrf.content,
                 },
             },
         });
-        
-        return window.Echo;
-    } catch (error) {
-        console.error('Erreur lors de l\'initialisation d\'Echo avec Pusher:', error);
+    } catch (e) {
+        console.error('Erreur initialisation Echo:', e);
         return null;
     }
+    
+    return echoInstance;
 }
 
-// Configuration Alpine.js pour l'éditeur de notes collaboratives
+// Composant Alpine.js
 function notesEditor(noteId) {
     return {
-        noteId: noteId,
+        noteId: parseInt(noteId),
         noteTitle: '',
-        noteContent: '',
-        renderedContent: '',
-        simplemde: null,
-        saveTimeout: null,
-        cursorUpdateTimeout: null,
-        collaborators: [],
-        cursors: {},
+        saveStatus: 'idle',
         
+        editor: null,
+        editorView: null,
+        
+        remoteCursors: {},
+        userColors: {},
+        collaborators: [],
+        
+        saveTimer: null,
+        cursorTimer: null,
+        isApplyingRemote: false,
+        echo: null,
+        channel: null,
+
         init() {
-            // Initialiser le contenu depuis le textarea si disponible
-            const editorEl = document.getElementById('note-editor');
-            if (!editorEl) {
-                console.error('Élément note-editor non trouvé');
+            // Récupérer le titre
+            const titleInput = this.$el.querySelector('input[type="text"]');
+            if (titleInput) {
+                this.noteTitle = titleInput.value || '';
+            }
+            
+            // Initialiser après le tick
+            this.$nextTick(() => {
+                this.setupEditor();
+                this.setupWebSocket();
+            });
+        },
+
+        setupEditor() {
+            const container = document.getElementById('editor-container');
+            if (!container) {
+                setTimeout(() => this.setupEditor(), 100);
                 return;
             }
+
+            // Contenu initial
+            const initialContent = window.noteContent || '';
             
-            // S'assurer que noteContent a une valeur par défaut
-            if (!this.noteContent && editorEl.value) {
-                this.noteContent = editorEl.value;
-            }
-            if (!this.noteContent) {
-                this.noteContent = '';
-            }
-            
-            // Initialiser SimpleMDE
+            // Détecter le thème
+            const isDark = document.documentElement.classList.contains('dark');
+
             try {
-                this.simplemde = new SimpleMDE({
-                    element: editorEl,
-                    initialValue: this.noteContent || '',
-                    spellChecker: false,
-                    placeholder: 'Commencez à écrire votre note...',
-                    toolbar: [
-                        'bold', 'italic', 'strikethrough', '|',
-                        'heading-1', 'heading-2', 'heading-3', '|',
-                        'code', 'quote', 'unordered-list', 'ordered-list', '|',
-                        'link', 'image', 'table', '|',
-                        'preview', 'side-by-side', 'fullscreen', '|',
-                        'guide'
+                // Créer l'état de l'éditeur
+                const state = EditorState.create({
+                    doc: initialContent,
+                    extensions: [
+                        basicSetup,
+                        markdown(),
+                        isDark ? oneDark : [],
+                        EditorView.updateListener.of((update) => {
+                            if (update.docChanged && !this.isApplyingRemote) {
+                                const content = update.state.doc.toString();
+                                this.renderPreview(content);
+                                this.queueSave(content);
+                                this.queueCursorUpdate();
+                            }
+                        }),
+                        EditorView.theme({
+                            '&': {
+                                height: '100%',
+                            },
+                            '.cm-scroller': {
+                                fontFamily: "'Fira Code', 'Monaco', 'Menlo', monospace",
+                            },
+                        }),
                     ],
                 });
-            } catch (error) {
-                console.error('Erreur lors de l\'initialisation de SimpleMDE:', error);
-                return;
-            }
-            
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:after-simplemde',message:'SimpleMDE created',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror),wrapperExists:!!(this.simplemde?.codemirror?.getWrapperElement?.())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-            // #endregion
-            
-            // Appliquer le thème initial après un court délai pour laisser SimpleMDE créer son DOM
-            setTimeout(() => {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:delayed-updateTheme',message:'calling updateTheme after delay',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-                // #endregion
-                this.updateTheme();
-            }, 100);
-            
-            // Observer les changements de thème
-            const observer = new MutationObserver(() => {
-                // Vérifier que SimpleMDE est prêt avant de mettre à jour le thème
-                if (this.simplemde && this.simplemde.codemirror) {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:mutation-observer',message:'mutation observer triggered updateTheme',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'E'})}).catch(()=>{});
-                    // #endregion
-                    this.updateTheme();
+
+                // Créer la vue
+                this.editorView = new EditorView({
+                    state: state,
+                    parent: container,
+                });
+
+                this.editor = this.editorView.state;
+
+                // Mettre à jour les curseurs lors du scroll
+                const scrollEl = this.editorView.scrollDOM;
+                if (scrollEl) {
+                    scrollEl.addEventListener('scroll', () => {
+                        this.drawCursors();
+                    });
                 }
-            });
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-            
-            // Écouter les changements
-            this.simplemde.codemirror.on('change', () => {
-                this.noteContent = this.simplemde.value();
-                this.debouncedSave();
-            });
-            
-            // Écouter les mouvements du curseur
-            this.simplemde.codemirror.on('cursorActivity', () => {
-                this.debouncedCursorUpdate();
-            });
-            
-            // Initialiser le rendu Markdown
-            this.updatePreview();
-            
-            // Écouter les événements WebSocket
-            this.initWebSocket();
-        },
-        
-        updateTheme() {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:entry',message:'updateTheme called',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
-            
-            // Détecter si on est en mode sombre
-            const isDark = document.documentElement.classList.contains('dark');
-            
-            if (this.simplemde && this.simplemde.codemirror) {
-                // Mettre à jour le thème CodeMirror
-                const wrapper = this.simplemde.codemirror.getWrapperElement();
-                
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:wrapper',message:'wrapper element check',data:{wrapperExists:!!wrapper,wrapperType:wrapper?.constructor?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                // #endregion
-                
-                if (!wrapper) {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:early-exit',message:'wrapper is null, exiting early',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                    // #endregion
-                    return;
-                }
-                
-                // Utiliser directement le wrapper Element qui EST le CodeMirror
-                const editor = wrapper.querySelector('.CodeMirror') || wrapper;
-                
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:editor',message:'editor element check',data:{editorExists:!!editor,editorType:editor?.constructor?.name,usedFallback:!wrapper.querySelector('.CodeMirror')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                // #endregion
-                
-                if (!editor || !editor.classList) {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:editor-null',message:'editor is null or has no classList',data:{editor:editor,editorType:typeof editor},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                    // #endregion
-                    return;
-                }
-                
-                if (isDark) {
-                    editor.classList.add('cm-s-material');
-                    editor.style.backgroundColor = '#1e293b';
-                    editor.style.color = '#e2e8f0';
-                } else {
-                    editor.classList.remove('cm-s-material');
-                    editor.style.backgroundColor = '#ffffff';
-                    editor.style.color = '#1e293b';
-                }
-                
-                // Rafraîchir l'éditeur pour appliquer les changements
-                this.simplemde.codemirror.refresh();
-                
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:success',message:'theme updated successfully',data:{isDark:isDark},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                // #endregion
-            } else {
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:no-simplemde',message:'simplemde or codemirror not available',data:{simplemde:!!this.simplemde,codemirror:!!(this.simplemde?.codemirror)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
+
+                // Observer le thème
+                const themeObserver = new MutationObserver(() => {
+                    // CodeMirror 6 gère mieux les thèmes, mais on peut ajouter une logique ici si besoin
+                });
+                themeObserver.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+
+            } catch (e) {
+                console.error('Erreur CodeMirror 6:', e);
             }
         },
-        
-        initWebSocket() {
-            // Initialiser Echo avec Pusher pour la collaboration en temps réel
-            const echo = initEchoIfNeeded();
-            if (!echo) {
-                // Pas de Pusher configuré, utiliser polling HTTP simple à la place
-                this.initPolling();
-                return;
-            }
-            
+
+        setupWebSocket() {
+            this.echo = getEcho();
+            if (!this.echo) return;
+
             try {
-                // Écouter les événements de broadcasting en temps réel
-                    
-                // Écouter les événements de broadcasting en temps réel
-                echo.private(`note.${this.noteId}`)
-                    .listen('.content.updated', (e) => {
-                        this.handleContentUpdated(e);
-                    })
-                    .listen('.cursor.moved', (e) => {
-                        this.handleCursorMoved(e);
-                    })
-                    .listen('.user.joined', (e) => {
-                        this.handleUserJoined(e);
-                    })
-                    .listen('.user.left', (e) => {
-                        this.handleUserLeft(e);
-                    });
-            } catch (error) {
-                console.error('Erreur lors de l\'initialisation des listeners WebSocket:', error);
-                // En cas d'erreur, utiliser polling
-                this.initPolling();
-            }
-        },
-        
-        // Polling HTTP simple pour récupérer les mises à jour si WebSocket n'est pas disponible
-        initPolling() {
-            console.warn('Collaboration en temps réel désactivée. Utilisation du polling HTTP (délai de 3 secondes)');
-            // Poll toutes les 3 secondes pour les mises à jour
-            setInterval(async () => {
-                try {
-                    const response = await fetch(`/admin/notes/${this.noteId}`, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.note && data.note.contenu_markdown !== this.noteContent) {
-                            // Contenu mis à jour par un autre utilisateur
-                            const currentCursor = this.simplemde?.codemirror?.getCursor();
-                            this.noteContent = data.note.contenu_markdown;
-                            if (this.simplemde) {
-                                this.simplemde.value(this.noteContent);
-                                if (currentCursor) {
-                                    // Restaurer la position du curseur si possible
-                                    try {
-                                        this.simplemde.codemirror.setCursor(currentCursor);
-                                    } catch (e) {
-                                        // Ignorer si la position n'est plus valide
-                                    }
-                                }
-                            }
-                            this.updatePreview();
-                        }
+                this.channel = this.echo.private(`note.${this.noteId}`);
+                
+                // Écouter les mouvements de curseur (seulement, pas le contenu)
+                this.channel.listen('.cursor.moved', (data) => {
+                    if (data.user && data.user.id !== window.currentUserId && data.cursor) {
+                        this.handleRemoteCursor(data.user, data.cursor);
                     }
-                } catch (error) {
-                    // Ignorer les erreurs de polling
-                }
-            }, 3000);
+                });
+                
+                // Utilisateurs qui rejoignent
+                this.channel.listen('.user.joined', (data) => {
+                    if (data.user && !this.collaborators.find(c => c.id === data.user.id)) {
+                        this.collaborators.push(data.user);
+                    }
+                });
+                
+                // Utilisateurs qui partent
+                this.channel.listen('.user.left', (data) => {
+                    if (data.user) {
+                        this.collaborators = this.collaborators.filter(c => c.id !== data.user.id);
+                        delete this.remoteCursors[data.user.id];
+                        this.drawCursors();
+                    }
+                });
+                
+                // Note: On n'écoute PAS .content.updated car on ne veut pas synchroniser
+                // le contenu via Pusher (cela se fait via sauvegarde HTTP uniquement)
+                
+            } catch (e) {
+                console.error('Erreur WebSocket:', e);
+            }
         },
-        
-        debouncedSave() {
-            clearTimeout(this.saveTimeout);
-            this.saveTimeout = setTimeout(() => {
-                this.saveContent();
-            }, 2000); // Sauvegarder après 2 secondes d'inactivité
+
+        // Sauvegarde avec délai (pas via Pusher)
+        queueSave(content) {
+            clearTimeout(this.saveTimer);
+            this.saveStatus = 'saving';
+            
+            this.saveTimer = setTimeout(() => {
+                this.saveContent(content);
+            }, 2000);
         },
-        
-        debouncedCursorUpdate() {
-            clearTimeout(this.cursorUpdateTimeout);
-            this.cursorUpdateTimeout = setTimeout(() => {
-                this.updateCursor();
-            }, 200); // Mettre à jour le curseur toutes les 200ms max
-        },
-        
-        async saveContent() {
+
+        // Sauvegarde HTTP
+        async saveContent(content) {
+            if (!content && this.editorView) {
+                content = this.editorView.state.doc.toString();
+            }
+
             try {
-                const response = await fetch(`/admin/notes/${this.noteId}`, {
+                const res = await fetch(`/admin/notes/${this.noteId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        contenu_markdown: this.noteContent
-                    })
+                    body: JSON.stringify({ contenu_markdown: content })
                 });
-                
-                const data = await response.json();
+
+                const data = await res.json();
                 if (data.success) {
-                    this.updatePreview();
+                    this.saveStatus = 'saved';
+                    setTimeout(() => {
+                        if (this.saveStatus === 'saved') {
+                            this.saveStatus = 'idle';
+                        }
+                    }, 2000);
+                } else {
+                    this.saveStatus = 'idle';
                 }
-            } catch (error) {
-                console.error('Erreur lors de la sauvegarde:', error);
+            } catch (e) {
+                console.error('Erreur sauvegarde:', e);
+                this.saveStatus = 'idle';
             }
         },
-        
+
+        // Mise à jour du titre
         async updateTitle() {
             try {
-                const response = await fetch(`/admin/notes/${this.noteId}`, {
+                await fetch(`/admin/notes/${this.noteId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        titre: this.noteTitle
-                    })
+                    body: JSON.stringify({ titre: this.noteTitle })
                 });
-                
-                const data = await response.json();
-                if (!data.success) {
-                    console.error('Erreur lors de la mise à jour du titre');
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
+            } catch (e) {
+                console.error('Erreur titre:', e);
             }
         },
-        
+
+        // Mise à jour du curseur (pour les autres utilisateurs)
+        queueCursorUpdate() {
+            clearTimeout(this.cursorTimer);
+            this.cursorTimer = setTimeout(() => this.updateCursor(), 200);
+        },
+
         async updateCursor() {
-            const cursor = this.simplemde.codemirror.getCursor();
-            const pos = this.simplemde.codemirror.indexFromPos(cursor);
+            if (!this.editorView) return;
             
             try {
+                const selection = this.editorView.state.selection.main;
+                const pos = selection.head;
+                
+                // Envoyer seulement la position, pas le contenu
                 await fetch(`/admin/notes/${this.noteId}/cursor`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        position: pos
-                    })
+                    body: JSON.stringify({ position: pos })
                 });
-            } catch (error) {
-                // Ignorer les erreurs de mise à jour du curseur
+            } catch (e) {
+                // Ignorer silencieusement
             }
         },
-        
-        handleContentUpdated(event) {
-            // Si le contenu a été mis à jour par un autre utilisateur
-            if (event.user.id !== window.currentUserId) {
-                const currentContent = this.simplemde.value();
-                // Stratégie simple: dernier write wins
-                // Pour une vraie collaboration, il faudrait implémenter OT ou CRDT
-                if (event.note.contenu_markdown !== currentContent) {
-                    // Demander confirmation avant d'écraser
-                    if (confirm('La note a été modifiée par un autre utilisateur. Voulez-vous charger la dernière version ?')) {
-                        this.simplemde.value(event.note.contenu_markdown);
-                        this.noteContent = event.note.contenu_markdown;
-                        this.updatePreview();
-                    }
+
+        // Gérer le curseur d'un autre utilisateur
+        handleRemoteCursor(user, cursor) {
+            this.remoteCursors[user.id] = {
+                user: user,
+                position: cursor.position || 0,
+                time: Date.now()
+            };
+            this.drawCursors();
+        },
+
+        // Dessiner les curseurs distants
+        drawCursors() {
+            if (!this.editorView) return;
+
+            const view = this.editorView;
+            const scrollEl = view.scrollDOM || view.dom;
+            
+            // Nettoyer les curseurs existants
+            scrollEl.querySelectorAll('.collaborator-cursor').forEach(el => el.remove());
+
+            // Nettoyer les curseurs expirés (5 secondes)
+            const now = Date.now();
+            Object.keys(this.remoteCursors).forEach(userId => {
+                if (now - this.remoteCursors[userId].time > 5000) {
+                    delete this.remoteCursors[userId];
                 }
-            }
+            });
+
+            // Dessiner chaque curseur
+            Object.values(this.remoteCursors).forEach(cursorData => {
+                try {
+                    const pos = cursorData.position;
+                    const coords = view.coordsAtPos(pos, 1); // 'window' pour les coordonnées absolues
+                    
+                    if (!coords) return;
+
+                    // Vérifier si le curseur est visible
+                    const scrollInfo = view.scrollDOM.getBoundingClientRect();
+                    if (coords.top < scrollInfo.top || coords.top > scrollInfo.bottom) {
+                        return; // Curseur hors de la zone visible
+                    }
+
+                    const color = this.getUserColor(cursorData.user.id);
+                    const lineHeight = coords.bottom - coords.top || 20;
+
+                    // Créer le curseur
+                    const cursorEl = document.createElement('div');
+                    cursorEl.className = 'collaborator-cursor';
+                    cursorEl.dataset.userId = cursorData.user.id;
+                    cursorEl.style.cssText = `
+                        position: absolute;
+                        width: 2px;
+                        height: ${lineHeight}px;
+                        background-color: ${color};
+                        left: ${coords.left}px;
+                        top: ${coords.top}px;
+                        z-index: 10;
+                        margin-left: -1px;
+                        pointer-events: auto;
+                    `;
+
+                    // Ajouter la goutte (via ::before en CSS)
+                    cursorEl.style.setProperty('--cursor-color', color);
+
+                    // Tag avec le nom (apparaît au hover)
+                    const nameTag = document.createElement('div');
+                    nameTag.className = 'collaborator-name-tag';
+                    nameTag.textContent = cursorData.user.name || 'Utilisateur';
+                    nameTag.style.cssText = `
+                        background-color: ${color};
+                    `;
+
+                    cursorEl.appendChild(nameTag);
+                    scrollEl.appendChild(cursorEl);
+
+                } catch (e) {
+                    console.debug('Erreur rendu curseur:', e);
+                }
+            });
         },
-        
-        handleCursorMoved(event) {
-            // Afficher le curseur d'un autre utilisateur
-            if (event.user.id !== window.currentUserId) {
-                this.cursors[event.user.id] = {
-                    user: event.user,
-                    position: event.cursor.position,
-                    color: this.getUserColor(event.user.id)
-                };
-                this.renderCursors();
-            }
-        },
-        
-        handleUserJoined(event) {
-            // Ajouter l'utilisateur à la liste des collaborateurs
-            if (!this.collaborators.find(c => c.id === event.user.id)) {
-                this.collaborators.push(event.user);
-            }
-        },
-        
-        handleUserLeft(event) {
-            // Retirer l'utilisateur de la liste
-            this.collaborators = this.collaborators.filter(c => c.id !== event.user.id);
-            delete this.cursors[event.user.id];
-            this.renderCursors();
-        },
-        
+
+        // Couleur pour un utilisateur
         getUserColor(userId) {
-            // Générer une couleur basée sur l'ID utilisateur
+            if (!userId) return '#3b82f6';
+            if (this.userColors[userId]) return this.userColors[userId];
+            
             const colors = [
                 '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
                 '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
             ];
-            return colors[userId % colors.length];
-        },
-        
-        renderCursors() {
-            // Supprimer les curseurs existants
-            document.querySelectorAll('.collaborator-cursor').forEach(el => el.remove());
             
-            // Afficher les curseurs des autres utilisateurs
-            Object.values(this.cursors).forEach(cursor => {
-                const pos = this.simplemde.codemirror.posFromIndex(cursor.position);
-                const coords = this.simplemde.codemirror.charCoords(pos);
-                
-                const cursorEl = document.createElement('div');
-                cursorEl.className = 'collaborator-cursor';
-                cursorEl.style.backgroundColor = cursor.color;
-                cursorEl.style.left = coords.left + 'px';
-                cursorEl.style.top = coords.top + 'px';
-                
-                const nameEl = document.createElement('div');
-                nameEl.className = 'collaborator-name';
-                nameEl.style.backgroundColor = cursor.color;
-                nameEl.style.color = 'white';
-                nameEl.textContent = cursor.user.name;
-                cursorEl.appendChild(nameEl);
-                
-                const editorEl = this.simplemde.codemirror.getWrapperElement();
-                editorEl.appendChild(cursorEl);
-            });
+            const color = colors[userId % colors.length];
+            this.userColors[userId] = color;
+            return color;
         },
-        
-        updatePreview() {
-            if (typeof marked !== 'undefined') {
-                this.renderedContent = marked.parse(this.noteContent || '');
-            } else {
-                this.renderedContent = this.noteContent.replace(/\n/g, '<br>');
-            }
+
+        // Style pour avatar collaborateur
+        getCollaboratorColor(userId) {
+            if (!userId) return {};
+            const color = this.getUserColor(userId);
+            return {
+                backgroundColor: color + '20',
+                color: color,
+                borderColor: color
+            };
+        },
+
+        // Getters pour le statut
+        get saveStatusText() {
+            if (this.saveStatus === 'saving') return 'Sauvegarde...';
+            if (this.saveStatus === 'saved') return 'Sauvegardé';
+            return '';
+        },
+
+        get saveStatusClass() {
+            return this.saveStatus;
         }
     };
 }
 
-// Exporter les fonctions pour utilisation globale avec Alpine.js
+// Export et enregistrement
 window.notesEditor = notesEditor;
+
+function registerNotesEditor() {
+    if (window.Alpine && typeof window.Alpine.data === 'function') {
+        window.Alpine.data('notesEditor', notesEditor);
+        return true;
+    }
+    return false;
+}
+
+if (!registerNotesEditor()) {
+    document.addEventListener('alpine:init', () => {
+        registerNotesEditor();
+    });
+    setTimeout(() => registerNotesEditor(), 1000);
+}

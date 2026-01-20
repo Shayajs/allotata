@@ -78,9 +78,6 @@ class KanbanController extends Controller
 
         $card = KanbanCard::create($validated);
 
-        // Émettre l'événement de création
-        event(new \App\Events\KanbanCardUpdated($card));
-
         return response()->json([
             'success' => true,
             'card' => $card->load('assignee', 'creator'),
@@ -113,9 +110,6 @@ class KanbanController extends Controller
         ]);
 
         $card->update($validated);
-
-        // Émettre l'événement de mise à jour
-        event(new \App\Events\KanbanCardUpdated($card));
 
         return response()->json([
             'success' => true,
@@ -161,9 +155,6 @@ class KanbanController extends Controller
                 'ordre' => $newOrdre,
             ]);
         });
-
-        // Émettre l'événement de déplacement
-        event(new \App\Events\KanbanCardMoved($card, $oldColumnId, $newColumnId));
 
         return response()->json([
             'success' => true,

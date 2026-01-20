@@ -1,55 +1,4 @@
-// Importer Echo et Pusher
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
-
-// Configuration de Laravel Echo avec Reverb
-window.Pusher = Pusher;
-
-// Initialiser Echo si nécessaire
-function initEchoIfNeeded() {
-    if (typeof window.Echo !== 'undefined') {
-        return window.Echo;
-    }
-    
-    if (Echo && Pusher) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (!csrfToken) {
-            return null;
-        }
-        
-        const reverbAppId = window.REVERB_APP_ID || 'reverb-app';
-        const reverbKey = window.REVERB_APP_KEY || 'reverb-key';
-        const reverbHost = window.REVERB_HOST || window.location.hostname;
-        const reverbPort = window.REVERB_PORT || '8080';
-        const reverbScheme = window.REVERB_SCHEME || (window.location.protocol === 'https:' ? 'https' : 'http');
-        
-        try {
-            window.Echo = new Echo({
-                broadcaster: 'reverb',
-                key: reverbKey,
-                wsHost: reverbHost,
-                wsPort: reverbPort,
-                wssPort: reverbPort,
-                forceTLS: reverbScheme === 'https',
-                enabledTransports: ['ws', 'wss'],
-                authEndpoint: '/broadcasting/auth',
-                auth: {
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken.content,
-                    },
-                },
-            });
-            return window.Echo;
-        } catch (error) {
-            console.error('Erreur lors de l\'initialisation d\'Echo:', error);
-            return null;
-        }
-    }
-    
-    return null;
-}
-
-// Configuration Alpine.js pour le Kanban
+// Configuration Alpine.js pour le Kanban (sans WebSocket)
 function kanbanData(boardId) {
     return {
         boardId: boardId,
@@ -72,9 +21,6 @@ function kanbanData(boardId) {
         init() {
             // Initialiser SortableJS pour le drag & drop
             this.initSortable();
-            
-            // Écouter les événements WebSocket
-            this.initWebSocket();
         },
         
         initSortable() {
@@ -96,33 +42,6 @@ function kanbanData(boardId) {
                     }
                 });
             });
-        },
-        
-        initWebSocket() {
-            // Initialiser Echo si nécessaire
-            const echo = initEchoIfNeeded();
-            if (!echo) {
-                console.warn('Echo n\'est pas disponible, les mises à jour en temps réel ne fonctionneront pas');
-                return;
-            }
-            
-            // Écouter les événements de broadcasting
-            echo.private(`kanban.${this.boardId}`)
-                .listen('.card.moved', (e) => {
-                    this.handleCardMoved(e);
-                })
-                .listen('.card.updated', (e) => {
-                    this.handleCardUpdated(e);
-                });
-        },
-        
-        handleDragStart(event, cardId) {
-            this.draggedCardId = cardId;
-            event.dataTransfer.effectAllowed = 'move';
-        },
-        
-        handleDragEnd(event) {
-            this.draggedCardId = null;
         },
         
         async moveCard(cardId, columnId, order) {
@@ -147,22 +66,6 @@ function kanbanData(boardId) {
             } catch (error) {
                 console.error('Erreur:', error);
                 location.reload();
-            }
-        },
-        
-        handleCardMoved(event) {
-            // Mettre à jour l'interface si une autre personne a déplacé une carte
-            if (event.card.id !== this.draggedCardId) {
-                location.reload(); // Simplification: recharger la page
-            }
-        },
-        
-        handleCardUpdated(event) {
-            // Mettre à jour la carte dans l'interface
-            const cardEl = document.querySelector(`[data-card-id="${event.card.id}"]`);
-            if (cardEl) {
-                // Mettre à jour le contenu de la carte
-                location.reload(); // Simplification: recharger la page
             }
         },
         
@@ -249,5 +152,19 @@ function kanbanData(boardId) {
     };
 }
 
-// Exporter les fonctions pour utilisation globale avec Alpine.js
+// Attendre qu'Alpine.js soit disponible
+function waitForAlpine(callback) {
+    if (window.Alpine) {
+        callback();
+    } else {
+        document.addEventListener('alpine:init', callback);
+    }
+}
+
+// Enregistrer la fonction avec Alpine.js
+waitForAlpine(() => {
+    window.Alpine.data('kanbanData', kanbanData);
+});
+
+// Exporter aussi globalement pour compatibilité
 window.kanbanData = kanbanData;
