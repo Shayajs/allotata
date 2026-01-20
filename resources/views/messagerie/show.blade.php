@@ -12,7 +12,7 @@
             // Configuration Reverb pour la présence en temps réel
             window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
             window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
-            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.1") }}';
+            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.2") }}';
             window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
             window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
             window.currentUserId = {{ auth()->id() ?? 'null' }};
