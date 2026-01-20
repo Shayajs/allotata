@@ -230,7 +230,7 @@
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         @foreach($entreprise->reservations->sortByDesc('date_reservation')->take(8) as $reservation)
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ $reservation->user->name }}</td>
+                                <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">{{ $reservation->user?->name ?? 'Utilisateur supprimé' }}</td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
                                 <td class="px-6 py-4 font-bold text-green-600 dark:text-green-400">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>
                                 <td class="px-6 py-4 text-right">

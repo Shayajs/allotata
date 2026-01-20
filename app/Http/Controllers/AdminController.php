@@ -775,6 +775,9 @@ class AdminController extends Controller
             'est_verifiee' => false, // Si le nom est refusé, l'entreprise ne peut pas être vérifiée
         ]);
 
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         return back()->with('success', 'Le nom a été refusé.');
     }
 
@@ -812,6 +815,9 @@ class AdminController extends Controller
             'est_verifiee' => false, // Si le SIREN est refusé, l'entreprise ne peut pas être vérifiée
         ]);
 
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         return back()->with('success', 'Le SIREN a été refusé.');
     }
 
@@ -839,6 +845,9 @@ class AdminController extends Controller
             'raison_refus_globale' => null,
         ]);
 
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         return back()->with('success', 'L\'entreprise a été validée avec succès.');
     }
 
@@ -855,6 +864,9 @@ class AdminController extends Controller
             'est_verifiee' => false,
             'raison_refus_globale' => $validated['raison'],
         ]);
+
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
         return back()->with('success', 'L\'entreprise a été refusée.');
     }
@@ -874,6 +886,9 @@ class AdminController extends Controller
             'est_verifiee' => false,
             'siren_verifie' => false,
         ]);
+
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
         return back()->with('success', 'L\'entreprise a été renvoyée pour correction.');
     }
@@ -900,6 +915,9 @@ class AdminController extends Controller
         $entreprise->update(['est_verifiee' => true]);
         $entreprise->refresh(); // Recharger pour vérifier que la mise à jour a fonctionné
 
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         return back()->with('success', 'Entreprise vérifiée avec succès.');
     }
 
@@ -909,6 +927,9 @@ class AdminController extends Controller
     public function unverifyEntreprise(Entreprise $entreprise)
     {
         $entreprise->update(['est_verifiee' => false]);
+
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
         return back()->with('success', 'Vérification de l\'entreprise retirée.');
     }
