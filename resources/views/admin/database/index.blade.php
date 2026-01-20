@@ -27,6 +27,28 @@
         </p>
     </div>
     @endif
+    
+    @if(session('success'))
+    <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-700/50 rounded-lg shadow-sm">
+        <p class="text-green-800 dark:text-green-300 font-medium flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            {{ session('success') }}
+        </p>
+    </div>
+    @endif
+    
+    @if(session('info'))
+    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700/50 rounded-lg shadow-sm">
+        <p class="text-blue-800 dark:text-blue-300 font-medium flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            {{ session('info') }}
+        </p>
+    </div>
+    @endif
 
     <!-- Informations sur la base de données -->
     @if($dbInfo)
@@ -87,7 +109,7 @@
                             <td class="px-4 py-3 text-sm">
                                 <button 
                                     onclick="viewTableData('{{ $table['name'] }}')" 
-                                    class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                                    class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded transition-colors"
                                     title="Voir les données"
                                 >
                                     Voir données
@@ -193,7 +215,7 @@
                     <!-- Bouton de création -->
                     <button 
                         onclick="createBackup()" 
-                        class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -206,7 +228,7 @@
             <!-- Autres actions -->
             <div class="flex flex-wrap gap-3">
             
-            <label class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 cursor-pointer">
+            <label class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                 </svg>
@@ -216,7 +238,7 @@
             
             <button 
                 onclick="cleanBackups()" 
-                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -297,7 +319,7 @@
                             <div class="flex items-center justify-end gap-2">
                                 <a 
                                     href="{{ route('admin.database.download', $backup['filename']) }}" 
-                                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
                                     title="Télécharger"
                                 >
                                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,7 +328,7 @@
                                 </a>
                                 <button 
                                     onclick="restoreBackup('{{ $backup['filename'] }}')" 
-                                    class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors"
+                                    class="px-3 py-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
                                     title="Restaurer"
                                 >
                                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,7 +337,7 @@
                                 </button>
                                 <button 
                                     onclick="deleteBackup('{{ $backup['filename'] }}')" 
-                                    class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+                                    class="px-3 py-1 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded text-xs font-medium transition-colors"
                                     title="Supprimer"
                                 >
                                     <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,8 +356,8 @@
 </div>
 
 <!-- Modal pour créer une sauvegarde -->
-<div id="backupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+<div id="backupModal" class="hidden fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-700">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Créer une sauvegarde</h3>
         <form id="backupForm" onsubmit="submitBackup(event)">
             <div class="mb-4">

@@ -15,7 +15,7 @@
                 Total: {{ number_format($total) }} ligne(s) | Page {{ $page }} sur {{ $totalPages }}
             </p>
         </div>
-        <a href="{{ route('admin.database.index') }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors">
+        <a href="{{ route('admin.database.index') }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
             ← Retour
         </a>
     </div>
@@ -28,7 +28,7 @@
                     @foreach($columns as $column)
                     <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
                         {{ $column->Field }}
-                        <span class="text-xs text-slate-400">({{ $column->Type }})</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">({{ $column->Type }})</span>
                     </th>
                     @endforeach
                 </tr>
@@ -61,13 +61,13 @@
         </div>
         <div class="flex gap-2">
             @if($page > 1)
-            <a href="?table={{ urlencode($tableName) }}&page={{ $page - 1 }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <a href="?table={{ urlencode($tableName) }}&page={{ $page - 1 }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
                 ← Précédent
             </a>
             @endif
             
             @if($page < $totalPages)
-            <a href="?table={{ urlencode($tableName) }}&page={{ $page + 1 }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <a href="?table={{ urlencode($tableName) }}&page={{ $page + 1 }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
                 Suivant →
             </a>
             @endif
