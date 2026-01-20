@@ -17,16 +17,14 @@
                     @php
                         use App\Helpers\SiteHelper;
                         $logoUrl = SiteHelper::getLogo('transparent');
+                        $siteName = SiteHelper::getSiteName();
                     @endphp
-                    @if($logoUrl)
-                        <a href="{{ route('home') }}" class="flex items-center">
-                            <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto">
-                        </a>
-                    @else
-                        <a href="{{ route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                            Allo Tata
-                        </a>
-                    @endif
+                    <a href="{{ route('home') }}" class="flex items-center gap-3">
+                        @if($logoUrl)
+                            <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-8 w-auto hidden sm:block">
+                        @endif
+                        <span class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">{{ $siteName }}</span>
+                    </a>
                     <div class="flex items-center gap-4">
                         <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
                             Retour au dashboard

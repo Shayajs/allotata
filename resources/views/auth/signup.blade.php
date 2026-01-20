@@ -13,9 +13,17 @@
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-6 sm:space-y-8">
             <div>
-                <a href="{{ route('home') }}" class="flex justify-center">
+                <a href="{{ route('home') }}" class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    @php
+                        use App\Helpers\SiteHelper;
+                        $logoUrl = SiteHelper::getLogo('transparent');
+                        $siteName = SiteHelper::getSiteName();
+                    @endphp
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-12 w-auto sm:h-10">
+                    @endif
                     <h1 class="text-3xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                        Allo Tata
+                        {{ $siteName }}
                     </h1>
                 </a>
                 <h2 class="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
