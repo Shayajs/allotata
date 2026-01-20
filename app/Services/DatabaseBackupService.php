@@ -93,12 +93,25 @@ class DatabaseBackupService
             // Exécuter la commande
             exec($command, $output, $returnCode);
             
-            if ($returnCode !== 0 || !file_exists($tempFile)) {
-                $error = implode("\n", $output);
+            // Si mysqldump échoue (pas installé dans Docker), utiliser PDO
+            if ($returnCode !== 0 || !file_exists($tempFile) || filesize($tempFile) < 100) {
+                Log::warning("mysqldump a échoué ou n'est pas disponible, utilisation de la méthode PDO", [
+                    'return_code' => $returnCode,
+                    'output' => implode("\n", $output),
+                ]);
+                
+                // Nettoyer le fichier temporaire si existant
                 if (file_exists($tempFile)) {
                     unlink($tempFile);
                 }
-                throw new Exception("Erreur lors de la création de la sauvegarde: {$error}");
+                
+                // Utiliser la méthode PDO
+                $content = $this->createBackupViaPdo($config, $type);
+                file_put_contents($tempFile, $content);
+                
+                if (!file_exists($tempFile) || filesize($tempFile) < 100) {
+                    throw new Exception("Erreur lors de la création de la sauvegarde via PDO");
+                }
             }
             
             // Modifier le fichier pour utiliser CREATE TABLE IF NOT EXISTS (seulement si structure présente)
@@ -185,6 +198,108 @@ class DatabaseBackupService
             Log::error("Erreur lors de la création de la sauvegarde: " . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Créer une sauvegarde via PDO (fallback si mysqldump n'est pas disponible)
+     * Cette méthode génère du SQL compatible avec l'import
+     */
+    protected function createBackupViaPdo($config, $type = 'all')
+    {
+        $sql = "";
+        $sql .= "-- Sauvegarde générée via PDO\n";
+        $sql .= "-- Base de données: {$config['database']}\n";
+        $sql .= "-- Date: " . date('Y-m-d H:i:s') . "\n";
+        $sql .= "-- Type: {$type}\n\n";
+        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n";
+        $sql .= "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+        $sql .= "SET AUTOCOMMIT = 0;\n";
+        $sql .= "START TRANSACTION;\n\n";
+        
+        // Récupérer toutes les tables
+        $tables = DB::select("SHOW TABLES");
+        $tableKey = "Tables_in_{$config['database']}";
+        
+        foreach ($tables as $table) {
+            $tableName = $table->$tableKey ?? array_values((array)$table)[0];
+            
+            // Ignorer certaines tables système
+            if (in_array($tableName, ['migrations', 'password_reset_tokens', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs'])) {
+                continue;
+            }
+            
+            $sql .= "-- --------------------------------------------------------\n";
+            $sql .= "-- Table: `{$tableName}`\n";
+            $sql .= "-- --------------------------------------------------------\n\n";
+            
+            // Structure de la table (si demandé)
+            if ($type !== 'data') {
+                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
+                if (!empty($createTable)) {
+                    $createStatement = $createTable[0]->{'Create Table'} ?? '';
+                    // Convertir en CREATE TABLE IF NOT EXISTS
+                    $createStatement = preg_replace('/CREATE TABLE/', 'CREATE TABLE IF NOT EXISTS', $createStatement, 1);
+                    $sql .= $createStatement . ";\n\n";
+                }
+            }
+            
+            // Données de la table (si demandé)
+            if ($type !== 'structure') {
+                $rows = DB::table($tableName)->get();
+                
+                if ($rows->count() > 0) {
+                    // Obtenir les colonnes
+                    $columns = DB::select("SHOW COLUMNS FROM `{$tableName}`");
+                    $columnNames = array_map(function($col) {
+                        return '`' . $col->Field . '`';
+                    }, $columns);
+                    
+                    $sql .= "-- Données de `{$tableName}` ({$rows->count()} lignes)\n";
+                    
+                    // Générer les INSERT par lots de 100
+                    $chunks = $rows->chunk(100);
+                    
+                    foreach ($chunks as $chunk) {
+                        $values = [];
+                        
+                        foreach ($chunk as $row) {
+                            $rowValues = [];
+                            foreach ($columns as $col) {
+                                $value = $row->{$col->Field};
+                                
+                                if ($value === null) {
+                                    $rowValues[] = 'NULL';
+                                } elseif (is_numeric($value) && !in_array($col->Type, ['varchar', 'text', 'longtext', 'mediumtext', 'tinytext', 'char', 'enum', 'set'])) {
+                                    $rowValues[] = $value;
+                                } else {
+                                    // Échapper les caractères spéciaux
+                                    $escaped = addslashes((string)$value);
+                                    $escaped = str_replace(["\r", "\n"], ["\\r", "\\n"], $escaped);
+                                    $rowValues[] = "'" . $escaped . "'";
+                                }
+                            }
+                            $values[] = '(' . implode(', ', $rowValues) . ')';
+                        }
+                        
+                        if (!empty($values)) {
+                            // Utiliser REPLACE INTO pour éviter les doublons
+                            $sql .= "REPLACE INTO `{$tableName}` (" . implode(', ', $columnNames) . ") VALUES\n";
+                            $sql .= implode(",\n", $values) . ";\n\n";
+                        }
+                    }
+                }
+            }
+        }
+        
+        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+        $sql .= "COMMIT;\n";
+        
+        Log::info("Sauvegarde PDO créée", [
+            'tables' => count($tables),
+            'size' => strlen($sql),
+        ]);
+        
+        return $sql;
     }
 
     /**

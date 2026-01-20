@@ -321,7 +321,18 @@ class TwoFactorController extends Controller
         );
 
         // Connecter l'utilisateur
-        Auth::login($user, $request->session()->get('two_factor_remember', false));
+        // Note: On vérifie si le remember me est possible (CookieJar disponible)
+        $remember = $request->session()->get('two_factor_remember', false);
+        try {
+            Auth::login($user, $remember);
+        } catch (\RuntimeException $e) {
+            // Si le CookieJar n'est pas disponible, se connecter sans remember me
+            if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
+                Auth::login($user, false);
+            } else {
+                throw $e;
+            }
+        }
 
         // Nettoyer la session A2F
         $redirectUrl = $request->session()->get('a2f_redirect_url');
