@@ -30,10 +30,13 @@ return [
 
     'servers' => [
         'reverb' => [
-            'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
+            // En développement : 127.0.0.2, en production : 0.0.0.0
+            // Si non défini, utilisera 127.0.0.2 par défaut (changez dans .env pour production)
+            'host' => env('REVERB_SERVER_HOST', '127.0.0.2'),
             'port' => env('REVERB_SERVER_PORT', 8080),
             'path' => env('REVERB_SERVER_PATH', ''),
-            'hostname' => env('REVERB_HOST'),
+            // REVERB_HOST est l'adresse accessible par les clients (127.0.0.2 en dev, domaine en prod)
+            'hostname' => env('REVERB_HOST', '127.0.0.2'),
             'options' => [
                 'tls' => [],
             ],
