@@ -20,8 +20,7 @@
                     @endphp
                     @if($logoUrl)
                         <a href="{{ route('home') }}" class="flex items-center">
-                            <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto dark:hidden">
-                            <img src="{{ SiteHelper::getLogo('dark') ?? $logoUrl }}" alt="Allo Tata" class="h-8 w-auto hidden dark:block">
+                            <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto">
                         </a>
                     @else
                         <a href="{{ route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
