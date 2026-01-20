@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('session_id')->index();
             $table->string('ip_address', 45);
             $table->text('user_agent')->nullable();
-            $table->enum('page_type', ['accueil', 'agenda', 'store'])->default('accueil');
+            $table->enum('page_type', ['accueil', 'agenda', 'store', 'services', 'produits'])->default('accueil');
             $table->integer('duree_seconde')->nullable();
             $table->boolean('a_quitte_rapidement')->default(false); // < 3 secondes
             $table->boolean('a_quitte_apres_exploration')->default(false); // > 7 secondes sans réservation

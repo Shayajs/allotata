@@ -12,8 +12,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Pour MySQL, on doit modifier l'enum en recréant la colonne
-        DB::statement("ALTER TABLE entreprise_visites MODIFY COLUMN page_type ENUM('accueil', 'agenda', 'store', 'services', 'produits') DEFAULT 'accueil'");
+        // Vérifier si la table existe avant de la modifier
+        // Cette migration peut s'exécuter avant la création de la table
+        // Dans ce cas, on ne fait rien car la table sera créée avec les bonnes valeurs
+        if (Schema::hasTable('entreprise_visites')) {
+            // Pour MySQL, on doit modifier l'enum en recréant la colonne
+            DB::statement("ALTER TABLE entreprise_visites MODIFY COLUMN page_type ENUM('accueil', 'agenda', 'store', 'services', 'produits') DEFAULT 'accueil'");
+        }
     }
 
     /**
@@ -21,7 +26,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revenir à l'ancien enum
-        DB::statement("ALTER TABLE entreprise_visites MODIFY COLUMN page_type ENUM('accueil', 'agenda', 'store') DEFAULT 'accueil'");
+        // Vérifier si la table existe avant de la modifier
+        if (Schema::hasTable('entreprise_visites')) {
+            // Revenir à l'ancien enum
+            DB::statement("ALTER TABLE entreprise_visites MODIFY COLUMN page_type ENUM('accueil', 'agenda', 'store') DEFAULT 'accueil'");
+        }
     }
 };
