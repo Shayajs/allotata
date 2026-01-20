@@ -60,12 +60,29 @@ class AppServiceProvider extends ServiceProvider
         // Personnaliser la durée du cookie "remember me" pour qu'il corresponde à la durée de session
         // Par défaut, Laravel utilise 2 semaines (20160 minutes), on l'étend à 10 ans (5256000 minutes)
         Auth::extend('session', function ($app, $name, array $config) {
-            return new \App\Auth\CustomSessionGuard(
+            $guard = new \App\Auth\CustomSessionGuard(
                 $name,
                 Auth::createUserProvider($config['provider'] ?? null),
                 $app['session.store'],
                 $app['request']
             );
+            
+            // IMPORTANT: Injecter le CookieJar pour que "remember me" fonctionne
+            if (isset($app['cookie'])) {
+                $guard->setCookieJar($app['cookie']);
+            }
+            
+            // Injecter le dispatcher d'événements
+            if (isset($app['events'])) {
+                $guard->setDispatcher($app['events']);
+            }
+            
+            // Injecter le request pour la détection du recaller
+            if (isset($app['request'])) {
+                $guard->setRequest($app['request']);
+            }
+            
+            return $guard;
         });
     }
 }

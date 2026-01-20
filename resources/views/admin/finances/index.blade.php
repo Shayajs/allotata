@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            fetch('{{ route("entreprise.fiscal-settings.save", $selectedEntreprise?->slug ?? "") }}', {
+            fetch('{{ $selectedEntreprise ? route("entreprise.fiscal-settings.save", $selectedEntreprise->slug) : "#" }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -655,7 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Fonction pour ouvrir la modale d'édition
 function openEditModal(id, type, date, amount, category, description) {
     const form = document.getElementById('edit-record-form');
-    form.action = '{{ url("/m/" . ($selectedEntreprise->slug ?? "") . "/finances") }}/' + id;
+    form.action = '{{ $selectedEntreprise ? url("/m/" . $selectedEntreprise->slug . "/finances") : "#" }}/' + id;
     
     document.getElementById('edit-type').value = type;
     document.getElementById('edit-date').value = date;

@@ -107,8 +107,13 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">
                                     <x-user-name :user="$reservation->user" />
+                                    @if(!$reservation->user && $reservation->nom_client)
+                                        {{ $reservation->nom_client }}
+                                    @endif
                                 </div>
-                                <div class="text-sm text-slate-500 dark:text-slate-400">{{ $reservation->user->email }}</div>
+                                <div class="text-sm text-slate-500 dark:text-slate-400">
+                                    {{ $reservation->user?->email ?? ($reservation->email_client ?? 'N/A') }}
+                                </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $reservation->entreprise->nom }}</div>
