@@ -153,9 +153,7 @@
         <textarea 
             id="note-editor"
             x-ref="editor"
-            x-model="noteContent"
-            @input="debouncedSave()"
-        >{{ $note->contenu_markdown }}</textarea>
+        >{{ $note->contenu_markdown ?? '' }}</textarea>
     </div>
 
     <!-- Prévisualisation (optionnelle) -->

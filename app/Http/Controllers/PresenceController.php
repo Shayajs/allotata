@@ -14,7 +14,7 @@ class PresenceController extends Controller
     public function __construct(PresenceService $presenceService)
     {
         $this->presenceService = $presenceService;
-        $this->middleware('auth');
+        // Le middleware 'auth' est appliqué au niveau des routes dans Laravel 11+
     }
 
     /**

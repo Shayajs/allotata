@@ -64,29 +64,39 @@ function notesEditor(noteId) {
         init() {
             // Initialiser le contenu depuis le textarea si disponible
             const editorEl = document.getElementById('note-editor');
-            if (editorEl && editorEl.value) {
+            if (!editorEl) {
+                console.error('Élément note-editor non trouvé');
+                return;
+            }
+            
+            // S'assurer que noteContent a une valeur par défaut
+            if (!this.noteContent && editorEl.value) {
                 this.noteContent = editorEl.value;
+            }
+            if (!this.noteContent) {
+                this.noteContent = '';
             }
             
             // Initialiser SimpleMDE
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:before-simplemde',message:'about to create SimpleMDE',data:{editorElExists:!!editorEl,editorElId:editorEl?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-            // #endregion
-            
-            this.simplemde = new SimpleMDE({
-                element: editorEl,
-                initialValue: this.noteContent || '',
-                spellChecker: false,
-                placeholder: 'Commencez à écrire votre note...',
-                toolbar: [
-                    'bold', 'italic', 'strikethrough', '|',
-                    'heading-1', 'heading-2', 'heading-3', '|',
-                    'code', 'quote', 'unordered-list', 'ordered-list', '|',
-                    'link', 'image', 'table', '|',
-                    'preview', 'side-by-side', 'fullscreen', '|',
-                    'guide'
-                ],
-            });
+            try {
+                this.simplemde = new SimpleMDE({
+                    element: editorEl,
+                    initialValue: this.noteContent || '',
+                    spellChecker: false,
+                    placeholder: 'Commencez à écrire votre note...',
+                    toolbar: [
+                        'bold', 'italic', 'strikethrough', '|',
+                        'heading-1', 'heading-2', 'heading-3', '|',
+                        'code', 'quote', 'unordered-list', 'ordered-list', '|',
+                        'link', 'image', 'table', '|',
+                        'preview', 'side-by-side', 'fullscreen', '|',
+                        'guide'
+                    ],
+                });
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation de SimpleMDE:', error);
+                return;
+            }
             
             // #region agent log
             fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:after-simplemde',message:'SimpleMDE created',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror),wrapperExists:!!(this.simplemde?.codemirror?.getWrapperElement?.())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
