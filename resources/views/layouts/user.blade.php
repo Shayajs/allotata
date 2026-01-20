@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>@yield('title', 'Dashboard') - Allo Tata</title>
+        @include('partials.favicon')
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -21,8 +22,17 @@
                         <!-- Menu Burger pour mobile web -->
                         @include('components.mobile-nav', ['navType' => 'dashboard'])
                         
-                        <a href="{{ route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                            Allo Tata
+                        <a href="{{ route('home') }}" class="flex items-center gap-2 text-xl font-bold">
+                            @php
+                                use App\Helpers\SiteHelper;
+                                $logoUrl = SiteHelper::getLogo('transparent');
+                            @endphp
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-8 w-auto dark:hidden" style="max-height: 32px;">
+                                <img src="{{ SiteHelper::getLogo('dark') ?? $logoUrl }}" alt="Allo Tata" class="h-8 w-auto hidden dark:block" style="max-height: 32px;">
+                            @else
+                                <span class="bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">Allo Tata</span>
+                            @endif
                         </a>
                     </div>
                     <!-- Liens desktop (masqués sur mobile) -->

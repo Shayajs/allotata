@@ -111,6 +111,11 @@ class Setting extends Model
             ['key' => 'site_name', 'value' => 'Allo Tata', 'type' => 'string', 'group' => 'general', 'label' => 'Nom du site'],
             ['key' => 'contact_email', 'value' => 'contact@allotata.fr', 'type' => 'string', 'group' => 'general', 'label' => 'Email de contact'],
             
+            // Logos (pas de valeur par défaut, seront uploadés via l'interface)
+            ['key' => 'site_logo_light', 'value' => null, 'type' => 'string', 'group' => 'logos', 'label' => 'Logo mode clair', 'description' => 'Logo utilisé pour le favicon et l\'affichage en mode clair'],
+            ['key' => 'site_logo_dark', 'value' => null, 'type' => 'string', 'group' => 'logos', 'label' => 'Logo mode sombre', 'description' => 'Logo utilisé pour le favicon et l\'affichage en mode sombre'],
+            ['key' => 'site_logo_transparent', 'value' => null, 'type' => 'string', 'group' => 'logos', 'label' => 'Logo sans fond', 'description' => 'Logo transparent utilisé dans les emails (PNG avec transparence recommandé)'],
+            
             // Abonnements
             ['key' => 'subscription_price', 'value' => '29.99', 'type' => 'float', 'group' => 'subscription', 'label' => 'Prix abonnement mensuel (€)'],
             ['key' => 'trial_days', 'value' => '14', 'type' => 'integer', 'group' => 'subscription', 'label' => 'Durée période d\'essai (jours)'],

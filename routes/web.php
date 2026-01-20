@@ -551,6 +551,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
     Route::post('/settings/store', [\App\Http\Controllers\Admin\SettingController::class, 'store'])->name('settings.store');
     Route::delete('/settings/{setting}', [\App\Http\Controllers\Admin\SettingController::class, 'destroy'])->name('settings.destroy');
+    Route::post('/settings/logos/light', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoLight'])->name('settings.upload-logo-light');
+    Route::post('/settings/logos/dark', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoDark'])->name('settings.upload-logo-dark');
+    Route::post('/settings/logos/transparent', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoTransparent'])->name('settings.upload-logo-transparent');
+    Route::delete('/settings/logos/{type}', [\App\Http\Controllers\Admin\SettingController::class, 'deleteLogo'])->name('settings.delete-logo');
     
     // Annonces
     Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);

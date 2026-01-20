@@ -435,7 +435,18 @@
                     <div class="email-container">
                         <!-- Header -->
                         <div class="header">
-                            <a href="{{ url('/') }}" class="logo">Allo Tata</a>
+                            @php
+                                use App\Helpers\SiteHelper;
+                                $emailLogo = SiteHelper::getEmailLogo();
+                                $siteName = SiteHelper::getSiteName();
+                            @endphp
+                            @if($emailLogo)
+                                <a href="{{ url('/') }}" style="display: inline-block; margin-bottom: 8px;">
+                                    <img src="{{ $emailLogo }}" alt="{{ $siteName }}" style="max-width: 200px; height: auto; max-height: 60px;">
+                                </a>
+                            @else
+                                <a href="{{ url('/') }}" class="logo">{{ $siteName }}</a>
+                            @endif
                             <p class="logo-subtitle">Votre assistant professionnel</p>
                         </div>
                         
