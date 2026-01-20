@@ -108,6 +108,7 @@ function notesEditor(noteId) {
         pusher: null,
         channel: null,
         presenceChannel: null,
+        isChannelSubscribed: false, // Flag pour vérifier si le canal est souscrit
         hasMasterKey: false, // Clé de sauvegarde Master
         userHeartbeats: {}, // Track des derniers heartbeats de chaque utilisateur { userId: timestamp }
         
@@ -280,9 +281,11 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Attendre que le canal soit complètement joint
+                // Attendre que le canal soit complètement joint AVANT toute action
                 this.presenceChannel.bind('pusher:subscription_succeeded', (members) => {
-                    console.log('✅ Canal Presence joint avec succès:', channelName);
+                    console.log('✅ Canal Presence souscrit avec succès:', channelName);
+                    this.isChannelSubscribed = true; // Marquer comme souscrit
+                    
                     const users = Object.values(members.members || {}).map(member => ({
                         id: member.id || member.user_id,
                         name: member.name || member.user_info?.name || 'Utilisateur',
@@ -301,6 +304,10 @@ function notesEditor(noteId) {
                             this.userHeartbeats[userId] = now;
                         }
                     });
+                    
+                    // Démarrer le heartbeat maintenant que nous sommes connectés
+                    this.startHeartbeat();
+                    this.startHeartbeatCheck();
                     
                     // Redessiner les curseurs après l'initialisation
                     this.$nextTick(() => {
@@ -405,11 +412,10 @@ function notesEditor(noteId) {
                     }
                 });
 
-                // Démarrer le système de heartbeat
-                this.startHeartbeat();
-                this.startHeartbeatCheck();
+                // Ne pas démarrer le heartbeat ici, attendre subscription_succeeded
+                // this.startHeartbeat() sera appelé dans subscription_succeeded
 
-                console.log('Collaboration en temps réel activée (Master/Slave)');
+                console.log('Collaboration en temps réel activée (Master/Slave) - En attente de souscription...');
 
             } catch (e) {
                 console.error('Erreur WebSocket:', e);
@@ -455,10 +461,10 @@ function notesEditor(noteId) {
             }
         },
 
-        // Gérer les changements locaux (envoyer via whisper)
+        // Gérer les changements locaux (envoyer via client event)
         handleLocalChange(update) {
-            if (!this.channel) {
-                console.warn('⚠️ handleLocalChange: canal non disponible');
+            if (!this.presenceChannel || !this.isChannelSubscribed) {
+                console.warn('⚠️ handleLocalChange: canal non disponible ou non souscrit');
                 return;
             }
             
@@ -483,6 +489,12 @@ function notesEditor(noteId) {
                         };
 
                         // Envoyer via client event (événement client-client, pas serveur)
+                        // Vérifier que le canal est souscrit avant d'envoyer
+                        if (!this.isChannelSubscribed) {
+                            console.warn('⚠️ Canal non encore souscrit, skip text-change');
+                            return;
+                        }
+                        
                         try {
                             console.log('📤 [Client Event] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
                             this.presenceChannel.trigger('client-text-change', change);
@@ -669,7 +681,10 @@ function notesEditor(noteId) {
         },
 
         async updateCursor() {
-            if (!this.editorView || !this.presenceChannel) return;
+            if (!this.editorView || !this.presenceChannel || !this.isChannelSubscribed) {
+                console.warn('⚠️ updateCursor: canal non disponible ou non souscrit');
+                return;
+            }
             
             try {
                 const selection = this.editorView.state.selection.main;
@@ -680,6 +695,12 @@ function notesEditor(noteId) {
                 const userName = currentUser?.name || 'Utilisateur';
                 
                 // Envoyer via whisper (pas besoin du serveur pour le curseur)
+                // Vérifier que le canal est souscrit avant d'envoyer
+                if (!this.isChannelSubscribed) {
+                    console.warn('⚠️ Canal non encore souscrit, skip cursor-moved');
+                    return;
+                }
+                
                 const cursorData = {
                     userId: Number(window.currentUserId), // S'assurer que c'est un nombre
                     user: {
@@ -840,6 +861,12 @@ function notesEditor(noteId) {
             if (!this.channel) return;
 
             try {
+                // Vérifier que le canal est souscrit avant d'envoyer
+                if (!this.isChannelSubscribed) {
+                    console.warn('⚠️ Canal non encore souscrit, skip heartbeat');
+                    return;
+                }
+                
                 // Envoyer via client event aux autres clients (pour détection rapide)
                 // S'assurer que toutes les valeurs sont des types primitifs valides
                 try {
