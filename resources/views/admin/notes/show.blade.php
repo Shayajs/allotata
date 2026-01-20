@@ -155,7 +155,7 @@
                     @endif
                     <span>•</span>
                     <span x-text="saveStatusText" :class="saveStatusClass" class="save-status"></span>
-                    <span x-show="hasMasterKey" class="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                    <span x-show="hasMasterKey === true" class="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
                         💾 Master
                     </span>
                 </div>
@@ -232,6 +232,8 @@
 <script>
     // Données initiales pour l'éditeur
     window.noteContent = @json($note->contenu_markdown ?? '');
+    window.currentUserId = {{ auth()->id() }};
+    window.noteMasterUserId = {{ $note->master_user_id ?? 'null' }};
     
     // Retirer x-cloak une fois Alpine initialisé
     function removeCloak() {

@@ -61,12 +61,15 @@ function notesEditor(noteId) {
         
         saveTimer: null,
         cursorTimer: null,
+        heartbeatTimer: null,
+        heartbeatCheckTimer: null,
         isApplyingRemote: false,
         isHandlingRemoteChange: false,
         
         echo: null,
         channel: null,
         hasMasterKey: false, // Clé de sauvegarde Master
+        userHeartbeats: {}, // Track des derniers heartbeats de chaque utilisateur { userId: timestamp }
         
         init() {
             const titleInput = this.$el.querySelector('input[type="text"]');
@@ -74,10 +77,54 @@ function notesEditor(noteId) {
                 this.noteTitle = titleInput.value || '';
             }
             
+            // Initialiser hasMasterKey depuis la base de données si disponible
+            if (window.noteMasterUserId) {
+                this.hasMasterKey = window.noteMasterUserId === window.currentUserId;
+            }
+            
+            // Initialiser notre propre heartbeat
+            this.userHeartbeats[window.currentUserId] = Date.now();
+            
             this.$nextTick(() => {
                 this.setupEditor();
                 this.setupWebSocket();
             });
+        },
+
+        // Nettoyer les timers lors de la destruction
+        destroy() {
+            if (this.heartbeatTimer) {
+                clearInterval(this.heartbeatTimer);
+                this.heartbeatTimer = null;
+            }
+            if (this.heartbeatCheckTimer) {
+                clearInterval(this.heartbeatCheckTimer);
+                this.heartbeatCheckTimer = null;
+            }
+            if (this.saveTimer) {
+                clearTimeout(this.saveTimer);
+            }
+            if (this.cursorTimer) {
+                clearTimeout(this.cursorTimer);
+            }
+        },
+
+        // Nettoyer les timers lors de la destruction
+        destroy() {
+            if (this.heartbeatTimer) {
+                clearInterval(this.heartbeatTimer);
+                this.heartbeatTimer = null;
+            }
+            if (this.heartbeatCheckTimer) {
+                clearInterval(this.heartbeatCheckTimer);
+                this.heartbeatCheckTimer = null;
+            }
+            if (this.saveTimer) {
+                clearTimeout(this.saveTimer);
+            }
+            if (this.cursorTimer) {
+                clearTimeout(this.cursorTimer);
+            }
         },
 
         setupEditor() {
@@ -98,9 +145,13 @@ function notesEditor(noteId) {
                         markdown(),
                         isDark ? oneDark : [],
                         EditorView.updateListener.of((update) => {
+                            // Détecter les changements de document
                             if (update.docChanged && !this.isApplyingRemote) {
-                                // Capturer les changements individuels
                                 this.handleLocalChange(update);
+                            }
+                            
+                            // Détecter les changements de sélection (mouvement du curseur)
+                            if (update.selectionSet || update.docChanged) {
                                 this.queueCursorUpdate();
                                 this.drawCursors();
                             }
@@ -121,7 +172,21 @@ function notesEditor(noteId) {
 
                 const scrollEl = this.editorView.scrollDOM;
                 if (scrollEl) {
+                    // S'assurer que le conteneur est positionné en relative pour les curseurs absolus
+                    if (window.getComputedStyle(scrollEl).position === 'static') {
+                        scrollEl.style.position = 'relative';
+                    }
                     scrollEl.addEventListener('scroll', () => this.drawCursors());
+                    
+                    // Redessiner les curseurs périodiquement pour s'assurer qu'ils sont à jour
+                    setInterval(() => {
+                        if (Object.keys(this.remoteCursors).length > 0) {
+                            this.drawCursors();
+                        }
+                    }, 1000); // Toutes les secondes
+                    
+                    // Dessiner les curseurs après un court délai pour s'assurer que le DOM est prêt
+                    setTimeout(() => this.drawCursors(), 100);
                 }
 
                 const themeObserver = new MutationObserver(() => {
@@ -152,6 +217,19 @@ function notesEditor(noteId) {
                 this.channel.here((users) => {
                     this.collaborators = users;
                     this.determineMaster(users);
+                    
+                    // Initialiser les heartbeats des utilisateurs présents
+                    const now = Date.now();
+                    users.forEach(user => {
+                        if (user.id !== window.currentUserId) {
+                            this.userHeartbeats[user.id] = now;
+                        }
+                    });
+                    
+                    // Redessiner les curseurs après l'initialisation
+                    this.$nextTick(() => {
+                        this.drawCursors();
+                    });
                 });
 
                 // Nouvel utilisateur rejoint
@@ -160,12 +238,18 @@ function notesEditor(noteId) {
                         this.collaborators.push(user);
                     }
                     this.determineMaster([...this.collaborators, user]);
+                    
+                    // Initialiser le heartbeat du nouvel utilisateur
+                    if (user.id !== window.currentUserId) {
+                        this.userHeartbeats[user.id] = Date.now();
+                    }
                 });
 
                 // Utilisateur part
                 this.channel.leaving((user) => {
                     this.collaborators = this.collaborators.filter(u => u.id !== user.id);
                     delete this.remoteCursors[user.id];
+                    delete this.userHeartbeats[user.id];
                     this.determineMaster(this.collaborators);
                     this.drawCursors();
                 });
@@ -184,6 +268,41 @@ function notesEditor(noteId) {
                     }
                 });
 
+                // Écouter les heartbeats des autres utilisateurs (whisper)
+                this.channel.listenForWhisper('isAlive', (data) => {
+                    if (data.userId !== window.currentUserId) {
+                        this.userHeartbeats[data.userId] = Date.now();
+                        
+                        // S'assurer que l'utilisateur est dans la liste des collaborateurs
+                        if (!this.collaborators.find(u => u.id === data.userId)) {
+                            // Ajouter l'utilisateur si on le connaît via Presence Channel
+                            // (normalement il devrait déjà être là, mais on peut avoir un cas limite)
+                            console.log('Utilisateur actif détecté via heartbeat:', data.userId);
+                        }
+                        
+                        // Si ce n'est pas nous qui sommes Master et que le Master actuel n'envoie plus de heartbeat
+                        if (data.isMaster && !this.hasMasterKey) {
+                            this.checkAndTransferMasterIfNeeded();
+                        }
+                    }
+                });
+
+                // Écouter les changements de Master (événement serveur)
+                this.echo.listen('.master.changed', (data) => {
+                    console.log('🔄 Master changé:', data);
+                    window.noteMasterUserId = data.master_user_id; // Mettre à jour la référence globale
+                    this.hasMasterKey = data.master_user_id === window.currentUserId;
+                    if (this.hasMasterKey) {
+                        console.log('💾 Vous êtes maintenant le Master');
+                    } else {
+                        console.log(`💾 Le Master est maintenant: ${data.master_user_name || data.master_user_id}`);
+                    }
+                });
+
+                // Démarrer le système de heartbeat
+                this.startHeartbeat();
+                this.startHeartbeatCheck();
+
                 console.log('Collaboration en temps réel activée (Master/Slave)');
 
             } catch (e) {
@@ -191,21 +310,35 @@ function notesEditor(noteId) {
             }
         },
 
-        // Déterminer qui est le Master (premier arrivé)
+        // Déterminer qui est le Master (priorité: master_user_id en base, sinon premier arrivé)
         determineMaster(users) {
             if (!users || users.length === 0) {
                 this.hasMasterKey = false;
                 return;
             }
 
-            // Trier par joined_at (timestamp)
+            // Si un master_user_id est défini en base de données, l'utiliser en priorité
+            if (window.noteMasterUserId) {
+                const masterInUsers = users.find(u => u.id === window.noteMasterUserId);
+                if (masterInUsers) {
+                    const wasMaster = this.hasMasterKey;
+                    this.hasMasterKey = window.noteMasterUserId === window.currentUserId;
+                    if (this.hasMasterKey && !wasMaster) {
+                        console.log('💾 Vous êtes le Master (défini en base de données)');
+                    }
+                    return;
+                }
+            }
+
+            // Sinon, utiliser le premier arrivé
             const sorted = users.sort((a, b) => (a.joined_at || 0) - (b.joined_at || 0));
             const master = sorted[0];
             
+            const wasMaster = this.hasMasterKey;
             this.hasMasterKey = master.id === window.currentUserId;
             
-            if (this.hasMasterKey) {
-                console.log('💾 Vous êtes le Master (sauvegarde activée)');
+            if (this.hasMasterKey && !wasMaster) {
+                console.log('💾 Vous êtes le Master (premier arrivé)');
             }
         },
 
@@ -275,13 +408,25 @@ function notesEditor(noteId) {
 
         // Gérer le curseur distant
         handleRemoteCursor(data) {
-            if (data.user && data.position !== undefined) {
+            if (data.userId !== window.currentUserId && data.position !== undefined) {
+                // Trouver les données utilisateur depuis les collaborateurs ou utiliser celles fournies
+                const collaborator = this.collaborators.find(u => u.id === data.userId);
+                const userData = data.user || collaborator || {
+                    id: data.userId,
+                    name: `Utilisateur ${data.userId}`
+                };
+                
                 this.remoteCursors[data.userId] = {
-                    user: data.user,
+                    user: userData,
+                    userId: data.userId,
                     position: data.position,
                     time: Date.now()
                 };
-                this.drawCursors();
+                
+                // Redessiner immédiatement
+                this.$nextTick(() => {
+                    this.drawCursors();
+                });
             }
         },
 
@@ -361,17 +506,21 @@ function notesEditor(noteId) {
                 const selection = this.editorView.state.selection.main;
                 const pos = selection.head;
                 
+                // Trouver notre info utilisateur depuis les collaborateurs
+                const currentUser = this.collaborators.find(u => u.id === window.currentUserId);
+                const userName = currentUser?.name || 'Utilisateur';
+                
                 // Envoyer via whisper (pas besoin du serveur pour le curseur)
                 this.channel.whisper('cursor-moved', {
                     userId: window.currentUserId,
                     user: {
                         id: window.currentUserId,
-                        name: document.body.dataset.userName || 'Utilisateur'
+                        name: userName
                     },
                     position: pos
                 });
             } catch (e) {
-                // Ignorer
+                console.error('Erreur updateCursor:', e);
             }
         },
 
@@ -382,57 +531,78 @@ function notesEditor(noteId) {
             const view = this.editorView;
             const scrollEl = view.scrollDOM || view.dom;
             
+            if (!scrollEl) return;
+            
+            // Retirer tous les curseurs existants
             scrollEl.querySelectorAll('.collaborator-cursor').forEach(el => el.remove());
 
             const now = Date.now();
+            const CURSOR_TIMEOUT = 5000; // 5 secondes
+            
+            // Nettoyer les curseurs expirés
             Object.keys(this.remoteCursors).forEach(userId => {
-                if (now - this.remoteCursors[userId].time > 5000) {
+                if (now - this.remoteCursors[userId].time > CURSOR_TIMEOUT) {
                     delete this.remoteCursors[userId];
                 }
             });
 
+            // Dessiner chaque curseur actif
             Object.values(this.remoteCursors).forEach(cursorData => {
                 try {
                     const pos = cursorData.position;
-                    const coords = view.coordsAtPos(pos, 1);
+                    if (pos === undefined || pos === null) return;
+                    
+                    const coords = view.coordsAtPos(pos);
                     
                     if (!coords) return;
 
-                    const scrollInfo = view.scrollDOM.getBoundingClientRect();
-                    if (coords.top < scrollInfo.top || coords.top > scrollInfo.bottom) {
+                    // Vérifier que le curseur est visible dans le viewport
+                    const scrollInfo = scrollEl.getBoundingClientRect();
+                    const cursorTop = coords.top;
+                    const cursorBottom = coords.bottom;
+                    
+                    // Ne pas afficher si en dehors du viewport
+                    if (cursorTop < scrollInfo.top || cursorBottom > scrollInfo.bottom) {
                         return;
                     }
 
-                    const color = this.getUserColor(cursorData.user.id);
-                    const lineHeight = coords.bottom - coords.top || 20;
+                    const color = this.getUserColor(cursorData.user?.id || cursorData.userId);
+                    const lineHeight = cursorBottom - cursorTop || 20;
+
+                    // Calculer la position relative au scrollEl
+                    const relativeLeft = coords.left - scrollInfo.left + scrollEl.scrollLeft;
+                    const relativeTop = cursorTop - scrollInfo.top + scrollEl.scrollTop;
 
                     const cursorEl = document.createElement('div');
                     cursorEl.className = 'collaborator-cursor';
+                    cursorEl.setAttribute('data-user-id', cursorData.user?.id || cursorData.userId);
                     cursorEl.style.cssText = `
                         position: absolute;
                         width: 2px;
                         height: ${lineHeight}px;
                         background-color: ${color};
-                        left: ${coords.left}px;
-                        top: ${coords.top}px;
-                        z-index: 10;
+                        left: ${relativeLeft}px;
+                        top: ${relativeTop}px;
+                        z-index: 1000;
                         margin-left: -1px;
                         pointer-events: auto;
+                        transition: opacity 0.2s;
                     `;
                     cursorEl.style.setProperty('--cursor-color', color);
 
                     const nameTag = document.createElement('div');
                     nameTag.className = 'collaborator-name-tag';
-                    nameTag.textContent = cursorData.user.name || 'Utilisateur';
+                    nameTag.textContent = cursorData.user?.name || 'Utilisateur';
                     nameTag.style.cssText = `
                         background-color: ${color};
+                        color: white;
                     `;
 
                     cursorEl.appendChild(nameTag);
                     scrollEl.appendChild(cursorEl);
 
                 } catch (e) {
-                    // Ignorer
+                    console.error('Erreur lors du dessin du curseur:', e);
                 }
             });
         },
@@ -473,7 +643,167 @@ function notesEditor(noteId) {
 
         get saveStatusClass() {
             return this.saveStatus;
-        }
+        },
+
+        // Système de heartbeat : envoyer toutes les secondes
+        startHeartbeat() {
+            if (this.heartbeatTimer) {
+                clearInterval(this.heartbeatTimer);
+            }
+
+            // Envoyer immédiatement le premier heartbeat
+            this.sendHeartbeat();
+
+            // Envoyer toutes les secondes
+            this.heartbeatTimer = setInterval(() => {
+                this.sendHeartbeat();
+            }, 1000);
+        },
+
+        // Envoyer un signal heartbeat au serveur et aux autres clients
+        async sendHeartbeat() {
+            if (!this.channel) return;
+
+            try {
+                // Envoyer via whisper aux autres clients (pour détection rapide)
+                this.channel.whisper('isAlive', {
+                    userId: window.currentUserId,
+                    isMaster: this.hasMasterKey,
+                    timestamp: Date.now(),
+                });
+
+                // Envoyer au serveur pour mettre à jour en base de données
+                const response = await fetch(`/admin/notes/${this.noteId}/heartbeat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        is_master: this.hasMasterKey,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Mettre à jour notre statut si le serveur indique qu'on est Master
+                    if (data.current_master_id === window.currentUserId && !this.hasMasterKey) {
+                        this.hasMasterKey = true;
+                        console.log('💾 Vous êtes maintenant le Master (confirmé par serveur)');
+                    }
+                }
+            } catch (e) {
+                console.error('Erreur envoi heartbeat:', e);
+            }
+        },
+
+        // Vérifier périodiquement qui est mort et transférer le Master si nécessaire
+        startHeartbeatCheck() {
+            if (this.heartbeatCheckTimer) {
+                clearInterval(this.heartbeatCheckTimer);
+            }
+
+            // Vérifier toutes les 3 secondes
+            this.heartbeatCheckTimer = setInterval(() => {
+                this.checkAndTransferMasterIfNeeded();
+            }, 3000);
+        },
+
+        // Vérifier et transférer le Master si le Master actuel est mort
+        async checkAndTransferMasterIfNeeded() {
+            if (!this.collaborators || this.collaborators.length === 0) return;
+
+            const now = Date.now();
+            const HEARTBEAT_TIMEOUT = 5000; // 5 secondes sans heartbeat = mort
+
+            // NETTOYER LES COLLABORATEURS INACTIFS
+            const activeCollaborators = [];
+            const removedUserIds = [];
+            
+            this.collaborators.forEach(user => {
+                if (user.id === window.currentUserId) {
+                    // Toujours garder nous-mêmes
+                    activeCollaborators.push(user);
+                } else {
+                    const lastHeartbeat = this.userHeartbeats[user.id] || 0;
+                    const isAlive = (now - lastHeartbeat) < HEARTBEAT_TIMEOUT;
+                    
+                    if (isAlive) {
+                        activeCollaborators.push(user);
+                    } else {
+                        // Retirer l'utilisateur inactif
+                        removedUserIds.push(user.id);
+                        console.log(`🚫 Utilisateur ${user.name || user.id} retiré (inactif depuis ${Math.round((now - lastHeartbeat) / 1000)}s)`);
+                    }
+                }
+            });
+            
+            // Mettre à jour la liste des collaborateurs si des changements
+            if (removedUserIds.length > 0 || activeCollaborators.length !== this.collaborators.length) {
+                this.collaborators = activeCollaborators;
+                
+                // Nettoyer les curseurs et heartbeats des utilisateurs retirés
+                removedUserIds.forEach(userId => {
+                    delete this.remoteCursors[userId];
+                    delete this.userHeartbeats[userId];
+                });
+                
+                // Redessiner les curseurs après nettoyage
+                this.drawCursors();
+            }
+
+            // Trier les utilisateurs par joined_at pour déterminer le prochain Master
+            const sorted = [...this.collaborators].sort((a, b) => (a.joined_at || 0) - (b.joined_at || 0));
+            
+            // Trouver le premier utilisateur vivant (qui a envoyé un heartbeat récemment)
+            let newMaster = null;
+            for (const user of sorted) {
+                const lastHeartbeat = this.userHeartbeats[user.id] || 0;
+                const isAlive = (now - lastHeartbeat) < HEARTBEAT_TIMEOUT;
+                
+                if (isAlive) {
+                    newMaster = user;
+                    break;
+                }
+            }
+
+            // Si nous sommes le Master actuel mais qu'on ne devrait plus l'être, vérifier avec le serveur
+            if (this.hasMasterKey && newMaster && newMaster.id !== window.currentUserId) {
+                // Le prochain Master devrait être quelqu'un d'autre, mais on garde notre statut
+                // jusqu'à ce que le serveur confirme ou qu'on ne reçoive plus notre propre statut
+            }
+
+            // Si on n'est pas Master mais qu'on devrait l'être (Master actuel est mort)
+            if (!this.hasMasterKey && newMaster && newMaster.id === window.currentUserId) {
+                try {
+                    // Demander au serveur de nous nommer Master
+                    const response = await fetch(`/admin/notes/${this.noteId}/master`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({
+                            master_user_id: window.currentUserId,
+                        }),
+                    });
+
+                    if (response.ok) {
+                        console.log('💾 Transfert du Master demandé au serveur');
+                    }
+                } catch (e) {
+                    console.error('Erreur lors du transfert du Master:', e);
+                }
+            }
+
+            // Nettoyer les heartbeats expirés (pour éviter une fuite mémoire)
+            for (const userId in this.userHeartbeats) {
+                const lastHeartbeat = this.userHeartbeats[userId];
+                if ((now - lastHeartbeat) > HEARTBEAT_TIMEOUT * 2) {
+                    delete this.userHeartbeats[userId];
+                }
+            }
+        },
     };
 }
 

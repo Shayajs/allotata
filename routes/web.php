@@ -431,6 +431,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/notes/{note}', [\App\Http\Controllers\Admin\NotesController::class, 'update'])->name('notes.update');
     Route::delete('/notes/{note}', [\App\Http\Controllers\Admin\NotesController::class, 'destroy'])->name('notes.destroy');
     Route::post('/notes/{note}/cursor', [\App\Http\Controllers\Admin\NotesController::class, 'updateCursor'])->name('notes.cursor.update');
+    Route::post('/notes/{note}/heartbeat', [\App\Http\Controllers\Admin\NotesController::class, 'heartbeat'])->name('notes.heartbeat');
+    Route::post('/notes/{note}/master', [\App\Http\Controllers\Admin\NotesController::class, 'updateMaster'])->name('notes.master.update');
     
     // Gestion des finances globales
     Route::get('/finances', [AdminController::class, 'finances'])->name('finances.index');

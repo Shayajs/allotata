@@ -66,6 +66,7 @@ class NotesController extends Controller
                 'contenu_markdown' => '',
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
+                'master_user_id' => auth()->id(), // Le créateur est le premier Master
             ]);
 
             NoteCollaborator::create([
@@ -96,7 +97,7 @@ class NotesController extends Controller
             ->where('user_id', auth()->id())
             ->update(['derniere_activite' => now()]);
 
-        $note->load(['creator', 'updater', 'collaborators.user', 'cursors.user']);
+        $note->load(['creator', 'updater', 'collaborators.user', 'cursors.user', 'master']);
 
         // Émettre l'événement de connexion
         event(new \App\Events\UserJoinedNote($note, auth()->user()));
@@ -178,6 +179,65 @@ class NotesController extends Controller
         return response()->json([
             'success' => true,
             'cursor' => $cursor->load('user'),
+        ]);
+    }
+
+    /**
+     * Heartbeat : signaler qu'on est toujours là et mettre à jour le Master si nécessaire
+     */
+    public function heartbeat(Request $request, Note $note)
+    {
+        $user = auth()->user();
+        $isMaster = $request->input('is_master', false);
+
+        // Mettre à jour la dernière activité du collaborateur
+        NoteCollaborator::where('note_id', $note->id)
+            ->where('user_id', $user->id)
+            ->update(['derniere_activite' => now()]);
+
+        // Si l'utilisateur est Master selon lui, vérifier et mettre à jour en base
+        if ($isMaster) {
+            // Si le Master actuel est différent, le changer
+            if ($note->master_user_id !== $user->id) {
+                $note->update(['master_user_id' => $user->id]);
+                event(new \App\Events\MasterChanged($note, $user));
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'current_master_id' => $note->fresh()->master_user_id,
+        ]);
+    }
+
+    /**
+     * Mettre à jour le Master de la note (appelé lors d'un changement détecté)
+     */
+    public function updateMaster(Request $request, Note $note)
+    {
+        $newMasterId = $request->input('master_user_id');
+
+        // Vérifier que l'utilisateur proposé est bien un collaborateur
+        $isCollaborator = NoteCollaborator::where('note_id', $note->id)
+            ->where('user_id', $newMasterId)
+            ->exists();
+
+        if (!$isCollaborator) {
+            return response()->json([
+                'success' => false,
+                'message' => 'L\'utilisateur n\'est pas un collaborateur de cette note.',
+            ], 403);
+        }
+
+        $masterUser = \App\Models\User::find($newMasterId);
+        
+        $note->update(['master_user_id' => $newMasterId]);
+        event(new \App\Events\MasterChanged($note, $masterUser));
+
+        return response()->json([
+            'success' => true,
+            'master_user_id' => $newMasterId,
+            'master_user_name' => $masterUser->name,
         ]);
     }
 }

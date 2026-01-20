@@ -16,6 +16,7 @@ class Note extends Model
         'contenu_markdown',
         'created_by',
         'updated_by',
+        'master_user_id',
     ];
 
     /**
@@ -32,6 +33,14 @@ class Note extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Utilisateur Master actuel (celui qui sauvegarde)
+     */
+    public function master(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'master_user_id');
     }
 
     /**
