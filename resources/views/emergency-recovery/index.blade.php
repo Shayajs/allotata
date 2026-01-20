@@ -1212,6 +1212,11 @@
             restoreFormData.append('filename', filename);
             restoreFormData.append('_token', '{{ csrf_token() }}');
 
+            updateStep('restore', 'loading');
+            document.getElementById('progressMessage').textContent = 'Restauration en cours... (peut prendre plusieurs minutes)';
+            document.getElementById('progressBarFill').style.width = '50%';
+            document.getElementById('progressPercent').textContent = '50%';
+
             return fetch('{{ request()->fullUrl() }}', {
                 method: 'POST',
                 body: restoreFormData
@@ -1220,15 +1225,40 @@
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
+                        console.error('Réponse HTML:', text.substring(0, 500));
                         throw new Error('Réponse non-JSON reçue.');
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.success && data.progress_id) {
-                    currentProgressId = data.progress_id;
-                    startProgressPolling(data.progress_id, token);
+                if (data.success) {
+                    // Restauration réussie - afficher les résultats
+                    updateStep('restore', 'success');
+                    updateStep('verify', 'success');
+                    
+                    document.getElementById('progressBarFill').style.width = '100%';
+                    document.getElementById('progressPercent').textContent = '100%';
+                    document.getElementById('progressMessage').textContent = data.message || 'Restauration terminée !';
+                    document.getElementById('progressTitleText').textContent = 'Restauration terminée !';
+                    document.querySelector('#progressTitle .animate-spin').textContent = '✅';
+                    document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                    document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+                    
+                    // Afficher les stats
+                    if (data.total_tables) {
+                        document.getElementById('statTables').textContent = data.total_tables;
+                        document.getElementById('statRows').textContent = formatNumber(data.total_rows || 0);
+                        document.getElementById('statUsers').textContent = data.users_count !== undefined ? data.users_count : '-';
+                        document.getElementById('progressStats').classList.add('visible');
+                        
+                        if (data.users_count === 0) {
+                            document.getElementById('statUsers').style.color = 'var(--danger)';
+                            updateStep('users', 'error', 'Aucun utilisateur trouvé !');
+                        } else {
+                            updateStep('users', 'success', data.users_count + ' utilisateur(s) trouvé(s)');
+                        }
+                    }
                 } else {
                     throw new Error(data.message || 'Erreur lors de la restauration');
                 }
@@ -1246,7 +1276,14 @@
 
             showProgress('Démarrage de la restauration...', 0);
             updateStep('upload', 'success', 'Fichier déjà présent');
-            updateStep('analyze', 'loading');
+            updateStep('analyze', 'success', 'Analyse terminée');
+            updateStep('structure', 'success');
+            updateStep('data', 'success');
+            updateStep('restore', 'loading');
+            
+            document.getElementById('progressBarFill').style.width = '40%';
+            document.getElementById('progressPercent').textContent = '40%';
+            document.getElementById('progressMessage').textContent = 'Restauration en cours... (peut prendre plusieurs minutes)';
 
             const formData = new FormData();
             formData.append('secret_token', token);
@@ -1262,53 +1299,53 @@
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
+                        console.error('Réponse HTML:', text.substring(0, 500));
                         throw new Error('Réponse non-JSON reçue.');
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.success && data.progress_id) {
-                    currentProgressId = data.progress_id;
-                    startProgressPolling(data.progress_id, token);
+                if (data.success) {
+                    // Restauration réussie
+                    updateStep('restore', 'success');
+                    updateStep('verify', 'success');
+                    
+                    document.getElementById('progressBarFill').style.width = '100%';
+                    document.getElementById('progressPercent').textContent = '100%';
+                    document.getElementById('progressMessage').textContent = data.message || 'Restauration terminée !';
+                    document.getElementById('progressTitleText').textContent = 'Restauration terminée !';
+                    document.querySelector('#progressTitle .animate-spin').textContent = '✅';
+                    document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
+                    document.getElementById('closeProgressBtn').style.display = 'inline-flex';
+                    
+                    // Afficher les stats
+                    if (data.total_tables) {
+                        document.getElementById('statTables').textContent = data.total_tables;
+                        document.getElementById('statRows').textContent = formatNumber(data.total_rows || 0);
+                        document.getElementById('statUsers').textContent = data.users_count !== undefined ? data.users_count : '-';
+                        document.getElementById('progressStats').classList.add('visible');
+                        
+                        if (data.users_count === 0) {
+                            document.getElementById('statUsers').style.color = 'var(--danger)';
+                            updateStep('users', 'error', 'Aucun utilisateur trouvé !');
+                        } else {
+                            updateStep('users', 'success', data.users_count + ' utilisateur(s) trouvé(s)');
+                        }
+                    }
                 } else {
-                    throw new Error(data.message || 'Erreur lors du démarrage');
+                    throw new Error(data.message || 'Erreur lors de la restauration');
                 }
             })
             .catch(error => {
                 console.error('Erreur:', error);
+                updateStep('restore', 'error');
                 document.getElementById('progressMessage').textContent = 'Erreur: ' + error.message;
                 document.getElementById('progressTitleText').textContent = 'Erreur';
                 document.querySelector('#progressTitle .animate-spin').textContent = '❌';
                 document.querySelector('#progressTitle .animate-spin').classList.remove('animate-spin');
                 document.getElementById('closeProgressBtn').style.display = 'inline-flex';
             });
-        }
-        
-        function startProgressPolling(progressId, token) {
-            const progressUrl = `{{ request()->fullUrl() }}/progress/${progressId}?token=${encodeURIComponent(token)}`;
-            
-            progressInterval = setInterval(() => {
-                fetch(progressUrl)
-                    .then(response => {
-                        const contentType = response.headers.get('content-type');
-                        if (!contentType || !contentType.includes('application/json')) {
-                            throw new Error('Réponse non-JSON');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        updateProgress(data);
-                        
-                        if (data.status === 'completed' || data.status === 'error') {
-                            clearInterval(progressInterval);
-                            progressInterval = null;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Polling error:', error);
-                    });
-            }, 500);
         }
 
         // Drag and drop
