@@ -30,7 +30,12 @@
     <div class="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">🎫 Ticket #{{ $ticket->numero_ticket }}</h1>
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                    </svg>
+                    Ticket #{{ $ticket->numero_ticket }}
+                </h1>
                 <p class="text-slate-600 dark:text-slate-400">{{ $ticket->sujet }}</p>
             </div>
             <a href="{{ route('tickets.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">

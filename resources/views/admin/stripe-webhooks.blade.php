@@ -27,10 +27,10 @@
             <nav class="flex overflow-x-auto scrollbar-hide px-6" aria-label="Tabs">
                 @php
                     $tabs = [
-                        ['id' => 'configuration', 'label' => 'Configuration', 'icon' => '⚙️'],
-                        ['id' => 'statistiques', 'label' => 'Statistiques', 'icon' => '📊', 'count' => $stats['total']],
-                        ['id' => 'evenements', 'label' => 'Événements', 'icon' => '📋'],
-                        ['id' => 'en-attente', 'label' => 'En attente', 'icon' => '⏳', 'count' => $stats['pending']],
+                        ['id' => 'configuration', 'label' => 'Configuration', 'icon' => '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>'],
+                        ['id' => 'statistiques', 'label' => 'Statistiques', 'icon' => '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>', 'count' => $stats['total']],
+                        ['id' => 'evenements', 'label' => 'Événements', 'icon' => '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>'],
+                        ['id' => 'en-attente', 'label' => 'En attente', 'icon' => '<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>', 'count' => $stats['pending']],
                     ];
                 @endphp
                 @foreach($tabs as $tab)
@@ -39,7 +39,7 @@
                         data-webhook-tab="{{ $tab['id'] }}"
                         class="webhook-tab-btn flex items-center gap-2 px-8 py-6 text-sm font-bold whitespace-nowrap border-b-2 transition-all {{ $loop->first ? 'border-green-500 text-green-600 dark:text-green-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300' }}"
                     >
-                        <span class="text-xl">{{ $tab['icon'] }}</span>
+                        {!! $tab['icon'] !!}
                         {{ $tab['label'] }}
                         @if(isset($tab['count']))
                             <span class="ml-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-[10px] rounded-md font-extrabold">{{ $tab['count'] }}</span>
@@ -65,11 +65,17 @@
                             <div class="flex items-center gap-2">
                                 @if($webhookConfigured)
                                     <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                        <span class="mr-2">✓</span> Configuré
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Configuré
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                                        <span class="mr-2">✗</span> Non configuré
+                                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        Non configuré
                                     </span>
                                 @endif
                             </div>
@@ -87,11 +93,14 @@
                                     {{ $webhookUrl }}
                                 </code>
                                 <button 
-                                    onclick="navigator.clipboard.writeText('{{ $webhookUrl }}'); this.textContent='✓ Copié!'; setTimeout(() => this.textContent='📋', 2000);"
-                                    class="px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 rounded-lg transition font-medium"
+                                    onclick="navigator.clipboard.writeText('{{ $webhookUrl }}'); const text = this; const svg = '<svg class=\'w-4 h-4 inline mr-1\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M5 13l4 4L19 7\'></path></svg>'; text.innerHTML = svg + ' Copié!'; setTimeout(() => text.innerHTML = '<svg class=\'w-4 h-4 inline mr-1\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\'></path></svg> Copier', 2000);"
+                                    class="px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 rounded-lg transition font-medium flex items-center gap-1"
                                     title="Copier l'URL"
                                 >
-                                    📋
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Copier
                                 </button>
                             </div>
                         </div>
@@ -104,11 +113,14 @@
                                         {{ substr($webhookSecret, 0, 30) }}...
                                     </code>
                                     <button 
-                                        onclick="navigator.clipboard.writeText('{{ $webhookSecret }}'); this.textContent='✓ Copié!'; setTimeout(() => this.textContent='📋', 2000);"
-                                        class="px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 rounded-lg transition font-medium"
+                                        onclick="navigator.clipboard.writeText('{{ $webhookSecret }}'); const text = this; const svg = '<svg class=\'w-4 h-4 inline mr-1\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M5 13l4 4L19 7\'></path></svg>'; text.innerHTML = svg + ' Copié!'; setTimeout(() => text.innerHTML = '<svg class=\'w-4 h-4 inline mr-1\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\'></path></svg> Copier', 2000);"
+                                        class="px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 rounded-lg transition font-medium flex items-center gap-1"
                                         title="Copier le secret"
                                     >
-                                        📋
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Copier
                                     </button>
                                 @else
                                     <span class="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400 font-medium">Non configuré</span>
@@ -120,7 +132,9 @@
                     @if(!$webhookConfigured)
                         <div class="p-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
                             <div class="flex items-start gap-3">
-                                <span class="text-2xl">⚠️</span>
+                                <svg class="w-6 h-6 flex-shrink-0 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
                                 <div>
                                     <h3 class="font-semibold text-yellow-900 dark:text-yellow-400 mb-2">Configuration requise</h3>
                                     <p class="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
@@ -149,7 +163,9 @@
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-12 h-12 bg-blue-500 dark:bg-blue-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl">📊</span>
+                                    <svg class="w-6 h-6 flex-shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
                                 </div>
                             </div>
                             <p class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ number_format($stats['total'], 0, ',', ' ') }}</p>
@@ -159,7 +175,9 @@
                         <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-12 h-12 bg-green-500 dark:bg-green-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl">✓</span>
+                                    <svg class="w-6 h-6 flex-shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
                                 </div>
                             </div>
                             <p class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ number_format($stats['processed'], 0, ',', ' ') }}</p>
@@ -169,7 +187,9 @@
                         <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-12 h-12 bg-orange-500 dark:bg-orange-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl">⏳</span>
+                                    <svg class="w-6 h-6 flex-shrink-0 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                 </div>
                             </div>
                             <p class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ number_format($stats['pending'], 0, ',', ' ') }}</p>
@@ -179,7 +199,9 @@
                         <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-12 h-12 bg-purple-500 dark:bg-purple-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl">📅</span>
+                                    <svg class="w-6 h-6 flex-shrink-0 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
                                 </div>
                             </div>
                             <p class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ number_format($stats['today'], 0, ',', ' ') }}</p>
@@ -189,7 +211,9 @@
                         <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-12 h-12 bg-yellow-500 dark:bg-yellow-600 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl">🕐</span>
+                                    <svg class="w-6 h-6 flex-shrink-0 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                 </div>
                             </div>
                             <p class="text-3xl font-bold text-slate-900 dark:text-white mb-1">{{ number_format($stats['last_24h'], 0, ',', ' ') }}</p>
@@ -279,7 +303,9 @@
                                     href="{{ route('admin.stripe-webhooks.index') }}" 
                                     class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition text-sm"
                                 >
-                                    ✕
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
                                 </a>
                             </div>
                         </form>
@@ -350,11 +376,17 @@
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     @if($transaction->processed)
                                                         <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                            ✓ Traité
+                                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                            Traité
                                                         </span>
                                                     @else
                                                         <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                                                            ⏳ En attente
+                                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            </svg>
+                                                            En attente
                                                         </span>
                                                     @endif
                                                 </td>
@@ -396,7 +428,9 @@
                     @if($recentPending->count() > 0)
                         <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-6">
                             <div class="flex items-center gap-3 mb-4">
-                                <span class="text-3xl">⚠️</span>
+                                <svg class="w-8 h-8 flex-shrink-0 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
                                 <div>
                                     <h3 class="text-lg font-semibold text-orange-900 dark:text-orange-400">Événements non traités</h3>
                                     <p class="text-sm text-orange-800 dark:text-orange-300">Ces webhooks nécessitent une attention</p>
@@ -430,7 +464,9 @@
                         </div>
                     @else
                         <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-12 text-center">
-                            <span class="text-4xl mb-4 block">✓</span>
+                            <svg class="w-12 h-12 mx-auto mb-4 flex-shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                             <h3 class="text-lg font-semibold text-green-900 dark:text-green-400 mb-2">Aucun événement en attente</h3>
                             <p class="text-sm text-green-800 dark:text-green-300">Tous les webhooks ont été traités avec succès !</p>
                         </div>
@@ -446,7 +482,9 @@
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <h3 class="text-xl font-semibold text-slate-900 dark:text-white">Détails du webhook</h3>
                 <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl">
-                    ✕
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
             <div id="transaction-details" class="p-6 overflow-y-auto flex-1">

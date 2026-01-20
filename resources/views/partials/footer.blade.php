@@ -12,7 +12,8 @@
             <div>
                 <h4 class="text-white font-semibold mb-4">Navigation</h4>
                 <ul class="space-y-2">
-                    <li><a href="{{ route('home') }}#fonctionnalites" class="hover:text-green-400 transition">Fonctionnalités</a></li>
+                    <li><a href="{{ route('pages.fonctionnalites') }}" class="hover:text-green-400 transition">Fonctionnalités</a></li>
+                    <li><a href="{{ route('courses.index') }}" class="hover:text-green-400 transition">Apprendre Allotata</a></li>
                     @auth
                         <li><a href="{{ route('dashboard') }}" class="hover:text-green-400 transition">Dashboard</a></li>
                     @else

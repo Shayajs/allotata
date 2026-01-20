@@ -60,6 +60,7 @@ class SettingsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'surname' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'photo_profil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'telephone' => ['nullable', 'string', 'max:20'],
@@ -69,6 +70,13 @@ class SettingsController extends Controller
             'ville' => ['nullable', 'string', 'max:255'],
             'code_postal' => ['nullable', 'string', 'max:10'],
         ]);
+
+        // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
+        $fullName = trim($validated['name']);
+        if (!empty($validated['surname'])) {
+            $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
+        }
+        $validated['name'] = $fullName;
 
         // Gérer l'upload de la photo de profil (atomicité : upload d'abord, suppression ensuite)
         if ($request->hasFile('photo_profil')) {

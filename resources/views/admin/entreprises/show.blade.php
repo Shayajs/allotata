@@ -11,15 +11,24 @@
         <div class="flex flex-wrap gap-2">
             @if($entreprise->est_verifiee)
                 <span class="px-3 py-1 text-xs lg:text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full border border-green-200 dark:border-green-800 font-medium">
-                    ✓ <span class="hidden lg:inline">Entreprise</span> vérifiée
+                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span class="hidden lg:inline">Entreprise</span> vérifiée
                 </span>
             @elseif($entreprise->aDesRefus())
                 <span class="px-3 py-1 text-xs lg:text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800 font-medium">
-                    ✗ Refusée
+                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Refusée
                 </span>
             @else
                 <span class="px-3 py-1 text-xs lg:text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800 font-medium">
-                    ⏳ <span class="hidden lg:inline">En attente de vérification</span><span class="lg:hidden">En attente</span>
+                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="hidden lg:inline">En attente de vérification</span><span class="lg:hidden">En attente</span>
                 </span>
             @endif
         </div>
@@ -124,7 +133,10 @@
             <form action="{{ route('admin.entreprises.validate', $entreprise) }}" method="POST" onsubmit="return confirm('Valider cette entreprise ? Elle sera immédiatement visible.');">
                 @csrf
                 <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 dark:shadow-none transition-all hover:scale-105 active:scale-95">
-                    🚀 Activer l'entreprise
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Activer l'entreprise
                 </button>
             </form>
         @endif
@@ -134,21 +146,32 @@
                 onclick="document.getElementById('modal-refus-global').classList.remove('hidden')"
                 class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-200 dark:shadow-none"
             >
-                🛑 Refuser l'entreprise
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Refuser l'entreprise
             </button>
         @endif
 
         <form action="{{ route('admin.entreprises.renvoyer', $entreprise) }}" method="POST" onsubmit="return confirm('Renvoyer cette entreprise pour correction ? Le gérant recevra une notification.');">
             @csrf
             <button type="submit" class="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95">
-                🔄 Renvoyer pour modification
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Renvoyer pour modification
             </button>
         </form>
     </div>
     
     @if($entreprise->raison_refus_globale)
         <div class="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl">
-            <p class="text-sm text-red-800 dark:text-red-400 font-medium"><strong>⚠️ Refus Global :</strong> {{ $entreprise->raison_refus_globale }}</p>
+            <p class="text-sm text-red-800 dark:text-red-400 font-medium flex items-center gap-2">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <strong>Refus Global :</strong> {{ $entreprise->raison_refus_globale }}
+            </p>
         </div>
     @endif
 </div>
@@ -368,7 +391,9 @@
 <div class="mt-8 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
     <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
         <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span>🔒</span>
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
             Sécurité & Historique
         </h2>
     </div>
@@ -379,13 +404,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Modifier l'email -->
                 <button onclick="showEmailModal()" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                    <span>✉️</span>
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
                     <span class="text-center">Modifier l'email</span>
                 </button>
 
                 <!-- Archiver -->
                 <button onclick="showArchiveModal()" class="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                    <span>🗄️</span>
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                    </svg>
                     <span class="text-center">Archiver</span>
                 </button>
             </div>
@@ -394,7 +423,9 @@
         <!-- Historique de sécurité -->
         <div>
             <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span>📜</span>
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
                 Historique des changements d'email
             </h3>
             @if(isset($securityHistory) && $securityHistory->count() > 0)
@@ -405,7 +436,10 @@
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-2">
                                         <span class="px-3 py-1 text-xs font-bold rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                                            ✉️ Email
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Email
                                         </span>
                                         @if($history->changed_by)
                                             <span class="text-xs text-slate-500">Par admin #{{ $history->changed_by }}</span>
@@ -472,7 +506,12 @@
 <!-- Modal Archiver -->
 <div id="archiveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
-        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-6">🗄️ Archiver l'entreprise</h3>
+        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-6 flex items-center gap-2">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+            </svg>
+            Archiver l'entreprise
+        </h3>
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Cette action archivera l'entreprise (soft delete). Elle pourra être restaurée ultérieurement.</p>
         <form action="{{ route('admin.entreprises.archive', $entreprise) }}" method="POST">
             @csrf

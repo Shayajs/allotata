@@ -43,6 +43,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'surname' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'invitation_token' => ['nullable', 'string'],
@@ -61,10 +62,17 @@ class AuthController extends Controller
             }
         }
 
+        // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
+        $fullName = trim($validated['name']);
+        if (!empty($validated['surname'])) {
+            $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
+        }
+
         // Créer un membre (par défaut client uniquement)
         // email_verified_at reste null jusqu'à vérification
         $user = User::create([
-            'name' => $validated['name'],
+            'name' => $fullName, // Nom complet pour la compatibilité
+            'surname' => $validated['surname'] ?? null, // Nom de famille séparé
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'est_client' => true, // Par défaut, tous les membres sont clients

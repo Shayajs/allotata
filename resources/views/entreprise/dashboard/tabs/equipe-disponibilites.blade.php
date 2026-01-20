@@ -129,7 +129,10 @@
                 </div>
                 <div class="mt-6 flex gap-3">
                     <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition shadow-sm hover:shadow-md">
-                        ✅ Ajouter
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Ajouter
                     </button>
                     <button type="button" onclick="document.getElementById('indispo-form').classList.add('hidden')" class="px-6 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                         Annuler
@@ -144,7 +147,10 @@
                         <div class="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition">
                             <div class="flex-1">
                                 <p class="font-semibold text-slate-900 dark:text-white mb-1">
-                                    📅 {{ \Carbon\Carbon::parse($indispo->date_debut)->format('d/m/Y') }}
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    {{ \Carbon\Carbon::parse($indispo->date_debut)->format('d/m/Y') }}
                                     @if($indispo->date_fin && $indispo->date_fin != $indispo->date_debut)
                                         - {{ \Carbon\Carbon::parse($indispo->date_fin)->format('d/m/Y') }}
                                     @endif
@@ -162,7 +168,10 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition shadow-sm hover:shadow-md">
-                                    🗑️ Supprimer
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Supprimer
                                 </button>
                             </form>
                         </div>

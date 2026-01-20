@@ -102,7 +102,10 @@
             @if(isset($reservations['en_attente']) && $reservations['en_attente']->count() > 0)
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-600 rounded-xl shadow-sm p-6 mb-8">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
-                        ⚠️ En attente de validation ({{ $reservations['en_attente']->count() }})
+                        <svg class="w-6 h-6 inline mr-2 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        En attente de validation ({{ $reservations['en_attente']->count() }})
                     </h2>
                     <div class="space-y-4">
                         @foreach($reservations['en_attente'] as $reservation)
@@ -117,7 +120,13 @@
                                     @endif
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-2 flex-wrap">
-                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h3>
+                                            <h3 class="font-semibold text-slate-900 dark:text-white">
+                                                @if($reservation->user)
+                                                    <x-user-name :user="$reservation->user" />
+                                                @else
+                                                    {{ $reservation->nom_client ?? 'N/A' }}
+                                                @endif
+                                            </h3>
                                             <span class="text-sm text-slate-600 dark:text-slate-400 truncate">{{ $reservation->user ? $reservation->user->email : ($reservation->email_client ?? 'N/A') }}</span>
                                             @if($reservation->estPourClienteNonInscrite())
                                                 <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">Cliente non inscrite</span>
@@ -133,12 +142,19 @@
                                         </p>
                                         @if($aGestionMultiPersonnes && $reservation->membre)
                                             <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">
-                                                👤 Assigné à : {{ $reservation->membre->user->name ?? 'Membre' }}
+                                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                </svg>
+                                                Assigné à : @if($reservation->membre && $reservation->membre->user) <x-user-name :user="$reservation->membre->user" /> @else Membre @endif
                                             </p>
                                         @endif
                                         @if($reservation->lieu)
                                             <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                                📍 {{ $reservation->lieu }}
+                                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                </svg>
+                                                {{ $reservation->lieu }}
                                             </p>
                                         @endif
                                         <p class="text-sm font-semibold text-green-600 dark:text-green-400">
@@ -152,7 +168,11 @@
                                             class="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
                                             title="Voir la réservation côté client"
                                         >
-                                            👁️ Côté client
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Côté client
                                         </a>
                                         <a 
                                             href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 
@@ -193,7 +213,13 @@
                                                 @endif
                                                 <div class="flex-1 min-w-0">
                                                     <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                                        <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h4>
+                                                        <h4 class="font-semibold text-slate-900 dark:text-white">
+                                                            @if($reservation->user)
+                                                                <x-user-name :user="$reservation->user" />
+                                                            @else
+                                                                {{ $reservation->nom_client ?? 'N/A' }}
+                                                            @endif
+                                                        </h4>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</span>
                                                         @if($reservation->estPourClienteNonInscrite())
                                                             <span class="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">Non inscrite</span>
@@ -205,14 +231,27 @@
                                                     <p class="text-sm text-slate-600 dark:text-slate-400">
                                                         {{ $reservation->type_service ?? 'Service' }} - {{ number_format($reservation->prix, 2, ',', ' ') }} €
                                                         @if($reservation->est_paye)
-                                                            <span class="ml-2 text-green-600 dark:text-green-400">✓ Payé</span>
+                                                            <span class="ml-2 text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                </svg>
+                                                                Payé
+                                                            </span>
                                                         @else
-                                                            <span class="ml-2 text-red-600 dark:text-red-400">✗ Non payé</span>
+                                                            <span class="ml-2 text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                </svg>
+                                                                Non payé
+                                                            </span>
                                                         @endif
                                                     </p>
                                                     @if($aGestionMultiPersonnes && $reservation->membre)
                                                         <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                                            👤 Assigné à : {{ $reservation->membre->user->name ?? 'Membre' }}
+                                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                </svg>
+                                                Assigné à : @if($reservation->membre && $reservation->membre->user) <x-user-name :user="$reservation->membre->user" /> @else Membre @endif
                                                         </p>
                                                     @endif
                                                 </div>
@@ -223,7 +262,10 @@
                                                         class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
                                                         title="Voir la réservation côté client"
                                                     >
-                                                        👁️
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                        </svg>
                                                     </a>
                                                     <a 
                                                         href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" 

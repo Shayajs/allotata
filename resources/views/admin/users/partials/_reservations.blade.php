@@ -43,7 +43,9 @@
         </div>
     @else
         <div class="bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-700">
-            <span class="text-4xl mb-4 block">📅</span>
+            <svg class="w-12 h-12 mx-auto mb-4 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
             <p class="text-slate-500 font-medium">Aucune réservation.</p>
         </div>
     @endif

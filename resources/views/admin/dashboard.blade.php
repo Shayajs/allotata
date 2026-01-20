@@ -11,7 +11,9 @@
     @if($alertes['entreprises_en_attente'] > 0)
         <a href="{{ route('admin.entreprises.index') }}?statut=en_attente" class="block p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">🏢</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
                 <div>
                     <p class="font-semibold text-orange-800 dark:text-orange-300">{{ $alertes['entreprises_en_attente'] }} entreprise(s) en attente de validation</p>
                     <p class="text-sm text-orange-600 dark:text-orange-400">Cliquez pour valider les entreprises</p>
@@ -22,7 +24,9 @@
     @if($alertes['tickets_urgents'] > 0)
         <a href="{{ route('admin.tickets.index') }}?priorite=urgente&statut=ouvert" class="block p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">🚨</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
                 <div>
                     <p class="font-semibold text-red-800 dark:text-red-300">{{ $alertes['tickets_urgents'] }} ticket(s) urgent(s) non traité(s)</p>
                     <p class="text-sm text-red-600 dark:text-red-400">Nécessite une attention immédiate</p>
@@ -33,7 +37,9 @@
     @if($alertes['contacts_non_lus'] > 0)
         <a href="{{ route('admin.contacts.index') }}?est_lu=0" class="block p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">📬</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
                 <div>
                     <p class="font-semibold text-blue-800 dark:text-blue-300">{{ $alertes['contacts_non_lus'] }} message(s) de contact non lu(s)</p>
                     <p class="text-sm text-blue-600 dark:text-blue-400">Cliquez pour consulter les messages</p>
@@ -53,7 +59,9 @@
                 <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ number_format($stats['total_users']) }}</p>
             </div>
             <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <span class="text-xl">👥</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
             </div>
         </div>
         <div class="mt-4 flex gap-2 text-xs">
@@ -69,7 +77,9 @@
                 <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ number_format($stats['total_entreprises']) }}</p>
             </div>
             <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <span class="text-xl">🏢</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
             </div>
         </div>
         <div class="mt-4 flex gap-2 text-xs">
@@ -85,7 +95,9 @@
                 <p class="text-3xl font-bold text-slate-900 dark:text-white">{{ number_format($stats['total_reservations']) }}</p>
             </div>
             <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                <span class="text-xl">📅</span>
+                <svg class="w-6 h-6 flex-shrink-0 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
             </div>
         </div>
         <div class="mt-4">
@@ -104,7 +116,9 @@
                 </p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center text-white transform group-hover:rotate-12 transition-transform">
-                <span class="text-xl">💎</span>
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
             </div>
         </div>
         <div class="mt-4 flex flex-col gap-2 relative z-10">
@@ -128,7 +142,12 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Inscriptions par jour -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📈 Nouvelles inscriptions (30 derniers jours)</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+            Nouvelles inscriptions (30 derniers jours)
+        </h2>
         <div class="relative h-[250px]">
             <canvas id="inscriptionsChart"></canvas>
         </div>
@@ -136,7 +155,12 @@
 
     <!-- Réservations par jour -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📅 Réservations (30 derniers jours)</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            Réservations (30 derniers jours)
+        </h2>
         <div class="relative h-[250px]">
             <canvas id="reservationsChart"></canvas>
         </div>
@@ -147,7 +171,12 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     <!-- Répartition des tickets -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🎫 Tickets par statut</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+            </svg>
+            Tickets par statut
+        </h2>
         <div class="relative h-[220px]">
             <canvas id="ticketsChart"></canvas>
         </div>
@@ -174,7 +203,7 @@
                             <!-- Icone -->
                             <div class="flex-shrink-0 mt-0.5">
                                 <span class="flex items-center justify-center w-10 h-10 rounded-xl {{ 'bg-'.$activity['color'].'-100 dark:bg-'.$activity['color'].'-900/30 text-'.$activity['color'].'-600 dark:text-'.$activity['color'].'-400' }} border {{ 'border-'.$activity['color'].'-200 dark:border-'.$activity['color'].'-800' }} shadow-sm">
-                                    {{ $activity['icon'] }}
+                                    {!! $activity['icon'] !!}
                                 </span>
                             </div>
                             
@@ -215,19 +244,27 @@
 <!-- Actions rapides -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <a href="{{ route('admin.users.index') }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:border-green-500 dark:hover:border-green-500 transition-all group text-center">
-        <span class="text-3xl">👥</span>
+        <svg class="w-8 h-8 mx-auto flex-shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
         <p class="mt-2 font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Utilisateurs</p>
     </a>
     <a href="{{ route('admin.entreprises.index') }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:border-green-500 dark:hover:border-green-500 transition-all group text-center">
-        <span class="text-3xl">🏢</span>
+        <svg class="w-8 h-8 mx-auto flex-shrink-0 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
         <p class="mt-2 font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Entreprises</p>
     </a>
     <a href="{{ route('admin.tickets.index') }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:border-green-500 dark:hover:border-green-500 transition-all group text-center">
-        <span class="text-3xl">🎫</span>
+        <svg class="w-8 h-8 mx-auto flex-shrink-0 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+        </svg>
         <p class="mt-2 font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Tickets</p>
     </a>
     <a href="{{ route('admin.exports.index') }}" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:border-green-500 dark:hover:border-green-500 transition-all group text-center">
-        <span class="text-3xl">📤</span>
+        <svg class="w-8 h-8 mx-auto flex-shrink-0 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
         <p class="mt-2 font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Exports</p>
     </a>
 </div>

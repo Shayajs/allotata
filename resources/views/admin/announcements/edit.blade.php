@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Modifier annonce')
-@section('header', '✏️ Modifier l\'annonce')
+@section('header', 'Modifier l\'annonce')
 @section('subheader', $announcement->titre)
 
 @section('content')
@@ -42,10 +42,10 @@
                 <div>
                     <label for="type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Type</label>
                     <select name="type" id="type" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        <option value="info" {{ old('type', $announcement->type) === 'info' ? 'selected' : '' }}>ℹ️ Information</option>
-                        <option value="success" {{ old('type', $announcement->type) === 'success' ? 'selected' : '' }}>✅ Succès</option>
-                        <option value="warning" {{ old('type', $announcement->type) === 'warning' ? 'selected' : '' }}>⚠️ Avertissement</option>
-                        <option value="danger" {{ old('type', $announcement->type) === 'danger' ? 'selected' : '' }}>🚨 Danger</option>
+                        <option value="info" {{ old('type', $announcement->type) === 'info' ? 'selected' : '' }}>Information</option>
+                        <option value="success" {{ old('type', $announcement->type) === 'success' ? 'selected' : '' }}>Succès</option>
+                        <option value="warning" {{ old('type', $announcement->type) === 'warning' ? 'selected' : '' }}>Avertissement</option>
+                        <option value="danger" {{ old('type', $announcement->type) === 'danger' ? 'selected' : '' }}>Danger</option>
                     </select>
                 </div>
 
@@ -88,14 +88,22 @@
                 <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" onsubmit="return confirm('Êtes-vous sûr ?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="text-red-600 hover:text-red-700 font-medium">🗑️ Supprimer</button>
+                    <button type="submit" class="text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Supprimer
+                    </button>
                 </form>
                 <div class="flex items-center gap-4">
                     <a href="{{ route('admin.announcements.index') }}" class="px-6 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
                         Annuler
                     </a>
                     <button type="submit" class="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                        ✅ Enregistrer
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Enregistrer
                     </button>
                 </div>
             </div>

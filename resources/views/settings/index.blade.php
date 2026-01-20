@@ -189,12 +189,12 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Nom complet *
+                                        Prénom *
                                     </label>
                                     <input 
                                         type="text" 
                                         name="name" 
-                                        value="{{ old('name', $user->name) }}"
+                                        value="{{ old('name', $user->first_name) }}"
                                         required
                                         class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                     >
@@ -202,7 +202,24 @@
                                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
                                 </div>
-
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Nom de famille
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        name="surname" 
+                                        value="{{ old('surname', $user->last_name) }}"
+                                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    >
+                                    @error('surname')
+                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Email *

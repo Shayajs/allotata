@@ -9,7 +9,8 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/site-web-editor.css',
                 'resources/js/app.js',
-                'resources/js/site-web-editor.js'
+                'resources/js/site-web-editor.js',
+                'resources/js/course-lesson-editor.js'
             ],
             refresh: true,
         }),

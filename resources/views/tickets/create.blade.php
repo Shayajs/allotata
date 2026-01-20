@@ -35,7 +35,12 @@
 
     <div class="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">🎫 Créer un ticket de support</h1>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                </svg>
+                Créer un ticket de support
+            </h1>
             <p class="text-slate-600 dark:text-slate-400">
                 Décrivez votre problème et notre équipe vous répondra dans les plus brefs délais.
             </p>
@@ -62,10 +67,10 @@
                             class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         >
                             <option value="">Sélectionnez une catégorie</option>
-                            <option value="technique" {{ old('categorie') == 'technique' ? 'selected' : '' }}>🔧 Technique</option>
-                            <option value="facturation" {{ old('categorie') == 'facturation' ? 'selected' : '' }}>💳 Facturation</option>
-                            <option value="compte" {{ old('categorie') == 'compte' ? 'selected' : '' }}>👤 Compte</option>
-                            <option value="autre" {{ old('categorie') == 'autre' ? 'selected' : '' }}>❓ Autre</option>
+                            <option value="technique" {{ old('categorie') == 'technique' ? 'selected' : '' }}>Technique</option>
+                            <option value="facturation" {{ old('categorie') == 'facturation' ? 'selected' : '' }}>Facturation</option>
+                            <option value="compte" {{ old('categorie') == 'compte' ? 'selected' : '' }}>Compte</option>
+                            <option value="autre" {{ old('categorie') == 'autre' ? 'selected' : '' }}>Autre</option>
                         </select>
                         @error('categorie')
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

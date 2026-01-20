@@ -18,7 +18,9 @@
         <!-- Pilotage des recettes (NOUVEAU) -->
         <div class="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl border border-indigo-500 shadow-xl p-8 text-white relative overflow-hidden group">
             <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                <span class="text-8xl">💰</span>
+                <svg class="w-32 h-32 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
             </div>
             
             <div class="relative z-10">
@@ -69,7 +71,9 @@
         <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white text-2xl">
-                    🧮
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Calculateur URSSAF</h3>
@@ -123,7 +127,9 @@
         <div class="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-2xl border border-orange-200 dark:border-orange-800 p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center text-white text-2xl">
-                    📅
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Rappels déclarations</h3>
@@ -185,7 +191,9 @@
         <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center text-white text-2xl">
-                    📝
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Générateur de devis</h3>
@@ -231,7 +239,9 @@
         <div class="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white text-2xl">
-                    📊
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Export comptable</h3>
@@ -253,10 +263,16 @@
                 
                 <div class="grid grid-cols-2 gap-3">
                     <a href="{{ route('factures.comptabilite', $entreprise->slug) }}" class="px-4 py-3 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-300 font-medium rounded-lg transition text-center text-sm">
-                        📈 Voir comptabilité
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        Voir comptabilité
                     </a>
                     <button type="button" onclick="exportCSV()" class="px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold rounded-lg transition-all text-sm">
-                        ⬇️ Export CSV
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Export CSV
                     </button>
                 </div>
             </div>
@@ -266,7 +282,9 @@
         <div class="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 lg:col-span-2">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-12 h-12 rounded-xl bg-slate-700 dark:bg-slate-600 flex items-center justify-center text-white text-2xl">
-                    💰
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Résumé du chiffre d'affaires</h3>
@@ -277,7 +295,9 @@
         <!-- Liens utiles -->        <div class="bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-2xl border border-cyan-200 dark:border-cyan-800 p-6 lg:col-span-2">
             <div class="flex items-center gap-3 mb-4">
                 <div class="w-12 h-12 rounded-xl bg-cyan-500 flex items-center justify-center text-white text-2xl">
-                    🔗
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Liens utiles</h3>
@@ -287,12 +307,16 @@
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <a href="https://www.autoentrepreneur.urssaf.fr" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
-                    <div class="text-2xl mb-2">🏛️</div>
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
                     <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">URSSAF</p>
                     <p class="text-xs text-slate-500">Déclarations</p>
                 </a>
                 <a href="https://www.impots.gouv.fr" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
-                    <div class="text-2xl mb-2">📋</div>
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
                     <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">Impôts</p>
                     <p class="text-xs text-slate-500">Déclaration IR</p>
                 </a>
@@ -302,7 +326,9 @@
                     <p class="text-xs text-slate-500">Formalités</p>
                 </a>
                 <a href="https://www.service-public.fr/professionnels-entreprises" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
-                    <div class="text-2xl mb-2">ℹ️</div>
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                     <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">Service Public</p>
                     <p class="text-xs text-slate-500">Infos entreprises</p>
                 </a>

@@ -9,7 +9,9 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
             <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-                <span class="text-6xl">📈</span>
+                <svg class="w-16 h-16 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
             </div>
             <p class="text-green-100 text-sm font-semibold uppercase tracking-wider mb-2">Recettes (Entrées)</p>
             <h3 class="text-3xl font-bold" id="display-totalIncome">{{ number_format($financeStats['totalIncome'], 2, ',', ' ') }} €</h3>
@@ -18,7 +20,9 @@
 
         <div class="bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
             <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-                <span class="text-6xl">📉</span>
+                <svg class="w-16 h-16 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                </svg>
             </div>
             <p class="text-red-100 text-sm font-semibold uppercase tracking-wider mb-2">Dépenses (Sorties)</p>
             <h3 class="text-3xl font-bold">{{ number_format($financeStats['totalExpense'], 2, ',', ' ') }} €</h3>
@@ -27,7 +31,9 @@
 
         <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
             <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-                <span class="text-6xl">🏛️</span>
+                <svg class="w-16 h-16 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
             </div>
             <p class="text-blue-100 text-sm font-semibold uppercase tracking-wider mb-2">Charges & Impôts (Est.)</p>
             <h3 class="text-3xl font-bold" id="display-totalCharges">{{ number_format($calculFiscal['total_charges'], 2, ',', ' ') }} €</h3>
@@ -36,7 +42,9 @@
 
         <div class="bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
             <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-                <span class="text-6xl">💎</span>
+                <svg class="w-16 h-16 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
             </div>
             <p class="text-purple-100 text-sm font-semibold uppercase tracking-wider mb-2">Reste à vivre (Net)</p>
             @php
@@ -55,7 +63,10 @@
             class="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 transition-all"
         >
             <div class="flex items-center gap-3">
-                <span class="text-2xl">⚙️</span>
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
                 <div class="text-left">
                     <h3 class="font-bold text-slate-900 dark:text-white">Paramètres fiscaux personnalisés</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Affinez le calcul de votre impôt (situation familiale, enfants, régime fiscal...)</p>
@@ -73,7 +84,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Situation familiale -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">👥 Situation familiale</label>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            Situation familiale
+                        </label>
                         <select name="fiscal_situation_familiale" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="celibataire" {{ ($entreprise->fiscal_situation_familiale ?? 'celibataire') == 'celibataire' ? 'selected' : '' }}>Célibataire</option>
                             <option value="marie" {{ ($entreprise->fiscal_situation_familiale ?? '') == 'marie' ? 'selected' : '' }}>Marié(e)</option>
@@ -85,14 +101,24 @@
 
                     <!-- Nombre d'enfants -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">👶 Nombre d'enfants à charge</label>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Nombre d'enfants à charge
+                        </label>
                         <input type="number" name="fiscal_nombre_enfants" min="0" max="20" value="{{ $entreprise->fiscal_nombre_enfants ?? 0 }}" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500">
                         <p class="text-xs text-slate-500 mt-1">1er et 2ème = 0.5 part, à partir du 3ème = 1 part</p>
                     </div>
 
                     <!-- Enfants en garde alternée -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">🔄 Garde alternée</label>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Garde alternée
+                        </label>
                         <input type="number" name="fiscal_enfants_garde_alternee" min="0" max="20" value="{{ $entreprise->fiscal_enfants_garde_alternee ?? 0 }}" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 focus:ring-indigo-500 focus:border-indigo-500">
                         <p class="text-xs text-slate-500 mt-1">Enfants en garde alternée (0.25 part chacun)</p>
                     </div>
@@ -101,7 +127,10 @@
                 <!-- Section Régime Fiscal -->
                 <div class="p-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border border-amber-200 dark:border-amber-800">
                     <h4 class="font-bold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
-                        <span class="text-xl">📋</span> Régime d'imposition
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Régime d'imposition
                     </h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -124,7 +153,10 @@
                 <!-- Revenus du foyer (barème progressif) -->
                 <div class="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800">
                     <h4 class="font-bold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2">
-                        <span class="text-xl">💰</span> Autres revenus du foyer (barème progressif)
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Autres revenus du foyer (barème progressif)
                     </h4>
                     <div>
                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Revenus annuels du conjoint et autres (€)</label>

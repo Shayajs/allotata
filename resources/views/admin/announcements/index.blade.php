@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Annonces')
-@section('header', '📣 Annonces')
+@section('header', 'Annonces')
 @section('subheader', 'Gérez les annonces affichées aux utilisateurs')
 
 @section('content')

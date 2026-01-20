@@ -27,7 +27,10 @@
                     </span>
                     @if($membre->user_id == $entreprise->user_id)
                         <span class="px-3 py-1 text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
-                            👑 Propriétaire
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                            </svg>
+                            Propriétaire
                         </span>
                     @endif
                 </div>
@@ -43,7 +46,10 @@
                 class="equipe-subtab flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all {{ ($activeSubTab ?? 'agenda') === 'agenda' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}"
                 data-subtab="agenda"
             >
-                📅 Agenda
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Agenda
             </button>
             <button 
                 onclick="showEquipeSubTab('disponibilites')"

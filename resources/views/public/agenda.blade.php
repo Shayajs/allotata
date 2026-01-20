@@ -47,6 +47,204 @@
             </div>
         </header>
 
+        <!-- Formulaire mobile (visible en haut sur mobile uniquement) -->
+        @auth
+            <div class="xl:hidden mb-6">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Réserver</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Sélectionnez un créneau</p>
+                        </div>
+                    </div>
+                    
+                    <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form-mobile">
+                        @csrf
+                        
+                        <div class="space-y-5">
+                            <!-- Service -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    Service
+                                </label>
+                                <select 
+                                    name="type_service_id" 
+                                    id="type_service_id_mobile"
+                                    required
+                                    class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                >
+                                    <option value="">Choisir un service</option>
+                                    @foreach($entreprise->typesServices as $service)
+                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}">
+                                            {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('type_service_id')
+                                    <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Sélection de la personne (si multi-personnes) -->
+                            @if($aGestionMultiPersonnes && $membres->count() > 0)
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                        Personne
+                                    </label>
+                                    <select 
+                                        name="membre_id" 
+                                        id="membre_id_mobile"
+                                        class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                        <option value="">Qu'importe (sélection automatique)</option>
+                                        @foreach($membres as $membre)
+                                            <option value="{{ $membre->id }}" {{ old('membre_id') == $membre->id ? 'selected' : '' }}>
+                                                {{ $membre->user->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        Si "Qu'importe" est sélectionné, le système choisira automatiquement la personne la moins chargée.
+                                    </p>
+                                    @error('membre_id')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            <!-- Date et heure sélectionnées -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                                    <input 
+                                        type="date" 
+                                        name="date_reservation" 
+                                        id="date_reservation_mobile"
+                                        required
+                                        min="{{ date('Y-m-d') }}"
+                                        class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                    @error('date_reservation')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
+                                    <input 
+                                        type="time" 
+                                        name="heure_reservation" 
+                                        id="heure_reservation_mobile"
+                                        required
+                                        class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                    @error('heure_reservation')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- Téléphone -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    Téléphone
+                                    @if(auth()->user() && auth()->user()->telephone)
+                                        <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
+                                    @endif
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    name="telephone_client" 
+                                    id="telephone_client_mobile"
+                                    required
+                                    value="{{ old('telephone_client', auth()->user()?->telephone ?? '') }}"
+                                    placeholder="06 12 34 56 78"
+                                    class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                >
+                                @error('telephone_client')
+                                    <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
+                                @if(auth()->user() && !auth()->user()->telephone)
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                        💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
+                                    </p>
+                                @endif
+                            </div>
+
+                            <!-- Option téléphone caché -->
+                            <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                <input 
+                                    type="checkbox" 
+                                    name="telephone_cache" 
+                                    value="1"
+                                    class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-green-600 focus:ring-green-500"
+                                >
+                                <span class="text-sm text-slate-700 dark:text-slate-300">Masquer mon numéro</span>
+                            </label>
+
+                            <!-- Lieu -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Lieu <span class="font-normal text-slate-500">(optionnel)</span></label>
+                                <input 
+                                    type="text" 
+                                    name="lieu" 
+                                    id="lieu_mobile"
+                                    placeholder="Adresse du rendez-vous"
+                                    class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                >
+                            </div>
+
+                            <!-- Notes -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notes <span class="font-normal text-slate-500">(optionnel)</span></label>
+                                <textarea 
+                                    name="notes" 
+                                    id="notes_mobile"
+                                    rows="2"
+                                    placeholder="Informations complémentaires..."
+                                    class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors resize-none"
+                                ></textarea>
+                            </div>
+
+                            <!-- Récapitulatif mobile -->
+                            <div id="recap-container-mobile" class="hidden p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
+                                <h3 class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">Récapitulatif</h3>
+                                <div class="space-y-1 text-sm text-green-700 dark:text-green-400 mb-4">
+                                    <p id="recap-service-mobile"></p>
+                                    <p id="recap-datetime-mobile"></p>
+                                    <p id="recap-prix-mobile" class="font-bold"></p>
+                                </div>
+                            </div>
+
+                            <!-- Bouton -->
+                            <button 
+                                type="submit" 
+                                class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            >
+                                Réserver
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @else
+            <div class="xl:hidden mb-6 text-center py-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <p class="text-slate-600 dark:text-slate-400 mb-4">Connectez-vous pour réserver</p>
+                <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                    Se connecter
+                </a>
+            </div>
+        @endauth
+
         <!-- Messages -->
         @if(session('success'))
             <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
@@ -185,8 +383,8 @@
                 </div>
             </div>
 
-            <!-- Formulaire de réservation -->
-            <div class="xl:col-span-1">
+            <!-- Formulaire de réservation (masqué sur mobile, visible sur desktop) -->
+            <div class="xl:col-span-1 hidden xl:block">
                 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 sticky top-6">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
@@ -348,8 +546,8 @@
                                     ></textarea>
                                 </div>
 
-                                <!-- Récapitulatif -->
-                                <div id="recap-container" class="hidden p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
+                                <!-- Récapitulatif (masqué sur mobile, visible sur desktop) -->
+                                <div id="recap-container" class="hidden xl:block p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
                                     <h3 class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">Récapitulatif</h3>
                                     <div class="space-y-1 text-sm text-green-700 dark:text-green-400">
                                         <p id="recap-service"></p>
@@ -358,10 +556,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Bouton -->
+                                <!-- Bouton (masqué sur mobile, visible sur desktop) -->
                                 <button 
                                     type="submit" 
-                                    class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                    class="hidden xl:block w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                                 >
                                     Confirmer la réservation
                                 </button>
@@ -405,10 +603,33 @@
             const prevWeekBtn = document.getElementById('prev-week');
             const nextWeekBtn = document.getElementById('next-week');
             const todayBtn = document.getElementById('today-btn');
+            // Éléments du formulaire desktop
             const dateInput = document.getElementById('date_reservation');
             const heureInput = document.getElementById('heure_reservation');
             const serviceSelect = document.getElementById('type_service_id');
             const recapContainer = document.getElementById('recap-container');
+            
+            // Éléments du formulaire mobile
+            const dateInputMobile = document.getElementById('date_reservation_mobile');
+            const heureInputMobile = document.getElementById('heure_reservation_mobile');
+            const serviceSelectMobile = document.getElementById('type_service_id_mobile');
+            const recapContainerMobile = document.getElementById('recap-container-mobile');
+            
+            // Fonction pour synchroniser les champs entre mobile et desktop
+            function syncFields() {
+                if (dateInput && dateInputMobile) {
+                    dateInputMobile.value = dateInput.value;
+                    dateInput.value = dateInputMobile.value;
+                }
+                if (heureInput && heureInputMobile) {
+                    heureInputMobile.value = heureInput.value;
+                    heureInput.value = heureInputMobile.value;
+                }
+                if (serviceSelect && serviceSelectMobile) {
+                    serviceSelectMobile.value = serviceSelect.value;
+                    serviceSelect.value = serviceSelectMobile.value;
+                }
+            }
             
             // Noms des jours
             const joursSemaine = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -657,39 +878,60 @@
             function selectSlot(date, time) {
                 selectedSlot = { date, time };
                 
+                // Mettre à jour les deux formulaires (mobile et desktop)
                 if (dateInput) dateInput.value = date;
+                if (dateInputMobile) dateInputMobile.value = date;
                 if (heureInput) heureInput.value = time;
+                if (heureInputMobile) heureInputMobile.value = time;
                 
                 renderCalendar();
                 updateRecap();
-                
-                // Scroll vers le formulaire sur mobile
-                if (window.innerWidth < 1280) {
-                    document.getElementById('reservation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
             }
             
             // Mettre à jour le récapitulatif
             function updateRecap() {
-                if (!recapContainer || !serviceSelect || !dateInput || !heureInput) return;
+                // Utiliser le formulaire mobile s'il existe, sinon le desktop
+                const currentServiceSelect = serviceSelectMobile || serviceSelect;
+                const currentDateInput = dateInputMobile || dateInput;
+                const currentHeureInput = heureInputMobile || heureInput;
                 
-                const service = serviceSelect.options[serviceSelect.selectedIndex];
-                const date = dateInput.value;
-                const heure = heureInput.value;
+                if (!currentServiceSelect || !currentDateInput || !currentHeureInput) return;
+                
+                const service = currentServiceSelect.options[currentServiceSelect.selectedIndex];
+                const date = currentDateInput.value;
+                const heure = currentHeureInput.value;
+                
+                // Synchroniser les champs
+                syncFields();
                 
                 if (service.value && date && heure) {
-                    recapContainer.classList.remove('hidden');
-                    
                     const dateObj = new Date(date);
                     const jourNom = joursComplets[dateObj.getDay()];
                     const jour = dateObj.getDate();
                     const moisNom = mois[dateObj.getMonth()];
                     
-                    document.getElementById('recap-service').textContent = `📋 ${service.text.split('•')[0].trim()}`;
-                    document.getElementById('recap-datetime').textContent = `📅 ${jourNom} ${jour} ${moisNom} à ${heure}`;
-                    document.getElementById('recap-prix').textContent = `💰 ${service.dataset.prix}€`;
+                    const serviceText = `📋 ${service.text.split('•')[0].trim()}`;
+                    const datetimeText = `📅 ${jourNom} ${jour} ${moisNom} à ${heure}`;
+                    const prixText = `💰 ${service.dataset.prix}€`;
+                    
+                    // Mettre à jour le récapitulatif desktop
+                    if (recapContainer) {
+                        recapContainer.classList.remove('hidden');
+                        document.getElementById('recap-service').textContent = serviceText;
+                        document.getElementById('recap-datetime').textContent = datetimeText;
+                        document.getElementById('recap-prix').textContent = prixText;
+                    }
+                    
+                    // Mettre à jour le récapitulatif mobile
+                    if (recapContainerMobile) {
+                        recapContainerMobile.classList.remove('hidden');
+                        document.getElementById('recap-service-mobile').textContent = serviceText;
+                        document.getElementById('recap-datetime-mobile').textContent = datetimeText;
+                        document.getElementById('recap-prix-mobile').textContent = prixText;
+                    }
                 } else {
-                    recapContainer.classList.add('hidden');
+                    if (recapContainer) recapContainer.classList.add('hidden');
+                    if (recapContainerMobile) recapContainerMobile.classList.add('hidden');
                 }
             }
             
@@ -713,9 +955,20 @@
                 renderCalendar();
             });
             
+            // Écouter les changements sur les deux formulaires
             serviceSelect?.addEventListener('change', updateRecap);
             dateInput?.addEventListener('change', updateRecap);
             heureInput?.addEventListener('change', updateRecap);
+            
+            if (serviceSelectMobile) {
+                serviceSelectMobile.addEventListener('change', updateRecap);
+            }
+            if (dateInputMobile) {
+                dateInputMobile.addEventListener('change', updateRecap);
+            }
+            if (heureInputMobile) {
+                heureInputMobile.addEventListener('change', updateRecap);
+            }
             
             // Initialiser
             renderCalendar();

@@ -52,7 +52,12 @@
 
     <!-- Graphiques -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">📈 Évolution sur 30 jours</h4>
+        <h4 class="text-lg font-semibold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+            Évolution sur 30 jours
+        </h4>
         <div style="height: 300px;">
             <canvas id="statsChart"></canvas>
         </div>

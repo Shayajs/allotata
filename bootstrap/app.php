@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'check.trusted.device' => \App\Http\Middleware\CheckTrustedDevice::class,
+            'lesson.accessible' => \App\Http\Middleware\EnsureLessonAccessible::class,
         ]);
         
         // Exception CSRF pour les webhooks Stripe

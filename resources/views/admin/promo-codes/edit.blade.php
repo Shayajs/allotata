@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Modifier code promo')
-@section('header', '✏️ Modifier le code promo')
+@section('header', 'Modifier le code promo')
 @section('subheader', $promoCode->code)
 
 @section('content')
@@ -102,7 +102,12 @@
 
             <!-- Statistiques d'usage -->
             <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <h3 class="font-medium text-slate-900 dark:text-white mb-2">📊 Statistiques</h3>
+                <h3 class="font-medium text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Statistiques
+                </h3>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-slate-600 dark:text-slate-400">Usages actuels:</span>
@@ -131,14 +136,22 @@
                 <form method="POST" action="{{ route('admin.promo-codes.destroy', $promoCode) }}" onsubmit="return confirm('Êtes-vous sûr ?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="text-red-600 hover:text-red-700 font-medium">🗑️ Supprimer</button>
+                    <button type="submit" class="text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Supprimer
+                    </button>
                 </form>
                 <div class="flex items-center gap-4">
                     <a href="{{ route('admin.promo-codes.index') }}" class="px-6 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
                         Annuler
                     </a>
                     <button type="submit" class="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                        ✅ Enregistrer
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Enregistrer
                     </button>
                 </div>
             </div>

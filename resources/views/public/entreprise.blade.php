@@ -220,7 +220,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                     <div>
-                        <p class="font-medium text-sm sm:text-base text-red-800 dark:text-red-300">⚠️ Votre entreprise n'est pas visible en ligne</p>
+                        <p class="font-medium text-sm sm:text-base text-red-800 dark:text-red-300 flex items-center gap-2">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            Votre entreprise n'est pas visible en ligne
+                        </p>
                         <p class="text-xs sm:text-sm text-red-700 dark:text-red-400 mt-1">
                             Vous consultez votre propre entreprise, mais elle n'est pas visible pour les autres utilisateurs car vous n'avez pas d'abonnement actif. 
                             <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="underline font-semibold">Souscrivez à un abonnement</a> pour rendre votre entreprise visible dans les recherches.
@@ -303,6 +308,35 @@
                                 @endforeach
                             </div>
                         </div>
+                    @endif
+                </div>
+
+                <!-- Boutons de navigation mobile (Services et Produits) -->
+                <div class="lg:hidden flex gap-3 mt-4 mb-4">
+                    @if($services->count() > 0)
+                        <button 
+                            onclick="const el = document.getElementById('services-section'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                            class="flex-1 inline-flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border-2 border-green-500 text-green-600 dark:text-green-400 font-bold py-3 px-4 rounded-lg transition hover:bg-green-50 dark:hover:bg-green-900/20 text-sm sm:text-base"
+                        >
+                            Services
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                            </svg>
+                        </button>
+                    @endif
+                    @php
+                        $produitsDisponibles = $produits ?? collect([]);
+                    @endphp
+                    @if($produitsDisponibles->count() > 0)
+                        <button 
+                            onclick="const el = document.getElementById('produits-section'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }"
+                            class="flex-1 inline-flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border-2 border-blue-500 text-blue-600 dark:text-blue-400 font-bold py-3 px-4 rounded-lg transition hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm sm:text-base"
+                        >
+                            Produits
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                            </svg>
+                        </button>
                     @endif
                 </div>
 
@@ -462,30 +496,42 @@
                         </div>
                     @endif
 
-                    @if($entreprise->rdv_uniquement_messagerie)
+                    <!-- Bouton Prendre rendez-vous -->
+                    <div class="space-y-3">
+                        @if($entreprise->rdv_uniquement_messagerie)
+                            @auth
+                                <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Prendre RDV (messagerie)
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Prendre RDV (messagerie)
+                                </a>
+                            @endauth
+                        @else
+                            <a href="{{ route('public.agenda', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                Prendre rendez-vous
+                            </a>
+                        @endif
                         @auth
-                            <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                                📅 Prendre RDV (messagerie)
+                            <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                                💬 Contacter
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                                📅 Prendre RDV (messagerie)
+                            <a href="{{ route('login') }}" class="block w-full bg-slate-400 hover:bg-slate-500 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
+                                🔒 Connectez-vous pour contacter
                             </a>
                         @endauth
-                    @else
-                        <a href="{{ route('public.agenda', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                            📅 Prendre rendez-vous
-                        </a>
-                    @endif
-                    @auth
-                        <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                            💬 Contacter
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="block w-full bg-slate-400 hover:bg-slate-500 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg transition text-center text-sm sm:text-base">
-                            🔒 Connectez-vous pour contacter
-                        </a>
-                    @endauth
+                    </div>
                 </div>
 
                 @if(($entreprise->site_web_externe) || ($entreprise->aSiteWebActif() && $entreprise->slug_web))
@@ -540,7 +586,7 @@
 
         <!-- Section Services -->
         @if($services->count() > 0)
-            <section class="mt-8 sm:mt-12">
+            <section id="services-section" class="mt-8 sm:mt-12">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
                     <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                         Services proposés
@@ -581,7 +627,10 @@
                                     @endif
                                     @if($entreprise->prix_negociables)
                                         <div class="absolute top-2 left-2 bg-orange-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
-                                            💰 Négociable
+                                            <svg class="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Négociable
                                         </div>
                                     @endif
                                 </div>
@@ -592,7 +641,10 @@
                                     </svg>
                                     @if($entreprise->prix_negociables)
                                         <div class="absolute top-2 left-2 bg-orange-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold">
-                                            💰 Négociable
+                                            <svg class="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Négociable
                                         </div>
                                     @endif
                                 </div>
@@ -617,7 +669,10 @@
                                             </span>
                                         </div>
                                         <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-                                            ⏱️ {{ $service->duree_minutes }} min
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            {{ $service->duree_minutes }} min
                                         </span>
                                     </div>
                                     <div class="text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -825,7 +880,7 @@
                         // Infos de base
                         document.getElementById('service-detail-nom').textContent = service.nom;
                         document.getElementById('service-detail-prix').textContent = service.prix + ' €';
-                        document.getElementById('service-detail-duree').textContent = '⏱️ Durée : ' + service.duree + ' minutes';
+                        document.getElementById('service-detail-duree').innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Durée : ' + service.duree + ' minutes';
                         document.getElementById('service-detail-description').textContent = service.description || 'Aucune description disponible.';
                         
                         // Mettre à jour les liens
@@ -932,7 +987,7 @@
             $produitsDisponibles = $produits ?? collect([]);
         @endphp
         @if($produitsDisponibles->count() > 0)
-            <section class="mt-8 sm:mt-12">
+            <section id="produits-section" class="mt-8 sm:mt-12">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
                     <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                         Produits
@@ -1203,5 +1258,37 @@
             }
         });
     </script>
+
+    <!-- Bouton fixe "Prendre rendez-vous" en bas sur mobile -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg">
+            <div class="max-w-6xl mx-auto px-4 py-3">
+                @if($entreprise->rdv_uniquement_messagerie)
+                    @auth
+                        <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-lg transition text-center text-base">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Prendre RDV (messagerie)
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-lg transition text-center text-base">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Prendre RDV (messagerie)
+                        </a>
+                    @endauth
+                @else
+                    <a href="{{ route('public.agenda', $entreprise->slug) }}" class="block w-full bg-gradient-to-r from-green-600 to-orange-500 hover:from-green-700 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-lg transition text-center text-base">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Prendre rendez-vous
+                    </a>
+                @endif
+            </div>
+        </div>
+    <!-- Padding en bas pour éviter que le contenu soit masqué par le bouton fixe -->
+    <div class="h-20 lg:hidden"></div>
 </body>
 </html>

@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Mail\Events\MessageSent;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * The policy mappings for the application.
+     *
+     * @var array<class-string, class-string>
+     */
+    protected $policies = [
+        \App\Models\CourseLesson::class => \App\Policies\CourseLessonPolicy::class,
+    ];
+
+    /**
      * Bootstrap any application services.
      */
     public function boot(): void
@@ -33,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
         Reservation::observe(ReservationObserver::class);
         User::observe(UserObserver::class);
         Entreprise::observe(EntrepriseObserver::class);
+
+        // Enregistrer les policies
+        Gate::policy(\App\Models\CourseLesson::class, \App\Policies\CourseLessonPolicy::class);
 
         // Configurer l'adresse d'expéditeur par défaut pour tous les emails
         Mail::alwaysFrom(

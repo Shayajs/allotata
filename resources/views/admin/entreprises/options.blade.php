@@ -20,14 +20,20 @@
                 class="tab-button px-4 lg:px-8 py-5 text-sm font-bold whitespace-nowrap border-b-2 border-green-500 text-green-600 flex items-center gap-2 transition-all"
                 data-tab="abonnements"
             >
-                <span class="text-lg">💳</span> Abonnements
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+                Abonnements
             </button>
             <button 
                 onclick="showTab('membres')"
                 class="tab-button px-4 lg:px-8 py-5 text-sm font-bold whitespace-nowrap border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-2 transition-all"
                 data-tab="membres"
             >
-                <span class="text-lg">👥</span> Membres & Accès
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                Membres & Accès
             </button>
         </nav>
     </div>
@@ -117,7 +123,9 @@
                 <div class="rounded-3xl border-2 transition-all overflow-hidden {{ $aGestionMultiPersonnes ? 'border-green-100 dark:border-green-900/30' : 'border-slate-100 dark:border-slate-700' }}">
                     <div class="p-6 lg:p-8 {{ $aGestionMultiPersonnes ? 'bg-green-50/50 dark:bg-green-900/10' : 'bg-white dark:bg-slate-800' }}">
                         <div class="flex items-center justify-between mb-6">
-                            <span class="text-4xl">👥</span>
+                            <svg class="w-10 h-10 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
                             @if($aGestionMultiPersonnes)
                                 <span class="px-2 py-1 text-[10px] uppercase font-bold bg-green-500 text-white rounded-lg">Option Active</span>
                             @else
@@ -191,7 +199,9 @@
         <div id="tab-membres" class="tab-content hidden space-y-8">
             @if(!$entreprise->aGestionMultiPersonnes())
                 <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 lg:p-6 flex gap-4 items-center">
-                    <span class="text-2xl lg:text-3xl">⚠️</span>
+                    <svg class="w-6 h-6 lg:w-8 lg:h-8 flex-shrink-0 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
                     <div class="flex-1">
                         <p class="text-amber-800 dark:text-amber-400 font-bold mb-1 text-sm lg:text-base">Abonnement Inactif</p>
                         <p class="text-xs lg:text-sm text-amber-700 dark:text-amber-500">L'entreprise n'a pas souscrit à l'option multi-personnes. En tant qu'administrateur, vous pouvez tout de même forcer l'ajout de membres.</p>
@@ -223,8 +233,8 @@
                                 required
                                 class="w-full px-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-sm appearance-none cursor-pointer text-sm"
                             >
-                                <option value="membre">📁 Membre standard</option>
-                                <option value="administrateur" {{ old('role') === 'administrateur' ? 'selected' : '' }}>🛡️ Administrateur</option>
+                                <option value="membre">Membre standard</option>
+                                <option value="administrateur" {{ old('role') === 'administrateur' ? 'selected' : '' }}>Administrateur</option>
                             </select>
                         </div>
                     </div>

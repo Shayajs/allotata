@@ -1,5 +1,10 @@
 <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">💳 Abonnements et options</h2>
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+        </svg>
+        Abonnements et options
+    </h2>
     @if($entreprise->user_id === auth()->id() && !request()->routeIs('entreprise.subscriptions.modal'))
         <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +185,9 @@
         <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="text-3xl">👥</span>
+                    <svg class="w-8 h-8 flex-shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
                     <div>
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white">Gestion Multi-Personnes</h3>
                         <p class="text-sm text-slate-600 dark:text-slate-400">Gérez plusieurs personnes pour votre entreprise</p>

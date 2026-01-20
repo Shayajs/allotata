@@ -1,0 +1,464 @@
+/* Allo Tata - Éditeur de Cours
+ * CSS pour l'éditeur visuel de cours avec drag & drop
+ */
+
+/* Toolbar */
+.course-editor-toolbar {
+    background: #1e293b;
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* Sidebar */
+.course-editor-sidebar {
+    position: fixed;
+    top: 56px;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    background: #1e293b;
+    color: white;
+    overflow-y: auto;
+    z-index: 90;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.2);
+    padding: 1.5rem;
+}
+
+.course-editor-sidebar.hidden {
+    transform: translateX(100%);
+}
+
+/* Zone de preview/édition */
+.course-preview {
+    margin-top: 56px;
+    margin-right: 320px;
+    min-height: calc(100vh - 56px);
+    transition: margin-right 0.3s ease;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.course-preview.full-width {
+    margin-right: 0;
+}
+
+.dark .course-preview {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+/* Bloc éditable */
+.course-editable-block {
+    position: relative;
+    cursor: grab;
+    transition: outline 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 1rem;
+}
+
+.course-editable-block:hover {
+    outline: 2px dashed #94a3b8;
+    outline-offset: 4px;
+}
+
+.course-editable-block.selected {
+    outline: 2px solid #22c55e;
+    outline-offset: 4px;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
+
+.course-editable-block.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+/* Contenu des blocs - couleur du texte */
+.course-block-content {
+    color: inherit;
+}
+
+.course-preview .course-block-content {
+    color: #1e293b;
+}
+
+.dark .course-preview .course-block-content {
+    color: #e2e8f0;
+}
+
+/* Texte dans les blocs génériques */
+.course-preview .prose {
+    color: #1e293b;
+}
+
+.dark .course-preview .prose {
+    color: #e2e8f0;
+}
+
+.course-preview .prose h1,
+.course-preview .prose h2,
+.course-preview .prose h3,
+.course-preview .prose h4,
+.course-preview .prose h5,
+.course-preview .prose h6 {
+    color: #0f172a;
+}
+
+.dark .course-preview .prose h1,
+.dark .course-preview .prose h2,
+.dark .course-preview .prose h3,
+.dark .course-preview .prose h4,
+.dark .course-preview .prose h5,
+.dark .course-preview .prose h6 {
+    color: #f1f5f9;
+}
+
+.course-preview .prose p {
+    color: #334155;
+}
+
+.dark .course-preview .prose p {
+    color: #cbd5e1;
+}
+
+/* Placeholder text amélioré */
+.course-preview .text-slate-400 {
+    color: #64748b !important;
+}
+
+.dark .course-preview .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+/* Texte dans les titres de blocs */
+.course-preview h1,
+.course-preview h2,
+.course-preview h3,
+.course-preview h4,
+.course-preview h5,
+.course-preview h6 {
+    color: #0f172a;
+}
+
+.dark .course-preview h1,
+.dark .course-preview h2,
+.dark .course-preview h3,
+.dark .course-preview h4,
+.dark .course-preview h5,
+.dark .course-preview h6 {
+    color: #f1f5f9;
+}
+
+/* Toolbar du bloc */
+.course-block-toolbar {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #1e293b;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem 0.25rem 0 0;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.course-editable-block:hover .course-block-toolbar,
+.course-editable-block.selected .course-block-toolbar {
+    opacity: 1;
+}
+
+.course-block-toolbar button {
+    padding: 0.25rem 0.5rem;
+    background: #334155;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s ease;
+}
+
+.course-block-toolbar button:hover {
+    background: #475569;
+}
+
+/* Drag handle */
+.course-drag-handle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #22c55e;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.course-editable-block:hover .course-drag-handle,
+.course-editable-block.selected .course-drag-handle {
+    opacity: 1;
+}
+
+.course-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Indicateur de statut */
+.course-save-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.course-save-status.saved {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+}
+
+.course-save-status.saving {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+}
+
+.course-save-status.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+/* Boutons d'action */
+.course-action-button {
+    padding: 0.5rem 1rem;
+    background: #334155;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.course-action-button:hover {
+    background: #475569;
+}
+
+.course-action-button.primary {
+    background: #22c55e;
+}
+
+.course-action-button.primary:hover {
+    background: #16a34a;
+}
+
+.course-action-button.publish {
+    background: #f59e0b;
+}
+
+.course-action-button.publish:hover {
+    background: #d97706;
+}
+
+/* Badge de statut */
+.course-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.course-status-badge.draft {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+}
+
+.course-status-badge.published {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+}
+
+/* Liste des blocs disponibles */
+.course-blocks-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.course-block-type {
+    padding: 0.75rem;
+    background: #334155;
+    border: 1px solid #475569;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+}
+
+.course-block-type:hover {
+    background: #475569;
+    border-color: #22c55e;
+    transform: translateY(-2px);
+    color: #f1f5f9;
+}
+
+.course-block-type-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Paramètres du bloc */
+.course-block-settings {
+    background: #334155;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.course-block-settings h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #e2e8f0;
+}
+
+.course-block-settings input,
+.course-block-settings textarea,
+.course-block-settings select {
+    width: 100%;
+    padding: 0.5rem;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 0.25rem;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+}
+
+.course-block-settings input::placeholder,
+.course-block-settings textarea::placeholder {
+    color: #64748b;
+}
+
+.course-block-settings label {
+    display: block;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    margin-bottom: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+/* Édition inline */
+[data-editable] {
+    position: relative;
+    cursor: text;
+    color: inherit;
+}
+
+[data-editable].editing {
+    outline: 2px solid #22c55e;
+    outline-offset: 2px;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+/* Couleurs pour les tabs de la sidebar */
+.sidebar-tab {
+    color: #94a3b8;
+}
+
+.sidebar-tab.active {
+    color: #86efac;
+    border-bottom-color: #22c55e;
+}
+
+.sidebar-tab:hover {
+    color: #cbd5e1;
+}
+
+/* Titres dans la sidebar */
+.course-editor-sidebar h3,
+.course-editor-sidebar h4 {
+    color: #e2e8f0;
+}
+
+/* Texte général dans la sidebar */
+.course-editor-sidebar {
+    color: #cbd5e1;
+}
+
+.course-editor-sidebar p {
+    color: #94a3b8;
+}
+
+/* Texte de placeholder amélioré */
+.course-preview .text-center.text-slate-500 {
+    color: #64748b !important;
+}
+
+.dark .course-preview .text-center.text-slate-500 {
+    color: #94a3b8 !important;
+}
+
+.course-preview .text-center.text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+.dark .course-preview .text-center.text-slate-400 {
+    color: #cbd5e1 !important;
+}
+
+/* Ghost element pour drag & drop */
+.course-block-ghost {
+    opacity: 0.4;
+    background: #cbd5e1;
+}
+
+/* Scrollbar personnalisée pour la sidebar */
+.course-editor-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.course-editor-sidebar::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.course-editor-sidebar::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+.course-editor-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .course-editor-sidebar {
+        transform: translateX(100%);
+    }
+    
+    .course-editor-sidebar.visible {
+        transform: translateX(0);
+    }
+    
+    .course-preview {
+        margin-right: 0;
+    }
+}

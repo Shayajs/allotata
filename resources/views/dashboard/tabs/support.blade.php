@@ -9,7 +9,12 @@
 
     {{-- Section FAQ rapide --}}
     <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">❓ Questions fréquentes</h3>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Questions fréquentes
+        </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <a href="{{ route('home') }}#faq" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
                 <p class="font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Comment créer une entreprise ?</p>
@@ -32,7 +37,12 @@
 
     {{-- Mes tickets --}}
     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">🎫 Mes tickets de support</h3>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+            </svg>
+            Mes tickets de support
+        </h3>
         
         @php
             $userTickets = \App\Models\Ticket::where('user_id', $user->id)
@@ -97,7 +107,10 @@
                 <p class="text-white/90 text-sm mt-1">Notre équipe est disponible pour vous aider.</p>
             </div>
             <a href="mailto:support@allotata.com" class="px-6 py-3 bg-white text-green-600 font-semibold rounded-lg hover:bg-slate-100 transition text-center">
-                📧 Contacter le support
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Contacter le support
             </a>
         </div>
     </div>

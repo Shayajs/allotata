@@ -40,14 +40,20 @@
                                 onclick="openEditModal('{{ $key }}', {{ json_encode($price['stripe_data']) }})"
                                 class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                             >
-                                ✏️ Modifier
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Modifier
                             </button>
                         @elseif(!$price['id'])
                             <button 
                                 onclick="openCreateMissingModal('{{ $key }}', '{{ $price['label'] }}')"
                                 class="px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
                             >
-                                ➕ Créer
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Créer
                             </button>
                         @endif
                     </div>
@@ -92,7 +98,12 @@
                         @endif
                     @else
                         <div class="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded mb-4">
-                            <p class="text-sm text-orange-800 dark:text-orange-400 mb-2">⚠️ Prix non configuré sur Stripe</p>
+                            <p class="text-sm text-orange-800 dark:text-orange-400 mb-2 flex items-center gap-1">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                Prix non configuré sur Stripe
+                            </p>
                             <p class="text-xs text-orange-700 dark:text-orange-300">Les utilisateurs ne pourront pas s'abonner tant que le prix n'est pas créé.</p>
                         </div>
                     @endif
@@ -210,7 +221,12 @@
 
     <!-- Instructions -->
     <div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-400 mb-2">ℹ️ Instructions</h3>
+        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-400 mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Instructions
+        </h3>
         <ul class="space-y-2 text-sm text-blue-800 dark:text-blue-300">
             <li>• Les prix créés seront automatiquement ajoutés au fichier <code class="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">.env</code></li>
             <li>• Si un produit avec le même nom existe déjà sur Stripe, il sera réutilisé</li>
@@ -228,7 +244,9 @@
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-semibold text-slate-900 dark:text-white">Modifier le prix</h3>
                     <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                        ✕
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
                 <form id="editForm" method="POST" class="space-y-4">
@@ -285,7 +303,9 @@
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-semibold text-slate-900 dark:text-white">Créer le prix manquant</h3>
                     <button onclick="closeCreateMissingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                        ✕
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
                 <form id="createMissingForm" method="POST" class="space-y-4">

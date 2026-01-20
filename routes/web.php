@@ -14,9 +14,18 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\CourseController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
+Route::get('/fonctionnalites', [\App\Http\Controllers\PageController::class, 'fonctionnalites'])->name('pages.fonctionnalites');
+
+// Routes publiques pour les cours
+Route::get('/apprendre', [CourseController::class, 'index'])->name('courses.index');
+Route::get('/apprendre/module/{module}', [CourseController::class, 'showModule'])->name('courses.module');
+Route::get('/apprendre/module/{module}/lecon/{lesson}', [CourseController::class, 'showLesson'])
+    ->middleware([\App\Http\Middleware\EnsureLessonAccessible::class])
+    ->name('courses.lesson');
 
 // Pages Légales
 Route::get('/legal/mentions-legales', [LegalController::class, 'mentionsLegales'])->name('legal.mentions');
@@ -178,6 +187,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/message', [TicketController::class, 'addMessage'])->name('tickets.add-message');
+    
+    // Routes API pour la progression des cours
+    Route::post('/api/courses/complete-lesson', [CourseController::class, 'completeLesson'])->name('api.courses.complete-lesson');
+    Route::post('/api/courses/quiz-submit', [CourseController::class, 'submitQuiz'])->name('api.courses.quiz-submit');
 });
 
 // Routes protégées - nécessitent authentification et email vérifié
@@ -456,6 +469,32 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/faqs/{faq}/edit', [FaqController::class, 'adminEdit'])->name('faqs.edit');
     Route::put('/faqs/{faq}', [FaqController::class, 'adminUpdate'])->name('faqs.update');
     Route::delete('/faqs/{faq}', [FaqController::class, 'adminDestroy'])->name('faqs.destroy');
+    
+    // Gestion des cours (mode édition)
+    Route::get('/courses', [\App\Http\Controllers\Admin\CourseController::class, 'index'])->name('courses.index');
+    Route::post('/courses/modules', [\App\Http\Controllers\Admin\CourseController::class, 'storeModule'])->name('courses.modules.store');
+    Route::put('/courses/modules/{module}', [\App\Http\Controllers\Admin\CourseController::class, 'updateModule'])->name('courses.modules.update');
+    Route::delete('/courses/modules/{module}', [\App\Http\Controllers\Admin\CourseController::class, 'destroyModule'])->name('courses.modules.destroy');
+    Route::post('/courses/modules/order', [\App\Http\Controllers\Admin\CourseController::class, 'updateModuleOrder'])->name('courses.modules.order');
+    Route::get('/courses/modules/{module}/edit', [\App\Http\Controllers\Admin\CourseController::class, 'editModule'])->name('courses.module.edit');
+    
+    Route::post('/courses/modules/{module}/lessons', [\App\Http\Controllers\Admin\CourseController::class, 'storeLesson'])->name('courses.lessons.store');
+    Route::put('/courses/modules/{module}/lessons/{lesson}', [\App\Http\Controllers\Admin\CourseController::class, 'updateLesson'])->name('courses.lessons.update');
+    Route::delete('/courses/modules/{module}/lessons/{lesson}', [\App\Http\Controllers\Admin\CourseController::class, 'destroyLesson'])->name('courses.lessons.destroy');
+    Route::post('/courses/modules/{module}/lessons/order', [\App\Http\Controllers\Admin\CourseController::class, 'updateLessonOrder'])->name('courses.lessons.order');
+    
+    // Édition complète d'une leçon
+    Route::get('/courses/lessons/{lesson}/edit', [\App\Http\Controllers\Admin\CourseController::class, 'editLesson'])->name('courses.lessons.edit');
+    Route::post('/courses/lessons/{lesson}/save-draft', [\App\Http\Controllers\Admin\CourseController::class, 'saveDraft'])->name('courses.lessons.save-draft');
+    Route::post('/courses/lessons/{lesson}/publish', [\App\Http\Controllers\Admin\CourseController::class, 'publish'])->name('courses.lessons.publish');
+    Route::post('/courses/lessons/{lesson}/render-block', [\App\Http\Controllers\Admin\CourseController::class, 'renderBlock'])->name('courses.lessons.render-block');
+    Route::post('/courses/lessons/{lesson}/upload-image', [\App\Http\Controllers\Admin\CourseController::class, 'uploadImageForLesson'])->name('courses.lessons.upload-image');
+    
+    Route::post('/courses/modules/{module}/lessons/{lesson}/questions', [\App\Http\Controllers\Admin\CourseController::class, 'storeQuizQuestion'])->name('courses.questions.store');
+    Route::put('/courses/modules/{module}/lessons/{lesson}/questions/{question}', [\App\Http\Controllers\Admin\CourseController::class, 'updateQuizQuestion'])->name('courses.questions.update');
+    Route::delete('/courses/modules/{module}/lessons/{lesson}/questions/{question}', [\App\Http\Controllers\Admin\CourseController::class, 'destroyQuizQuestion'])->name('courses.questions.destroy');
+    
+    Route::post('/courses/upload-image', [\App\Http\Controllers\Admin\CourseController::class, 'uploadImage'])->name('courses.upload-image');
     
     // Recherche globale
     Route::get('/search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');

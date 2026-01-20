@@ -2,7 +2,10 @@
     <!-- Actions Administrateur -->
     <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 lg:p-8 border border-slate-700 shadow-lg">
         <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
-            <span>⚙️</span>
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
             Actions Administrateur
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -14,7 +17,9 @@
                     <span>Envoyer par email</span>
                 </label>
                 <button type="submit" class="flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                    <span>🔑</span>
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
                     <span class="text-center">Générer un mot de passe</span>
                 </button>
             </form>
@@ -23,7 +28,9 @@
             <div class="flex flex-col">
                 <div class="h-6 mb-3"></div>
                 <button onclick="showEmailModal()" class="flex-1 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                    <span>✉️</span>
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
                     <span class="text-center">Modifier l'email</span>
                 </button>
             </div>
@@ -35,13 +42,17 @@
                     <form action="{{ route('admin.users.unblock', $user) }}" method="POST" class="flex-1 flex">
                         @csrf
                         <button type="submit" class="flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                            <span>✅</span>
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                             <span class="text-center">Débloquer</span>
                         </button>
                     </form>
                 @else
                     <button onclick="showBlockModal()" class="flex-1 w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                        <span>🚫</span>
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
                         <span class="text-center">Bloquer</span>
                     </button>
                 @endif
@@ -51,7 +62,9 @@
             <div class="flex flex-col">
                 <div class="h-6 mb-3"></div>
                 <button onclick="showArchiveModal()" class="flex-1 w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
-                    <span>🗄️</span>
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                    </svg>
                     <span class="text-center">Archiver</span>
                 </button>
             </div>
@@ -146,7 +159,9 @@
     <!-- Tentatives de connexion récentes -->
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 lg:p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-            <span>📋</span>
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
             Tentatives de connexion récentes
         </h3>
         @if($loginAttempts->count() > 0)
@@ -287,7 +302,9 @@
     <!-- Historique de sécurité -->
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 lg:p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-            <span>📜</span>
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
             Historique des changements (Mots de passe & Emails)
         </h3>
         @if(isset($securityHistory) && $securityHistory->count() > 0)
@@ -301,7 +318,17 @@
                                         @if($history->type === 'password') bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400
                                         @else bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400
                                         @endif">
-                                        {{ $history->type === 'password' ? '🔑 Mot de passe' : '✉️ Email' }}
+                                        @if($history->type === 'password')
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                            </svg>
+                                            Mot de passe
+                                        @else
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Email
+                                        @endif
                                     </span>
                                     @if($history->changed_by)
                                         <span class="text-xs text-slate-500">Par admin #{{ $history->changed_by }}</span>
@@ -373,7 +400,12 @@
 <!-- Modal Bloquer -->
 <div id="blockModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
-        <h3 class="text-xl font-bold text-red-600 dark:text-red-400 mb-6">🚫 Bloquer l'utilisateur</h3>
+        <h3 class="text-xl font-bold text-red-600 dark:text-red-400 mb-6 flex items-center gap-2">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+            </svg>
+            Bloquer l'utilisateur
+        </h3>
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Cette action bloquera définitivement l'accès au compte.</p>
         <form action="{{ route('admin.users.block', $user) }}" method="POST">
             @csrf
@@ -396,7 +428,12 @@
 <!-- Modal Archiver -->
 <div id="archiveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
-        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-6">🗄️ Archiver l'utilisateur</h3>
+        <h3 class="text-xl font-bold text-orange-600 dark:text-orange-400 mb-6 flex items-center gap-2">
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+            </svg>
+            Archiver l'utilisateur
+        </h3>
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Cette action archivera le compte (soft delete). L'utilisateur pourra être restauré ultérieurement.</p>
         <form action="{{ route('admin.users.archive', $user) }}" method="POST">
             @csrf

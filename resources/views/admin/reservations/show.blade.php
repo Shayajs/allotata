@@ -75,7 +75,9 @@
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                         <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Client</h2>
                         <div class="space-y-2">
-                            <p class="text-sm font-medium text-slate-900 dark:text-white">{{ $reservation->user->name }}</p>
+                            <p class="text-sm font-medium text-slate-900 dark:text-white">
+                                <x-user-name :user="$reservation->user" />
+                            </p>
                             <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user->email }}</p>
                             <a href="{{ route('admin.users.show', $reservation->user) }}" class="text-sm text-green-600 hover:text-green-700 dark:text-green-400">
                                 Voir le profil →

@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Nouvelle annonce')
-@section('header', '➕ Nouvelle annonce')
+@section('header', 'Nouvelle annonce')
 @section('subheader', 'Créez une annonce pour les utilisateurs')
 
 @section('content')
@@ -43,10 +43,10 @@
                 <div>
                     <label for="type" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Type</label>
                     <select name="type" id="type" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-                        <option value="info" {{ old('type') === 'info' ? 'selected' : '' }}>ℹ️ Information</option>
-                        <option value="success" {{ old('type') === 'success' ? 'selected' : '' }}>✅ Succès</option>
-                        <option value="warning" {{ old('type') === 'warning' ? 'selected' : '' }}>⚠️ Avertissement</option>
-                        <option value="danger" {{ old('type') === 'danger' ? 'selected' : '' }}>🚨 Danger</option>
+                        <option value="info" {{ old('type') === 'info' ? 'selected' : '' }}>Information</option>
+                        <option value="success" {{ old('type') === 'success' ? 'selected' : '' }}>Succès</option>
+                        <option value="warning" {{ old('type') === 'warning' ? 'selected' : '' }}>Avertissement</option>
+                        <option value="danger" {{ old('type') === 'danger' ? 'selected' : '' }}>Danger</option>
                     </select>
                 </div>
 
@@ -92,7 +92,10 @@
                     Annuler
                 </a>
                 <button type="submit" class="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                    ✅ Créer l'annonce
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Créer l'annonce
                 </button>
             </div>
         </form>

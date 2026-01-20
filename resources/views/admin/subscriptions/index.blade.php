@@ -4,7 +4,12 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">💳 Gestion des abonnements</h1>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+                Gestion des abonnements
+            </h1>
             <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Consultez et gérez tous les abonnements actifs (utilisateurs et entreprises).
             </p>
@@ -22,7 +27,12 @@
 
     @if(session('sync_success'))
         <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p class="text-sm text-blue-800 dark:text-blue-400">🔄 {{ session('sync_success') }}</p>
+            <p class="text-sm text-blue-800 dark:text-blue-400 flex items-center gap-1">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                {{ session('sync_success') }}
+            </p>
         </div>
     @endif
 
@@ -69,7 +79,12 @@
     <!-- Abonnements utilisateurs Stripe -->
     @if($userSubscriptions->count() > 0)
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">👤 Abonnements utilisateurs (Stripe)</h2>
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Abonnements utilisateurs (Stripe)
+            </h2>
             <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">
@@ -120,12 +135,18 @@
                                     <form action="{{ route('admin.subscriptions.user.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
                                         <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">
-                                            🔄 Sync
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            Sync
                                         </button>
                                     </form>
                                     
                                     <span class="text-slate-400 cursor-not-allowed text-xs font-medium mr-2" title="Géré par Stripe">
-                                        🔒 Stripe
+                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        Stripe
                                     </span>
 
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
@@ -148,7 +169,12 @@
     <!-- Abonnements entreprises Stripe -->
     @if($entrepriseSubscriptions->count() > 0)
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">🏢 Abonnements entreprises (Stripe)</h2>
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Abonnements entreprises (Stripe)
+            </h2>
             <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">
@@ -214,12 +240,18 @@
                                     <form action="{{ route('admin.subscriptions.entreprise.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
                                         <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">
-                                            🔄 Sync
+                                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            Sync
                                         </button>
                                     </form>
                                     
                                     <span class="text-slate-400 cursor-not-allowed text-xs font-medium mr-2" title="Géré par Stripe">
-                                        🔒 Stripe
+                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        Stripe
                                     </span>
 
                                     <a href="https://dashboard.stripe.com/{{ str_starts_with(config('services.stripe.key'), 'pk_test') ? 'test/' : '' }}subscriptions/{{ $subscription->stripe_id }}" 
@@ -242,7 +274,12 @@
     <!-- Abonnements manuels utilisateurs -->
     @if($manualUserSubscriptions->count() > 0)
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">👤 Abonnements utilisateurs (Manuels)</h2>
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Abonnements utilisateurs (Manuels)
+            </h2>
             <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">
@@ -289,7 +326,12 @@
     <!-- Abonnements manuels entreprises -->
     @if($manualEntrepriseSubscriptions->count() > 0)
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">🏢 Abonnements entreprises (Manuels)</h2>
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Abonnements entreprises (Manuels)
+            </h2>
             <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">

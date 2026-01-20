@@ -134,7 +134,13 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-2">
-                                            <h3 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h3>
+                                            <h3 class="font-semibold text-slate-900 dark:text-white">
+                                                @if($reservation->user)
+                                                    <x-user-name :user="$reservation->user" />
+                                                @else
+                                                    {{ $reservation->nom_client ?? 'N/A' }}
+                                                @endif
+                                            </h3>
                                             <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
                                             <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->user ? $reservation->user->email : ($reservation->email_client ?? 'N/A') }}</span>
                                             @if($reservation->creee_manuellement)
@@ -196,7 +202,13 @@
                                             <div class="flex items-start justify-between">
                                                 <div class="flex-1">
                                                     <div class="flex items-center gap-2 mb-2 flex-wrap">
-                                                        <h4 class="font-semibold text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</h4>
+                                                        <h4 class="font-semibold text-slate-900 dark:text-white">
+                                                            @if($reservation->user)
+                                                                <x-user-name :user="$reservation->user" />
+                                                            @else
+                                                                {{ $reservation->nom_client ?? 'N/A' }}
+                                                            @endif
+                                                        </h4>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">•</span>
                                                         <span class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</span>
                                                         @if($reservation->creee_manuellement)

@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Recherche')
-@section('header', '🔍 Recherche globale')
+@section('header', 'Recherche globale')
 @section('subheader', $query ? "Résultats pour \"$query\"" : 'Recherchez dans toutes les données')
 
 @section('content')
@@ -48,7 +48,10 @@
         @if($results['users']->count() > 0)
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <span>👥</span> Utilisateurs ({{ $results['users']->count() }})
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    Utilisateurs ({{ $results['users']->count() }})
                 </h2>
                 <div class="space-y-3">
                     @foreach($results['users'] as $user)
@@ -73,7 +76,10 @@
         @if($results['entreprises']->count() > 0)
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <span>🏢</span> Entreprises ({{ $results['entreprises']->count() }})
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Entreprises ({{ $results['entreprises']->count() }})
                 </h2>
                 <div class="space-y-3">
                     @foreach($results['entreprises'] as $entreprise)
@@ -98,7 +104,10 @@
         @if($results['reservations']->count() > 0)
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <span>📅</span> Réservations ({{ $results['reservations']->count() }})
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Réservations ({{ $results['reservations']->count() }})
                 </h2>
                 <div class="space-y-3">
                     @foreach($results['reservations'] as $reservation)
@@ -120,7 +129,10 @@
         @if($results['tickets']->count() > 0)
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <span>🎫</span> Tickets ({{ $results['tickets']->count() }})
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                    </svg>
+                    Tickets ({{ $results['tickets']->count() }})
                 </h2>
                 <div class="space-y-3">
                     @foreach($results['tickets'] as $ticket)

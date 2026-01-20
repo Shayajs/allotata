@@ -1,13 +1,16 @@
 @extends('admin.layout')
 
 @section('title', 'Codes promo')
-@section('header', '🎁 Codes promotionnels')
+@section('header', 'Codes promotionnels')
 @section('subheader', 'Gérez les codes promo pour les abonnements')
 
 @section('content')
 <div class="flex justify-end mb-6">
     <a href="{{ route('admin.promo-codes.create') }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-        ➕ Nouveau code promo
+        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nouveau code promo
     </a>
 </div>
 

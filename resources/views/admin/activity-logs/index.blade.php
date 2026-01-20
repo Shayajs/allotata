@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Logs d\'activité')
-@section('header', '📝 Logs d\'activité')
+@section('header', 'Logs d\'activité')
 @section('subheader', 'Historique des actions administratives')
 
 @section('content')

@@ -30,22 +30,40 @@
             <form class="mt-6 sm:mt-8 space-y-5 sm:space-y-6 mobile-form" action="{{ route('register') }}" method="POST">
                 @csrf
                 <div class="rounded-md shadow-sm space-y-4">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Nom complet
-                        </label>
-                        <input 
-                            id="name" 
-                            name="name" 
-                            type="text" 
-                            required 
-                            value="{{ old('name') }}"
-                            class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 touch-target"
-                            placeholder="Votre nom"
-                        >
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                        @enderror
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Prénom *
+                            </label>
+                            <input 
+                                id="name" 
+                                name="name" 
+                                type="text" 
+                                required 
+                                value="{{ old('name') }}"
+                                class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 touch-target"
+                                placeholder="Votre prénom"
+                            >
+                            @error('name')
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="surname" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Nom de famille
+                            </label>
+                            <input 
+                                id="surname" 
+                                name="surname" 
+                                type="text" 
+                                value="{{ old('surname') }}"
+                                class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 touch-target"
+                                placeholder="Votre nom de famille"
+                            >
+                            @error('surname')
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                     <div>
                         <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

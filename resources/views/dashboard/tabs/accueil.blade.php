@@ -15,9 +15,15 @@
                     <p class="font-semibold text-slate-900 dark:text-white">Statut Client</p>
                     <p class="text-sm text-slate-600 dark:text-slate-400">
                         @if($user->est_client)
-                            ✓ Vous pouvez effectuer des achats
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Vous pouvez effectuer des achats
                         @else
-                            ✗ Client désactivé
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Client désactivé
                         @endif
                     </p>
                 </div>
@@ -34,9 +40,15 @@
                     <p class="font-semibold text-slate-900 dark:text-white">Statut Gérant</p>
                     <p class="text-sm text-slate-600 dark:text-slate-400">
                         @if($user->est_gerant)
-                            ✓ Vous gérez {{ $entreprises->count() }} entreprise(s)
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Vous gérez {{ $entreprises->count() }} entreprise(s)
                         @else
-                            ✗ Aucune entreprise pour le moment
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Aucune entreprise pour le moment
                         @endif
                     </p>
                 </div>
@@ -47,7 +59,12 @@
     <!-- Statistiques globales (pour les gérants) -->
     @if($user->est_gerant && $stats)
         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📊 Statistiques globales</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Statistiques globales
+            </h3>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -92,7 +109,10 @@
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-                        <span class="text-2xl">⚠️</span> Réservations en attente
+                        <svg class="w-6 h-6 flex-shrink-0 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        Réservations en attente
                     </h3>
                     <p class="text-slate-600 dark:text-slate-400 text-sm">
                         {{ $reservationsEnAttente->count() }} réservation(s) nécessitent votre validation
@@ -127,7 +147,12 @@
     @if($entreprises->count() > 0)
         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">🏢 Mes entreprises</h3>
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Mes entreprises
+                </h3>
                 <button onclick="showTab('entreprises')" class="text-sm text-green-600 dark:text-green-400 hover:underline">
                     Voir tout →
                 </button>

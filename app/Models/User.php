@@ -21,6 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'name',
+        'surname',
         'email',
         'password',
         'est_client',
@@ -294,6 +295,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Relation : Un utilisateur peut avoir plusieurs progressions de leçons
+     */
+    public function lessonProgress()
+    {
+        return $this->hasMany(UserLessonProgress::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs progressions de modules
+     */
+    public function moduleProgress()
+    {
+        return $this->hasMany(UserModuleProgress::class);
+    }
+
+    /**
      * Vérifie si le compte est actuellement verrouillé
      */
     public function isAccountLocked(): bool
@@ -529,5 +546,73 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         return $this->google2fa_enabled && !empty($this->google2fa_secret);
+    }
+
+    /**
+     * Obtenir le prénom (extrait du nom complet si surname est vide)
+     */
+    public function getFirstNameAttribute(): string
+    {
+        if (!empty($this->surname)) {
+            // Si on a un surname, le name contient soit juste le prénom, soit le nom complet
+            // On extrait le premier mot du name
+            $parts = explode(' ', trim($this->name), 2);
+            return $parts[0];
+        }
+        // Si pas de surname, extraire le prénom du nom complet
+        $parts = explode(' ', trim($this->name), 2);
+        return $parts[0] ?? $this->name;
+    }
+
+    /**
+     * Obtenir le nom de famille (surname ou extrait du nom complet)
+     */
+    public function getLastNameAttribute(): string
+    {
+        if (!empty($this->surname)) {
+            return $this->surname;
+        }
+        // Si pas de surname, extraire le nom de famille du nom complet
+        $parts = explode(' ', trim($this->name), 2);
+        return $parts[1] ?? '';
+    }
+
+    /**
+     * Obtenir le nom formaté en version courte (P. Nom)
+     * Pour affichage sur mobile/petits écrans
+     */
+    public function getShortNameAttribute(): string
+    {
+        $firstName = $this->first_name;
+        $lastName = $this->last_name;
+        
+        if (empty($lastName)) {
+            // Si pas de nom de famille, retourner le nom complet tel quel
+            return $this->name;
+        }
+        
+        // Prendre la première lettre du prénom
+        $firstInitial = !empty($firstName) ? strtoupper(substr(trim($firstName), 0, 1)) . '.' : '';
+        
+        $result = trim($firstInitial . ' ' . $lastName);
+        return !empty($result) ? $result : $this->name;
+    }
+
+    /**
+     * Obtenir le nom formaté en version complète (Prénom Nom)
+     * Pour affichage sur desktop/grands écrans
+     */
+    public function getFullNameAttribute(): string
+    {
+        $firstName = $this->first_name;
+        $lastName = $this->last_name;
+        
+        if (empty($lastName)) {
+            // Si pas de nom de famille, retourner le nom complet tel quel
+            return $this->name;
+        }
+        
+        $result = trim($firstName . ' ' . $lastName);
+        return !empty($result) ? $result : $this->name;
     }
 }

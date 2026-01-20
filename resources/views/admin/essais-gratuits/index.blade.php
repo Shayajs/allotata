@@ -4,14 +4,22 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">🎁 Essais Gratuits</h1>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+                Essais Gratuits
+            </h1>
             <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Gérez et analysez les essais gratuits accordés aux utilisateurs et entreprises.
             </p>
         </div>
         <div class="flex gap-3">
             <a href="{{ route('admin.essais-gratuits.export') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium rounded-lg transition text-sm">
-                📥 Export CSV
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Export CSV
             </a>
             <button onclick="openAccorderModal()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                 + Accorder un essai
@@ -68,23 +76,23 @@
             </a>
             <a href="{{ route('admin.essais-gratuits.index', ['filter' => 'actifs']) }}" 
                class="px-3 py-1.5 rounded-lg transition text-sm {{ $filter === 'actifs' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
-                🟢 Actifs
+                Actifs
             </a>
             <a href="{{ route('admin.essais-gratuits.index', ['filter' => 'convertis']) }}" 
                class="px-3 py-1.5 rounded-lg transition text-sm {{ $filter === 'convertis' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
-                💰 Convertis
+                Convertis
             </a>
             <a href="{{ route('admin.essais-gratuits.index', ['filter' => 'expires']) }}" 
                class="px-3 py-1.5 rounded-lg transition text-sm {{ $filter === 'expires' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
-                ⏰ Expirés
+                Expirés
             </a>
             <a href="{{ route('admin.essais-gratuits.index', ['filter' => 'users']) }}" 
                class="px-3 py-1.5 rounded-lg transition text-sm {{ $filter === 'users' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
-                👤 Utilisateurs
+                Utilisateurs
             </a>
             <a href="{{ route('admin.essais-gratuits.index', ['filter' => 'entreprises']) }}" 
                class="px-3 py-1.5 rounded-lg transition text-sm {{ $filter === 'entreprises' ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
-                🏢 Entreprises
+                Entreprises
             </a>
         </div>
         
@@ -132,7 +140,15 @@
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-lg">{{ $isUser ? '👤' : '🏢' }}</span>
+                                        @if($isUser)
+                                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                        @else
+                                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                        @endif
                                         <div>
                                             <p class="text-sm font-medium text-slate-900 dark:text-white">{{ $nomCible }}</p>
                                             <p class="text-xs text-slate-500 dark:text-slate-400">{{ $emailCible }}</p>
@@ -173,7 +189,10 @@
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-3 text-xs">
                                         <span title="Connexions" class="flex items-center gap-1">
-                                            🔗 {{ $essai->nb_connexions }}
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                            </svg>
+                                            {{ $essai->nb_connexions }}
                                         </span>
                                         <span title="Actions" class="flex items-center gap-1">
                                             ⚡ {{ $essai->nb_actions }}
@@ -205,7 +224,10 @@
                                                 onclick="openProlongerModal({{ $essai->id }})"
                                                 class="text-green-600 dark:text-green-400 hover:text-green-800 text-xs font-medium"
                                             >
-                                                🔄 Réactiver
+                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                </svg>
+                                                Réactiver
                                             </button>
                                         @else
                                             <span class="text-xs text-slate-400">-</span>
@@ -233,7 +255,12 @@
 <div id="accorder-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-6">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold text-slate-900 dark:text-white">🎁 Accorder un essai gratuit</h3>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+                Accorder un essai gratuit
+            </h3>
             <button onclick="closeAccorderModal()" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>

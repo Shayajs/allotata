@@ -105,7 +105,9 @@
                     @forelse($reservations as $reservation)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $reservation->user->name }}</div>
+                                <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                    <x-user-name :user="$reservation->user" />
+                                </div>
                                 <div class="text-sm text-slate-500 dark:text-slate-400">{{ $reservation->user->email }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

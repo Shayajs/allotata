@@ -88,7 +88,13 @@
                         @endif
                         <div>
                             <div class="flex items-center gap-2 flex-wrap">
-                                <p class="font-semibold text-lg text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</p>
+                                <p class="font-semibold text-lg text-slate-900 dark:text-white">
+                                    @if($reservation->user)
+                                        <x-user-name :user="$reservation->user" />
+                                    @else
+                                        {{ $reservation->nom_client ?? 'N/A' }}
+                                    @endif
+                                </p>
                                 @if($reservation->estPourClienteNonInscrite())
                                     <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">Non inscrit</span>
                                 @endif
@@ -138,7 +144,13 @@
                     <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">Personne assignée</h3>
                     <div class="flex items-center gap-3">
                         <x-avatar :user="$reservation->membre->user" size="md" />
-                        <p class="text-slate-900 dark:text-white font-medium">{{ $reservation->membre->user->name }}</p>
+                        <p class="text-slate-900 dark:text-white font-medium">
+                            @if($reservation->membre && $reservation->membre->user)
+                                <x-user-name :user="$reservation->membre->user" />
+                            @else
+                                Membre assigné
+                            @endif
+                        </p>
                     </div>
                 </div>
                 @endif

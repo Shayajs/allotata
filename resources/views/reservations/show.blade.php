@@ -79,7 +79,13 @@
                             @endif
                             <div>
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <p class="font-medium text-slate-900 dark:text-white">{{ $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'N/A') }}</p>
+                                    <p class="font-medium text-slate-900 dark:text-white">
+                                        @if($reservation->user)
+                                            <x-user-name :user="$reservation->user" />
+                                        @else
+                                            {{ $reservation->nom_client ?? 'N/A' }}
+                                        @endif
+                                    </p>
                                     @if($reservation->estPourClienteNonInscrite())
                                         <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full">Cliente non inscrite</span>
                                     @endif

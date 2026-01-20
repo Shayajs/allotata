@@ -128,10 +128,10 @@
         };
         
         const statutLabels = {
-            'en_attente': '⏳ En attente',
-            'confirmee': '✓ Confirmée',
-            'terminee': '✓ Terminée',
-            'annulee': '✗ Annulée'
+        'en_attente': '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> En attente',
+        'confirmee': '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Confirmée',
+        'terminee': '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Terminée',
+        'annulee': '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Annulée'
         };
         
         // Charger les réservations
@@ -287,11 +287,11 @@
                         <span class="text-xs text-slate-500 dark:text-slate-400 uppercase">Client</span>
                         <p class="font-semibold text-slate-900 dark:text-white">${props.client || '-'}</p>
                         <p class="text-sm text-slate-600 dark:text-slate-400">${props.client_email || ''}</p>
-                        ${props.telephone ? `<p class="text-sm text-slate-600 dark:text-slate-400">📞 ${props.telephone}</p>` : ''}
+                        ${props.telephone ? `<p class="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> ${props.telephone}</p>` : ''}
                     </div>
                     <div>
                         <span class="text-xs text-slate-500 dark:text-slate-400 uppercase">Payé</span>
-                        <p class="font-semibold ${props.est_paye ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${props.est_paye ? '✓ Oui' : '✗ Non'}</p>
+                        <p class="font-semibold ${props.est_paye ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} flex items-center gap-1">${props.est_paye ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Oui' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> Non'}</p>
                     </div>
                     ${props.lieu ? `<div><span class="text-xs text-slate-500 dark:text-slate-400 uppercase">Lieu</span><p class="text-slate-900 dark:text-white">${props.lieu}</p></div>` : ''}
                     ${props.notes ? `<div><span class="text-xs text-slate-500 dark:text-slate-400 uppercase">Notes</span><p class="text-slate-600 dark:text-slate-400">${props.notes}</p></div>` : ''}

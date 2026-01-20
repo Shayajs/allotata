@@ -10,4 +10,9 @@ class PageController extends Controller
     {
         return view('pages.about');
     }
+
+    public function fonctionnalites()
+    {
+        return view('pages.fonctionnalites');
+    }
 }

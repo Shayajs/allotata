@@ -96,7 +96,10 @@
             @if($google2faDisabled)
                 <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                     <p class="text-sm text-yellow-700 dark:text-yellow-400">
-                        ⚠️ L'authentification TOTP est désactivée par l'administrateur.
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        L'authentification TOTP est désactivée par l'administrateur.
                     </p>
                 </div>
             @endif
@@ -105,7 +108,12 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                         <div>
-                            <p class="font-medium text-green-900 dark:text-green-300">✓ Authentification TOTP activée</p>
+                            <p class="font-medium text-green-900 dark:text-green-300 flex items-center gap-2">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Authentification TOTP activée
+                            </p>
                             <p class="text-sm text-green-700 dark:text-green-400 mt-1">
                                 Votre compte est protégé par l'authentification à deux facteurs via Google Authenticator.
                             </p>
@@ -123,7 +131,12 @@
                         <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                             <div class="flex items-center justify-between mb-3">
                                 <div>
-                                    <p class="font-medium text-blue-900 dark:text-blue-300">🔑 Codes de récupération</p>
+                                    <p class="font-medium text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        Codes de récupération
+                                    </p>
                                     <p class="text-sm text-blue-700 dark:text-blue-400 mt-1">
                                         Enregistrez ces codes dans un endroit sûr. Ils ne peuvent être utilisés qu'une seule fois chacun.
                                     </p>
@@ -138,11 +151,15 @@
                                             </code>
                                             @if($codeData['used'])
                                                 <span class="text-xs text-red-600 dark:text-red-400 ml-2" title="Utilisé le {{ $codeData['used_at'] ? $codeData['used_at']->format('d/m/Y à H:i') : 'N/A' }}">
-                                                    ✗
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
                                                 </span>
                                             @else
                                                 <span class="text-xs text-green-600 dark:text-green-400 ml-2">
-                                                    ✓
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
                                                 </span>
                                             @endif
                                         </div>
@@ -155,7 +172,7 @@
                                 @endforeach
                             </div>
                             <p class="text-xs text-blue-600 dark:text-blue-400 mt-3">
-                                <strong>Note :</strong> Les codes barrés (✗) ont déjà été utilisés et ne peuvent plus être utilisés. Les codes valides (✓) peuvent encore être utilisés une fois.
+                                <strong>Note :</strong> Les codes barrés ont déjà été utilisés et ne peuvent plus être utilisés. Les codes valides peuvent encore être utilisés une fois.
                             </p>
                         </div>
                     @endif
@@ -442,7 +459,12 @@
 
                     <div id="google2fa-recovery-codes-display" class="hidden">
                         <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                            <p class="font-medium text-blue-900 dark:text-blue-300 mb-2">⚠️ Codes de récupération</p>
+                            <p class="font-medium text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                Codes de récupération
+                            </p>
                             <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
                                 Enregistrez ces codes dans un endroit sûr. Vous pourrez les utiliser si vous perdez l'accès à votre application d'authentification.
                             </p>
@@ -457,7 +479,10 @@
                 <div id="google2fa-disable-content" class="hidden space-y-4">
                     <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                         <p class="text-sm text-red-700 dark:text-red-400">
-                            ⚠️ La désactivation de l'authentification TOTP réduira la sécurité de votre compte.
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            La désactivation de l'authentification TOTP réduira la sécurité de votre compte.
                         </p>
                     </div>
                     <form action="{{ route('security.google2fa.disable') }}" method="POST" id="disable-google2fa-form">
@@ -476,7 +501,10 @@
                 <div id="google2fa-recovery-content" class="hidden space-y-4">
                     <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p class="text-sm text-blue-700 dark:text-blue-400">
-                            ⚠️ Les anciens codes de récupération seront invalidés après la régénération.
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            Les anciens codes de récupération seront invalidés après la régénération.
                         </p>
                     </div>
                     <form action="{{ route('security.google2fa.recovery-codes') }}" method="POST" id="recovery-codes-form">

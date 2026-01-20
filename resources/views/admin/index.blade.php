@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Administration')
-@section('header', '📊 Dashboard')
+@section('header', 'Dashboard')
 @section('subheader', 'Gérez les utilisateurs, entreprises et réservations de la plateforme.')
 
 @section('content')

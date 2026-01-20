@@ -1,19 +1,32 @@
 <div>
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">👥 Gestion de l'équipe</h2>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                Gestion de l'équipe
+            </h2>
             <p class="text-slate-600 dark:text-slate-400">
                 Gérez les membres de votre équipe, leurs disponibilités et leurs performances
             </p>
         </div>
         <button onclick="toggleAddMemberForm()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
-            ➕ Ajouter un membre
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter un membre
         </button>
     </div>
 
     <!-- Formulaire d'ajout de membre (masqué par défaut) -->
     <div id="add-member-form" class="hidden mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">➕ Ajouter un membre</h3>
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter un membre
+        </h3>
         <form action="{{ route('entreprise.membres.store', $entreprise->slug) }}" method="POST">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -62,7 +75,12 @@
     <!-- Invitations en cours -->
     @if($invitationsEnCours && $invitationsEnCours->count() > 0)
         <div class="mb-6">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">📧 Invitations en cours</h3>
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Invitations en cours
+            </h3>
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @foreach($invitationsEnCours as $invitation)
                     <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
@@ -75,9 +93,15 @@
                             </div>
                             <span class="px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full whitespace-nowrap ml-2">
                                 @if($invitation->estEnAttenteCompte())
-                                    ⏳ En attente de compte
+                                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    En attente de compte
                                 @elseif($invitation->estEnAttenteAcceptation())
-                                    📬 En attente d'acceptation
+                                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    En attente d'acceptation
                                 @endif
                             </span>
                         </div>
@@ -92,7 +116,10 @@
                         </div>
                         @if($invitation->estExpiree())
                             <div class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
-                                ⚠️ Cette invitation a expiré
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                Cette invitation a expiré
                             </div>
                         @endif
                     </div>

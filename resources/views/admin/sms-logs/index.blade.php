@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
 @section('title', 'Logs SMS')
-@section('header', '📱 Logs SMS')
+@section('header', 'Logs SMS')
 @section('subheader', 'Consultez l\'historique des SMS envoyés et testez l\'envoi')
 
 @section('content')
@@ -13,7 +13,7 @@
             <p class="text-sm text-slate-600 dark:text-slate-400">
                 Mode actuel : 
                 <span class="font-medium {{ $currentMode === 'twilio' ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400' }}">
-                    {{ $currentMode === 'twilio' ? '🔴 Production (Twilio)' : '🟡 Test (Log)' }}
+                    {{ $currentMode === 'twilio' ? 'Production (Twilio)' : 'Test (Log)' }}
                 </span>
             </p>
             @if($currentMode === 'log')
@@ -40,7 +40,10 @@
                 </label>
             </form>
             <button onclick="document.getElementById('testSmsModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-                📱 Envoyer un SMS de test
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                Envoyer un SMS de test
             </button>
         </div>
     </div>
@@ -167,7 +170,10 @@
                                 @endif
                                 @if($log->error_message)
                                     <div class="text-xs text-red-600 dark:text-red-400 mt-1" title="{{ $log->error_message }}">
-                                        ⚠️ {{ Str::limit($log->error_message, 40) }}
+                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                        {{ Str::limit($log->error_message, 40) }}
                                     </div>
                                 @endif
                             </td>
@@ -198,7 +204,9 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Envoyer un SMS de test</h2>
             <button onclick="document.getElementById('testSmsModal').classList.add('hidden')" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                ✕
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
         </div>
         
@@ -215,7 +223,10 @@
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
-                    📱 Envoyer
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Envoyer
                 </button>
                 <button type="button" onclick="document.getElementById('testSmsModal').classList.add('hidden')" class="bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-medium">
                     Annuler

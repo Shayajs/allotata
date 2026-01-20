@@ -30,7 +30,12 @@
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div class="mb-8 flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">🎫 Mes tickets de support</h1>
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                    </svg>
+                    Mes tickets de support
+                </h1>
                 <p class="text-slate-600 dark:text-slate-400">Suivez l'état de vos demandes de support</p>
             </div>
             <a href="{{ route('tickets.create') }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
@@ -107,10 +112,25 @@
                                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ $ticket->sujet }}</h3>
                                 <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">{{ $ticket->description }}</p>
                                 <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                                    <span>📅 {{ $ticket->created_at->format('d/m/Y à H:i') }}</span>
-                                    <span class="capitalize">📁 {{ $ticket->categorie }}</span>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        {{ $ticket->created_at->format('d/m/Y à H:i') }}
+                                    </span>
+                                    <span class="capitalize flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                        {{ $ticket->categorie }}
+                                    </span>
                                     @if($ticket->assigneA)
-                                        <span>👤 Assigné à {{ $ticket->assigneA->name }}</span>
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                            Assigné à {{ $ticket->assigneA->name }}
+                                        </span>
                                     @endif
                                 </div>
                             </div>

@@ -96,7 +96,9 @@
                 <div class="bg-gradient-to-br from-green-50 via-orange-50 to-green-50 dark:from-green-900/20 dark:via-orange-900/20 dark:to-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-6 mb-6 shadow-lg">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white text-2xl shadow-md">
-                            📅
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
                         </div>
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white">Proposition de rendez-vous</h3>
                     </div>
