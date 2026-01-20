@@ -38,7 +38,7 @@ class DashboardController extends Controller
         $reservations = collect([]);
         if ($user->est_client) {
             $query = $user->reservations()
-                ->with(['entreprise', 'facture']);
+                ->with(['entreprise', 'facture', 'typeService']);
 
             // Recherche
             if ($request->filled('search')) {
@@ -63,8 +63,13 @@ class DashboardController extends Controller
                 $query->where('est_paye', $request->est_paye === '1');
             }
 
-            // Filtrer les réservations passées (ne pas afficher les rendez-vous qui sont déjà passés)
-            $query->where('date_reservation', '>=', now());
+            // Filtrer les réservations passées selon le paramètre
+            // Si le paramètre "passees" est présent, on affiche les passées, sinon on affiche les futures
+            if (!$request->has('passees')) {
+                $query->where('date_reservation', '>=', now());
+            } else {
+                $query->where('date_reservation', '<', now());
+            }
 
             $reservations = $query->orderBy('date_reservation', 'desc')->get();
         }

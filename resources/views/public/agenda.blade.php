@@ -81,7 +81,7 @@
                                 >
                                     <option value="">Choisir un service</option>
                                     @foreach($entreprise->typesServices as $service)
-                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id ? 'selected' : '' }}>
+                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}>
                                             {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                         </option>
                                     @endforeach
@@ -153,7 +153,7 @@
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                     Téléphone
-                                    @if(auth()->user() && auth()->user()->telephone)
+                                    @if(isset($userInfo) && !empty($userInfo['telephone']))
                                         <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
                                     @endif
                                 </label>
@@ -162,14 +162,14 @@
                                     name="telephone_client" 
                                     id="telephone_client_mobile"
                                     required
-                                    value="{{ old('telephone_client', auth()->user()?->telephone ?? '') }}"
+                                    value="{{ old('telephone_client', $userInfo['telephone'] ?? '') }}"
                                     placeholder="06 12 34 56 78"
                                     class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                 >
                                 @error('telephone_client')
                                     <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
-                                @if(auth()->user() && !auth()->user()->telephone)
+                                @if(!isset($userInfo) || empty($userInfo['telephone']))
                                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                         💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
                                     </p>
@@ -417,7 +417,7 @@
                                     >
                                         <option value="">Choisir un service</option>
                                         @foreach($entreprise->typesServices as $service)
-                                            <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id ? 'selected' : '' }}>
+                                            <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}>
                                                 {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                             </option>
                                         @endforeach
@@ -489,7 +489,7 @@
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                         Téléphone
-                                        @if(auth()->user() && auth()->user()->telephone)
+                                        @if(isset($userInfo) && !empty($userInfo['telephone']))
                                             <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
                                         @endif
                                     </label>
@@ -498,14 +498,14 @@
                                         name="telephone_client" 
                                         id="telephone_client"
                                         required
-                                        value="{{ old('telephone_client', auth()->user()?->telephone ?? '') }}"
+                                        value="{{ old('telephone_client', $userInfo['telephone'] ?? '') }}"
                                         placeholder="06 12 34 56 78"
                                         class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
                                     @error('telephone_client')
                                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
-                                    @if(auth()->user() && !auth()->user()->telephone)
+                                    @if(!isset($userInfo) || empty($userInfo['telephone']))
                                         <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                             💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
                                         </p>
@@ -969,6 +969,20 @@
             }
             if (heureInputMobile) {
                 heureInputMobile.addEventListener('change', updateRecap);
+            }
+            
+            // Si un service est pré-sélectionné via l'URL, déclencher la mise à jour
+            const serviceParam = new URLSearchParams(window.location.search).get('service');
+            if (serviceParam) {
+                // Attendre que le DOM soit complètement chargé
+                setTimeout(() => {
+                    if (serviceSelect && serviceSelect.value === serviceParam) {
+                        serviceSelect.dispatchEvent(new Event('change'));
+                    }
+                    if (serviceSelectMobile && serviceSelectMobile.value === serviceParam) {
+                        serviceSelectMobile.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
             }
             
             // Initialiser

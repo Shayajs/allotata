@@ -1256,19 +1256,10 @@ class MessagerieController extends Controller
 
         $date = \Carbon\Carbon::parse($validated['date']);
         
-        // Récupérer les horaires d'ouverture pour ce jour
-        $jourSemaine = $date->dayOfWeek; // 0 = dimanche, 6 = samedi
-        $horaire = $entreprise->horairesOuverture()
-            ->where(function($q) use ($date, $jourSemaine) {
-                $q->where(function($q2) use ($jourSemaine) {
-                    $q2->where('jour_semaine', $jourSemaine)
-                       ->where('est_exceptionnel', false);
-                })->orWhere(function($q2) use ($date) {
-                    $q2->where('date_exception', $date->format('Y-m-d'))
-                       ->where('est_exceptionnel', true);
-                });
-            })
-            ->first();
+        // Utiliser le service ExceptionDateService pour récupérer les horaires applicables
+        $exceptionDateService = app(\App\Services\ExceptionDateService::class);
+        $horaires = $exceptionDateService->getHorairesForDate($entreprise, $date);
+        $horaire = $horaires->first(); // Prendre le premier horaire (ou null si aucun)
 
         // Récupérer les réservations pour ce jour (exclure la réservation en cours de modification)
         $reservations = Reservation::where('entreprise_id', $entreprise->id)

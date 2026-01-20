@@ -190,6 +190,7 @@ class SettingsController extends Controller
             'afficher_nom_gerant' => ['nullable'],
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
+            'accepter_reservations_auto' => ['nullable'],
             'site_web_externe' => ['nullable', 'url', 'max:255'],
         ]);
 
@@ -221,6 +222,7 @@ class SettingsController extends Controller
         $validated['afficher_nom_gerant'] = $request->has('afficher_nom_gerant') && $request->input('afficher_nom_gerant') == '1';
         $validated['prix_negociables'] = $request->has('prix_negociables') && $request->input('prix_negociables') == '1';
         $validated['rdv_uniquement_messagerie'] = $request->has('rdv_uniquement_messagerie') && $request->input('rdv_uniquement_messagerie') == '1';
+        $validated['accepter_reservations_auto'] = $request->has('accepter_reservations_auto') && $request->input('accepter_reservations_auto') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
 
         // Gérer les valeurs vides pour latitude/longitude
@@ -232,6 +234,9 @@ class SettingsController extends Controller
         }
 
         $entreprise->update($validated);
+
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
         // Rediriger vers le dashboard de l'entreprise avec l'onglet paramètres
         return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
@@ -272,6 +277,9 @@ class SettingsController extends Controller
             
             // 4. Mettre à jour avec le nouveau chemin
             $entreprise->update(['logo' => $logoPath]);
+            
+            // Invalider le cache public de l'entreprise
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
             
             // 5. Supprimer l'ancien logo APRÈS la mise à jour réussie
             if ($oldLogoPath) {
@@ -336,6 +344,9 @@ class SettingsController extends Controller
         if ($entreprise->logo) {
             $imageService->delete($entreprise->logo);
             $entreprise->update(['logo' => null]);
+            
+            // Invalider le cache public de l'entreprise
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
         }
 
         return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
@@ -376,6 +387,9 @@ class SettingsController extends Controller
             
             // 4. Mettre à jour avec le nouveau chemin
             $entreprise->update(['image_fond' => $imageFondPath]);
+            
+            // Invalider le cache public de l'entreprise
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
             
             // 5. Supprimer l'ancienne image APRÈS la mise à jour réussie
             if ($oldImageFondPath) {
@@ -440,6 +454,9 @@ class SettingsController extends Controller
         if ($entreprise->image_fond) {
             $imageService->delete($entreprise->image_fond);
             $entreprise->update(['image_fond' => null]);
+            
+            // Invalider le cache public de l'entreprise
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
         }
 
         return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
@@ -475,6 +492,9 @@ class SettingsController extends Controller
             'ordre' => $maxOrdre + 1,
         ]);
 
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'La photo a été ajoutée avec succès.');
     }
@@ -497,6 +517,9 @@ class SettingsController extends Controller
         }
 
         $photo->delete();
+
+        // Invalider le cache public de l'entreprise
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
         return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
             ->with('success', 'La photo a été supprimée.');

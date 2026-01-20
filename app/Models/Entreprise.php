@@ -57,6 +57,7 @@ class Entreprise extends Model
         'image_fond',
         'prix_negociables',
         'rdv_uniquement_messagerie',
+        'accepter_reservations_auto',
         'est_verifiee', // Permet la mise à jour par les contrôleurs admin
         'contenu_site_web',
         'phrase_accroche',
@@ -89,6 +90,7 @@ class Entreprise extends Model
             'siren_valide' => 'boolean',
             'prix_negociables' => 'boolean',
             'rdv_uniquement_messagerie' => 'boolean',
+            'accepter_reservations_auto' => 'boolean',
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web

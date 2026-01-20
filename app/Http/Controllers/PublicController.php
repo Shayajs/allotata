@@ -214,15 +214,9 @@ class PublicController extends Controller
             $jourSemaine = $date->dayOfWeek; // 0 = dimanche, 1 = lundi, etc.
             $dateString = $date->format('Y-m-d');
             
-            // Vérifier d'abord s'il y a un jour exceptionnel pour cette date (prioritaire)
-            $horairesExceptionnels = $horairesRaw->filter(function($h) use ($dateString) {
-                return $h->est_exceptionnel && $h->date_exception && $h->date_exception->format('Y-m-d') === $dateString;
-            });
-            
-            // Si pas de jour exceptionnel, utiliser les horaires réguliers pour ce jour
-            $plagesHoraires = $horairesExceptionnels->isNotEmpty() 
-                ? $horairesExceptionnels 
-                : $horairesRaw->where('jour_semaine', $jourSemaine)->where('est_exceptionnel', false);
+            // Utiliser le service ExceptionDateService pour récupérer les horaires applicables
+            $exceptionDateService = app(\App\Services\ExceptionDateService::class);
+            $plagesHoraires = $exceptionDateService->getHorairesForDate($entreprise, $date);
             
             // Calculer les créneaux disponibles pour ce jour (pour toutes les plages)
             $creneaux = [];
@@ -324,6 +318,23 @@ class PublicController extends Controller
             ];
         }
 
+        // Récupérer les informations utilisateur pour préchargement (avec gestion d'erreur)
+        $userInfo = null;
+        if ($user) {
+            try {
+                $userInfo = [
+                    'name' => $user->name ?? '',
+                    'surname' => $user->surname ?? '',
+                    'email' => $user->email ?? '',
+                    'telephone' => $user->telephone ?? '',
+                ];
+            } catch (\Exception $e) {
+                // En cas d'erreur, on laisse userInfo à null
+                \Log::warning('Erreur lors de la récupération des informations utilisateur pour préchargement: ' . $e->getMessage());
+                $userInfo = null;
+            }
+        }
+
         return view('public.agenda', [
             'entreprise' => $entreprise,
             'horaires' => $horaires,
@@ -331,6 +342,7 @@ class PublicController extends Controller
             'isOwner' => $isOwner,
             'membres' => $membres,
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
+            'userInfo' => $userInfo,
         ]);
     }
 
@@ -578,7 +590,10 @@ class PublicController extends Controller
             return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
         }
 
-        // Créer la réservation (en attente de confirmation par la tata)
+        // Déterminer le statut initial : confirmée si acceptation automatique activée, sinon en attente
+        $statutInitial = $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente';
+        
+        // Créer la réservation
         $reservation = Reservation::create([
             'user_id' => $userId,
             'entreprise_id' => $entreprise->id,
@@ -592,7 +607,7 @@ class PublicController extends Controller
             'prix' => $typeService->prix,
             'duree_minutes' => $typeService->duree_minutes,
             'type_service' => $typeService->nom,
-            'statut' => 'en_attente', // En attente de confirmation par la tata
+            'statut' => $statutInitial,
         ]);
 
         // Marquer la visite comme ayant passé une commande (seulement si consentement)
@@ -614,15 +629,25 @@ class PublicController extends Controller
             \Log::warning('Erreur lors du marquage de réservation dans visite: ' . $e->getMessage());
         }
 
+        // Invalider le cache des statistiques
+        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
         // Créer une notification pour le gérant
         $gerant = $entreprise->user;
         if ($gerant) {
             $nomClient = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
+            $titreNotification = $statutInitial === 'confirmee' 
+                ? 'Nouvelle réservation confirmée automatiquement'
+                : 'Nouvelle réservation';
+            $messageNotification = $statutInitial === 'confirmee'
+                ? "Une nouvelle réservation a été automatiquement confirmée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}."
+                : "Une nouvelle réservation a été demandée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}.";
+            
             Notification::creer(
                 $gerant->id,
                 'reservation',
-                'Nouvelle réservation',
-                "Une nouvelle réservation a été demandée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}.",
+                $titreNotification,
+                $messageNotification,
                 route('reservations.show', [$entreprise->slug, $reservation->id]),
                 ['reservation_id' => $reservation->id, 'user_id' => $userId]
             );
@@ -638,18 +663,44 @@ class PublicController extends Controller
 
         // Créer une notification pour le client (uniquement si inscrit)
         if ($userId) {
-            Notification::creer(
-                $userId,
-                'reservation',
-                'Réservation en attente',
-                "Votre demande de réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} est en attente de confirmation.",
-                route('dashboard'),
-                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-            );
+            if ($statutInitial === 'confirmee') {
+                // Réservation confirmée automatiquement
+                Notification::creer(
+                    $userId,
+                    'reservation',
+                    'Réservation confirmée',
+                    "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
+                    route('dashboard'),
+                    ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+                );
+
+                // Envoyer un email de confirmation au client
+                try {
+                    $reservation->refresh();
+                    \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+                } catch (\Exception $e) {
+                    \Log::error("Erreur lors de l'envoi de l'email de confirmation : " . $e->getMessage());
+                }
+            } else {
+                // Réservation en attente
+                Notification::creer(
+                    $userId,
+                    'reservation',
+                    'Réservation en attente',
+                    "Votre demande de réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} est en attente de confirmation.",
+                    route('dashboard'),
+                    ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+                );
+            }
         }
 
+        // Message de succès selon le statut
+        $messageSuccess = $statutInitial === 'confirmee'
+            ? 'Votre réservation a été confirmée avec succès !'
+            : 'Votre demande de réservation a été envoyée ! La tata va la valider prochainement.';
+
         return redirect()->route('public.entreprise', $slug)
-            ->with('success', 'Votre demande de réservation a été envoyée ! La tata va la valider prochainement.');
+            ->with('success', $messageSuccess);
     }
 
     /**
