@@ -105,9 +105,9 @@ function notesEditor(noteId) {
                         EditorView.updateListener.of((update) => {
                             if (update.docChanged && !this.isApplyingRemote) {
                                 const content = update.state.doc.toString();
-                                this.renderPreview(content);
                                 this.queueSave(content);
                                 this.queueCursorUpdate();
+                                this.drawCursors();
                             }
                         }),
                         EditorView.theme({
@@ -158,10 +158,17 @@ function notesEditor(noteId) {
             try {
                 this.channel = this.echo.private(`note.${this.noteId}`);
                 
-                // Écouter les mouvements de curseur (seulement, pas le contenu)
+                // Écouter les mouvements de curseur
                 this.channel.listen('.cursor.moved', (data) => {
                     if (data.user && data.user.id !== window.currentUserId && data.cursor) {
                         this.handleRemoteCursor(data.user, data.cursor);
+                    }
+                });
+                
+                // Écouter les mises à jour de contenu (pour voir les modifications en temps réel)
+                this.channel.listen('.content.updated', (data) => {
+                    if (data.user && data.user.id !== window.currentUserId && data.note) {
+                        this.handleRemoteContent(data.note.contenu_markdown);
                     }
                 });
                 
@@ -180,9 +187,6 @@ function notesEditor(noteId) {
                         this.drawCursors();
                     }
                 });
-                
-                // Note: On n'écoute PAS .content.updated car on ne veut pas synchroniser
-                // le contenu via Pusher (cela se fait via sauvegarde HTTP uniquement)
                 
             } catch (e) {
                 console.error('Erreur WebSocket:', e);
@@ -282,6 +286,55 @@ function notesEditor(noteId) {
                 position: cursor.position || 0,
                 time: Date.now()
             };
+            this.drawCursors();
+        },
+
+        // Appliquer le contenu modifié par un autre utilisateur (temps réel)
+        handleRemoteContent(content) {
+            if (!this.editorView) return;
+
+            this.isApplyingRemote = true;
+
+            // Sauvegarder la position du curseur et du scroll
+            const selection = this.editorView.state.selection.main;
+            const scrollPos = this.editorView.scrollDOM.scrollTop;
+
+            try {
+                // Appliquer le nouveau contenu
+                const transaction = this.editorView.state.update({
+                    changes: {
+                        from: 0,
+                        to: this.editorView.state.doc.length,
+                        insert: content
+                    }
+                });
+
+                this.editorView.dispatch(transaction);
+
+                // Restaurer la position du curseur si possible
+                try {
+                    const newSelection = selection.head > content.length 
+                        ? { anchor: content.length, head: content.length }
+                        : selection;
+                    this.editorView.dispatch({
+                        selection: newSelection
+                    });
+                } catch (e) {
+                    // Ignorer si la position n'est plus valide
+                }
+
+                // Restaurer la position de scroll
+                if (scrollPos !== undefined) {
+                    this.editorView.scrollDOM.scrollTop = scrollPos;
+                }
+
+            } catch (e) {
+                console.error('Erreur application contenu distant:', e);
+            }
+
+            this.isApplyingRemote = false;
+            
+            // Redessiner les curseurs
             this.drawCursors();
         },
 
