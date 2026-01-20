@@ -5,14 +5,16 @@
                 @php
                     use App\Helpers\SiteHelper;
                     $logoUrl = SiteHelper::getLogo('transparent');
+                    $siteName = SiteHelper::getSiteName();
                 @endphp
-                @if($logoUrl)
-                    <img src="{{ $logoUrl }}" alt="{{ SiteHelper::getSiteName() }}" class="h-8 w-auto mb-4" style="max-height: 40px;">
-                @else
-                    <h3 class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent mb-4">
-                        {{ SiteHelper::getSiteName() }}
+                <div class="flex items-center gap-3 mb-4">
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-10 w-auto hidden sm:block" style="max-height: 40px;">
+                    @endif
+                    <h3 class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                        {{ $siteName }}
                     </h3>
-                @endif
+                </div>
                 <p class="text-slate-500">
                     La plateforme de gestion complète pour les micro-entreprises à succès.
                 </p>
