@@ -269,8 +269,10 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                const channelName = `presence-note.${noteIdStr}`;
-                console.log('🔌 Connexion au canal:', channelName, typeof channelName);
+                // IMPORTANT: Ne pas ajouter le préfixe "presence-" ici, Pusher le fait automatiquement
+                // pour les Presence Channels. Utiliser juste "note.{id}"
+                const channelName = `note.${noteIdStr}`;
+                console.log('🔌 Connexion au canal Presence:', channelName, typeof channelName);
                 
                 // Créer le canal Presence - s'assurer que le nom est une string
                 try {
