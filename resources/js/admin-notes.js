@@ -1,16 +1,11 @@
 /**
  * Éditeur de notes collaboratif - CodeMirror 6
  * Architecture Master/Slave : Synchronisation par frappes de touches
- */
-
-/**
- * Éditeur de notes collaboratif - CodeMirror 6
- * Architecture Master/Slave : Synchronisation par frappes de touches
  * Connexion DIRECTE à Pusher (sans Laravel Echo)
  */
 
 import { EditorView } from '@codemirror/view';
-import { EditorState, ChangeSet } from '@codemirror/state';
+import { EditorState } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -533,21 +528,21 @@ function notesEditor(noteId) {
                 
                 console.log(`🔄 [handleRemoteTextChange] Application: from=${from}, to=${to}, insert="${insert.substring(0, 20)}..."`);
                 
-                const changes = ChangeSet.of({
-                    from: from,
-                    to: to,
-                    insert: insert
-                });
-
-                const transaction = state.update({
-                    changes: changes,
+                // Dans CodeMirror 6, on peut passer directement un objet {from, to, insert}
+                // sans avoir besoin de créer un ChangeSet
+                this.editorView.dispatch({
+                    changes: {
+                        from: from,
+                        to: to,
+                        insert: insert
+                    },
                     annotations: [EditorState.transactionMeta.of({ remote: true })]
                 });
-
-                this.editorView.dispatch(transaction);
+                
                 console.log('✅ [handleRemoteTextChange] Changement appliqué avec succès');
             } catch (e) {
                 console.error('❌ Erreur application changement distant:', e);
+                console.error('   Détails:', { from: data.from, to: data.to, insert: data.insert?.substring(0, 50) });
             }
 
             this.isApplyingRemote = false;
