@@ -276,35 +276,29 @@ function notesEditor(noteId) {
             }
 
             try {
-                // Extraire la valeur brute (pas le Proxy Alpine) et forcer en string primitive
-                const rawNoteId = this.noteId || this.noteIdString;
-                const noteIdStr = String(rawNoteId).trim();
-                
-                if (!noteIdStr || noteIdStr === 'NaN' || noteIdStr === 'null' || noteIdStr === 'undefined' || isNaN(parseInt(noteIdStr, 10))) {
-                    console.error('❌ Erreur: noteId invalide pour le canal:', noteIdStr, typeof rawNoteId);
+                // On extrait la valeur la plus simple possible
+                const rawId = this.noteId || this.noteIdString;
+                const cleanId = String(rawId).replace(/[^0-9]/g, ''); // On ne garde que les chiffres
+
+                if (!cleanId) {
+                    console.error("❌ ID de note manquant");
                     return;
                 }
+
+                const channelName = "note." + cleanId;
                 
-                // Construire le nom du canal et forcer la conversion en string primitive
-                // Utiliser String() explicitement pour éviter les Proxy Alpine.js
-                const cleanChannelName = String('note.' + noteIdStr).trim();
-                
-                // Vérification de sécurité : s'assurer que c'est bien une string primitive
-                if (typeof cleanChannelName !== 'string') {
-                    console.error('❌ Erreur: cleanChannelName n\'est pas une string:', typeof cleanChannelName, cleanChannelName);
-                    return;
-                }
-                
-                // Vérifier que echo existe avant d'appeler join
-                if (!this.echo || typeof this.echo.join !== 'function') {
+                // On appelle Echo en s'assurant que l'objet est bien là
+                if (this.echo && typeof this.echo.join === 'function') {
+                    this.channel = this.echo.join(channelName);
+                    console.log("🚀 Succès : Connexion au canal", channelName);
+                } else {
                     console.error('❌ Erreur: echo.join n\'est pas une fonction', { echo: this.echo, join: typeof this.echo?.join });
                     return;
                 }
-                
-                // Créer le Presence Channel - Echo.join attend une string primitive (pas un Proxy)
-                // La conversion String() garantit qu'on passe une valeur primitive
-                this.channel = this.echo.join(cleanChannelName);
-                console.log('🔌 Canal Presence créé:', cleanChannelName, 'type:', typeof cleanChannelName);
+            } catch (e) {
+                console.error("💥 Crash lors de la création du canal :", e.message);
+                return;
+            }
 
                 // Écouter les changements de texte (whisper - événements clients)
                 this.channel.listenForWhisper('text-change', (data) => {
