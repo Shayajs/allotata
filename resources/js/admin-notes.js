@@ -27,19 +27,40 @@ function getPusher() {
     }
     
     try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        if (!csrfToken) {
+            console.warn('⚠️ CSRF token non trouvé, l\'authentification peut échouer');
+        }
+        
         pusherInstance = new Pusher(String(key), {
             cluster: String(cluster),
             forceTLS: true,
             encrypted: true,
+            enabledTransports: ['ws', 'wss'],
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
                 },
             },
         });
         
-        console.log('✅ Pusher initialisé avec succès');
+        // Gestion des erreurs de connexion
+        pusherInstance.connection.bind('error', (err) => {
+            console.error('❌ Erreur de connexion Pusher:', err);
+        });
+        
+        pusherInstance.connection.bind('connected', () => {
+            console.log('✅ Pusher connecté avec succès');
+        });
+        
+        pusherInstance.connection.bind('disconnected', () => {
+            console.warn('⚠️ Pusher déconnecté');
+        });
+        
+        console.log('✅ Instance Pusher créée avec succès');
     } catch (e) {
         console.error('❌ Erreur initialisation Pusher:', e);
         return null;
@@ -230,13 +251,24 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Nom du canal Presence
-                const channelName = `presence-note.${this.noteIdString || String(this.noteId)}`;
-                console.log('🔌 Connexion au canal:', channelName);
+                // Nom du canal Presence - S'assurer que c'est une string valide
+                const noteIdStr = String(this.noteIdString || this.noteId || '');
+                if (!noteIdStr || noteIdStr === 'NaN' || noteIdStr === '0') {
+                    console.error('❌ Erreur: noteId invalide pour le canal:', noteIdStr);
+                    return;
+                }
                 
-                // Créer le canal Presence
-                this.presenceChannel = this.pusher.subscribe(channelName);
-                this.channel = this.presenceChannel; // Pour compatibilité avec le reste du code
+                const channelName = `presence-note.${noteIdStr}`;
+                console.log('🔌 Connexion au canal:', channelName, typeof channelName);
+                
+                // Créer le canal Presence - s'assurer que le nom est une string
+                try {
+                    this.presenceChannel = this.pusher.subscribe(String(channelName));
+                    this.channel = this.presenceChannel; // Pour compatibilité avec le reste du code
+                } catch (e) {
+                    console.error('❌ Erreur lors de la souscription au canal:', e, channelName);
+                    return;
+                }
                 
                 // Attendre que le canal soit complètement joint
                 this.presenceChannel.bind('pusher:subscription_succeeded', (members) => {
