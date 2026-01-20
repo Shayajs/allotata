@@ -288,22 +288,29 @@ class EmergencyRecoveryController extends Controller
             // Exécuter la restauration avec suivi de progression
             $result = $this->backupService->restoreBackup($filepath, true, $progressFile);
 
-            // Logger l'action critique
-            Log::critical("EMERGENCY RECOVERY: Base de données restaurée", [
-                'filename' => $filename,
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'total_tables' => $result['total_tables'] ?? 0,
-                'total_rows' => $result['total_rows'] ?? 0,
-            ]);
+                // Logger l'action critique
+                Log::critical("EMERGENCY RECOVERY: Base de données restaurée", [
+                    'filename' => $filename,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'total_tables' => $result['total_tables'] ?? 0,
+                    'total_rows' => $result['total_rows'] ?? 0,
+                    'users_count' => $result['users_count'] ?? 0,
+                ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => '✅ Base de données restaurée avec succès !',
-                'progress_id' => $progressId,
-                'total_tables' => $result['total_tables'] ?? 0,
-                'total_rows' => $result['total_rows'] ?? 0,
-            ]);
+                $message = '✅ Base de données restaurée avec succès !';
+                if (isset($result['users_count']) && $result['users_count'] === 0) {
+                    $message .= ' ⚠️ ATTENTION: Aucun utilisateur trouvé.';
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'progress_id' => $progressId,
+                    'total_tables' => $result['total_tables'] ?? 0,
+                    'total_rows' => $result['total_rows'] ?? 0,
+                    'users_count' => $result['users_count'] ?? 0,
+                ]);
         } catch (\Exception $e) {
             // Mettre à jour le fichier de progression en cas d'erreur
             if (isset($progressFile) && file_exists($progressFile)) {
