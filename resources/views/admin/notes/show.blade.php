@@ -155,6 +155,9 @@
                     @endif
                     <span>•</span>
                     <span x-text="saveStatusText" :class="saveStatusClass" class="save-status"></span>
+                    <span x-show="hasMasterKey" class="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded">
+                        💾 Master
+                    </span>
                 </div>
             </div>
 

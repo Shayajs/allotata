@@ -9,11 +9,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NoteCursorMoved implements ShouldBroadcast
+class NoteCursorMoved implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -37,7 +37,7 @@ class NoteCursorMoved implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('note.' . $this->note->id),
+            new PresenceChannel('note.' . $this->note->id),
         ];
     }
 

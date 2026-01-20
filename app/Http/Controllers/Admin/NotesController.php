@@ -124,8 +124,9 @@ class NotesController extends Controller
             ->where('user_id', auth()->id())
             ->update(['derniere_activite' => now()]);
 
-        // Émettre l'événement de mise à jour
-        event(new \App\Events\NoteContentUpdated($note, auth()->user()));
+        // Note: Plus besoin d'émettre NoteContentUpdated car la synchronisation
+        // se fait maintenant via whisper events (client-client) pour les modifications
+        // Seul le Master sauvegarde en base via HTTP
 
         return response()->json([
             'success' => true,
