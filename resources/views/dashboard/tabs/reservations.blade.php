@@ -2,12 +2,28 @@
 <div>
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Mes Réservations</h2>
-        <a href="{{ route('factures.index') }}" class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
-            <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Mes Factures
-        </a>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                <a 
+                    href="{{ route('dashboard', ['tab' => 'reservations']) }}" 
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition {{ !request('passees') ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}"
+                >
+                    À venir
+                </a>
+                <a 
+                    href="{{ route('dashboard', ['tab' => 'reservations', 'passees' => 1]) }}" 
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition {{ request('passees') ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}"
+                >
+                    Passées
+                </a>
+            </div>
+            <a href="{{ route('factures.index') }}" class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
+                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Mes Factures
+            </a>
+        </div>
     </div>
 
     {{-- Barre de recherche et filtres --}}
@@ -175,7 +191,7 @@
                             @endif
 
                             {{-- Actions pour le client --}}
-                            @if(in_array($reservation->statut, ['en_attente', 'confirmee']))
+                            @if(in_array($reservation->statut, ['en_attente', 'confirmee']) && !request('passees'))
                                 <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2">
                                     @if($reservation->statut === 'en_attente')
                                         <button 
@@ -211,6 +227,19 @@
                                             Annulation impossible (payé)
                                         </span>
                                     @endif
+                                </div>
+                            @elseif(request('passees') && $reservation->type_service_id && $reservation->entreprise)
+                                {{-- Bouton "Reprendre ce service" pour les réservations passées --}}
+                                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <a 
+                                        href="{{ route('public.agenda', $reservation->entreprise->slug) }}?service={{ $reservation->type_service_id }}"
+                                        class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        Reprendre ce service
+                                    </a>
                                 </div>
                             @endif
                         </div>

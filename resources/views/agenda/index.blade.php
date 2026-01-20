@@ -165,6 +165,15 @@
                                     @endif
                                     <button 
                                         type="button" 
+                                        class="copy-horaires-btn px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                        data-jour="{{ $i }}"
+                                        title="Copier ces horaires vers tous les jours ouverts"
+                                        style="{{ $isFerme ? 'display: none;' : '' }}"
+                                    >
+                                        📋 Copier
+                                    </button>
+                                    <button 
+                                        type="button" 
                                         class="ml-auto px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors add-plage-btn"
                                         data-jour="{{ $i }}"
                                         style="{{ $isFerme ? 'display: none;' : '' }}"
@@ -784,14 +793,17 @@
                     const jourContainer = document.querySelector(`.jour-horaires[data-jour="${jourIndex}"]`);
                     const plagesContainer = jourContainer.querySelector('.plages-container');
                     const addPlageBtn = jourContainer.querySelector('.add-plage-btn');
+                    const copyBtn = jourContainer.querySelector('.copy-horaires-btn');
                     
                     if (this.checked) {
                         // Jour fermé : vider les plages et les cacher
                         plagesContainer.innerHTML = '<div class="text-sm text-slate-500 dark:text-slate-400 italic">Jour fermé</div>';
                         if (addPlageBtn) addPlageBtn.style.display = 'none';
+                        if (copyBtn) copyBtn.style.display = 'none';
                     } else {
-                        // Jour ouvert : afficher le bouton d'ajout et ajouter une plage par défaut si vide
+                        // Jour ouvert : afficher les boutons et ajouter une plage par défaut si vide
                         if (addPlageBtn) addPlageBtn.style.display = 'block';
+                        if (copyBtn) copyBtn.style.display = 'block';
                         if (plagesContainer.querySelectorAll('.plage-item').length === 0) {
                             addPlage(jourIndex);
                         }
@@ -888,7 +900,119 @@
                 });
             }
             
-            // Event listeners pour ajouter/supprimer des plages
+            // Copier les horaires d'un jour vers tous les jours ouverts
+            function copyHorairesToAllDays(sourceJourIndex) {
+                const sourceJourContainer = document.querySelector(`.jour-horaires[data-jour="${sourceJourIndex}"]`);
+                if (!sourceJourContainer) return;
+                
+                const sourceCheckbox = sourceJourContainer.querySelector('.horaire-ferme-checkbox');
+                if (sourceCheckbox && sourceCheckbox.checked) {
+                    alert('Impossible de copier un jour fermé. Veuillez d\'abord ouvrir ce jour.');
+                    return;
+                }
+                
+                // Récupérer les plages du jour source
+                const sourcePlages = sourceJourContainer.querySelectorAll('.plage-item');
+                if (sourcePlages.length === 0) {
+                    alert('Ce jour n\'a pas de plages horaires à copier.');
+                    return;
+                }
+                
+                const plagesData = [];
+                sourcePlages.forEach(plage => {
+                    const ouvertureInput = plage.querySelector('input[name*="[heure_ouverture]"]');
+                    const fermetureInput = plage.querySelector('input[name*="[heure_fermeture]"]');
+                    if (ouvertureInput && fermetureInput && ouvertureInput.value && fermetureInput.value) {
+                        plagesData.push({
+                            ouverture: ouvertureInput.value,
+                            fermeture: fermetureInput.value
+                        });
+                    }
+                });
+                
+                if (plagesData.length === 0) {
+                    alert('Aucune plage horaire valide à copier.');
+                    return;
+                }
+                
+                // Demander confirmation
+                if (!confirm(`Copier ces ${plagesData.length} plage(s) horaire(s) vers tous les jours ouverts ?`)) {
+                    return;
+                }
+                
+                // Appliquer à tous les autres jours ouverts
+                let copiedCount = 0;
+                document.querySelectorAll('.jour-horaires').forEach(jourContainer => {
+                    const jourIndex = parseInt(jourContainer.dataset.jour);
+                    if (jourIndex === sourceJourIndex) return; // Ignorer le jour source
+                    
+                    const checkbox = jourContainer.querySelector('.horaire-ferme-checkbox');
+                    if (checkbox && checkbox.checked) return; // Ignorer les jours fermés
+                    
+                    // Décocher la checkbox si elle était cochée
+                    if (checkbox) checkbox.checked = false;
+                    
+                    // Vider les plages existantes
+                    const plagesContainer = jourContainer.querySelector('.plages-container');
+                    if (plagesContainer) {
+                        plagesContainer.innerHTML = '';
+                        
+                        // Ajouter les nouvelles plages
+                        plagesData.forEach((plageData, index) => {
+                            const plageHtml = `
+                                <div class="plage-item flex items-center gap-3 mb-2">
+                                    <div class="flex items-center gap-2 flex-1">
+                                        <span class="text-sm text-slate-500 dark:text-slate-400">De</span>
+                                        <input 
+                                            type="time" 
+                                            name="horaires[${jourIndex}][plages][${index}][heure_ouverture]" 
+                                            value="${plageData.ouverture}"
+                                            class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            required
+                                        >
+                                        <span class="text-sm text-slate-500 dark:text-slate-400">à</span>
+                                        <input 
+                                            type="time" 
+                                            name="horaires[${jourIndex}][plages][${index}][heure_fermeture]" 
+                                            value="${plageData.fermeture}"
+                                            class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            required
+                                        >
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        class="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors remove-plage-btn"
+                                        title="Supprimer cette plage"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            `;
+                            plagesContainer.insertAdjacentHTML('beforeend', plageHtml);
+                        });
+                        
+                        // Afficher le bouton d'ajout de plage
+                        const addPlageBtn = jourContainer.querySelector('.add-plage-btn');
+                        if (addPlageBtn) addPlageBtn.style.display = 'block';
+                        
+                        // Afficher le bouton de copie
+                        const copyBtn = jourContainer.querySelector('.copy-horaires-btn');
+                        if (copyBtn) copyBtn.style.display = 'block';
+                    }
+                    
+                    copiedCount++;
+                });
+                
+                if (copiedCount > 0) {
+                    alert(`Horaires copiés avec succès vers ${copiedCount} jour(s) !`);
+                } else {
+                    alert('Aucun jour ouvert trouvé pour copier les horaires.');
+                }
+            }
+            
+            // Event listeners pour ajouter/supprimer des plages et copier les horaires
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.add-plage-btn')) {
                     const btn = e.target.closest('.add-plage-btn');
@@ -899,6 +1023,12 @@
                 if (e.target.closest('.remove-plage-btn')) {
                     const btn = e.target.closest('.remove-plage-btn');
                     removePlage(btn);
+                }
+                
+                if (e.target.closest('.copy-horaires-btn')) {
+                    const btn = e.target.closest('.copy-horaires-btn');
+                    const jourIndex = parseInt(btn.dataset.jour);
+                    copyHorairesToAllDays(jourIndex);
                 }
             });
             

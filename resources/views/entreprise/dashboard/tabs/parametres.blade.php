@@ -459,6 +459,24 @@
                         </p>
                     </div>
                 </label>
+
+                <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
+                    <input 
+                        type="checkbox" 
+                        name="accepter_reservations_auto" 
+                        value="1"
+                        {{ old('accepter_reservations_auto', $entreprise->accepter_reservations_auto) ? 'checked' : '' }}
+                        class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                    >
+                    <div>
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">
+                            ✅ Accepter automatiquement les réservations
+                        </span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Si activé, les réservations seront automatiquement confirmées sans attendre votre validation. Désactivé par défaut.
+                        </p>
+                    </div>
+                </label>
             </div>
         </div>
 

@@ -30,8 +30,27 @@ class EntrepriseObserver
             }
         }
 
-        // Si le statut de vérification a changé, invalider le cache public
-        if ($entreprise->isDirty('est_verifiee')) {
+        // Invalider le cache public si des champs affectant l'affichage public ont changé
+        // Liste des champs qui affectent l'affichage public
+        $publicFields = [
+            'nom', 'slug', 'type_activite', 'description', 'mots_cles',
+            'logo', 'image_fond', 'ville', 'adresse_rue', 'code_postal',
+            'latitude', 'longitude', 'afficher_adresse_complete',
+            'rayon_deplacement', 'afficher_nom_gerant', 'prix_negociables',
+            'rdv_uniquement_messagerie', 'est_verifiee', 'phrase_accroche',
+            'site_web_externe'
+        ];
+
+        // Vérifier si un champ public a changé
+        $hasPublicFieldChanged = false;
+        foreach ($publicFields as $field) {
+            if ($entreprise->isDirty($field)) {
+                $hasPublicFieldChanged = true;
+                break;
+            }
+        }
+
+        if ($hasPublicFieldChanged) {
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
         }
     }

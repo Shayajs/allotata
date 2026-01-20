@@ -7,9 +7,12 @@ use App\Models\HorairesOuverture;
 use App\Models\TypeService;
 use App\Models\ServiceImage;
 use App\Services\ImageService;
+use App\Services\JoursFeriesService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AgendaController extends Controller
 {
@@ -189,6 +192,7 @@ class AgendaController extends Controller
 
     /**
      * Créer un jour exceptionnel (fermeture ou horaire spécial)
+     * Supporte maintenant : jour, mois, plage, jours fériés
      */
     public function storeJourExceptionnel(Request $request, $slug)
     {
@@ -201,41 +205,247 @@ class AgendaController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
-        $validated = $request->validate([
-            'date_exception' => 'required|date|after_or_equal:today',
+        $typeException = $request->input('type_exception', 'jour');
+        
+        // Validation selon le type
+        $validated = $this->validateException($request, $typeException);
+        
+        // Préparer les données communes
+        $heureOuverture = $validated['est_ferme'] ? null : ($validated['heure_ouverture'] ?? null);
+        $heureFermeture = $validated['est_ferme'] ? null : ($validated['heure_fermeture'] ?? null);
+
+        DB::beginTransaction();
+        try {
+            switch ($typeException) {
+                case 'jour':
+                    $this->createJourExceptionnel($entreprise, $validated, $heureOuverture, $heureFermeture);
+                    break;
+                    
+                case 'mois':
+                    $this->createMoisExceptionnel($entreprise, $validated, $heureOuverture, $heureFermeture);
+                    break;
+                    
+                case 'plage':
+                    $this->createPlageExceptionnelle($entreprise, $validated, $heureOuverture, $heureFermeture);
+                    break;
+                    
+                case 'jours_feries':
+                    $this->createJoursFeriesExceptionnels($entreprise, $validated, $heureOuverture, $heureFermeture);
+                    break;
+                    
+                default:
+                    throw new \InvalidArgumentException('Type d\'exception non valide');
+            }
+            
+            DB::commit();
+            
+            $message = $this->getSuccessMessage($typeException);
+            return redirect()->route('agenda.index', $slug)
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la création d\'une exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return redirect()->route('agenda.index', $slug)
+                ->with('error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Valide les données selon le type d'exception
+     */
+    private function validateException(Request $request, string $type): array
+    {
+        $rules = [
+            'type_exception' => 'required|in:jour,mois,plage,jours_feries',
             'heure_ouverture' => 'nullable|date_format:H:i',
             'heure_fermeture' => 'nullable|date_format:H:i',
             'est_ferme' => 'boolean',
-        ]);
+        ];
+        
+        switch ($type) {
+            case 'jour':
+                $rules['date_exception'] = 'required|date|after_or_equal:today';
+                break;
+                
+            case 'mois':
+                $rules['mois'] = 'required|integer|min:1|max:12';
+                $rules['annee'] = 'required|integer|min:' . date('Y') . '|max:' . (date('Y') + 5);
+                $rules['jours_exclus'] = 'nullable|array';
+                $rules['jours_exclus.*'] = 'integer|min:0|max:6';
+                break;
+                
+            case 'plage':
+                $rules['date_debut'] = 'required|date|after_or_equal:today';
+                $rules['date_fin'] = 'required|date|after_or_equal:date_debut';
+                break;
+                
+            case 'jours_feries':
+                $rules['annee_jours_feries'] = 'required|integer|min:' . date('Y') . '|max:' . (date('Y') + 5);
+                $rules['zone_jours_feries'] = 'nullable|string|max:50';
+                break;
+        }
+        
+        return $request->validate($rules);
+    }
 
+    /**
+     * Crée une exception de type "jour"
+     */
+    private function createJourExceptionnel(Entreprise $entreprise, array $validated, $heureOuverture, $heureFermeture): void
+    {
+        $date = Carbon::parse($validated['date_exception']);
+        
         // Vérifier si un jour exceptionnel existe déjà pour cette date
         $existing = HorairesOuverture::where('entreprise_id', $entreprise->id)
+            ->where('type_exception', 'jour')
             ->where('date_exception', $validated['date_exception'])
             ->first();
 
         if ($existing) {
             $existing->update([
-                'heure_ouverture' => $validated['est_ferme'] ? null : $validated['heure_ouverture'],
-                'heure_fermeture' => $validated['est_ferme'] ? null : $validated['heure_fermeture'],
+                'heure_ouverture' => $heureOuverture,
+                'heure_fermeture' => $heureFermeture,
                 'est_exceptionnel' => true,
+                'type_exception' => 'jour',
             ]);
         } else {
             HorairesOuverture::create([
                 'entreprise_id' => $entreprise->id,
-                'jour_semaine' => \Carbon\Carbon::parse($validated['date_exception'])->dayOfWeek,
-                'heure_ouverture' => $validated['est_ferme'] ? null : $validated['heure_ouverture'],
-                'heure_fermeture' => $validated['est_ferme'] ? null : $validated['heure_fermeture'],
+                'jour_semaine' => $date->dayOfWeek,
+                'heure_ouverture' => $heureOuverture,
+                'heure_fermeture' => $heureFermeture,
                 'est_exceptionnel' => true,
+                'type_exception' => 'jour',
                 'date_exception' => $validated['date_exception'],
             ]);
         }
+    }
 
-        return redirect()->route('agenda.index', $slug)
-            ->with('success', 'Le jour exceptionnel a été enregistré avec succès.');
+    /**
+     * Crée une exception de type "mois"
+     */
+    private function createMoisExceptionnel(Entreprise $entreprise, array $validated, $heureOuverture, $heureFermeture): void
+    {
+        // Vérifier si une exception pour ce mois existe déjà
+        $existing = HorairesOuverture::where('entreprise_id', $entreprise->id)
+            ->where('type_exception', 'mois')
+            ->where('mois', $validated['mois'])
+            ->where('annee', $validated['annee'])
+            ->first();
+
+        $joursExclus = $validated['jours_exclus'] ?? [];
+        
+        if ($existing) {
+            $existing->update([
+                'heure_ouverture' => $heureOuverture,
+                'heure_fermeture' => $heureFermeture,
+                'jours_exclus' => $joursExclus,
+            ]);
+        } else {
+            HorairesOuverture::create([
+                'entreprise_id' => $entreprise->id,
+                'jour_semaine' => 0, // Valeur par défaut, non utilisée pour les mois
+                'heure_ouverture' => $heureOuverture,
+                'heure_fermeture' => $heureFermeture,
+                'est_exceptionnel' => true,
+                'type_exception' => 'mois',
+                'mois' => $validated['mois'],
+                'annee' => $validated['annee'],
+                'jours_exclus' => $joursExclus,
+            ]);
+        }
+    }
+
+    /**
+     * Crée une exception de type "plage"
+     */
+    private function createPlageExceptionnelle(Entreprise $entreprise, array $validated, $heureOuverture, $heureFermeture): void
+    {
+        HorairesOuverture::create([
+            'entreprise_id' => $entreprise->id,
+            'jour_semaine' => 0, // Valeur par défaut, non utilisée pour les plages
+            'heure_ouverture' => $heureOuverture,
+            'heure_fermeture' => $heureFermeture,
+            'est_exceptionnel' => true,
+            'type_exception' => 'plage',
+            'date_debut' => $validated['date_debut'],
+            'date_fin' => $validated['date_fin'],
+        ]);
+    }
+
+    /**
+     * Crée des exceptions de type "jours fériés"
+     */
+    private function createJoursFeriesExceptionnels(Entreprise $entreprise, array $validated, $heureOuverture, $heureFermeture): void
+    {
+        $joursFeriesService = app(JoursFeriesService::class);
+        $zone = $validated['zone_jours_feries'] ?? 'metropole';
+        $annee = $validated['annee_jours_feries'];
+        
+        // Récupérer les jours fériés
+        $joursFeries = $joursFeriesService->getJoursFeries($annee, $zone);
+        
+        if (empty($joursFeries)) {
+            throw new \Exception('Aucun jour férié trouvé pour l\'année ' . $annee . ' dans la zone ' . $zone);
+        }
+        
+        // Supprimer les anciens jours fériés pour cette année et zone
+        HorairesOuverture::where('entreprise_id', $entreprise->id)
+            ->where('type_exception', 'jours_feries')
+            ->where('annee_jours_feries', $annee)
+            ->where('zone_jours_feries', $zone)
+            ->delete();
+        
+        // Créer un enregistrement pour chaque jour férié
+        foreach ($joursFeries as $date => $nom) {
+            $dateCarbon = Carbon::parse($date);
+            
+            HorairesOuverture::create([
+                'entreprise_id' => $entreprise->id,
+                'jour_semaine' => $dateCarbon->dayOfWeek,
+                'heure_ouverture' => $heureOuverture,
+                'heure_fermeture' => $heureFermeture,
+                'est_exceptionnel' => true,
+                'type_exception' => 'jours_feries',
+                'date_exception' => $date,
+                'est_jours_feries' => true,
+                'annee_jours_feries' => $annee,
+                'zone_jours_feries' => $zone,
+            ]);
+        }
+    }
+
+    /**
+     * Retourne le message de succès selon le type
+     */
+    private function getSuccessMessage(string $type): string
+    {
+        switch ($type) {
+            case 'jour':
+                return 'Le jour exceptionnel a été enregistré avec succès.';
+            case 'mois':
+                return 'L\'exception pour le mois a été enregistrée avec succès.';
+            case 'plage':
+                return 'L\'exception pour la plage de dates a été enregistrée avec succès.';
+            case 'jours_feries':
+                return 'Les jours fériés ont été enregistrés avec succès.';
+            default:
+                return 'L\'exception a été enregistrée avec succès.';
+        }
     }
 
     /**
      * Supprimer un jour exceptionnel
+     * Gère la suppression selon le type :
+     * - Jour : Supprime l'enregistrement unique
+     * - Mois : Supprime l'enregistrement du mois
+     * - Plage : Supprime l'enregistrement de la plage
+     * - Jours fériés : Supprime tous les jours fériés de la même année/zone
      */
     public function deleteJourExceptionnel($slug, $horaireId)
     {
@@ -253,10 +463,35 @@ class AgendaController extends Controller
             ->where('est_exceptionnel', true)
             ->firstOrFail();
 
-        $horaire->delete();
-
-        return redirect()->route('agenda.index', $slug)
-            ->with('success', 'Le jour exceptionnel a été supprimé.');
+        DB::beginTransaction();
+        try {
+            // Si c'est un groupe de jours fériés, supprimer tous les jours fériés de la même année/zone
+            if ($horaire->isTypeJoursFeries() && $horaire->annee_jours_feries && $horaire->zone_jours_feries) {
+                HorairesOuverture::where('entreprise_id', $entreprise->id)
+                    ->where('type_exception', 'jours_feries')
+                    ->where('annee_jours_feries', $horaire->annee_jours_feries)
+                    ->where('zone_jours_feries', $horaire->zone_jours_feries)
+                    ->delete();
+                $message = 'Les jours fériés ont été supprimés.';
+            } else {
+                $horaire->delete();
+                $message = 'L\'exception a été supprimée.';
+            }
+            
+            DB::commit();
+            
+            return redirect()->route('agenda.index', $slug)
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la suppression d\'une exception', [
+                'error' => $e->getMessage(),
+            ]);
+            
+            return redirect()->route('agenda.index', $slug)
+                ->with('error', 'Une erreur est survenue lors de la suppression.');
+        }
     }
 
     /**

@@ -249,20 +249,63 @@
                     </p>
 
                     @php
-                        $joursExceptionnels = $entreprise->horairesOuverture()
+                        // Récupérer toutes les exceptions, groupées par type pour un meilleur affichage
+                        $exceptions = $entreprise->horairesOuverture()
                             ->where('est_exceptionnel', true)
-                            ->where('date_exception', '>=', now()->format('Y-m-d'))
-                            ->orderBy('date_exception')
                             ->get();
+                        
+                        // Grouper par type pour éviter les doublons (surtout pour les jours fériés et mois)
+                        $exceptionsGrouped = [];
+                        $exceptionsTraitees = [];
+                        
+                        foreach ($exceptions as $horaire) {
+                            $key = null;
+                            
+                            if ($horaire->isTypeJour()) {
+                                // Pour les jours ponctuels, on affiche chaque jour
+                                if ($horaire->date_exception && $horaire->date_exception->format('Y-m-d') >= now()->format('Y-m-d')) {
+                                    $key = 'jour_' . $horaire->id;
+                                    $exceptionsGrouped[$key] = $horaire;
+                                }
+                            } elseif ($horaire->isTypeMois()) {
+                                // Pour les mois, on groupe par mois/année
+                                $key = 'mois_' . $horaire->mois . '_' . $horaire->annee;
+                                if (!isset($exceptionsGrouped[$key])) {
+                                    $exceptionsGrouped[$key] = $horaire;
+                                }
+                            } elseif ($horaire->isTypePlage()) {
+                                // Pour les plages, on affiche chaque plage
+                                if ($horaire->date_fin && $horaire->date_fin->format('Y-m-d') >= now()->format('Y-m-d')) {
+                                    $key = 'plage_' . $horaire->id;
+                                    $exceptionsGrouped[$key] = $horaire;
+                                }
+                            } elseif ($horaire->isTypeJoursFeries()) {
+                                // Pour les jours fériés, on groupe par année/zone
+                                $key = 'jours_feries_' . $horaire->annee_jours_feries . '_' . $horaire->zone_jours_feries;
+                                if (!isset($exceptionsGrouped[$key])) {
+                                    $exceptionsGrouped[$key] = $horaire;
+                                }
+                            }
+                        }
                     @endphp
 
-                    @if($joursExceptionnels->count() > 0)
+                    @if(count($exceptionsGrouped) > 0)
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach($joursExceptionnels as $horaire)
+                            @foreach($exceptionsGrouped as $horaire)
                                 <div class="p-3 sm:p-4 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between bg-slate-50 dark:bg-slate-700/50">
                                     <div class="flex-1 min-w-0">
                                         <p class="font-semibold text-sm sm:text-base text-slate-900 dark:text-white">
-                                            {{ \Carbon\Carbon::parse($horaire->date_exception)->locale('fr')->isoFormat('dddd D MMM') }}
+                                            @if($horaire->isTypeJour())
+                                                {{ $horaire->date_exception ? \Carbon\Carbon::parse($horaire->date_exception)->locale('fr')->isoFormat('dddd D MMM') : 'Jour exceptionnel' }}
+                                            @elseif($horaire->isTypeMois())
+                                                {{ $horaire->getTypeDescription() }}
+                                            @elseif($horaire->isTypePlage())
+                                                {{ $horaire->getTypeDescription() }}
+                                            @elseif($horaire->isTypeJoursFeries())
+                                                {{ $horaire->getTypeDescription() }}
+                                            @else
+                                                {{ $horaire->date_exception ? \Carbon\Carbon::parse($horaire->date_exception)->locale('fr')->isoFormat('dddd D MMM') : 'Exception' }}
+                                            @endif
                                         </p>
                                         <p class="text-xs sm:text-sm {{ $horaire->heure_ouverture ? 'text-slate-600 dark:text-slate-400' : 'text-red-600 dark:text-red-400' }}">
                                             @if($horaire->heure_ouverture && $horaire->heure_fermeture)
@@ -272,8 +315,13 @@
                                                 Fermé
                                             @endif
                                         </p>
+                                        @if($horaire->isTypeMois() && count($horaire->getJoursExclus()) > 0)
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                Exclu: {{ implode(', ', array_map(function($j) { return \App\Models\HorairesOuverture::getJoursSemaine()[$j] ?? ''; }, $horaire->getJoursExclus())) }}
+                                            </p>
+                                        @endif
                                     </div>
-                                    <form action="{{ route('agenda.jour-exceptionnel.delete', [$entreprise->slug, $horaire->id]) }}" method="POST" onsubmit="return confirm('Supprimer ce jour ?');" class="ml-2 flex-shrink-0">
+                                    <form action="{{ route('agenda.jour-exceptionnel.delete', [$entreprise->slug, $horaire->id]) }}" method="POST" onsubmit="return confirm('Supprimer cette exception ?');" class="ml-2 flex-shrink-0">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition">
@@ -299,7 +347,7 @@
 
             <!-- Modal pour ajouter un jour exceptionnel -->
             <div id="modal-jour-exceptionnel" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-xl font-bold text-slate-900 dark:text-white">Jour exceptionnel</h3>
                         <button onclick="document.getElementById('modal-jour-exceptionnel').classList.add('hidden')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
@@ -308,19 +356,169 @@
                             </svg>
                         </button>
                     </div>
-                    <form action="{{ route('agenda.jour-exceptionnel.store', $entreprise->slug) }}" method="POST">
+                    <form action="{{ route('agenda.jour-exceptionnel.store', $entreprise->slug) }}" method="POST" id="form-jour-exceptionnel">
                         @csrf
+                        <input type="hidden" name="type_exception" id="type_exception" value="jour">
+                        
                         <div class="space-y-4">
+                            <!-- Sélecteur de type -->
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date *</label>
-                                <input 
-                                    type="date" 
-                                    name="date_exception"
-                                    required
-                                    min="{{ now()->format('Y-m-d') }}"
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Type d'exception *</label>
+                                <select 
+                                    id="select-type-exception"
+                                    onchange="onChangeTypeException()"
                                     class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                 >
+                                    <option value="jour">Jour ponctuel</option>
+                                    <option value="mois">Mois complet</option>
+                                    <option value="plage">Plage de dates</option>
+                                    <option value="jours_feries">Jours fériés</option>
+                                </select>
                             </div>
+
+                            <!-- Champs pour type "jour" -->
+                            <div id="fields-jour" class="exception-type-fields">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date *</label>
+                                    <input 
+                                        type="date" 
+                                        name="date_exception"
+                                        id="date_exception"
+                                        min="{{ now()->format('Y-m-d') }}"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Champs pour type "mois" -->
+                            <div id="fields-mois" class="exception-type-fields hidden">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mois *</label>
+                                        <select 
+                                            name="mois"
+                                            id="mois"
+                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        >
+                                            <option value="1">Janvier</option>
+                                            <option value="2">Février</option>
+                                            <option value="3">Mars</option>
+                                            <option value="4">Avril</option>
+                                            <option value="5">Mai</option>
+                                            <option value="6">Juin</option>
+                                            <option value="7">Juillet</option>
+                                            <option value="8">Août</option>
+                                            <option value="9">Septembre</option>
+                                            <option value="10">Octobre</option>
+                                            <option value="11">Novembre</option>
+                                            <option value="12">Décembre</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Année *</label>
+                                        <input 
+                                            type="number" 
+                                            name="annee"
+                                            id="annee"
+                                            min="{{ date('Y') }}"
+                                            max="{{ date('Y') + 5 }}"
+                                            value="{{ date('Y') }}"
+                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        >
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Exclure des jours de la semaine (optionnel)</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @php
+                                            $joursSemaine = [
+                                                0 => 'Dimanche',
+                                                1 => 'Lundi',
+                                                2 => 'Mardi',
+                                                3 => 'Mercredi',
+                                                4 => 'Jeudi',
+                                                5 => 'Vendredi',
+                                                6 => 'Samedi',
+                                            ];
+                                        @endphp
+                                        @foreach($joursSemaine as $num => $nom)
+                                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="jours_exclus[]"
+                                                    value="{{ $num }}"
+                                                    class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-600 focus:ring-amber-500"
+                                                >
+                                                <span class="text-sm text-slate-700 dark:text-slate-300">{{ $nom }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Champs pour type "plage" -->
+                            <div id="fields-plage" class="exception-type-fields hidden">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date de début *</label>
+                                    <input 
+                                        type="date" 
+                                        name="date_debut"
+                                        id="date_debut"
+                                        min="{{ now()->format('Y-m-d') }}"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date de fin *</label>
+                                    <input 
+                                        type="date" 
+                                        name="date_fin"
+                                        id="date_fin"
+                                        min="{{ now()->format('Y-m-d') }}"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Champs pour type "jours_feries" -->
+                            <div id="fields-jours_feries" class="exception-type-fields hidden">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Année *</label>
+                                    <input 
+                                        type="number" 
+                                        name="annee_jours_feries"
+                                        id="annee_jours_feries"
+                                        min="{{ date('Y') }}"
+                                        max="{{ date('Y') + 5 }}"
+                                        value="{{ date('Y') }}"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Zone géographique</label>
+                                    <select 
+                                        name="zone_jours_feries"
+                                        id="zone_jours_feries"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    >
+                                        <option value="metropole">Métropole</option>
+                                        <option value="alsace-moselle">Alsace-Moselle</option>
+                                        <option value="guadeloupe">Guadeloupe</option>
+                                        <option value="guyane">Guyane</option>
+                                        <option value="martinique">Martinique</option>
+                                        <option value="mayotte">Mayotte</option>
+                                        <option value="nouvelle-caledonie">Nouvelle-Calédonie</option>
+                                        <option value="polynesie-francaise">Polynésie Française</option>
+                                        <option value="reunion">La Réunion</option>
+                                        <option value="saint-barthelemy">Saint-Barthélemy</option>
+                                        <option value="saint-martin">Saint-Martin</option>
+                                        <option value="saint-pierre-et-miquelon">Saint-Pierre-et-Miquelon</option>
+                                        <option value="wallis-et-futuna">Wallis-et-Futuna</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Horaires (commun à tous les types) -->
                             <label class="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
                                 <input 
                                     type="checkbox" 
@@ -331,7 +529,7 @@
                                     onchange="toggleHorairesExceptionnel()"
                                     class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500"
                                 >
-                                <span class="text-sm font-medium text-red-700 dark:text-red-400">Fermé ce jour</span>
+                                <span class="text-sm font-medium text-red-700 dark:text-red-400">Fermé</span>
                             </label>
                             <div id="horaires-exceptionnel" class="grid grid-cols-2 gap-4 opacity-50">
                                 <div>
@@ -339,6 +537,7 @@
                                     <input 
                                         type="time" 
                                         name="heure_ouverture"
+                                        id="heure_ouverture"
                                         disabled
                                         class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
@@ -348,6 +547,7 @@
                                     <input 
                                         type="time" 
                                         name="heure_fermeture"
+                                        id="heure_fermeture"
                                         disabled
                                         class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
@@ -780,12 +980,92 @@
         }
     }
     
+    // Gérer le changement de type d'exception
+    function onChangeTypeException() {
+        const select = document.getElementById('select-type-exception');
+        const type = select.value;
+        const form = document.getElementById('form-jour-exceptionnel');
+        const typeInput = document.getElementById('type_exception');
+        
+        // Mettre à jour le champ hidden
+        typeInput.value = type;
+        
+        // Masquer tous les champs
+        document.querySelectorAll('.exception-type-fields').forEach(field => {
+            field.classList.add('hidden');
+        });
+        
+        // Afficher les champs correspondants
+        const fieldsToShow = document.getElementById('fields-' + type);
+        if (fieldsToShow) {
+            fieldsToShow.classList.remove('hidden');
+        }
+        
+        // Gérer les champs requis selon le type
+        const allInputs = form.querySelectorAll('input[required], select[required]');
+        allInputs.forEach(input => {
+            input.removeAttribute('required');
+        });
+        
+        // Ajouter required aux champs nécessaires selon le type
+        switch(type) {
+            case 'jour':
+                document.getElementById('date_exception')?.setAttribute('required', 'required');
+                break;
+            case 'mois':
+                document.getElementById('mois')?.setAttribute('required', 'required');
+                document.getElementById('annee')?.setAttribute('required', 'required');
+                break;
+            case 'plage':
+                document.getElementById('date_debut')?.setAttribute('required', 'required');
+                document.getElementById('date_fin')?.setAttribute('required', 'required');
+                break;
+            case 'jours_feries':
+                document.getElementById('annee_jours_feries')?.setAttribute('required', 'required');
+                break;
+        }
+        
+        // Validation de la date de fin pour les plages
+        if (type === 'plage') {
+            const dateDebut = document.getElementById('date_debut');
+            const dateFin = document.getElementById('date_fin');
+            
+            dateDebut?.addEventListener('change', function() {
+                if (dateFin && this.value) {
+                    dateFin.min = this.value;
+                }
+            });
+        }
+    }
+    
     // Fermer le modal jour exceptionnel en cliquant dehors
     document.getElementById('modal-jour-exceptionnel')?.addEventListener('click', function(e) {
         if (e.target === this) {
             this.classList.add('hidden');
         }
     });
+    
+    // Réinitialiser le formulaire à l'ouverture
+    const openModalBtn = document.querySelector('button[onclick*="modal-jour-exceptionnel"]');
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+            const modal = document.getElementById('modal-jour-exceptionnel');
+            const form = document.getElementById('form-jour-exceptionnel');
+            if (form) {
+                form.reset();
+                const selectType = document.getElementById('select-type-exception');
+                const typeInput = document.getElementById('type_exception');
+                const estFerme = document.getElementById('est_ferme');
+                
+                if (selectType) selectType.value = 'jour';
+                if (typeInput) typeInput.value = 'jour';
+                if (estFerme) estFerme.checked = true;
+                
+                onChangeTypeException();
+                toggleHorairesExceptionnel();
+            }
+        });
+    }
     
     // Fonction pour afficher la liste des réservations triées
     function renderReservationsList() {
