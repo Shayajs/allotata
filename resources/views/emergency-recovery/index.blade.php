@@ -414,7 +414,17 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                // Vérifier si la réponse est du JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        console.error('Réponse HTML reçue au lieu de JSON:', text.substring(0, 500));
+                        throw new Error('Réponse non-JSON reçue. Le serveur a peut-être renvoyé une page d\'erreur HTML.');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success && data.progress_id) {
                     currentProgressId = data.progress_id;
@@ -424,6 +434,7 @@
                 }
             })
             .catch(error => {
+                console.error('Erreur lors de la restauration:', error);
                 showError('Erreur: ' + error.message);
             });
         }
@@ -433,7 +444,16 @@
             
             restoreProgressInterval = setInterval(() => {
                 fetch(progressUrl)
-                    .then(response => response.json())
+                    .then(response => {
+                        // Vérifier si la réponse est du JSON
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                throw new Error('Réponse non-JSON lors du polling');
+                            });
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         updateProgress(data);
                         
@@ -448,6 +468,9 @@
                                 if (data.total_tables) {
                                     document.getElementById('totalTables').textContent = data.total_tables;
                                     document.getElementById('totalRows').textContent = number_format(data.total_rows || 0);
+                                    if (data.tables_with_data) {
+                                        document.getElementById('tablesWithData').textContent = data.tables_with_data;
+                                    }
                                     document.getElementById('progressStats').classList.remove('hidden');
                                 }
                                 
@@ -459,6 +482,7 @@
                     })
                     .catch(error => {
                         console.error('Erreur lors du polling:', error);
+                        // Ne pas arrêter le polling pour une erreur temporaire
                     });
             }, 500); // Polling toutes les 500ms
         }
@@ -535,6 +559,9 @@
             const form = event.target;
             const formData = new FormData(form);
             
+            // Obtenir l'URL de manière sûre
+            const formAction = form.getAttribute('action') || form.action || '{{ request()->fullUrl() }}';
+            
             // Afficher la modale
             document.getElementById('restoreProgressModal').classList.remove('hidden');
             document.getElementById('progressBar').style.width = '0%';
@@ -544,11 +571,20 @@
             document.getElementById('closeProgressModal').classList.add('hidden');
             document.getElementById('progressStats').classList.add('hidden');
 
-            fetch(form.action, {
+            fetch(formAction, {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                // Vérifier si la réponse est du JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Réponse non-JSON reçue. Le serveur a peut-être renvoyé une page d\'erreur HTML.');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     document.getElementById('progressBar').style.width = '100%';
@@ -564,6 +600,7 @@
                 }
             })
             .catch(error => {
+                console.error('Erreur lors de l\'import:', error);
                 showError('Erreur: ' + error.message);
             });
         }
