@@ -44,14 +44,22 @@ class DatabaseBackupController extends Controller
     {
         $request->validate([
             'description' => 'nullable|string|max:500',
+            'type' => 'required|in:all,structure,data',
         ]);
 
         try {
-            $result = $this->backupService->createBackup($request->description);
+            $type = $request->input('type', 'all');
+            $result = $this->backupService->createBackup($request->description, $type);
+            
+            $typeNames = [
+                'all' => 'complète (structure + données)',
+                'structure' => 'structure seule',
+                'data' => 'données seules',
+            ];
             
             return response()->json([
                 'success' => true,
-                'message' => 'Sauvegarde créée avec succès',
+                'message' => 'Sauvegarde ' . ($typeNames[$type] ?? $type) . ' créée avec succès',
                 'backup' => $result,
             ]);
         } catch (\Exception $e) {

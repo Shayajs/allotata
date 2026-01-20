@@ -25,9 +25,12 @@ class DatabaseBackupService
     }
 
     /**
-     * Créer une sauvegarde complète de la base de données
+     * Créer une sauvegarde de la base de données
+     * 
+     * @param string|null $description Description de la sauvegarde
+     * @param string $type Type de sauvegarde: 'all' (tout), 'structure' (structure seule), 'data' (données seules)
      */
-    public function createBackup($description = null)
+    public function createBackup($description = null, $type = 'all')
     {
         try {
             $config = config("database.connections.{$this->connection}");
@@ -36,33 +39,46 @@ class DatabaseBackupService
                 throw new Exception("Le driver de base de données {$config['driver']} n'est pas supporté. Seuls MySQL et MariaDB sont supportés.");
             }
 
+            // Valider le type
+            if (!in_array($type, ['all', 'structure', 'data'])) {
+                throw new Exception("Type de sauvegarde invalide. Utilisez 'all', 'structure' ou 'data'.");
+            }
+
             $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
-            $filename = "backup_{$timestamp}.sql";
+            $typeSuffix = $type === 'all' ? 'full' : ($type === 'structure' ? 'structure' : 'data');
+            $filename = "backup_{$typeSuffix}_{$timestamp}.sql";
             $filepath = $this->backupPath . '/' . $filename;
 
-            // Construire la commande mysqldump
-            // Options importantes pour récupération d'urgence :
-            // --single-transaction : Pour une sauvegarde cohérente sans verrous
-            // --routines : Inclure les procédures stockées et fonctions
-            // --triggers : Inclure les triggers
-            // --insert-ignore : Utiliser INSERT IGNORE pour éviter les erreurs de doublons
-            // --complete-insert : INSERT complets avec noms de colonnes (plus sûr pour restauration)
-            // --extended-insert : INSERT optimisés (plus rapide)
-            // --lock-tables=false : Pas de verrous (déjà géré par --single-transaction)
-            // --skip-add-drop-table : Ne pas ajouter DROP TABLE (on utilisera CREATE TABLE IF NOT EXISTS)
-            // Par défaut, mysqldump inclut TOUTES les données (structure + données + relations)
+            // Construire la commande mysqldump selon le type
             $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
+            
+            // Options communes
+            $commonOptions = '--single-transaction --routines --triggers --lock-tables=false --skip-add-drop-table';
+            
+            // Options selon le type
+            if ($type === 'structure') {
+                // Structure seule : pas de données
+                $dumpOptions = '--no-data';
+            } elseif ($type === 'data') {
+                // Données seules : pas de structure CREATE TABLE
+                $dumpOptions = '--no-create-info --insert-ignore --complete-insert --extended-insert';
+            } else {
+                // Tout : structure + données
+                $dumpOptions = '--insert-ignore --complete-insert --extended-insert';
+            }
             
             // Créer un fichier temporaire pour le dump brut
             $tempFile = $filepath . '.tmp';
             
-            // D'abord, créer le dump avec structure et données
+            // Construire la commande mysqldump
             $command = sprintf(
-                'mysqldump --host=%s --port=%s --user=%s %s --single-transaction --routines --triggers --insert-ignore --complete-insert --extended-insert --lock-tables=false --skip-add-drop-table %s > %s 2>&1',
+                'mysqldump --host=%s --port=%s --user=%s %s %s %s %s > %s 2>&1',
                 escapeshellarg($config['host']),
                 escapeshellarg($config['port']),
                 escapeshellarg($config['username']),
                 $passwordArg,
+                $commonOptions,
+                $dumpOptions,
                 escapeshellarg($config['database']),
                 escapeshellarg($tempFile)
             );
@@ -78,12 +94,14 @@ class DatabaseBackupService
                 throw new Exception("Erreur lors de la création de la sauvegarde: {$error}");
             }
             
-            // Modifier le fichier pour utiliser CREATE TABLE IF NOT EXISTS
+            // Modifier le fichier pour utiliser CREATE TABLE IF NOT EXISTS (seulement si structure présente)
             $content = file_get_contents($tempFile);
             
-            // Remplacer CREATE TABLE par CREATE TABLE IF NOT EXISTS
-            // Pattern: CREATE TABLE `nom_table` ( ou CREATE TABLE nom_table (
-            $content = preg_replace('/CREATE TABLE\s+(`?)([^\s`\(]+)(`?)\s*\(/i', 'CREATE TABLE IF NOT EXISTS $1$2$3 (', $content);
+            // Remplacer CREATE TABLE par CREATE TABLE IF NOT EXISTS (seulement si on a la structure)
+            if ($type !== 'data') {
+                // Pattern: CREATE TABLE `nom_table` ( ou CREATE TABLE nom_table (
+                $content = preg_replace('/CREATE TABLE\s+(`?)([^\s`\(]+)(`?)\s*\(/i', 'CREATE TABLE IF NOT EXISTS $1$2$3 (', $content);
+            }
             
             // Écrire le fichier modifié
             file_put_contents($filepath, $content);
@@ -122,6 +140,7 @@ class DatabaseBackupService
                 'size' => filesize($filepath),
                 'created_at' => Carbon::now()->toDateTimeString(),
                 'description' => $description,
+                'type' => $type,
                 'database' => $config['database'],
                 'driver' => $config['driver'],
             ];
@@ -432,7 +451,14 @@ class DatabaseBackupService
     public function listBackups()
     {
         $backups = [];
-        $files = glob($this->backupPath . '/backup_*.sql');
+        // Rechercher tous les fichiers de sauvegarde (anciens et nouveaux formats)
+        $files = array_merge(
+            glob($this->backupPath . '/backup_*.sql'),
+            glob($this->backupPath . '/backup_full_*.sql'),
+            glob($this->backupPath . '/backup_structure_*.sql'),
+            glob($this->backupPath . '/backup_data_*.sql')
+        );
+        $files = array_unique($files); // Éviter les doublons
 
         foreach ($files as $filepath) {
             $filename = basename($filepath);
