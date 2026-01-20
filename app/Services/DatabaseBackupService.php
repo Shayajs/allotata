@@ -300,69 +300,81 @@ class DatabaseBackupService
                 ]));
             }
 
-            // Construire la commande mysql pour restaurer
-            // Utiliser --password= pour éviter l'invite interactive si le mot de passe est vide
-            $passwordArg = !empty($config['password']) ? '--password=' . escapeshellarg($config['password']) : '';
-            
-            // Lire le fichier pour estimer la progression
+            // Lire le fichier SQL pour l'exécuter via PDO
             $fileSize = filesize($reorganizedFile);
-            $estimatedProgress = 15; // Début à 15%
             
             if ($progressFile) {
                 file_put_contents($progressFile, json_encode([
                     'status' => 'restoring',
                     'message' => 'Importation des données en cours...',
-                    'progress' => $estimatedProgress,
+                    'progress' => 15,
                     'file_size' => $fileSize,
                 ]));
             }
 
-            // Exécuter la commande mysql pour restaurer
-            // Note: mysql lit le fichier ligne par ligne, donc on ne peut pas vraiment suivre la progression
-            // Mais on peut estimer en fonction de la taille du fichier
-            $command = sprintf(
-                'mysql --host=%s --port=%s --user=%s %s %s < %s 2>&1',
-                escapeshellarg($config['host']),
-                escapeshellarg($config['port']),
-                escapeshellarg($config['username']),
-                $passwordArg,
-                escapeshellarg($config['database']),
-                escapeshellarg($reorganizedFile)
-            );
-
-            // Mettre à jour la progression avant l'exécution
+            Log::info("Restauration via PDO du fichier: {$reorganizedFile} ({$fileSize} bytes)");
+            
+            // Lire le contenu du fichier SQL
+            $sqlContent = file_get_contents($reorganizedFile);
+            
+            if ($sqlContent === false) {
+                throw new Exception("Impossible de lire le fichier SQL: {$reorganizedFile}");
+            }
+            
             if ($progressFile) {
                 file_put_contents($progressFile, json_encode([
                     'status' => 'restoring',
-                    'message' => 'Importation des données... (cela peut prendre plusieurs minutes)',
-                    'progress' => 30,
+                    'message' => 'Exécution des requêtes SQL...',
+                    'progress' => 20,
                 ]));
             }
-
-            // Logger la commande (sans le mot de passe)
-            $commandForLog = sprintf(
-                'mysql --host=%s --port=%s --user=%s [PASSWORD] %s < %s',
-                $config['host'],
-                $config['port'],
-                $config['username'],
-                $config['database'],
-                $reorganizedFile
-            );
-            Log::info("Exécution de la commande de restauration: {$commandForLog}");
             
-            // Exécuter la commande et capturer la sortie
-            exec($command, $output, $returnCode);
-            
-            // Logger le résultat
-            Log::info("Résultat de la commande mysql", [
-                'return_code' => $returnCode,
-                'output' => implode("\n", $output),
-            ]);
-            
-            // Vérifier si la commande a réussi
-            if ($returnCode !== 0) {
-                $errorOutput = implode("\n", $output);
-                Log::error("Erreur lors de l'exécution de mysql: {$errorOutput}");
+            // Exécuter le SQL via PDO
+            // On utilise DB::unprepared() qui permet d'exécuter plusieurs requêtes
+            try {
+                // Diviser le contenu en statements individuels pour un meilleur suivi
+                $statements = $this->parseSqlStatements($sqlContent);
+                $totalStatements = count($statements);
+                $executedStatements = 0;
+                $errors = [];
+                
+                Log::info("Nombre de statements SQL à exécuter: {$totalStatements}");
+                
+                foreach ($statements as $statement) {
+                    $statement = trim($statement);
+                    
+                    // Ignorer les lignes vides et les commentaires
+                    if (empty($statement) || strpos($statement, '--') === 0 || strpos($statement, '/*') === 0) {
+                        continue;
+                    }
+                    
+                    try {
+                        DB::unprepared($statement);
+                        $executedStatements++;
+                        
+                        // Mettre à jour la progression périodiquement
+                        if ($progressFile && $executedStatements % 50 === 0) {
+                            $progress = 20 + (int)(($executedStatements / $totalStatements) * 50);
+                            file_put_contents($progressFile, json_encode([
+                                'status' => 'restoring',
+                                'message' => "Exécution des requêtes SQL... ({$executedStatements}/{$totalStatements})",
+                                'progress' => min($progress, 70),
+                                'executed_statements' => $executedStatements,
+                                'total_statements' => $totalStatements,
+                            ]));
+                        }
+                    } catch (\Exception $stmtError) {
+                        // Logger l'erreur mais continuer (INSERT IGNORE, CREATE IF NOT EXISTS)
+                        $shortStatement = substr($statement, 0, 100) . (strlen($statement) > 100 ? '...' : '');
+                        Log::warning("Erreur SQL (ignorée): " . $stmtError->getMessage() . " - Statement: {$shortStatement}");
+                        $errors[] = $stmtError->getMessage();
+                    }
+                }
+                
+                Log::info("Restauration terminée: {$executedStatements} statements exécutés, " . count($errors) . " erreurs");
+                
+            } catch (\Exception $e) {
+                Log::error("Erreur fatale lors de la restauration SQL: " . $e->getMessage());
                 
                 // Nettoyer le fichier réorganisé
                 if ($reorganizedFile !== $filepath && file_exists($reorganizedFile)) {
@@ -373,12 +385,12 @@ class DatabaseBackupService
                     file_put_contents($progressFile, json_encode([
                         'status' => 'error',
                         'message' => 'Erreur lors de l\'importation SQL',
-                        'error' => $errorOutput,
+                        'error' => $e->getMessage(),
                         'progress' => 0,
                     ]));
                 }
                 
-                throw new Exception("Erreur lors de l'exécution de la commande mysql: {$errorOutput}");
+                throw new Exception("Erreur lors de l'exécution SQL: " . $e->getMessage());
             }
             
             // Nettoyer le fichier réorganisé si c'était un fichier temporaire
@@ -893,6 +905,126 @@ class DatabaseBackupService
         ]);
         
         return $sorted;
+    }
+
+    /**
+     * Parser un fichier SQL en statements individuels
+     * Gère les cas complexes comme les INSERT multi-lignes, les commentaires, etc.
+     */
+    protected function parseSqlStatements($sqlContent)
+    {
+        $statements = [];
+        $currentStatement = '';
+        $inString = false;
+        $stringChar = '';
+        $inComment = false;
+        $commentType = '';
+        
+        $length = strlen($sqlContent);
+        
+        for ($i = 0; $i < $length; $i++) {
+            $char = $sqlContent[$i];
+            $nextChar = ($i + 1 < $length) ? $sqlContent[$i + 1] : '';
+            
+            // Gestion des commentaires sur une ligne (--)
+            if (!$inString && !$inComment && $char === '-' && $nextChar === '-') {
+                $inComment = true;
+                $commentType = '--';
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Gestion des commentaires multi-lignes /* */
+            if (!$inString && !$inComment && $char === '/' && $nextChar === '*') {
+                $inComment = true;
+                $commentType = '/*';
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Fin de commentaire sur une ligne
+            if ($inComment && $commentType === '--' && ($char === "\n" || $char === "\r")) {
+                $inComment = false;
+                $commentType = '';
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Fin de commentaire multi-lignes
+            if ($inComment && $commentType === '/*' && $char === '*' && $nextChar === '/') {
+                $inComment = false;
+                $commentType = '';
+                $currentStatement .= $char . $nextChar;
+                $i++; // Sauter le /
+                continue;
+            }
+            
+            // Dans un commentaire, continuer
+            if ($inComment) {
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Gestion des chaînes de caractères
+            if (!$inString && ($char === "'" || $char === '"')) {
+                $inString = true;
+                $stringChar = $char;
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Fin de chaîne (gérer les échappements)
+            if ($inString && $char === $stringChar) {
+                // Vérifier si c'est un échappement ('')
+                if ($nextChar === $stringChar) {
+                    $currentStatement .= $char . $nextChar;
+                    $i++; // Sauter le caractère suivant
+                    continue;
+                }
+                // Vérifier si c'est un échappement avec backslash
+                $prevChar = ($i > 0) ? $sqlContent[$i - 1] : '';
+                if ($prevChar === '\\') {
+                    $currentStatement .= $char;
+                    continue;
+                }
+                $inString = false;
+                $stringChar = '';
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Dans une chaîne, ajouter le caractère
+            if ($inString) {
+                $currentStatement .= $char;
+                continue;
+            }
+            
+            // Détection du délimiteur (;)
+            if ($char === ';') {
+                $currentStatement .= $char;
+                $trimmed = trim($currentStatement);
+                
+                // Ignorer les statements vides ou les commentaires seuls
+                if (!empty($trimmed) && 
+                    strpos($trimmed, '--') !== 0 && 
+                    !(strpos($trimmed, '/*') === 0 && strpos($trimmed, '*/') === strlen($trimmed) - 2)) {
+                    $statements[] = $trimmed;
+                }
+                
+                $currentStatement = '';
+                continue;
+            }
+            
+            $currentStatement .= $char;
+        }
+        
+        // Ajouter le dernier statement s'il n'est pas vide
+        $trimmed = trim($currentStatement);
+        if (!empty($trimmed) && $trimmed !== ';') {
+            $statements[] = $trimmed;
+        }
+        
+        return $statements;
     }
 
     /**
