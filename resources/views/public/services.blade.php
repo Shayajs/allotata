@@ -303,7 +303,8 @@
                             <!-- Bouton d'action -->
                             <div class="mt-8">
                                 <a 
-                                    href="{{ route('public.agenda', $entreprise->slug) }}"
+                                    id="desktop-reservation-link"
+                                    href="{{ route('public.agenda', ['slug' => $entreprise->slug, 'service' => $firstService->id]) }}"
                                     class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
                                 >
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,9 +324,8 @@
         @endif
     </div>
 
-    <script>
-        // Données des services
-        const servicesData = @json($typesServices->map(function($service) {
+    @php
+        $servicesDataArray = $typesServices->map(function($service) {
             $imageCouverture = $service->imageCouverture;
             $premiereImage = $service->images->first();
             $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
@@ -358,9 +358,18 @@
                 'note_moyenne' => $service->note_moyenne,
                 'photos_avis' => $photosAvis->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray(),
             ];
-        }));
+        })->toArray();
+        
+        $realisationPhotosArray = $entreprise->realisationPhotos->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray();
+        $agendaBaseUrl = route('public.agenda', $entreprise->slug);
+    @endphp
 
-        const realisationPhotos = @json($entreprise->realisationPhotos->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray());
+    <script>
+        // Données des services
+        const servicesData = @json($servicesDataArray);
+
+        const realisationPhotos = @json($realisationPhotosArray);
+        const agendaBaseUrl = @json($agendaBaseUrl);
 
         function selectService(serviceId, isMobile) {
             const service = servicesData.find(s => s.id === serviceId);
@@ -450,6 +459,12 @@
                     avisList.innerHTML = '<p class="text-slate-500 dark:text-slate-400">Aucun avis pour le moment.</p>';
                 }
             }
+
+            // Mettre à jour le lien de réservation
+            const reservationLink = document.getElementById('desktop-reservation-link');
+            if (reservationLink) {
+                reservationLink.href = agendaBaseUrl + '?service=' + service.id;
+            }
         }
 
         function updateMobileServiceDetails(service) {
@@ -478,7 +493,7 @@
                         </div>
                     </div>
                 ` : ''}
-                <a href="{{ route('public.agenda', $entreprise->slug) }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
+                <a href="${agendaBaseUrl}?service=${service.id}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
                     Réserver ce service
                 </a>
             `;

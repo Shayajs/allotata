@@ -133,6 +133,28 @@
                             @endif
                         </div>
                     </div>
+                @elseif($facture->type_facture === 'abonnement_entreprise')
+                    <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Détails de l'abonnement</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-slate-600 dark:text-slate-400">Type</p>
+                                <p class="font-medium text-slate-900 dark:text-white">
+                                    @if($facture->entrepriseSubscription)
+                                        {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
+                                    @else
+                                        Abonnement Allotata
+                                    @endif
+                                </p>
+                            </div>
+                            @if($facture->notes)
+                                <div class="col-span-2">
+                                    <p class="text-slate-600 dark:text-slate-400">Période</p>
+                                    <p class="font-medium text-slate-900 dark:text-white">{{ $facture->notes }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 @endif
 
                 @if($facture->estGroupee())
@@ -181,9 +203,19 @@
                             @else
                                 <tr>
                                     <td class="px-4 py-4 text-sm text-slate-900 dark:text-white">
-                                        {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
-                                        @if($facture->reservation && $facture->reservation->duree_minutes)
-                                            <span class="text-slate-500 dark:text-slate-400">({{ $facture->reservation->duree_minutes }} min)</span>
+                                        @if($facture->reservation)
+                                            {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
+                                            @if($facture->reservation->duree_minutes)
+                                                <span class="text-slate-500 dark:text-slate-400">({{ $facture->reservation->duree_minutes }} min)</span>
+                                            @endif
+                                        @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
+                                            @if($facture->entrepriseSubscription)
+                                                {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
+                                            @else
+                                                Abonnement
+                                            @endif
+                                        @else
+                                            Service
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 text-sm text-right text-slate-900 dark:text-white">{{ number_format($facture->montant_ht, 2, ',', ' ') }} €</td>

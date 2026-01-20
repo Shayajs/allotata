@@ -212,23 +212,49 @@
         <!-- En-tête -->
         <div class="header">
             <div class="logo-section">
-                @if($facture->entreprise->logo)
+                @if($facture->type_facture === 'abonnement_entreprise')
+                    <div class="company-name">Allo Tata</div>
+                    <div class="company-details">
+                        Service d'abonnement<br>
+                        Facture entreprise à entreprise
+                    </div>
+                @elseif($facture->entreprise && $facture->entreprise->logo)
                     <img src="{{ public_path('storage/' . $facture->entreprise->logo) }}" alt="Logo {{ $facture->entreprise->nom }}" class="logo">
+                    <div class="company-name">{{ $facture->entreprise->nom }}</div>
+                    <div class="company-details">
+                        {{ $facture->entreprise->type_activite }}<br>
+                        @if($facture->entreprise->siren)
+                            SIREN : {{ $facture->entreprise->siren }}<br>
+                        @endif
+                        {{ $facture->entreprise->email }}<br>
+                        @if($facture->entreprise->telephone)
+                            {{ $facture->entreprise->telephone }}<br>
+                        @endif
+                        @if($facture->entreprise->ville)
+                            {{ $facture->entreprise->ville }}
+                        @endif
+                    </div>
+                @elseif($facture->entreprise)
+                    <div class="company-name">{{ $facture->entreprise->nom }}</div>
+                    <div class="company-details">
+                        {{ $facture->entreprise->type_activite }}<br>
+                        @if($facture->entreprise->siren)
+                            SIREN : {{ $facture->entreprise->siren }}<br>
+                        @endif
+                        {{ $facture->entreprise->email }}<br>
+                        @if($facture->entreprise->telephone)
+                            {{ $facture->entreprise->telephone }}<br>
+                        @endif
+                        @if($facture->entreprise->ville)
+                            {{ $facture->entreprise->ville }}
+                        @endif
+                    </div>
+                @else
+                    <div class="company-name">Allo Tata</div>
+                    <div class="company-details">
+                        Service d'abonnement
+                    </div>
                 @endif
-                <div class="company-name">{{ $facture->entreprise->nom }}</div>
-                <div class="company-details">
-                    {{ $facture->entreprise->type_activite }}<br>
-                    @if($facture->entreprise->siren)
-                        SIREN : {{ $facture->entreprise->siren }}<br>
-                    @endif
-                    {{ $facture->entreprise->email }}<br>
-                    @if($facture->entreprise->telephone)
-                        {{ $facture->entreprise->telephone }}<br>
-                    @endif
-                    @if($facture->entreprise->ville)
-                        {{ $facture->entreprise->ville }}
-                    @endif
-                </div>
             </div>
             <div class="invoice-info">
                 <div class="invoice-title">FACTURE</div>
@@ -247,12 +273,26 @@
             <div class="column">
                 <div class="section-title">Facturé à</div>
                 <div class="client-info">
-                    <div class="info-line">
-                        <span class="info-label">{{ $facture->user->name }}</span>
-                    </div>
-                    <div class="info-line">
-                        <span class="info-value">{{ $facture->user->email }}</span>
-                    </div>
+                    @if($facture->type_facture === 'abonnement_entreprise' && $facture->entreprise)
+                        <div class="info-line">
+                            <span class="info-label">{{ $facture->entreprise->nom }}</span>
+                        </div>
+                        <div class="info-line">
+                            <span class="info-value">{{ $facture->entreprise->email }}</span>
+                        </div>
+                        @if($facture->entreprise->siren)
+                            <div class="info-line">
+                                <span class="info-value">SIREN : {{ $facture->entreprise->siren }}</span>
+                            </div>
+                        @endif
+                    @elseif($facture->user)
+                        <div class="info-line">
+                            <span class="info-label">{{ $facture->user->name }}</span>
+                        </div>
+                        <div class="info-line">
+                            <span class="info-value">{{ $facture->user->email }}</span>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -273,6 +313,26 @@
                     <div class="info-line">
                         <span class="info-label">Lieu :</span>
                         <span class="info-value">{{ $facture->reservation->lieu }}</span>
+                    </div>
+                @endif
+            </div>
+        @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
+            <div class="reservation-details">
+                <div class="reservation-title">Détails de l'abonnement</div>
+                <div class="info-line">
+                    <span class="info-label">Type :</span>
+                    <span class="info-value">
+                        @if($facture->entrepriseSubscription)
+                            {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
+                        @else
+                            Abonnement
+                        @endif
+                    </span>
+                </div>
+                @if($facture->notes)
+                    <div class="info-line">
+                        <span class="info-label">Période :</span>
+                        <span class="info-value">{{ $facture->notes }}</span>
                     </div>
                 @endif
             </div>
@@ -315,14 +375,28 @@
                 @else
                     <tr>
                         <td>
-                            {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
-                            @if($facture->reservation && $facture->reservation->duree_minutes)
-                                ({{ $facture->reservation->duree_minutes }} min)
+                            @if($facture->reservation)
+                                {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
+                                @if($facture->reservation->duree_minutes)
+                                    ({{ $facture->reservation->duree_minutes }} min)
+                                @endif
+                            @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
+                                @if($facture->entrepriseSubscription)
+                                    {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
+                                @else
+                                    Abonnement
+                                @endif
+                            @else
+                                Service
                             @endif
                         </td>
                         <td>
                             @if($facture->reservation)
                                 {{ $facture->reservation->date_reservation->format('d/m/Y H:i') }}
+                            @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
+                                {{ $facture->date_facture->format('d/m/Y') }}
+                            @else
+                                {{ $facture->date_facture->format('d/m/Y') }}
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($facture->montant_ht, 2, ',', ' ') }} €</td>

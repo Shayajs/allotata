@@ -595,6 +595,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/subscriptions/stop-manual/{id}', [\App\Http\Controllers\AdminSubscriptionController::class, 'stopManual'])->name('subscriptions.stop_manual');
     Route::post('/subscriptions/update-manual/{id}', [\App\Http\Controllers\AdminSubscriptionController::class, 'updateManual'])->name('subscriptions.update_manual');
     
+    // Gestion des factures
+    Route::get('/factures', [AdminController::class, 'factures'])->name('factures.index');
+    Route::get('/factures/create', [AdminController::class, 'createFacture'])->name('factures.create');
+    Route::post('/factures', [AdminController::class, 'storeFacture'])->name('factures.store');
+    Route::get('/factures/{facture}', [AdminController::class, 'showFacture'])->name('factures.show');
+    Route::post('/factures/generate-subscription', [AdminController::class, 'generateSubscriptionInvoices'])->name('factures.generate-subscription');
+    
     // Legacy / Specific Sync Actions (Redirigés ou gérés par le nouveau controller si implémentés, sinon garder AdminController pour l'instant pour la rétrocompatibilité des actions spécifiques utilisateur/entreprise si je ne les ai pas toutes migrées)
     // J'ai implémenté forceManual, mais pas syncUserSubscription ni cancel... 
     // Attends, mon AdminSubscriptionController n'est pas complet ! Il manque les méthodes sync/cancel individuelles !

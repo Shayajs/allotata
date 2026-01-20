@@ -28,67 +28,75 @@ class AdminStatistiqueController extends Controller
      */
     public function index(Request $request)
     {
-        // Période par défaut : 30 jours
-        $periodDays = $request->get('period', 30);
-        $dateDebut = now()->subDays($periodDays);
-        
-        // ===== STATISTIQUES GLOBALES =====
-        $statsGlobales = $this->getStatsGlobales($periodDays);
-        
-        // ===== STATISTIQUES DE VISITES =====
-        $statsVisites = $this->getStatsVisites($dateDebut);
-        
-        // ===== STATISTIQUES DE CONVERSION =====
-        $statsConversion = $this->getStatsConversion($dateDebut);
-        
-        // ===== STATISTIQUES PAR ENTREPRISE =====
-        $statsParEntreprise = $this->getStatsParEntreprise($dateDebut);
-        
-        // ===== STATISTIQUES FINANCIÈRES =====
-        $statsFinances = $this->getStatsFinances($dateDebut);
-        
-        // ===== STATISTIQUES D'ABONNEMENTS =====
-        $statsAbonnements = $this->getStatsAbonnements();
-        
-        // ===== STATISTIQUES TEMPORELLES =====
-        $statsTemporelles = $this->getStatsTemporelles($periodDays);
-        
-        // ===== TOP SERVICES/PRODUITS CLIQUÉS =====
-        $topServices = $this->getTopServicesGlobal($dateDebut, 20);
-        $topProduits = $this->getTopProduitsGlobal($dateDebut, 20);
-        
-        // ===== STATISTIQUES RGPD/CONSENTEMENT =====
-        $statsRGPD = $this->getStatsRGPD();
-        
-        // ===== STATISTIQUES D'ACTIVITÉ =====
-        $statsActivite = $this->getStatsActivite($dateDebut);
-        
-        // ===== STATISTIQUES PAR TYPE DE PAGE =====
-        $statsPages = $this->getStatsPages($dateDebut);
-        
-        // ===== STATISTIQUES GÉOGRAPHIQUES (par ville) =====
-        $statsGeo = $this->getStatsGeo($dateDebut);
-        
-        // ===== STATISTIQUES PAR HEURE =====
-        $statsHeure = $this->getStatsHeure($dateDebut);
-        
-        return view('admin.statistiques.index', compact(
-            'periodDays',
-            'statsGlobales',
-            'statsVisites',
-            'statsConversion',
-            'statsParEntreprise',
-            'statsFinances',
-            'statsAbonnements',
-            'statsTemporelles',
-            'topServices',
-            'topProduits',
-            'statsRGPD',
-            'statsActivite',
-            'statsPages',
-            'statsGeo',
-            'statsHeure'
-        ));
+        try {
+            // Période par défaut : 30 jours
+            $periodDays = $request->get('period', 30);
+            $dateDebut = now()->subDays($periodDays);
+            
+            // ===== STATISTIQUES GLOBALES =====
+            $statsGlobales = $this->getStatsGlobales($periodDays);
+            
+            // ===== STATISTIQUES DE VISITES =====
+            $statsVisites = $this->getStatsVisites($dateDebut);
+            
+            // ===== STATISTIQUES DE CONVERSION =====
+            $statsConversion = $this->getStatsConversion($dateDebut);
+            
+            // ===== STATISTIQUES PAR ENTREPRISE (limité à 50) =====
+            $statsParEntreprise = $this->getStatsParEntreprise($dateDebut);
+            
+            // ===== STATISTIQUES FINANCIÈRES =====
+            $statsFinances = $this->getStatsFinances($dateDebut);
+            
+            // ===== STATISTIQUES D'ABONNEMENTS =====
+            $statsAbonnements = $this->getStatsAbonnements();
+            
+            // ===== STATISTIQUES TEMPORELLES =====
+            $statsTemporelles = $this->getStatsTemporelles($periodDays);
+            
+            // ===== TOP SERVICES/PRODUITS CLIQUÉS =====
+            $topServices = $this->getTopServicesGlobal($dateDebut, 20);
+            $topProduits = $this->getTopProduitsGlobal($dateDebut, 20);
+            
+            // ===== STATISTIQUES RGPD/CONSENTEMENT =====
+            $statsRGPD = $this->getStatsRGPD();
+            
+            // ===== STATISTIQUES D'ACTIVITÉ =====
+            $statsActivite = $this->getStatsActivite($dateDebut);
+            
+            // ===== STATISTIQUES PAR TYPE DE PAGE =====
+            $statsPages = $this->getStatsPages($dateDebut);
+            
+            // ===== STATISTIQUES GÉOGRAPHIQUES (par ville) =====
+            $statsGeo = $this->getStatsGeo($dateDebut);
+            
+            // ===== STATISTIQUES PAR HEURE =====
+            $statsHeure = $this->getStatsHeure($dateDebut);
+            
+            return view('admin.statistiques.index', compact(
+                'periodDays',
+                'statsGlobales',
+                'statsVisites',
+                'statsConversion',
+                'statsParEntreprise',
+                'statsFinances',
+                'statsAbonnements',
+                'statsTemporelles',
+                'topServices',
+                'topProduits',
+                'statsRGPD',
+                'statsActivite',
+                'statsPages',
+                'statsGeo',
+                'statsHeure'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Erreur dans AdminStatistiqueController::index: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with('error', 'Erreur lors du chargement des statistiques : ' . $e->getMessage());
+        }
     }
 
     /**
@@ -192,85 +200,148 @@ class AdminStatistiqueController extends Controller
 
     private function getStatsGlobales($periodDays)
     {
-        $dateDebut = now()->subDays($periodDays);
-        
-        return [
-            'total_users' => User::count(),
-            'new_users' => User::where('created_at', '>=', $dateDebut)->count(),
-            'total_clients' => User::where('est_client', true)->count(),
-            'total_gerants' => User::where('est_gerant', true)->count(),
-            'total_entreprises' => Entreprise::count(),
-            'new_entreprises' => Entreprise::where('created_at', '>=', $dateDebut)->count(),
-            'entreprises_verifiees' => Entreprise::where('est_verifiee', true)->count(),
-            'total_reservations' => Reservation::count(),
-            'new_reservations' => Reservation::where('created_at', '>=', $dateDebut)->count(),
-            'total_factures' => Facture::count(),
-            'total_conversations' => Conversation::count(),
-            'total_messages' => Message::count(),
-        ];
+        return Cache::remember("admin_stats_globales_{$periodDays}", 300, function () use ($periodDays) {
+            $dateDebut = now()->subDays($periodDays);
+            
+            return [
+                'total_users' => User::count(),
+                'new_users' => User::where('created_at', '>=', $dateDebut)->count(),
+                'total_clients' => User::where('est_client', true)->count(),
+                'total_gerants' => User::where('est_gerant', true)->count(),
+                'total_entreprises' => Entreprise::count(),
+                'new_entreprises' => Entreprise::where('created_at', '>=', $dateDebut)->count(),
+                'entreprises_verifiees' => Entreprise::where('est_verifiee', true)->count(),
+                'total_reservations' => Reservation::count(),
+                'new_reservations' => Reservation::where('created_at', '>=', $dateDebut)->count(),
+                'total_factures' => Facture::count(),
+                'total_conversations' => Conversation::count(),
+                'total_messages' => Message::count(),
+            ];
+        });
     }
 
     private function getStatsVisites($dateDebut)
     {
-        $visites = EntrepriseVisite::where('created_at', '>=', $dateDebut)->get();
+        $cacheKey = 'admin_stats_visites_' . $dateDebut->format('Y-m-d');
         
-        return [
-            'total' => $visites->count(),
-            'avec_user' => $visites->whereNotNull('user_id')->count(),
-            'anonymes' => $visites->whereNull('user_id')->count(),
-            'avec_reservation' => $visites->where('a_passe_commande', true)->count(),
-            'explorations' => $visites->where('a_quitte_apres_exploration', true)->count(),
-            'rapides' => $visites->where('a_quitte_rapidement', true)->count(),
-            'duree_moyenne' => round($visites->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0),
-            'temps_moyen_avant_reservation' => round($visites->where('temps_avant_reservation_secondes', '>', 0)->avg('temps_avant_reservation_secondes') ?? 0),
-            'total_clics_services' => $visites->sum('nb_clics_services'),
-            'total_clics_produits' => $visites->sum('nb_clics_produits'),
-        ];
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            // Utiliser des requêtes agrégées au lieu de charger toutes les visites
+            $stats = EntrepriseVisite::where('created_at', '>=', $dateDebut)
+                ->select(
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(CASE WHEN user_id IS NOT NULL THEN 1 ELSE 0 END) as avec_user'),
+                    DB::raw('SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) as anonymes'),
+                    DB::raw('SUM(CASE WHEN a_passe_commande = 1 THEN 1 ELSE 0 END) as avec_reservation'),
+                    DB::raw('SUM(CASE WHEN a_quitte_apres_exploration = 1 THEN 1 ELSE 0 END) as explorations'),
+                    DB::raw('SUM(CASE WHEN a_quitte_rapidement = 1 THEN 1 ELSE 0 END) as rapides'),
+                    DB::raw('AVG(CASE WHEN duree_seconde > 0 THEN duree_seconde ELSE NULL END) as duree_moyenne'),
+                    DB::raw('AVG(CASE WHEN temps_avant_reservation_secondes > 0 THEN temps_avant_reservation_secondes ELSE NULL END) as temps_moyen_avant_reservation'),
+                    DB::raw('SUM(nb_clics_services) as total_clics_services'),
+                    DB::raw('SUM(nb_clics_produits) as total_clics_produits')
+                )
+                ->first();
+            
+            return [
+                'total' => $stats->total ?? 0,
+                'avec_user' => $stats->avec_user ?? 0,
+                'anonymes' => $stats->anonymes ?? 0,
+                'avec_reservation' => $stats->avec_reservation ?? 0,
+                'explorations' => $stats->explorations ?? 0,
+                'rapides' => $stats->rapides ?? 0,
+                'duree_moyenne' => round($stats->duree_moyenne ?? 0),
+                'temps_moyen_avant_reservation' => round($stats->temps_moyen_avant_reservation ?? 0),
+                'total_clics_services' => $stats->total_clics_services ?? 0,
+                'total_clics_produits' => $stats->total_clics_produits ?? 0,
+            ];
+        });
     }
 
     private function getStatsConversion($dateDebut)
     {
-        $visites = EntrepriseVisite::where('created_at', '>=', $dateDebut)->get();
+        $cacheKey = 'admin_stats_conversion_' . $dateDebut->format('Y-m-d');
         
-        $total = $visites->count();
-        $avecReservation = $visites->where('a_passe_commande', true)->count();
-        $explorations = $visites->where('a_quitte_apres_exploration', true)->count();
-        $rapides = $visites->where('a_quitte_rapidement', true)->count();
-        
-        return [
-            'taux_conversion_global' => $total > 0 ? round(($avecReservation / $total) * 100, 2) : 0,
-            'taux_rebond' => $total > 0 ? round(($rapides / $total) * 100, 2) : 0,
-            'taux_exploration' => $total > 0 ? round(($explorations / $total) * 100, 2) : 0,
-            'ratio_exploration_reservation' => $explorations > 0 ? round(($avecReservation / $explorations) * 100, 2) : 0,
-        ];
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            // Utiliser des requêtes agrégées
+            $stats = EntrepriseVisite::where('created_at', '>=', $dateDebut)
+                ->select(
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(CASE WHEN a_passe_commande = 1 THEN 1 ELSE 0 END) as avec_reservation'),
+                    DB::raw('SUM(CASE WHEN a_quitte_apres_exploration = 1 THEN 1 ELSE 0 END) as explorations'),
+                    DB::raw('SUM(CASE WHEN a_quitte_rapidement = 1 THEN 1 ELSE 0 END) as rapides')
+                )
+                ->first();
+            
+            $total = $stats->total ?? 0;
+            $avecReservation = $stats->avec_reservation ?? 0;
+            $explorations = $stats->explorations ?? 0;
+            $rapides = $stats->rapides ?? 0;
+            
+            return [
+                'taux_conversion_global' => $total > 0 ? round(($avecReservation / $total) * 100, 2) : 0,
+                'taux_rebond' => $total > 0 ? round(($rapides / $total) * 100, 2) : 0,
+                'taux_exploration' => $total > 0 ? round(($explorations / $total) * 100, 2) : 0,
+                'ratio_exploration_reservation' => $explorations > 0 ? round(($avecReservation / $explorations) * 100, 2) : 0,
+            ];
+        });
     }
 
     private function getStatsParEntreprise($dateDebut)
     {
-        return Entreprise::with(['visites' => function($q) use ($dateDebut) {
-            $q->where('created_at', '>=', $dateDebut);
-        }])->get()->map(function($entreprise) use ($dateDebut) {
-            $visites = $entreprise->visites;
+        $cacheKey = 'admin_stats_par_entreprise_' . $dateDebut->format('Y-m-d');
+        
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            // Utiliser des requêtes agrégées au lieu de charger toutes les visites
+            $entreprises = Entreprise::select('id', 'nom', 'slug', 'ville')
+                ->withCount([
+                    'visites as total_visites' => function($q) use ($dateDebut) {
+                        $q->where('created_at', '>=', $dateDebut);
+                    },
+                    'visites as visites_exploration' => function($q) use ($dateDebut) {
+                        $q->where('created_at', '>=', $dateDebut)
+                          ->where('a_quitte_apres_exploration', true);
+                    },
+                    'visites as visites_rapides' => function($q) use ($dateDebut) {
+                        $q->where('created_at', '>=', $dateDebut)
+                          ->where('a_quitte_rapidement', true);
+                    },
+                    'visites as reservations_count' => function($q) use ($dateDebut) {
+                        $q->where('created_at', '>=', $dateDebut)
+                          ->where('a_passe_commande', true);
+                    }
+                ])
+                ->limit(50)
+                ->get();
             
-            $reservations = $visites->where('a_passe_commande', true)->count();
-            $tauxConversion = $visites->count() > 0 ? round(($reservations / $visites->count()) * 100, 2) : 0;
-            
-            $revenu = Reservation::where('entreprise_id', $entreprise->id)
-                ->where('created_at', '>=', $dateDebut)
+            // Calculer les revenus et autres métriques
+            $revenus = Reservation::where('created_at', '>=', $dateDebut)
                 ->where('est_paye', true)
-                ->sum('prix');
+                ->select('entreprise_id', DB::raw('SUM(prix) as total_revenu'))
+                ->groupBy('entreprise_id')
+                ->pluck('total_revenu', 'entreprise_id');
             
-            return [
-                'entreprise' => $entreprise,
-                'total_visites' => $visites->count(),
-                'visites_exploration' => $visites->where('a_quitte_apres_exploration', true)->count(),
-                'visites_rapides' => $visites->where('a_quitte_rapidement', true)->count(),
-                'reservations' => $reservations,
-                'taux_conversion' => $tauxConversion,
-                'duree_moyenne' => round($visites->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0),
-                'revenu' => $revenu,
-            ];
-        })->sortByDesc('total_visites')->take(50);
+            $dureesMoyennes = EntrepriseVisite::where('created_at', '>=', $dateDebut)
+                ->where('duree_seconde', '>', 0)
+                ->select('entreprise_id', DB::raw('AVG(duree_seconde) as duree_moyenne'))
+                ->groupBy('entreprise_id')
+                ->pluck('duree_moyenne', 'entreprise_id');
+            
+            return $entreprises->map(function($entreprise) use ($revenus, $dureesMoyennes) {
+                $totalVisites = $entreprise->total_visites ?? 0;
+                $reservations = $entreprise->reservations_count ?? 0;
+                $tauxConversion = $totalVisites > 0 ? round(($reservations / $totalVisites) * 100, 2) : 0;
+                
+                return [
+                    'entreprise' => $entreprise,
+                    'total_visites' => $totalVisites,
+                    'visites_exploration' => $entreprise->visites_exploration ?? 0,
+                    'visites_rapides' => $entreprise->visites_rapides ?? 0,
+                    'reservations' => $reservations,
+                    'taux_conversion' => $tauxConversion,
+                    'duree_moyenne' => round($dureesMoyennes[$entreprise->id] ?? 0),
+                    'revenu' => $revenus[$entreprise->id] ?? 0,
+                ];
+            })->sortByDesc('total_visites')->values();
+        });
     }
 
     private function getStatsFinances($dateDebut)
@@ -291,49 +362,55 @@ class AdminStatistiqueController extends Controller
 
     private function getStatsAbonnements()
     {
-        return [
-            'total_actifs' => User::where(function($q) {
-                $q->where(function($q2) {
-                    $q2->where('abonnement_manuel', true)
-                       ->where('abonnement_manuel_actif_jusqu', '>=', now());
-                })->orWhereHas('subscriptions', function($q3) {
-                    $q3->where('stripe_status', 'active');
-                });
-            })->count(),
-            'manuels_actifs' => User::where('abonnement_manuel', true)
-                ->where('abonnement_manuel_actif_jusqu', '>=', now())
-                ->count(),
-            'stripe_actifs' => DB::table('subscriptions')->where('stripe_status', 'active')->count(),
-            'expires_bientot' => User::where('abonnement_manuel', true)
-                ->where('abonnement_manuel_actif_jusqu', '>=', now())
-                ->where('abonnement_manuel_actif_jusqu', '<=', now()->addDays(7))
-                ->count(),
-        ];
+        return Cache::remember('admin_stats_abonnements', 300, function () {
+            return [
+                'total_actifs' => User::where(function($q) {
+                    $q->where(function($q2) {
+                        $q2->where('abonnement_manuel', true)
+                           ->where('abonnement_manuel_actif_jusqu', '>=', now());
+                    })->orWhereHas('subscriptions', function($q3) {
+                        $q3->where('stripe_status', 'active');
+                    });
+                })->count(),
+                'manuels_actifs' => User::where('abonnement_manuel', true)
+                    ->where('abonnement_manuel_actif_jusqu', '>=', now())
+                    ->count(),
+                'stripe_actifs' => DB::table('subscriptions')->where('stripe_status', 'active')->count(),
+                'expires_bientot' => User::where('abonnement_manuel', true)
+                    ->where('abonnement_manuel_actif_jusqu', '>=', now())
+                    ->where('abonnement_manuel_actif_jusqu', '<=', now()->addDays(7))
+                    ->count(),
+            ];
+        });
     }
 
     private function getStatsTemporelles($periodDays)
     {
-        $labels = [];
-        $visitesData = [];
-        $reservationsData = [];
-        $usersData = [];
+        $cacheKey = 'admin_stats_temporelles_' . $periodDays;
         
-        for ($i = $periodDays - 1; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $dateStr = $date->format('Y-m-d');
-            $labels[] = $date->format('d/m');
+        return Cache::remember($cacheKey, 300, function () use ($periodDays) {
+            $labels = [];
+            $visitesData = [];
+            $reservationsData = [];
+            $usersData = [];
             
-            $visitesData[] = EntrepriseVisite::whereDate('created_at', $dateStr)->count();
-            $reservationsData[] = Reservation::whereDate('created_at', $dateStr)->count();
-            $usersData[] = User::whereDate('created_at', $dateStr)->count();
-        }
-        
-        return [
-            'labels' => $labels,
-            'visites' => $visitesData,
-            'reservations' => $reservationsData,
-            'users' => $usersData,
-        ];
+            for ($i = $periodDays - 1; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $dateStr = $date->format('Y-m-d');
+                $labels[] = $date->format('d/m');
+                
+                $visitesData[] = EntrepriseVisite::whereDate('created_at', $dateStr)->count();
+                $reservationsData[] = Reservation::whereDate('created_at', $dateStr)->count();
+                $usersData[] = User::whereDate('created_at', $dateStr)->count();
+            }
+            
+            return [
+                'labels' => $labels,
+                'visites' => $visitesData,
+                'reservations' => $reservationsData,
+                'users' => $usersData,
+            ];
+        });
     }
 
     private function getTopServicesGlobal($dateDebut, $limit = 20)
@@ -349,13 +426,17 @@ class AdminStatistiqueController extends Controller
 
     private function getTopProduitsGlobal($dateDebut, $limit = 20)
     {
-        return VisiteClic::where('type', 'produit')
-            ->where('created_at', '>=', $dateDebut)
-            ->select('item_id', 'item_nom', DB::raw('count(*) as nb_clics'))
-            ->groupBy('item_id', 'item_nom')
-            ->orderBy('nb_clics', 'desc')
-            ->limit($limit)
-            ->get();
+        $cacheKey = 'admin_top_produits_' . $dateDebut->format('Y-m-d') . '_' . $limit;
+        
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut, $limit) {
+            return VisiteClic::where('type', 'produit')
+                ->where('created_at', '>=', $dateDebut)
+                ->select('item_id', 'item_nom', DB::raw('count(*) as nb_clics'))
+                ->groupBy('item_id', 'item_nom')
+                ->orderBy('nb_clics', 'desc')
+                ->limit($limit)
+                ->get();
+        });
     }
 
     private function getStatsRGPD()
@@ -372,54 +453,77 @@ class AdminStatistiqueController extends Controller
 
     private function getStatsActivite($dateDebut)
     {
-        return [
-            'conversations' => Conversation::where('created_at', '>=', $dateDebut)->count(),
-            'messages' => Message::where('created_at', '>=', $dateDebut)->count(),
-            'tickets' => Ticket::where('created_at', '>=', $dateDebut)->count(),
-            'contacts' => Contact::where('created_at', '>=', $dateDebut)->count(),
-        ];
+        $cacheKey = 'admin_stats_activite_' . $dateDebut->format('Y-m-d');
+        
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            return [
+                'conversations' => Conversation::where('created_at', '>=', $dateDebut)->count(),
+                'messages' => Message::where('created_at', '>=', $dateDebut)->count(),
+                'tickets' => Ticket::where('created_at', '>=', $dateDebut)->count(),
+                'contacts' => Contact::where('created_at', '>=', $dateDebut)->count(),
+            ];
+        });
     }
 
     private function getStatsPages($dateDebut)
     {
-        $visites = EntrepriseVisite::where('created_at', '>=', $dateDebut)->get();
+        $cacheKey = 'admin_stats_pages_' . $dateDebut->format('Y-m-d');
         
-        return [
-            'accueil' => $visites->where('page_type', 'accueil')->count(),
-            'agenda' => $visites->where('page_type', 'agenda')->count(),
-            'store' => $visites->where('page_type', 'store')->count(),
-            'services' => $visites->where('page_type', 'services')->count(),
-            'produits' => $visites->where('page_type', 'produits')->count(),
-        ];
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            // Utiliser des requêtes agrégées
+            $stats = EntrepriseVisite::where('created_at', '>=', $dateDebut)
+                ->select(
+                    'page_type',
+                    DB::raw('COUNT(*) as count')
+                )
+                ->groupBy('page_type')
+                ->pluck('count', 'page_type');
+            
+            return [
+                'accueil' => $stats['accueil'] ?? 0,
+                'agenda' => $stats['agenda'] ?? 0,
+                'store' => $stats['store'] ?? 0,
+                'services' => $stats['services'] ?? 0,
+                'produits' => $stats['produits'] ?? 0,
+            ];
+        });
     }
 
     private function getStatsGeo($dateDebut)
     {
-        return Entreprise::withCount(['visites as total_visites' => function($q) use ($dateDebut) {
-            $q->where('created_at', '>=', $dateDebut);
-        }])->whereNotNull('ville')
-            ->orderBy('total_visites', 'desc')
-            ->get()
-            ->groupBy('ville')
-            ->map(function($entreprises) {
-                return [
-                    'ville' => $entreprises->first()->ville,
-                    'total_visites' => $entreprises->sum('total_visites'),
-                    'nb_entreprises' => $entreprises->count(),
-                ];
-            })
-            ->sortByDesc('total_visites')
-            ->take(20);
+        $cacheKey = 'admin_stats_geo_' . $dateDebut->format('Y-m-d');
+        
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            return Entreprise::withCount(['visites as total_visites' => function($q) use ($dateDebut) {
+                $q->where('created_at', '>=', $dateDebut);
+            }])->whereNotNull('ville')
+                ->orderBy('total_visites', 'desc')
+                ->get()
+                ->groupBy('ville')
+                ->map(function($entreprises) {
+                    return [
+                        'ville' => $entreprises->first()->ville,
+                        'total_visites' => $entreprises->sum('total_visites'),
+                        'nb_entreprises' => $entreprises->count(),
+                    ];
+                })
+                ->sortByDesc('total_visites')
+                ->take(20);
+        });
     }
 
     private function getStatsHeure($dateDebut)
     {
-        $stats = [];
-        for ($h = 0; $h < 24; $h++) {
-            $stats[$h] = EntrepriseVisite::where('created_at', '>=', $dateDebut)
-                ->whereRaw('HOUR(created_at) = ?', [$h])
-                ->count();
-        }
-        return $stats;
+        $cacheKey = 'admin_stats_heure_' . $dateDebut->format('Y-m-d');
+        
+        return Cache::remember($cacheKey, 300, function () use ($dateDebut) {
+            $stats = [];
+            for ($h = 0; $h < 24; $h++) {
+                $stats[$h] = EntrepriseVisite::where('created_at', '>=', $dateDebut)
+                    ->whereRaw('HOUR(created_at) = ?', [$h])
+                    ->count();
+            }
+            return $stats;
+        });
     }
 }

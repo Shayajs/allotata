@@ -81,7 +81,7 @@
                                 >
                                     <option value="">Choisir un service</option>
                                     @foreach($entreprise->typesServices as $service)
-                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}">
+                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id ? 'selected' : '' }}>
                                             {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                         </option>
                                     @endforeach
@@ -417,7 +417,7 @@
                                     >
                                         <option value="">Choisir un service</option>
                                         @foreach($entreprise->typesServices as $service)
-                                            <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}">
+                                            <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id ? 'selected' : '' }}>
                                                 {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                             </option>
                                         @endforeach

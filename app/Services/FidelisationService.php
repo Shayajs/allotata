@@ -398,6 +398,17 @@ class FidelisationService
             }
 
             if ($estARisque) {
+                // Calculer le CA total du client
+                $caClient = $reservations->sum('prix');
+                
+                // Calculer le score de risque (0-100)
+                $scoreRisque = 0;
+                if ($stats['derniere_visite']) {
+                    $jours = $stats['derniere_visite']->diffInDays(now());
+                    // Plus le nombre de jours est élevé, plus le score est élevé
+                    $scoreRisque = min(100, ($jours / 180) * 100);
+                }
+
                 $clientsARisque->push([
                     'client' => $client,
                     'nb_reservations' => $stats['nb_reservations'],
@@ -407,6 +418,8 @@ class FidelisationService
                     'statut' => $stats['statut'],
                     'raison' => $raison,
                     'jours_sans_visite' => $stats['derniere_visite'] ? $stats['derniere_visite']->diffInDays(now()) : 0,
+                    'ca_total' => $caClient,
+                    'score_risque' => round($scoreRisque),
                 ]);
             }
         }
@@ -488,14 +501,101 @@ class FidelisationService
 
         // Taux de rétention (clients avec au moins 2 réservations)
         $clientsAvecPlusieursReservations = 0;
-        foreach ($query as $reservations) {
+        $totalCA = 0;
+        $dureesEntreVisites = [];
+        $topClients = collect([]);
+
+        foreach ($query as $userId => $reservations) {
+            $client = $reservations->first()->user;
+            if (!$client) {
+                continue;
+            }
+
             if ($reservations->count() >= 2) {
                 $clientsAvecPlusieursReservations++;
             }
+
+            // Calculer le CA par client
+            $caClient = $reservations->sum('prix');
+            $totalCA += $caClient;
+
+            // Calculer les durées entre visites
+            $dates = $reservations->sortBy('date_reservation')->pluck('date_reservation');
+            foreach ($dates->sliding(2) as $pair) {
+                if ($pair->count() === 2) {
+                    $dureesEntreVisites[] = $pair->first()->diffInDays($pair->last());
+                }
+            }
+
+            // Préparer top clients
+            $clientStats = $this->calculateClientFidelite($entreprise, $client);
+            $topClients->push([
+                'client' => $client,
+                'nb_reservations' => $clientStats['nb_reservations'],
+                'ca_total' => $caClient,
+                'frequence_moyenne' => $clientStats['frequence_moyenne'],
+            ]);
         }
+
         $stats['taux_retention'] = $stats['total_clients'] > 0 
             ? round(($clientsAvecPlusieursReservations / $stats['total_clients']) * 100, 1)
             : 0;
+
+        // CA moyen par client
+        $stats['ca_moyen_client'] = $stats['total_clients'] > 0 
+            ? round($totalCA / $stats['total_clients'], 2)
+            : 0;
+
+        // Durée moyenne entre visites
+        $stats['duree_moyenne_entre_visites'] = count($dureesEntreVisites) > 0
+            ? round(array_sum($dureesEntreVisites) / count($dureesEntreVisites), 1)
+            : 0;
+
+        // Top 5 clients par CA
+        $stats['top_clients_ca'] = $topClients->sortByDesc('ca_total')->take(5)->values()->all();
+
+        // Top 5 clients par fréquence
+        $stats['top_clients_frequence'] = $topClients->sortByDesc('frequence_moyenne')->take(5)->values()->all();
+
+        // Évolution des statuts (12 derniers mois)
+        $evolutionStatuts = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $mois = $date->format('Y-m');
+            
+            $clientsMois = Reservation::where('entreprise_id', $entreprise->id)
+                ->whereIn('statut', ['confirmee', 'terminee'])
+                ->whereNotNull('user_id')
+                ->whereNotNull('date_reservation')
+                ->whereYear('date_reservation', $date->year)
+                ->whereMonth('date_reservation', $date->month)
+                ->with('user')
+                ->get()
+                ->groupBy('user_id');
+
+            $reguliers = 0;
+            $occasionnels = 0;
+            $nouveaux = 0;
+
+            foreach ($clientsMois as $userId => $clientReservations) {
+                $client = $clientReservations->first()->user;
+                if (!$client) continue;
+
+                $clientStats = $this->calculateClientFidelite($entreprise, $client);
+                if ($clientStats['statut'] === 'regulier') $reguliers++;
+                elseif ($clientStats['statut'] === 'occasionnel') $occasionnels++;
+                else $nouveaux++;
+            }
+
+            $evolutionStatuts[] = [
+                'mois' => $date->format('M Y'),
+                'reguliers' => $reguliers,
+                'occasionnels' => $occasionnels,
+                'nouveaux' => $nouveaux,
+            ];
+        }
+
+        $stats['evolution_statuts'] = $evolutionStatuts;
 
         return [
             'norme_quartier' => $normeQuartier,

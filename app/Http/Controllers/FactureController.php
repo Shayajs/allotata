@@ -139,6 +139,53 @@ class FactureController extends Controller
             }
         }
 
+        // Générer automatiquement les factures d'abonnement si nécessaire
+        // Quand on accède à la page factures, vérifier si une facture doit être générée pour le mois actuel
+        $abonnements = \App\Models\EntrepriseSubscription::where('entreprise_id', $entreprise->id)
+            ->where(function($q) {
+                $q->where('est_manuel', true)
+                  ->orWhere(function($q2) {
+                      $q2->where('est_manuel', false)
+                         ->whereIn('stripe_status', ['active', 'trialing']);
+                  });
+            })
+            ->get();
+
+        foreach ($abonnements as $subscription) {
+            try {
+                $jourActuel = now()->day;
+                $dateFacture = now();
+                
+                // Vérifier si c'est le jour de renouvellement ou si on accède à la page factures
+                // Si jour_renouvellement n'est pas défini, on génère quand même si on accède à la page
+                if (!$subscription->jour_renouvellement || $subscription->jour_renouvellement == $jourActuel || $request->has('generate')) {
+                    // Vérifier si une facture existe déjà pour ce mois
+                    $periodeDebut = $dateFacture->copy()->startOfMonth();
+                    $periodeFin = $dateFacture->copy()->endOfMonth();
+                    
+                    if ($subscription->type_renouvellement === 'annuel') {
+                        $periodeDebut = $dateFacture->copy()->startOfYear();
+                        $periodeFin = $dateFacture->copy()->endOfYear();
+                    }
+
+                    $factureExistante = Facture::where('entreprise_subscription_id', $subscription->id)
+                        ->where('type_facture', 'abonnement_entreprise')
+                        ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
+                        ->first();
+
+                    if (!$factureExistante) {
+                        if ($subscription->est_manuel) {
+                            Facture::generateFromManualEntrepriseSubscription($subscription, $dateFacture);
+                        } else {
+                            Facture::generateFromStripeEntrepriseSubscription($subscription, $dateFacture);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de la génération automatique de facture d'abonnement pour l'entreprise #{$entreprise->id}: " . $e->getMessage());
+            }
+        }
+
         $query = $entreprise->factures()
             ->with(['user', 'reservation']);
 

@@ -8,11 +8,18 @@ class MediaLibrary {
         this.selectedFile = null;
         this.onSelectCallback = null;
         
+        // Pour la sélection multiple
+        this.selectedFiles = new Set();
+        this.isMultiSelectMode = false;
+        
         // Pour la création de dossiers et le déplacement
         this.folderSelectorMode = null; // 'create' ou 'move'
         this.selectedFolderPath = '/';
         this.filesToMove = [];
         this.createFolderParentFolder = '/';
+        
+        // Pour le drag and drop
+        this.draggedFileId = null;
         
         this.init();
     }
@@ -208,7 +215,11 @@ class MediaLibrary {
     renderFileCard(file, isModal = false) {
         const url = `/media/${file.path}`;
         const isSelected = this.selectedFile?.id === file.id;
-        const isMultiSelected = this.selectedFiles.has(file.id);
+        // S'assurer que selectedFiles existe et est un Set
+        if (!this.selectedFiles) {
+            this.selectedFiles = new Set();
+        }
+        const isMultiSelected = !isModal && this.selectedFiles.has(file.id);
         const dragClass = !isModal ? 'draggable-file' : '';
 
         return `

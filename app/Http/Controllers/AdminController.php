@@ -18,6 +18,7 @@ use Stripe\Product;
 use App\Models\Ticket;
 use App\Models\Contact;
 use App\Models\EntrepriseFinance;
+use App\Models\Facture;
 
 class AdminController extends Controller
 {
@@ -2440,5 +2441,186 @@ class AdminController extends Controller
             'raw_data' => $transaction->raw_data,
             'created_at' => $transaction->created_at->toISOString(),
         ]);
+    }
+
+    /**
+     * Afficher la liste des factures (admin)
+     */
+    public function factures(Request $request)
+    {
+        $query = Facture::with(['entreprise', 'user', 'entrepriseSubscription', 'reservation']);
+
+        // Filtres
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('numero_facture', 'like', "%{$search}%")
+                  ->orWhereHas('entreprise', function($entrepriseQuery) use ($search) {
+                      $entrepriseQuery->where('nom', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('type_facture')) {
+            $query->where('type_facture', $request->type_facture);
+        }
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        if ($request->filled('date_debut')) {
+            $query->whereDate('date_facture', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('date_facture', '<=', $request->date_fin);
+        }
+
+        $factures = $query->orderBy('date_facture', 'desc')->paginate(20)->withQueryString();
+
+        return view('admin.factures.index', [
+            'factures' => $factures,
+        ]);
+    }
+
+    /**
+     * Afficher le formulaire de création de facture manuelle (admin)
+     */
+    public function createFacture()
+    {
+        $entreprises = Entreprise::orderBy('nom')->get();
+        $users = User::orderBy('name')->get();
+        $subscriptions = EntrepriseSubscription::with('entreprise')
+            ->where(function($q) {
+                $q->where('est_manuel', true)
+                  ->orWhere(function($q2) {
+                      $q2->where('est_manuel', false)
+                         ->whereIn('stripe_status', ['active', 'trialing']);
+                  });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.factures.create', [
+            'entreprises' => $entreprises,
+            'users' => $users,
+            'subscriptions' => $subscriptions,
+        ]);
+    }
+
+    /**
+     * Stocker une facture manuelle (admin)
+     */
+    public function storeFacture(Request $request)
+    {
+        $validated = $request->validate([
+            'type_facture' => 'required|in:reservation,abonnement_manuel,abonnement_entreprise',
+            'entreprise_id' => 'nullable|exists:entreprises,id',
+            'user_id' => 'nullable|exists:users,id',
+            'entreprise_subscription_id' => 'nullable|exists:entreprise_subscriptions,id',
+            'montant_ht' => 'required|numeric|min:0.01',
+            'taux_tva' => 'nullable|numeric|min:0|max:100',
+            'date_facture' => 'required|date',
+            'date_echeance' => 'nullable|date|after_or_equal:date_facture',
+            'notes' => 'nullable|string|max:1000',
+            'statut' => 'nullable|in:brouillon,emise,payee,annulee',
+        ]);
+
+        // Vérifier qu'au moins entreprise_id ou user_id est fourni
+        if (!$validated['entreprise_id'] && !$validated['user_id']) {
+            return back()->withErrors(['error' => 'Au moins une entreprise ou un utilisateur doit être sélectionné.'])->withInput();
+        }
+
+        try {
+            $facture = Facture::generateManualInvoice($validated);
+
+            return redirect()->route('admin.factures.show', $facture->id)
+                ->with('success', 'Facture créée avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la création de facture manuelle: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Une erreur est survenue lors de la création de la facture.'])->withInput();
+        }
+    }
+
+    /**
+     * Afficher une facture (admin)
+     */
+    public function showFacture(Facture $facture)
+    {
+        $facture->load(['entreprise', 'user', 'entrepriseSubscription', 'reservation', 'reservations']);
+
+        return view('admin.factures.show', [
+            'facture' => $facture,
+        ]);
+    }
+
+    /**
+     * Générer automatiquement les factures d'abonnement manquantes (admin)
+     */
+    public function generateSubscriptionInvoices(Request $request)
+    {
+        $dateFacture = $request->filled('date') ? \Carbon\Carbon::parse($request->date) : now();
+        $force = $request->boolean('force', false);
+
+        $facturesGenerees = 0;
+        $erreurs = 0;
+
+        // Générer pour les abonnements manuels entreprises
+        $subscriptionsManuelles = EntrepriseSubscription::where('est_manuel', true)
+            ->whereNotNull('type_renouvellement')
+            ->whereNotNull('jour_renouvellement')
+            ->whereNotNull('montant')
+            ->where(function($query) {
+                $query->whereNull('actif_jusqu')
+                      ->orWhere('actif_jusqu', '>=', now());
+            })
+            ->with('entreprise')
+            ->get();
+
+        foreach ($subscriptionsManuelles as $subscription) {
+            if ($force || $subscription->jour_renouvellement == $dateFacture->day) {
+                try {
+                    $facture = Facture::generateFromManualEntrepriseSubscription($subscription, $dateFacture);
+                    if ($facture) {
+                        $facturesGenerees++;
+                    }
+                } catch (\Exception $e) {
+                    $erreurs++;
+                    Log::error('Erreur génération facture abonnement manuel ' . $subscription->id . ': ' . $e->getMessage());
+                }
+            }
+        }
+
+        // Générer pour les abonnements Stripe entreprises
+        $subscriptionsStripe = EntrepriseSubscription::where('est_manuel', false)
+            ->whereIn('stripe_status', ['active', 'trialing'])
+            ->whereNotNull('stripe_id')
+            ->with('entreprise')
+            ->get();
+
+        foreach ($subscriptionsStripe as $subscription) {
+            if ($force || $subscription->jour_renouvellement == $dateFacture->day) {
+                try {
+                    $facture = Facture::generateFromStripeEntrepriseSubscription($subscription, $dateFacture);
+                    if ($facture) {
+                        $facturesGenerees++;
+                    }
+                } catch (\Exception $e) {
+                    $erreurs++;
+                    Log::error('Erreur génération facture abonnement Stripe ' . $subscription->id . ': ' . $e->getMessage());
+                }
+            }
+        }
+
+        $message = "Génération terminée : {$facturesGenerees} facture(s) générée(s)";
+        if ($erreurs > 0) {
+            $message .= ", {$erreurs} erreur(s)";
+        }
+
+        return back()->with('success', $message);
     }
 }

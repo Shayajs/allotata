@@ -194,7 +194,7 @@ class Facture extends Model
         }
 
         $factureExistante = self::where('entreprise_subscription_id', $subscription->id)
-            ->where('type_facture', 'abonnement_manuel')
+            ->where('type_facture', 'abonnement_entreprise')
             ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
             ->first();
 
@@ -208,13 +208,13 @@ class Facture extends Model
         $montantTVA = 0;
         $montantTTC = $montantHT;
 
-        // Créer la facture
+        // Créer la facture (type abonnement_entreprise pour facture Allotata vers entreprise)
         $facture = self::create([
-            'user_id' => $entreprise->user_id,
+            'user_id' => $entreprise->user_id, // Pour compatibilité, mais c'est une facture entreprise
             'entreprise_id' => $entreprise->id,
             'entreprise_subscription_id' => $subscription->id,
             'reservation_id' => null,
-            'type_facture' => 'abonnement_manuel',
+            'type_facture' => 'abonnement_entreprise',
             'numero_facture' => self::generateNumeroFacture(),
             'date_facture' => $dateFacture,
             'date_echeance' => $dateFacture->copy()->addDays(30), // Échéance 30 jours
@@ -226,10 +226,143 @@ class Facture extends Model
             'notes' => 'Facture d\'abonnement ' . ($subscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes') . ' (' . ($subscription->type_renouvellement === 'mensuel' ? 'mensuel' : 'annuel') . ') - Période du ' . $periodeDebut->format('d/m/Y') . ' au ' . $periodeFin->format('d/m/Y'),
         ]);
 
-        \Log::info('Facture d\'abonnement manuel entreprise générée', [
+        \Log::info('Facture d\'abonnement entreprise générée', [
             'facture_id' => $facture->id,
             'entreprise_id' => $entreprise->id,
             'subscription_id' => $subscription->id,
+            'montant' => $montantTTC,
+        ]);
+
+        return $facture;
+    }
+
+    /**
+     * Génère une facture pour un abonnement Stripe entreprise
+     */
+    public static function generateFromStripeEntrepriseSubscription(EntrepriseSubscription $subscription, \Carbon\Carbon $dateFacture = null): ?Facture
+    {
+        if ($subscription->est_manuel || !$subscription->stripe_id) {
+            return null;
+        }
+
+        $dateFacture = $dateFacture ?? now();
+        $entreprise = $subscription->entreprise;
+        
+        // Vérifier si une facture existe déjà pour cette période
+        $periodeDebut = $dateFacture->copy()->startOfMonth();
+        $periodeFin = $dateFacture->copy()->endOfMonth();
+
+        $factureExistante = self::where('entreprise_subscription_id', $subscription->id)
+            ->where('type_facture', 'abonnement_entreprise')
+            ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
+            ->first();
+
+        if ($factureExistante) {
+            return $factureExistante;
+        }
+
+        // Récupérer le montant depuis Stripe ou utiliser un montant par défaut
+        $montantHT = $subscription->montant ?? 0;
+        
+        // Si pas de montant dans la subscription, essayer de récupérer depuis Stripe
+        if ($montantHT == 0 && $subscription->stripe_price) {
+            try {
+                $stripePrice = \Stripe\Price::retrieve($subscription->stripe_price, ['api_key' => config('services.stripe.secret')]);
+                $montantHT = $stripePrice->unit_amount / 100; // Stripe stocke en centimes
+            } catch (\Exception $e) {
+                \Log::warning('Impossible de récupérer le prix Stripe pour la subscription ' . $subscription->id . ': ' . $e->getMessage());
+            }
+        }
+
+        if ($montantHT == 0) {
+            \Log::warning('Impossible de générer une facture pour la subscription ' . $subscription->id . ' : montant invalide');
+            return null;
+        }
+
+        // Calculer les montants (TVA à 0% par défaut)
+        $tauxTVA = 0;
+        $montantTVA = 0;
+        $montantTTC = $montantHT;
+
+        // Créer la facture (type abonnement_entreprise pour facture Allotata vers entreprise)
+        $facture = self::create([
+            'user_id' => $entreprise->user_id, // Pour compatibilité, mais c'est une facture entreprise
+            'entreprise_id' => $entreprise->id,
+            'entreprise_subscription_id' => $subscription->id,
+            'reservation_id' => null,
+            'type_facture' => 'abonnement_entreprise',
+            'numero_facture' => self::generateNumeroFacture(),
+            'date_facture' => $dateFacture,
+            'date_echeance' => $dateFacture->copy()->addDays(30), // Échéance 30 jours
+            'montant_ht' => $montantHT,
+            'taux_tva' => $tauxTVA,
+            'montant_tva' => $montantTVA,
+            'montant_ttc' => $montantTTC,
+            'statut' => 'emise',
+            'notes' => 'Facture d\'abonnement Stripe ' . ($subscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes') . ' (mensuel) - Période du ' . $periodeDebut->format('d/m/Y') . ' au ' . $periodeFin->format('d/m/Y'),
+        ]);
+
+        \Log::info('Facture d\'abonnement Stripe entreprise générée', [
+            'facture_id' => $facture->id,
+            'entreprise_id' => $entreprise->id,
+            'subscription_id' => $subscription->id,
+            'montant' => $montantTTC,
+        ]);
+
+        return $facture;
+    }
+
+    /**
+     * Génère une facture manuelle pour une entreprise ou un membre
+     */
+    public static function generateManualInvoice(array $data): ?Facture
+    {
+        $validated = [
+            'entreprise_id' => $data['entreprise_id'] ?? null,
+            'user_id' => $data['user_id'] ?? null,
+            'montant_ht' => $data['montant_ht'] ?? 0,
+            'taux_tva' => $data['taux_tva'] ?? 0,
+            'date_facture' => $data['date_facture'] ?? now(),
+            'date_echeance' => $data['date_echeance'] ?? now()->addDays(30),
+            'notes' => $data['notes'] ?? null,
+            'type_facture' => $data['type_facture'] ?? 'reservation',
+            'statut' => $data['statut'] ?? 'emise',
+        ];
+
+        // Vérifier qu'au moins entreprise_id ou user_id est fourni
+        if (!$validated['entreprise_id'] && !$validated['user_id']) {
+            throw new \Exception('Au moins entreprise_id ou user_id doit être fourni');
+        }
+
+        // Calculer les montants
+        $montantHT = $validated['montant_ht'];
+        $tauxTVA = $validated['taux_tva'];
+        $montantTVA = $montantHT * ($tauxTVA / 100);
+        $montantTTC = $montantHT + $montantTVA;
+
+        // Créer la facture
+        $facture = self::create([
+            'reservation_id' => null,
+            'entreprise_id' => $validated['entreprise_id'],
+            'user_id' => $validated['user_id'],
+            'entreprise_subscription_id' => $data['entreprise_subscription_id'] ?? null,
+            'type_facture' => $validated['type_facture'],
+            'numero_facture' => self::generateNumeroFacture(),
+            'date_facture' => $validated['date_facture'],
+            'date_echeance' => $validated['date_echeance'],
+            'montant_ht' => $montantHT,
+            'taux_tva' => $tauxTVA,
+            'montant_tva' => $montantTVA,
+            'montant_ttc' => $montantTTC,
+            'statut' => $validated['statut'],
+            'notes' => $validated['notes'],
+        ]);
+
+        \Log::info('Facture manuelle générée', [
+            'facture_id' => $facture->id,
+            'entreprise_id' => $validated['entreprise_id'],
+            'user_id' => $validated['user_id'],
+            'type_facture' => $validated['type_facture'],
             'montant' => $montantTTC,
         ]);
 

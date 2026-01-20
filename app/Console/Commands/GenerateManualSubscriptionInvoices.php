@@ -125,7 +125,7 @@ class GenerateManualSubscriptionInvoices extends Command
                     // Vérifier si une facture existe déjà pour cette période
                     if (!$force) {
                         $factureExistante = Facture::where('entreprise_subscription_id', $subscription->id)
-                            ->where('type_facture', 'abonnement_manuel')
+                            ->where('type_facture', 'abonnement_entreprise')
                             ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
                             ->first();
 

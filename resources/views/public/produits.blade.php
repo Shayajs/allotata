@@ -378,9 +378,8 @@
         @endif
     </div>
 
-    <script>
-        // Données des produits
-        const produitsData = @json($produits->map(function($produit) {
+    @php
+        $produitsDataArray = $produits->map(function($produit) {
             $imageCouverture = $produit->imageCouverture;
             $premiereImage = $produit->images->first();
             $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
@@ -418,9 +417,18 @@
                 'note_moyenne' => $produit->note_moyenne,
                 'photos_avis' => $photosAvis->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray(),
             ];
-        }));
+        })->toArray();
+        
+        $realisationPhotosArray = $entreprise->realisationPhotos->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray();
+        $commanderProduitBaseUrl = route('messagerie.commander-produit', ['slug' => $entreprise->slug, 'produitId' => 0]);
+    @endphp
 
-        const realisationPhotos = @json($entreprise->realisationPhotos->map(fn($p) => asset('storage/' . $p->photo_path))->take(8)->toArray());
+    <script>
+        // Données des produits
+        const produitsData = @json($produitsDataArray);
+
+        const realisationPhotos = @json($realisationPhotosArray);
+        const commanderProduitBaseUrl = @json($commanderProduitBaseUrl);
 
         function selectProduit(produitId, isMobile) {
             const produit = produitsData.find(p => p.id === produitId);
@@ -572,7 +580,7 @@
                         </div>
                     </div>
                 ` : ''}
-                <a href="${'{{ route('messagerie.commander-produit', ['slug' => $entreprise->slug, 'produitId' => 0]) }}'.replace('/0', '/' + produit.id)}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
+                <a href="${commanderProduitBaseUrl.replace('/0', '/' + produit.id)}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
                     Commander ce produit
                 </a>
             `;
