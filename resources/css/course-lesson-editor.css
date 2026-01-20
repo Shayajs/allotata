@@ -41,21 +41,85 @@
 
 /* Zone de preview/édition */
 .course-preview {
-    margin-top: 56px;
-    margin-right: 320px;
-    min-height: calc(100vh - 56px);
-    transition: margin-right 0.3s ease;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 320px;
+    bottom: 0;
+    margin-top: 0;
+    margin-right: 0;
+    height: calc(100vh - 56px);
+    transition: right 0.3s ease;
     background: #f8fafc;
     color: #1e293b;
+    overflow: visible; /* Permettre le scroll du conteneur enfant */
+    display: flex;
+    flex-direction: column;
 }
 
 .course-preview.full-width {
-    margin-right: 0;
+    right: 0;
 }
 
 .dark .course-preview {
     background: #0f172a;
     color: #e2e8f0;
+}
+
+/* Conteneur des blocs */
+#blocks-container {
+    flex: 1 1 auto;
+    min-height: 0; /* Important pour que flex fonctionne avec overflow */
+    max-height: 100%;
+    overflow-y: scroll !important; /* Forcer la scrollbar visible */
+    overflow-x: hidden;
+    /* Améliorer le scroll sur tous les navigateurs */
+    -webkit-overflow-scrolling: touch;
+    /* S'assurer que le conteneur peut scroller */
+    position: relative;
+    /* Forcer le scroll à fonctionner */
+    overscroll-behavior: contain;
+}
+
+/* S'assurer que le conteneur des blocs est bien scrollable même avec peu de contenu */
+#blocks-container::after {
+    content: '';
+    display: block;
+    height: 200px; /* Espace en bas pour faciliter le scroll */
+}
+
+/* Améliorer la visibilité de la scrollbar */
+#blocks-container::-webkit-scrollbar {
+    width: 14px;
+}
+
+#blocks-container::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 7px;
+}
+
+#blocks-container::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 7px;
+    border: 3px solid #e2e8f0;
+}
+
+#blocks-container::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Scrollbar en mode sombre */
+.dark #blocks-container::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark #blocks-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-color: #1e293b;
+}
+
+.dark #blocks-container::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
 }
 
 /* Bloc éditable */
@@ -64,6 +128,10 @@
     cursor: grab;
     transition: outline 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     margin-bottom: 1rem;
+    /* S'assurer que les blocs ne bloquent pas le scroll */
+    pointer-events: auto;
+    /* Permettre le scroll même sur les blocs */
+    touch-action: pan-y;
 }
 
 .course-editable-block:hover {
@@ -101,7 +169,7 @@
 }
 
 .dark .course-preview .prose {
-    color: #e2e8f0;
+    color: #ffffff !important; /* Blanc en mode sombre */
 }
 
 .course-preview .prose h1,
@@ -119,7 +187,7 @@
 .dark .course-preview .prose h4,
 .dark .course-preview .prose h5,
 .dark .course-preview .prose h6 {
-    color: #f1f5f9;
+    color: #ffffff !important; /* Blanc en mode sombre */
 }
 
 .course-preview .prose p {
@@ -127,7 +195,23 @@
 }
 
 .dark .course-preview .prose p {
-    color: #cbd5e1;
+    color: #ffffff !important; /* Blanc en mode sombre */
+}
+
+.course-preview .prose li {
+    color: #334155;
+}
+
+.dark .course-preview .prose li {
+    color: #ffffff !important; /* Blanc en mode sombre */
+}
+
+.course-preview .prose strong {
+    color: #0f172a;
+}
+
+.dark .course-preview .prose strong {
+    color: #ffffff !important; /* Blanc en mode sombre */
 }
 
 /* Placeholder text amélioré */
@@ -155,7 +239,27 @@
 .dark .course-preview h4,
 .dark .course-preview h5,
 .dark .course-preview h6 {
-    color: #f1f5f9;
+    color: #ffffff !important; /* Blanc en mode sombre */
+}
+
+/* Force le texte blanc en mode sombre partout */
+.dark .course-preview,
+.dark .course-preview * {
+    color: #ffffff !important;
+}
+
+.dark .course-preview .prose *,
+.dark .course-preview .course-block-content * {
+    color: #ffffff !important;
+}
+
+/* Exceptions pour les liens et éléments spéciaux */
+.dark .course-preview a {
+    color: #4ade80 !important; /* Vert clair pour les liens */
+}
+
+.dark .course-preview .prose a {
+    color: #4ade80 !important;
 }
 
 /* Toolbar du bloc */
@@ -392,6 +496,15 @@
     color: #cbd5e1;
 }
 
+/* Contenu des tabs - masquer/afficher */
+.sidebar-tab-content {
+    display: none;
+}
+
+.sidebar-tab-content.active {
+    display: block;
+}
+
 /* Titres dans la sidebar */
 .course-editor-sidebar h3,
 .course-editor-sidebar h4 {
@@ -422,6 +535,138 @@
 
 .dark .course-preview .text-center.text-slate-400 {
     color: #cbd5e1 !important;
+}
+
+/* Mode AlloTata - Dégradé vert-orange */
+.allotata-text {
+    font-weight: 900 !important;
+    background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+}
+
+.dark .allotata-text {
+    background: linear-gradient(135deg, #4ade80 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Éditeur de texte riche (Quill) */
+.ql-editor {
+    min-height: 200px;
+    color: #1e293b;
+}
+
+.dark .ql-editor {
+    color: #ffffff !important;
+    background: #1e293b;
+}
+
+/* Style du bouton AlloTata dans Quill */
+.ql-toolbar .ql-allotata {
+    width: auto;
+    padding: 0 8px;
+    font-weight: 900;
+    border: none !important;
+}
+
+.ql-toolbar .ql-allotata span.allotata-text {
+    background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Préserver le format AlloTata dans l'éditeur Quill */
+.ql-editor .allotata-text {
+    font-weight: 900 !important;
+    background: linear-gradient(135deg, #22c55e 0%, #f97316 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    display: inline-block !important;
+}
+
+.dark .ql-editor .allotata-text {
+    background: linear-gradient(135deg, #4ade80 0%, #fb923c 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+.dark .ql-editor.ql-blank::before {
+    color: #94a3b8 !important;
+}
+
+.ql-toolbar {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.dark .ql-toolbar {
+    border-color: #475569;
+    background: #1e293b;
+}
+
+.ql-container {
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    font-size: 1rem;
+}
+
+.dark .ql-container {
+    border-color: #475569;
+    background: #1e293b;
+}
+
+.ql-toolbar .ql-stroke {
+    stroke: #64748b;
+}
+
+.dark .ql-toolbar .ql-stroke {
+    stroke: #94a3b8;
+}
+
+.ql-toolbar .ql-fill {
+    fill: #64748b;
+}
+
+.dark .ql-toolbar .ql-fill {
+    fill: #94a3b8;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar button.ql-active {
+    color: #22c55e;
+}
+
+.dark .ql-toolbar button:hover,
+.dark .ql-toolbar button.ql-active {
+    color: #4ade80;
+}
+
+.ql-toolbar .ql-allotata {
+    width: auto;
+    padding: 0 8px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    border: none !important;
+}
+
+.dark .ql-toolbar .ql-allotata {
+    background: linear-gradient(135deg, #4ade80 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 /* Ghost element pour drag & drop */

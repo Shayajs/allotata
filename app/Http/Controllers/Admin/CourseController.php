@@ -361,15 +361,15 @@ class CourseController extends Controller
             'is_auto_save' => 'nullable|boolean',
         ]);
 
-        // Mettre à jour les blocs
-        if (isset($validated['blocks'])) {
-            $lesson->contenu_blocks_json = $validated['blocks'];
-        }
-
         // Mettre à jour les autres champs si fournis
         $updateData = [
             'is_draft' => true, // Toujours brouillon avec cette méthode
         ];
+
+        // Mettre à jour les blocs - IMPORTANT: les inclure dans updateData
+        if (isset($validated['blocks'])) {
+            $updateData['contenu_blocks_json'] = $validated['blocks'];
+        }
 
         if (isset($validated['titre'])) {
             $updateData['titre'] = $validated['titre'];
@@ -405,60 +405,168 @@ class CourseController extends Controller
      */
     public function publish(Request $request, CourseLesson $lesson)
     {
-        $validated = $request->validate([
-            'blocks' => 'nullable|array', // Peut être vide au début
-            'titre' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'nullable|in:course,quiz',
-            'ordre' => 'nullable|integer|min:0',
-            'points_quiz' => 'nullable|integer|min:0',
-            'est_actif' => 'nullable|boolean',
-        ]);
+        try {
+            // Validation avec gestion d'erreur JSON
+            try {
+                $validated = $request->validate([
+                    'blocks' => 'nullable|array', // Peut être vide au début
+                    'titre' => 'nullable|string|max:255',
+                    'description' => 'nullable|string',
+                    'type' => 'nullable|in:course,quiz',
+                    'ordre' => 'nullable|integer|min:0',
+                    'points_quiz' => 'nullable|integer|min:0',
+                    'est_actif' => 'nullable|boolean',
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('Erreur de validation lors de la publication', [
+                    'lesson_id' => $lesson->id,
+                    'errors' => $e->errors()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Erreur de validation',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
 
-        // Mettre à jour les blocs (garder les anciens si non fournis)
-        if (isset($validated['blocks'])) {
-            $lesson->contenu_blocks_json = $validated['blocks'];
-        }
+            // Mettre à jour les blocs (garder les anciens si non fournis)
+            if (isset($validated['blocks'])) {
+                // S'assurer que blocks est bien un array
+                if (is_array($validated['blocks'])) {
+                    $lesson->contenu_blocks_json = $validated['blocks'];
+                } else {
+                    \Log::warning('blocks n\'est pas un array dans publish', [
+                        'lesson_id' => $lesson->id,
+                        'blocks_type' => gettype($validated['blocks'])
+                    ]);
+                    // Ne pas mettre à jour si ce n'est pas un array
+                }
+            }
+            // Générer le HTML à partir des blocs
+            if (!empty($lesson->contenu_blocks_json)) {
+                try {
+                    // S'assurer que contenu_blocks_json est bien un array
+                    if (!is_array($lesson->contenu_blocks_json)) {
+                        \Log::warning('contenu_blocks_json n\'est pas un array', [
+                            'lesson_id' => $lesson->id,
+                            'type' => gettype($lesson->contenu_blocks_json)
+                        ]);
+                        $lesson->contenu_blocks_json = [];
+                    }
+                    
+                    $generatedHtml = $lesson->generateHtmlFromBlocks();
+                    $lesson->contenu_rich_html = $generatedHtml;
+                } catch (\Exception $e) {
+                    \Log::error('Erreur lors de la génération du HTML depuis les blocs', [
+                        'lesson_id' => $lesson->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'blocks_json' => is_array($lesson->contenu_blocks_json) ? 'array of ' . count($lesson->contenu_blocks_json) . ' blocks' : gettype($lesson->contenu_blocks_json)
+                    ]);
+                    
+                    // Ne pas bloquer la publication si le HTML ne peut pas être généré
+                    // On met une chaîne vide ou le HTML existant
+                    if (empty($lesson->contenu_rich_html)) {
+                        $lesson->contenu_rich_html = '';
+                    }
+                }
+            } else {
+                // Si pas de blocs, garder le HTML existant ou mettre une chaîne vide
+                if (empty($lesson->contenu_rich_html)) {
+                    $lesson->contenu_rich_html = '';
+                }
+            }
 
-        // Générer le HTML à partir des blocs
-        if (!empty($lesson->contenu_blocks_json)) {
-            $lesson->contenu_rich_html = $lesson->generateHtmlFromBlocks();
-        }
+            // Mettre à jour les autres champs
+            $updateData = [
+                'is_draft' => false,
+                'contenu_blocks_json' => $lesson->contenu_blocks_json, // IMPORTANT: sauvegarder les blocs
+                'contenu_rich_html' => $lesson->contenu_rich_html,     // IMPORTANT: sauvegarder le HTML généré
+            ];
 
-        // Mettre à jour les autres champs
-        $updateData = [
-            'is_draft' => false,
-            'published_at' => $lesson->published_at ?? now(), // Ne change que si première publication
-        ];
+            // Définir published_at seulement si c'est la première publication
+            if ($lesson->published_at === null) {
+                $updateData['published_at'] = now();
+            }
 
-        if (isset($validated['titre'])) {
-            $updateData['titre'] = $validated['titre'];
-        }
-        if (isset($validated['description'])) {
-            $updateData['description'] = $validated['description'];
-        }
-        if (isset($validated['type'])) {
-            $updateData['type'] = $validated['type'];
-        }
-        if (isset($validated['ordre'])) {
-            $updateData['ordre'] = $validated['ordre'];
-        }
-        if (isset($validated['points_quiz'])) {
-            $updateData['points_quiz'] = $validated['points_quiz'];
-        }
-        if (isset($validated['est_actif'])) {
-            $updateData['est_actif'] = $validated['est_actif'];
-        }
+            if (isset($validated['titre'])) {
+                $updateData['titre'] = $validated['titre'];
+            }
+            if (isset($validated['description'])) {
+                $updateData['description'] = $validated['description'];
+            }
+            if (isset($validated['type'])) {
+                $updateData['type'] = $validated['type'];
+            }
+            if (isset($validated['ordre'])) {
+                $updateData['ordre'] = $validated['ordre'];
+            }
+            if (isset($validated['points_quiz'])) {
+                $updateData['points_quiz'] = $validated['points_quiz'];
+            }
+            if (isset($validated['est_actif'])) {
+                $updateData['est_actif'] = $validated['est_actif'];
+            }
 
-        $lesson->update($updateData);
+            // Sauvegarder les modifications
+            $lesson->update($updateData);
+            
+            // Log pour debug
+            \Log::info('Leçon publiée', [
+                'lesson_id' => $lesson->id,
+                'html_length' => strlen($lesson->contenu_rich_html ?? ''),
+                'blocks_count' => is_array($lesson->contenu_blocks_json) ? count($lesson->contenu_blocks_json) : 0,
+            ]);
+            
+            // Rafraîchir le modèle pour obtenir les valeurs à jour
+            $lesson->refresh();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Leçon publiée avec succès',
-            'published_at' => $lesson->published_at->toIso8601String(),
-            'is_draft' => false,
-            'is_published' => true,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Leçon publiée avec succès',
+                'published_at' => $lesson->published_at ? $lesson->published_at->toIso8601String() : null,
+                'is_draft' => false,
+                'is_published' => true,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Double check pour les erreurs de validation
+            \Log::error('Erreur de validation lors de la publication (catch externe)', [
+                'lesson_id' => $lesson->id,
+                'errors' => $e->errors()
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur de validation',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Erreur de base de données
+            \Log::error('Erreur de base de données lors de la publication', [
+                'lesson_id' => $lesson->id,
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql() ?? null
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur de base de données lors de la publication',
+                'message' => config('app.debug') ? $e->getMessage() : 'Une erreur est survenue lors de la publication',
+            ], 500);
+        } catch (\Exception $e) {
+            // Toute autre exception
+            \Log::error('Erreur lors de la publication de la leçon', [
+                'lesson_id' => $lesson->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors de la publication',
+                'message' => config('app.debug') ? $e->getMessage() : 'Une erreur est survenue lors de la publication',
+            ], 500);
+        }
     }
 
     /**
@@ -518,6 +626,37 @@ class CourseController extends Controller
                 'url' => Storage::disk('public')->url($path),
             ]);
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors de l\'upload: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload de vidéo pour un bloc de leçon (via API)
+     */
+    public function uploadVideoForLesson(Request $request, CourseLesson $lesson)
+    {
+        $request->validate([
+            'video' => 'required|mimes:mp4,webm,ogg,mov,avi|max:102400', // 100MB max
+            'block_id' => 'nullable|string',
+        ]);
+
+        try {
+            $path = $request->file('video')->store('courses/lessons/' . $lesson->id . '/videos', 'public');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => Storage::disk('public')->url($path),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'upload de vidéo', [
+                'lesson_id' => $lesson->id,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'error' => 'Erreur lors de l\'upload: ' . $e->getMessage(),

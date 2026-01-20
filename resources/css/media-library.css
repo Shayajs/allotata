@@ -1,0 +1,200 @@
+/* Media Library Styles */
+
+.media-card {
+    transition: all 0.2s ease;
+}
+
+.media-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.media-card.selected {
+    border-color: rgb(34, 197, 94);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Folder tree styles */
+.folder-item {
+    margin-left: 0.5rem;
+}
+
+/* Modal styles */
+#media-selector-modal {
+    display: flex;
+    backdrop-filter: blur(4px);
+    z-index: 9999 !important; /* Toujours au premier plan */
+}
+
+#media-selector-modal.hidden {
+    display: none;
+}
+
+#file-details-modal {
+    display: flex;
+    backdrop-filter: blur(4px);
+    z-index: 10000 !important; /* Au-dessus de la modale de sélection */
+}
+
+#file-details-modal.hidden {
+    display: none;
+}
+
+/* Scrollbar styles */
+#folder-tree::-webkit-scrollbar,
+#modal-folder-tree::-webkit-scrollbar {
+    width: 6px;
+}
+
+#folder-tree::-webkit-scrollbar-track,
+#modal-folder-tree::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#folder-tree::-webkit-scrollbar-thumb,
+#modal-folder-tree::-webkit-scrollbar-thumb {
+    background: rgb(203, 213, 225);
+    border-radius: 3px;
+}
+
+.dark #folder-tree::-webkit-scrollbar-thumb,
+.dark #modal-folder-tree::-webkit-scrollbar-thumb {
+    background: rgb(51, 65, 85);
+}
+
+/* Breadcrumb styles */
+#breadcrumb a,
+#modal-breadcrumb a {
+    transition: color 0.2s;
+}
+
+/* File type icons */
+.media-card svg {
+    width: 48px;
+    height: 48px;
+}
+
+/* Loading animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    #media-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    #modal-media-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border: 1px solid rgb(226, 232, 240);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    min-width: 150px;
+}
+
+.dark .dropdown-menu {
+    background: rgb(30, 41, 59);
+    border-color: rgb(51, 65, 85);
+}
+
+.dropdown-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    color: rgb(51, 65, 85);
+    transition: background-color 0.2s;
+}
+
+.dark .dropdown-menu button {
+    color: rgb(226, 232, 240);
+}
+
+.dropdown-menu button:hover {
+    background-color: rgb(241, 245, 249);
+}
+
+.dark .dropdown-menu button:hover {
+    background-color: rgb(51, 65, 85);
+}
+
+/* File preview styles */
+.media-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Aspect ratio for file cards */
+.aspect-square {
+    aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+    aspect-ratio: 16 / 9;
+}
+
+/* Menu contextuel */
+#file-context-menu {
+    position: fixed;
+}
+
+#file-context-menu button {
+    transition: background-color 0.2s;
+}
+
+/* Zone de drop */
+#drop-zone {
+    transition: all 0.3s ease;
+}
+
+/* Barre de progression */
+#upload-progress-bar {
+    transition: width 0.3s ease;
+}
+
+/* Fichiers draggables */
+.draggable-file {
+    cursor: grab;
+}
+
+.draggable-file:active {
+    cursor: grabbing;
+}
+
+/* Zone de drop pour les dossiers */
+.folder-item {
+    transition: background-color 0.2s;
+}
+
+.folder-item.drag-over {
+    background-color: rgb(220, 252, 231);
+}
+
+.dark .folder-item.drag-over {
+    background-color: rgba(6, 78, 59, 0.3);
+}

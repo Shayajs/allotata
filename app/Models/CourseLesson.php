@@ -186,27 +186,92 @@ class CourseLesson extends Model
 
         $html = '';
         
-        foreach ($this->contenu_blocks_json as $block) {
+        foreach ($this->contenu_blocks_json as $index => $block) {
+            $shouldContinue = false;
+            
             try {
-                $blockType = $block['type'] ?? null;
-                if (!$blockType) {
-                    continue;
+                // Vérifier que c'est bien un tableau
+                if (!is_array($block)) {
+                    \Log::warning('Bloc non-tableau dans CourseLesson::generateHtmlFromBlocks', [
+                        'lesson_id' => $this->id,
+                        'block_index' => $index,
+                        'block' => $block
+                    ]);
+                    $shouldContinue = true;
                 }
 
-                // Rendre le bloc selon son type
-                $html .= $this->renderBlock($block);
+                if (!$shouldContinue) {
+                    $blockType = $block['type'] ?? null;
+                    if (!$blockType || !is_string($blockType)) {
+                        \Log::warning('Type de bloc invalide dans CourseLesson::generateHtmlFromBlocks', [
+                            'lesson_id' => $this->id,
+                            'block_index' => $index,
+                            'block' => $block
+                        ]);
+                        $shouldContinue = true;
+                    }
+                }
+
+                if (!$shouldContinue) {
+                    // Rendre le bloc selon son type
+                    $blockHtml = $this->renderBlock($block);
+                    if (!empty($blockHtml)) {
+                        $html .= $blockHtml;
+                    }
+                }
             } catch (\Exception $e) {
                 \Log::error('Erreur lors du rendu du bloc dans CourseLesson::generateHtmlFromBlocks', [
                     'lesson_id' => $this->id,
+                    'block_index' => $index,
                     'block' => $block,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
-                continue;
+                // On continue avec le prochain bloc en cas d'erreur
             }
         }
 
+        // Si pas de HTML généré, retourner une chaîne vide au lieu d'une erreur
+        if (empty($html) || !is_string($html)) {
+            \Log::debug('generateHtmlFromBlocks: HTML vide ou non-string', [
+                'lesson_id' => $this->id,
+                'html_type' => gettype($html),
+                'html_length' => is_string($html) ? strlen($html) : 0
+            ]);
+            return '';
+        }
+
         // Nettoyer le HTML avec HTML Purifier
-        return \App\Services\HtmlPurifierService::purify($html);
+        try {
+            $purified = \App\Services\HtmlPurifierService::purify($html);
+            
+            // Vérifier que le HTML n'a pas été complètement vidé ou échappé
+            // Si le HTML purifié est vide ou beaucoup plus court, il y a peut-être un problème
+            if (empty($purified) || (strlen($purified) < strlen($html) * 0.3 && strpos($html, '<section') !== false && strpos($purified, '<section') === false)) {
+                \Log::warning('HTML Purifier a peut-être supprimé trop de contenu', [
+                    'lesson_id' => $this->id,
+                    'original_length' => strlen($html),
+                    'purified_length' => strlen($purified),
+                    'original_preview' => substr($html, 0, 500),
+                    'purified_preview' => substr($purified, 0, 500)
+                ]);
+                // En mode debug, retourner le HTML original pour diagnostic
+                if (config('app.debug')) {
+                    return $html;
+                }
+            }
+            
+            return is_string($purified) ? $purified : $html;
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors du nettoyage HTML avec HTML Purifier dans generateHtmlFromBlocks', [
+                'lesson_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            // En cas d'erreur, retourner le HTML non nettoyé plutôt que de faire échouer la publication
+            return $html;
+        }
     }
 
     /**
@@ -232,7 +297,7 @@ class CourseLesson extends Model
         }
 
         try {
-            return view($viewPath, [
+            $rendered = view($viewPath, [
                 'block' => $block,
                 'lesson' => $this,
                 'entreprise' => null, // Pas utilisé pour les cours
@@ -240,10 +305,14 @@ class CourseLesson extends Model
                 'settings' => $blockSettings,
                 'editMode' => false, // Mode rendu final (pas édition)
             ])->render();
+            
+            return $rendered ?: '';
         } catch (\Exception $e) {
             \Log::error('Erreur lors du rendu du bloc', [
                 'block_type' => $blockType,
-                'error' => $e->getMessage()
+                'lesson_id' => $this->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return $this->renderBlockFallback($block);
         }
@@ -299,22 +368,31 @@ class CourseLesson extends Model
         
         // Rendu minimal pour les types courants
         if ($blockType === 'text' && isset($blockContent['html'])) {
-            return '<div class="course-block course-block-text">' . $blockContent['html'] . '</div>';
+            $html = is_string($blockContent['html']) ? $blockContent['html'] : '';
+            return '<div class="course-block course-block-text">' . $html . '</div>';
         }
         
         if ($blockType === 'heading' && isset($blockContent['text'])) {
-            $level = $blockContent['level'] ?? 2;
-            return "<h{$level} class=\"course-block course-block-heading\">{$blockContent['text']}</h{$level}>";
+            $level = (int)($blockContent['level'] ?? 2);
+            $text = htmlspecialchars($blockContent['text'] ?? '', ENT_QUOTES, 'UTF-8');
+            if ($level < 1 || $level > 6) $level = 2;
+            return "<h{$level} class=\"course-block course-block-heading\">{$text}</h{$level}>";
         }
         
         if ($blockType === 'image' && isset($blockContent['src'])) {
-            $alt = $blockContent['alt'] ?? '';
-            $caption = isset($blockContent['caption']) ? "<figcaption>{$blockContent['caption']}</figcaption>" : '';
-            return "<figure class=\"course-block course-block-image\"><img src=\"{$blockContent['src']}\" alt=\"{$alt}\">{$caption}</figure>";
+            $src = htmlspecialchars($blockContent['src'] ?? '', ENT_QUOTES, 'UTF-8');
+            $alt = htmlspecialchars($blockContent['alt'] ?? '', ENT_QUOTES, 'UTF-8');
+            $caption = '';
+            if (isset($blockContent['caption']) && !empty($blockContent['caption'])) {
+                $captionText = htmlspecialchars($blockContent['caption'], ENT_QUOTES, 'UTF-8');
+                $caption = "<figcaption>{$captionText}</figcaption>";
+            }
+            return "<figure class=\"course-block course-block-image\"><img src=\"{$src}\" alt=\"{$alt}\">{$caption}</figure>";
         }
 
         // Rendu générique
-        return '<div class="course-block course-block-unknown">[Bloc: ' . htmlspecialchars($blockType) . ']</div>';
+        $blockTypeEscaped = htmlspecialchars((string)$blockType, ENT_QUOTES, 'UTF-8');
+        return '<div class="course-block course-block-unknown">[Bloc: ' . $blockTypeEscaped . ']</div>';
     }
 
     /**

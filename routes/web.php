@@ -470,6 +470,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/faqs/{faq}', [FaqController::class, 'adminUpdate'])->name('faqs.update');
     Route::delete('/faqs/{faq}', [FaqController::class, 'adminDestroy'])->name('faqs.destroy');
     
+    // Gestion des médias (médiathèque)
+    Route::get('/media', [\App\Http\Controllers\Admin\MediaController::class, 'index'])->name('media.index');
+    Route::get('/api/media/list', [\App\Http\Controllers\Admin\MediaController::class, 'list'])->name('media.list');
+    Route::post('/api/media/upload', [\App\Http\Controllers\Admin\MediaController::class, 'upload'])->name('media.upload');
+    Route::post('/api/media/folders', [\App\Http\Controllers\Admin\MediaController::class, 'createFolder'])->name('media.folders.create');
+    Route::get('/api/media/{mediaFile}', [\App\Http\Controllers\Admin\MediaController::class, 'show'])->name('media.show');
+    Route::put('/api/media/{mediaFile}/rename', [\App\Http\Controllers\Admin\MediaController::class, 'rename'])->name('media.rename');
+    Route::put('/api/media/{mediaFile}/move', [\App\Http\Controllers\Admin\MediaController::class, 'move'])->name('media.move');
+    Route::post('/api/media/{mediaFile}/thumbnail', [\App\Http\Controllers\Admin\MediaController::class, 'uploadThumbnail'])->name('media.thumbnail.upload');
+    Route::delete('/api/media/{mediaFile}/thumbnail', [\App\Http\Controllers\Admin\MediaController::class, 'deleteThumbnail'])->name('media.thumbnail.delete');
+    Route::delete('/api/media/{mediaFile}', [\App\Http\Controllers\Admin\MediaController::class, 'delete'])->name('media.delete');
+    
     // Gestion des cours (mode édition)
     Route::get('/courses', [\App\Http\Controllers\Admin\CourseController::class, 'index'])->name('courses.index');
     Route::post('/courses/modules', [\App\Http\Controllers\Admin\CourseController::class, 'storeModule'])->name('courses.modules.store');
@@ -489,6 +501,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/courses/lessons/{lesson}/publish', [\App\Http\Controllers\Admin\CourseController::class, 'publish'])->name('courses.lessons.publish');
     Route::post('/courses/lessons/{lesson}/render-block', [\App\Http\Controllers\Admin\CourseController::class, 'renderBlock'])->name('courses.lessons.render-block');
     Route::post('/courses/lessons/{lesson}/upload-image', [\App\Http\Controllers\Admin\CourseController::class, 'uploadImageForLesson'])->name('courses.lessons.upload-image');
+    Route::post('/courses/lessons/{lesson}/upload-video', [\App\Http\Controllers\Admin\CourseController::class, 'uploadVideoForLesson'])->name('courses.lessons.upload-video');
     
     Route::post('/courses/modules/{module}/lessons/{lesson}/questions', [\App\Http\Controllers\Admin\CourseController::class, 'storeQuizQuestion'])->name('courses.questions.store');
     Route::put('/courses/modules/{module}/lessons/{lesson}/questions/{question}', [\App\Http\Controllers\Admin\CourseController::class, 'updateQuizQuestion'])->name('courses.questions.update');

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './mobile.css';
+@import './course-blocks.css';
 
 /* Configuration du mode sombre avec le sélecteur de classe (au lieu de media query) */
 @custom-variant dark (&:where(.dark, .dark *));

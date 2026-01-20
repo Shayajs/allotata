@@ -24,7 +24,7 @@
 
 <section class="py-8 md:py-12 px-4">
     <div class="{{ $maxWidthClass }} mx-auto {{ $alignClass }}">
-        <div class="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-green-600 dark:prose-a:text-green-400 prose-a:no-underline hover:prose-a:underline"
+        <div class="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-green-600 dark:prose-a:text-green-400 prose-a:no-underline hover:prose-a:underline course-text-content"
              @if($editMode) data-editable="html" @endif>
             {!! $html !!}
         </div>

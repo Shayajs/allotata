@@ -1,6 +1,14 @@
 import './bootstrap';
 import './address-autocomplete';
 
+// Charger les scripts des blocs de cours uniquement sur les pages de cours
+// Doit être fait après le DOMContentLoaded car le contenu est généré dynamiquement
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.querySelector('[data-video-block-id], .course-text-content')) {
+        import('./course-blocks.js');
+    }
+});
+
 // ========================================
 // Gestion du thème clair/foncé avec cookies
 // ========================================

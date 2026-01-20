@@ -43,10 +43,11 @@ class StorageController extends Controller
         }
         
         // Vérification de sécurité simplifiée pour le développement
-        $allowedDirs = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services'];
+        $allowedDirs = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media'];
         $firstSegment = explode('/', $path)[0] ?? '';
         
         // Vérification minimale : juste s'assurer que c'est dans un dossier autorisé
+        // Les thumbnails sont dans media/thumbnails/ donc autorisées (media est dans allowedDirs)
         if (!in_array($firstSegment, $allowedDirs)) {
             \Log::error('StorageController - Dossier non autorisé', [
                 'path' => $path,
@@ -119,7 +120,7 @@ class StorageController extends Controller
         
         // Méthode 3 : Vérification par segments (dernier recours)
         // On vérifie que le chemin demandé ne contient pas de ".." et commence bien par un sous-dossier autorisé
-        $allowedDirectories = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services'];
+        $allowedDirectories = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media'];
         $pathSegments = explode('/', $requestedPath);
         
         // Si le premier segment est un dossier autorisé, on accepte

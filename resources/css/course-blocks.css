@@ -1,0 +1,90 @@
+/* Styles pour les blocs de cours - Version publique */
+
+/* Vidéo épinglée (PC uniquement) */
+@media (min-width: 768px) {
+    .video-pinned-container {
+        position: relative;
+    }
+    
+    .video-sticky-wrapper {
+        position: sticky;
+        top: 80px;
+        max-width: 350px;
+        margin-left: auto;
+        margin-right: 0;
+        z-index: 40;
+    }
+    
+    .video-pinned .video-player {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border: 2px solid #22c55e;
+        border-radius: 0.5rem;
+    }
+    
+    /* Réduire légèrement la taille quand épinglée */
+    .video-pinned.aspect-video {
+        max-height: 400px;
+    }
+    
+    .video-pinned .video-player video,
+    .video-pinned .video-player iframe {
+        max-height: 400px;
+    }
+}
+
+/* Contrôle audio mobile */
+@media (max-width: 767px) {
+    .video-audio-control {
+        display: none !important;
+    }
+    
+    .video-audio-control.show {
+        display: block !important;
+    }
+    
+    .video-player {
+        position: relative;
+    }
+}
+
+.video-audio-control {
+    transition: opacity 0.3s ease;
+}
+
+/* Style pour le texte AlloTata dans les blocs */
+.allotata-text {
+    font-weight: 900 !important;
+    background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+}
+
+.dark .allotata-text {
+    background: linear-gradient(135deg, #4ade80 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Styles pour le contenu texte des cours */
+.course-text-content {
+    color: #1e293b;
+}
+
+.dark .course-text-content {
+    color: #ffffff !important;
+}
+
+.course-text-content p,
+.course-text-content li,
+.course-text-content span {
+    color: inherit;
+}
+
+.dark .course-text-content p,
+.dark .course-text-content li,
+.dark .course-text-content span {
+    color: #ffffff !important;
+}

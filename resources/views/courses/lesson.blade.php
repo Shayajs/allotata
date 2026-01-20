@@ -2,10 +2,63 @@
 
 @section('title', $lesson->titre . ' - ' . $module->titre)
 
+@push('styles')
+{{-- Styles pour les blocs de cours inclus dans app.css --}}
+<style>
+    /* Désactiver le scroll du body pour la page de cours */
+    body {
+        overflow: hidden;
+    }
+    /* Ajuster le main du layout pour la page de cours */
+    main.max-w-7xl {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: calc(100vh - 4rem) !important;
+        overflow: hidden !important;
+    }
+    
+    /* S'assurer que seuls les conteneurs principaux ont le scroll */
+    /* Empêcher le scroll dans les blocs individuels qui pourraient créer des conflits */
+    #lesson-content section,
+    #lesson-content .prose,
+    #lesson-content .prose > *,
+    #lesson-content .course-block-content {
+        overflow: visible !important;
+    }
+    
+    /* S'assurer que les styles des blocs de cours sont appliqués */
+    #lesson-content {
+        line-height: 1.7;
+    }
+    
+    #lesson-content section {
+        margin-bottom: 0;
+    }
+    
+    /* Les iframes et vidéos peuvent avoir leur propre scroll mais ne doivent pas bloquer le scroll de la page */
+    #lesson-content iframe,
+    #lesson-content video {
+        pointer-events: auto;
+    }
+    
+    /* Empêcher le scroll sur les conteneurs de blocs qui pourraient en créer */
+    #lesson-content > * > * {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+    
+    /* S'assurer que le contenu principal peut bien scroller */
+    #lesson-content {
+        overflow: visible;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
+<div class="bg-slate-50 dark:bg-slate-900 flex overflow-hidden" style="height: calc(100vh - 4rem);">
     <!-- Sidebar 20% -->
-    <aside class="w-1/5 min-w-[280px] bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto sticky top-0 h-screen">
+    <aside class="w-1/5 min-w-[280px] bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto h-full">
         <div class="p-6">
             <!-- Barre de progression circulaire -->
             @if($user && $moduleProgress)
@@ -91,7 +144,7 @@
                         <li>
                             <a 
                                 href="{{ route('courses.lesson', ['module' => $module, 'lesson' => $l]) }}"
-                                class="block px-3 py-2 rounded-lg text-sm transition-colors relative {{ $isCurrent ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium' : $isAccessible ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' : 'text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed' }}"
+                                class="block px-3 py-2 rounded-lg text-sm transition-colors relative {{ $isCurrent ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium' : ($isAccessible ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700' : 'text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed') }}"
                                 @if(!$isAccessible) onclick="event.preventDefault(); return false;" @endif
                             >
                                 <div class="flex items-center justify-between">
@@ -122,7 +175,7 @@
     </aside>
 
     <!-- Contenu principal 80% -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto h-full" id="lesson-main-content">
         <div class="max-w-4xl mx-auto p-8">
             <!-- Image de couverture -->
             @if($lesson->image_path)
@@ -170,7 +223,7 @@
 
             <!-- Contenu riche du cours -->
             @if($lesson->contenu_rich_html)
-                <div class="prose prose-lg dark:prose-invert max-w-none mb-8">
+                <div id="lesson-content" class="mb-8">
                     {!! $lesson->contenu_rich_html !!}
                 </div>
             @endif
@@ -425,4 +478,8 @@
 </script>
 @endpush
 @include('components.admin-edit-courses-button')
+
+@push('scripts')
+{{-- Scripts pour les blocs de cours (chargé depuis app.js automatiquement) --}}
+@endpush
 @endsection

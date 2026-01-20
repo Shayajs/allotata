@@ -9,13 +9,92 @@
     @vite(['resources/css/app.css', 'resources/js/course-lesson-editor.js'])
     @include('partials.theme-script')
     
+    {{-- Media Library CSS et JS --}}
+    <link href="{{ Vite::asset('resources/css/media-library.css') }}" rel="stylesheet">
+    <script src="{{ Vite::asset('resources/js/media-library.js') }}"></script>
+    
     {{-- SortableJS pour le drag & drop --}}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     
+    {{-- Quill.js pour l'éditeur de texte riche --}}
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <style>
         /* Styles spécifiques à l'éditeur de cours */
-        body {
+        html, body {
             overflow: hidden;
+            height: 100%;
+        }
+        
+        /* Forcer le scroll sur le conteneur des blocs */
+        #course-preview {
+            display: flex;
+            flex-direction: column;
+            overflow: visible !important;
+        }
+        
+        #blocks-container {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+        }
+        
+        /* Force le texte blanc en mode sombre */
+        .dark .course-preview,
+        .dark .course-preview *,
+        .dark .course-preview .prose,
+        .dark .course-preview .prose *,
+        .dark .course-preview .course-block-content,
+        .dark .course-preview .course-block-content * {
+            color: #ffffff !important;
+        }
+        
+        /* Exceptions pour les liens */
+        .dark .course-preview a,
+        .dark .course-preview .prose a {
+            color: #4ade80 !important;
+        }
+        
+        /* Mode AlloTata */
+        .allotata-text {
+            font-weight: 900 !important;
+            background: linear-gradient(135deg, #22c55e 0%, #f97316 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+        
+        .dark .allotata-text {
+            background: linear-gradient(135deg, #4ade80 0%, #fb923c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Quill Editor styles */
+        .dark .ql-editor {
+            color: #ffffff !important;
+            background: #1e293b;
+        }
+        
+        .dark .ql-toolbar {
+            background: #1e293b;
+            border-color: #475569;
+        }
+        
+        .dark .ql-container {
+            border-color: #475569;
+            background: #1e293b;
+        }
+        
+        .ql-toolbar .ql-allotata {
+            width: auto;
+            padding: 0 8px;
+            font-weight: 900;
+            border: none !important;
         }
     </style>
 </head>
@@ -234,7 +313,7 @@
         </div>
 
         {{-- Tab: Propriétés du bloc --}}
-        <div id="tab-properties" class="sidebar-tab-content">
+        <div id="tab-properties" class="sidebar-tab-content" style="display: none;">
             <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Propriétés du bloc</h3>
             <div id="block-properties">
                 <p class="text-slate-400 text-center py-8 text-sm">Sélectionnez un bloc pour voir ses propriétés</p>
@@ -242,7 +321,7 @@
         </div>
 
         {{-- Tab: Paramètres de la leçon --}}
-        <div id="tab-lesson" class="sidebar-tab-content">
+        <div id="tab-lesson" class="sidebar-tab-content" style="display: none;">
             <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Paramètres de la leçon</h3>
             
             <form id="lesson-settings-form" class="space-y-4">
@@ -320,7 +399,9 @@
     @vite(['resources/js/app.js', 'resources/js/course-lesson-editor.js'])
     
     <script>
-        // Initialiser l'éditeur après le chargement
+        // Initialiser l'éditeur après le chargement (UNE SEULE FOIS)
+        let courseEditor = null;
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Attendre que CourseLessonEditor soit disponible
             if (typeof CourseLessonEditor === 'undefined') {
@@ -328,60 +409,12 @@
                 return;
             }
             
-            const blocks = @json($lesson->getBlocks());
-            
-            window.courseEditor = new CourseLessonEditor({
-                lessonId: {{ $lesson->id }},
-                csrfToken: document.querySelector('meta[name="csrf-token"]').content,
-                initialBlocks: blocks
-            });
-        });
-
-        // Switch entre les tabs de la sidebar
-        function switchSidebarTab(tab) {
-            // Désactiver tous les tabs
-            document.querySelectorAll('.sidebar-tab').forEach(t => {
-                t.classList.remove('active', 'text-green-400', 'border-green-500');
-                t.classList.add('text-slate-400', 'border-transparent');
-            });
-            
-            document.querySelectorAll('.sidebar-tab-content').forEach(c => {
-                c.classList.remove('active');
-            });
-
-            // Activer le tab sélectionné
-            const tabBtn = document.querySelector(`[data-tab="${tab}"]`);
-            const tabContent = document.getElementById(`tab-${tab}`);
-            
-            if (tabBtn && tabContent) {
-                tabBtn.classList.add('active', 'text-green-400', 'border-green-500');
-                tabBtn.classList.remove('text-slate-400', 'border-transparent');
-                tabContent.classList.add('active');
+            // Vérifier qu'on n'a pas déjà initialisé
+            if (window.courseEditor) {
+                console.warn('CourseEditor déjà initialisé, on ignore cette seconde initialisation.');
+                return;
             }
-        }
-
-        // Toggle quiz fields
-        function toggleQuizFields() {
-            const type = document.getElementById('lesson-type').value;
-            const quizFields = document.getElementById('quiz-fields');
-            if (type === 'quiz') {
-                quizFields.classList.remove('hidden');
-            } else {
-                quizFields.classList.add('hidden');
-            }
-        }
-
-        // Initialiser toggle quiz fields au chargement
-        document.addEventListener('DOMContentLoaded', function() {
-            toggleQuizFields();
-        });
-    </script>
-    
-    <script>
-        // Initialiser l'éditeur
-        let courseEditor = null;
-        
-        document.addEventListener('DOMContentLoaded', function() {
+            
             const blocks = @json($lesson->getBlocks());
             
             courseEditor = new CourseLessonEditor({
@@ -392,6 +425,9 @@
             
             // Exposer globalement pour les appels depuis les boutons
             window.courseEditor = courseEditor;
+            
+            // Initialiser toggle quiz fields
+            toggleQuizFields();
         });
 
         // Switch entre les tabs de la sidebar
@@ -402,8 +438,10 @@
                 t.classList.add('text-slate-400', 'border-transparent');
             });
             
+            // Masquer tous les contenus de tabs
             document.querySelectorAll('.sidebar-tab-content').forEach(c => {
                 c.classList.remove('active');
+                c.style.display = 'none';
             });
 
             // Activer le tab sélectionné
@@ -414,22 +452,81 @@
                 tabBtn.classList.add('active', 'text-green-400', 'border-green-500');
                 tabBtn.classList.remove('text-slate-400', 'border-transparent');
                 tabContent.classList.add('active');
+                tabContent.style.display = 'block';
             }
         }
+        
+        // Exposer la fonction globalement
+        window.switchSidebarTab = switchSidebarTab;
 
         // Toggle quiz fields
         function toggleQuizFields() {
-            const type = document.getElementById('lesson-type').value;
+            const typeEl = document.getElementById('lesson-type');
             const quizFields = document.getElementById('quiz-fields');
+            if (!typeEl || !quizFields) return;
+            
+            const type = typeEl.value;
             if (type === 'quiz') {
                 quizFields.classList.remove('hidden');
             } else {
                 quizFields.classList.add('hidden');
             }
         }
-
-        // Initialiser toggle quiz fields
-        toggleQuizFields();
     </script>
+
+    {{-- Modale de sélection de fichiers (Médiathèque) --}}
+    <div id="media-selector-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <!-- En-tête -->
+            <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Sélectionner un fichier</h2>
+                <button id="close-selector-modal" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Contenu -->
+            <div class="flex-1 overflow-hidden flex">
+                <!-- Sidebar de la modale -->
+                <div class="w-64 border-r border-slate-200 dark:border-slate-700 p-4 overflow-y-auto">
+                    <div class="mb-4">
+                        <input 
+                            type="text" 
+                            id="modal-search"
+                            placeholder="Rechercher..."
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                        >
+                    </div>
+                    <div id="modal-folder-tree" class="space-y-1">
+                        <!-- Arborescence chargée dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Zone de sélection -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+                        <nav id="modal-breadcrumb" class="flex items-center gap-2 text-sm">
+                            <!-- Breadcrumb chargé dynamiquement -->
+                        </nav>
+                    </div>
+                    <div id="modal-media-grid" class="flex-1 p-4 overflow-y-auto grid grid-cols-4 gap-4">
+                        <!-- Fichiers chargés dynamiquement -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pied -->
+            <div class="p-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3">
+                <button id="cancel-selector" class="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
+                    Annuler
+                </button>
+                <button id="confirm-selector" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                    Sélectionner
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
