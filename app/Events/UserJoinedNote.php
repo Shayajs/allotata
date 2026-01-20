@@ -35,7 +35,7 @@ class UserJoinedNote implements ShouldBroadcastNow
     {
         // Utiliser PresenceChannel maintenant
         return [
-            new PresenceChannel('presence-note.' . $this->note->id),
+            new PresenceChannel('note.' . $this->note->id),
         ];
     }
 
