@@ -70,6 +70,10 @@ function notesEditor(noteId) {
             }
             
             // Initialiser SimpleMDE
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:before-simplemde',message:'about to create SimpleMDE',data:{editorElExists:!!editorEl,editorElId:editorEl?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            
             this.simplemde = new SimpleMDE({
                 element: editorEl,
                 initialValue: this.noteContent || '',
@@ -85,8 +89,17 @@ function notesEditor(noteId) {
                 ],
             });
             
-            // Appliquer le thème initial
-            this.updateTheme();
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:after-simplemde',message:'SimpleMDE created',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror),wrapperExists:!!(this.simplemde?.codemirror?.getWrapperElement?.())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            
+            // Appliquer le thème initial après un court délai pour laisser SimpleMDE créer son DOM
+            setTimeout(() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:init:delayed-updateTheme',message:'calling updateTheme after delay',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+                this.updateTheme();
+            }, 100);
             
             // Observer les changements de thème
             const observer = new MutationObserver(() => {
@@ -116,13 +129,41 @@ function notesEditor(noteId) {
         },
         
         updateTheme() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:entry',message:'updateTheme called',data:{simplemdeExists:!!this.simplemde,codemirrorExists:!!(this.simplemde?.codemirror)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            
             // Détecter si on est en mode sombre
             const isDark = document.documentElement.classList.contains('dark');
             
             if (this.simplemde && this.simplemde.codemirror) {
                 // Mettre à jour le thème CodeMirror
                 const wrapper = this.simplemde.codemirror.getWrapperElement();
-                const editor = wrapper.querySelector('.CodeMirror');
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:wrapper',message:'wrapper element check',data:{wrapperExists:!!wrapper,wrapperType:wrapper?.constructor?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
+                
+                if (!wrapper) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:early-exit',message:'wrapper is null, exiting early',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
+                    return;
+                }
+                
+                // Utiliser directement le wrapper Element qui EST le CodeMirror
+                const editor = wrapper.querySelector('.CodeMirror') || wrapper;
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:editor',message:'editor element check',data:{editorExists:!!editor,editorType:editor?.constructor?.name,usedFallback:!wrapper.querySelector('.CodeMirror')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                
+                if (!editor || !editor.classList) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:editor-null',message:'editor is null or has no classList',data:{editor:editor,editorType:typeof editor},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                    // #endregion
+                    return;
+                }
                 
                 if (isDark) {
                     editor.classList.add('cm-s-material');
@@ -136,6 +177,14 @@ function notesEditor(noteId) {
                 
                 // Rafraîchir l'éditeur pour appliquer les changements
                 this.simplemde.codemirror.refresh();
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:success',message:'theme updated successfully',data:{isDark:isDark},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+            } else {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8dac8818-4e86-487b-a651-bf0cced01d9a',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin-notes.js:updateTheme:no-simplemde',message:'simplemde or codemirror not available',data:{simplemde:!!this.simplemde,codemirror:!!(this.simplemde?.codemirror)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
             }
         },
         

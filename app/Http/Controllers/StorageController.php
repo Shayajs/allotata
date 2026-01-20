@@ -43,7 +43,7 @@ class StorageController extends Controller
         }
         
         // Vérification de sécurité simplifiée pour le développement
-        $allowedDirs = ['logos', 'site_logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media'];
+        $allowedDirs = ['logos', 'site_logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media', 'produits'];
         $firstSegment = explode('/', $path)[0] ?? '';
         
         // Vérification minimale : juste s'assurer que c'est dans un dossier autorisé
@@ -120,7 +120,7 @@ class StorageController extends Controller
         
         // Méthode 3 : Vérification par segments (dernier recours)
         // On vérifie que le chemin demandé ne contient pas de ".." et commence bien par un sous-dossier autorisé
-        $allowedDirectories = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media'];
+        $allowedDirectories = ['logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media', 'produits'];
         $pathSegments = explode('/', $requestedPath);
         
         // Si le premier segment est un dossier autorisé, on accepte
