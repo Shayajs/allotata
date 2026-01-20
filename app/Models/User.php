@@ -329,6 +329,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Relation : Un utilisateur a une présence
+     */
+    public function presence()
+    {
+        return $this->hasOne(UserPresence::class);
+    }
+
+    /**
      * Vérifie si le compte est actuellement verrouillé
      */
     public function isAccountLocked(): bool

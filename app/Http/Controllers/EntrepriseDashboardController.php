@@ -224,11 +224,64 @@ class EntrepriseDashboardController extends Controller
 
         // ===== Données pour l'onglet Stock =====
         $produits = collect([]);
+        
+        // #region agent log
+        try {
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B1',
+                'location' => 'EntrepriseDashboardController.php:' . __LINE__,
+                'message' => 'Chargement produits stock',
+                'data' => [
+                    'activeTab' => $activeTab,
+                    'tab_request' => $request->get('tab'),
+                    'slug' => $slug,
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
+        
         if ($activeTab === 'stock') {
             $produits = $entreprise->produits()
                 ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
                 ->orderBy('nom')
                 ->get();
+            
+            // #region agent log
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B1',
+                'location' => 'EntrepriseDashboardController.php:' . __LINE__,
+                'message' => 'Produits chargés pour stock',
+                'data' => [
+                    'produits_count' => $produits->count(),
+                    'produits_actifs' => $produits->where('est_actif', true)->count(),
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            // #endregion
+        } else {
+            // #region agent log
+            try {
+                $logData = [
+                    'sessionId' => 'debug-session',
+                    'runId' => 'run1',
+                    'hypothesisId' => 'B1',
+                    'location' => 'EntrepriseDashboardController.php:' . __LINE__,
+                    'message' => 'Tab non stock - produits non chargés',
+                    'data' => [
+                        'activeTab' => $activeTab,
+                    ],
+                    'timestamp' => time() * 1000,
+                ];
+                @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            } catch (\Exception $e) {}
+            // #endregion
         }
 
         // ===== Données pour l'onglet Fidélisation =====

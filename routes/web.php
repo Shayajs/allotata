@@ -200,6 +200,11 @@ Route::middleware('auth')->group(function () {
     // Routes API pour la progression des cours
     Route::post('/api/courses/complete-lesson', [CourseController::class, 'completeLesson'])->name('api.courses.complete-lesson');
     Route::post('/api/courses/quiz-submit', [CourseController::class, 'submitQuiz'])->name('api.courses.quiz-submit');
+    
+    // Routes API pour la présence
+    Route::post('/api/presence/heartbeat', [\App\Http\Controllers\PresenceController::class, 'heartbeat'])->name('api.presence.heartbeat');
+    Route::get('/api/presence/users', [\App\Http\Controllers\PresenceController::class, 'index'])->name('api.presence.users');
+    Route::get('/api/presence/user/{userId}', [\App\Http\Controllers\PresenceController::class, 'show'])->name('api.presence.user');
 });
 
 // Routes protégées - nécessitent authentification et email vérifié
@@ -408,6 +413,24 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/errors/{id}/read', [\App\Http\Controllers\ErrorLogController::class, 'markAsRead'])->name('errors.mark-read');
     Route::post('/errors/mark-all-read', [\App\Http\Controllers\ErrorLogController::class, 'markAllAsRead'])->name('errors.mark-all-read');
     Route::get('/', [AdminController::class, 'index'])->name('index');
+    
+    // Kanban
+    Route::get('/kanban', [\App\Http\Controllers\Admin\KanbanController::class, 'index'])->name('kanban.index');
+    Route::post('/kanban/cards', [\App\Http\Controllers\Admin\KanbanController::class, 'storeCard'])->name('kanban.cards.store');
+    Route::get('/kanban/cards/{card}', [\App\Http\Controllers\Admin\KanbanController::class, 'showCard'])->name('kanban.cards.show');
+    Route::put('/kanban/cards/{card}', [\App\Http\Controllers\Admin\KanbanController::class, 'updateCard'])->name('kanban.cards.update');
+    Route::post('/kanban/cards/{card}/move', [\App\Http\Controllers\Admin\KanbanController::class, 'moveCard'])->name('kanban.cards.move');
+    Route::delete('/kanban/cards/{card}', [\App\Http\Controllers\Admin\KanbanController::class, 'deleteCard'])->name('kanban.cards.delete');
+    Route::post('/kanban/sync/reservations', [\App\Http\Controllers\Admin\KanbanController::class, 'syncFromReservations'])->name('kanban.sync.reservations');
+    Route::post('/kanban/sync/tickets', [\App\Http\Controllers\Admin\KanbanController::class, 'syncFromTickets'])->name('kanban.sync.tickets');
+    
+    // Notes
+    Route::get('/notes', [\App\Http\Controllers\Admin\NotesController::class, 'index'])->name('notes.index');
+    Route::post('/notes', [\App\Http\Controllers\Admin\NotesController::class, 'store'])->name('notes.store');
+    Route::get('/notes/{note}', [\App\Http\Controllers\Admin\NotesController::class, 'show'])->name('notes.show');
+    Route::put('/notes/{note}', [\App\Http\Controllers\Admin\NotesController::class, 'update'])->name('notes.update');
+    Route::delete('/notes/{note}', [\App\Http\Controllers\Admin\NotesController::class, 'destroy'])->name('notes.destroy');
+    Route::post('/notes/{note}/cursor', [\App\Http\Controllers\Admin\NotesController::class, 'updateCursor'])->name('notes.cursor.update');
     
     // Gestion des finances globales
     Route::get('/finances', [AdminController::class, 'finances'])->name('finances.index');

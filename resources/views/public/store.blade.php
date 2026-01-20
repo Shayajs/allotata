@@ -161,57 +161,83 @@
         @endif
     </div>
 
-    <!-- Modal détaillé pour un produit (similaire aux services) -->
+    <!-- Modal détaillé pour un produit (layout deux colonnes comme les services) -->
     <div id="produit-detail-modal" class="hidden fixed inset-0 bg-black/80 z-50 overflow-y-auto" onclick="closeProduitModal(event)">
         <div class="min-h-screen py-4 sm:py-8 px-2 sm:px-4 flex items-start justify-center">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl my-4 overflow-hidden" onclick="event.stopPropagation()">
-                <!-- Header avec fermeture -->
-                <div class="relative">
-                    <button onclick="closeProduitModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                    
-                    <!-- Galerie d'images -->
-                    <div id="produit-detail-gallery" class="relative h-56 sm:h-72 md:h-80 bg-slate-200 dark:bg-slate-700">
-                        <img id="produit-detail-image" src="" alt="" class="w-full h-full object-cover">
-                        <div id="produit-detail-no-image" class="hidden absolute inset-0 bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
-                            <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-6xl my-4 overflow-hidden" onclick="event.stopPropagation()">
+                <div class="flex flex-col lg:flex-row h-[calc(100vh-4rem)] max-h-[800px]">
+                    <!-- Colonne gauche : Images (50%) -->
+                    <div class="lg:w-1/2 flex flex-col bg-slate-100 dark:bg-slate-900">
+                        <button onclick="closeProduitModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Contenu -->
-                <div class="p-4 sm:p-6">
-                    <h3 id="produit-detail-nom" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2"></h3>
-                    
-                    <div class="flex flex-wrap items-center gap-3 mb-4">
-                        <div class="flex items-center gap-1.5">
-                            <span id="produit-detail-prix" class="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400"></span>
-                            <span id="produit-detail-prix-original" class="hidden text-xl line-through text-slate-400"></span>
-                        </div>
-                        <span id="produit-detail-stock" class="text-slate-600 dark:text-slate-400 text-sm"></span>
-                    </div>
-                    
-                    <div id="produit-detail-description" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mb-6 whitespace-pre-line"></div>
-                    
-                    <!-- Actions -->
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                        @auth
-                            <a href="#" id="produit-commander-link-modal" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </button>
+                        
+                        <!-- Galerie d'images principale -->
+                        <div id="produit-detail-gallery" class="relative flex-1 bg-slate-200 dark:bg-slate-700">
+                            <!-- Image principale -->
+                            <img id="produit-detail-image" src="" alt="" class="w-full h-full object-cover">
+                            
+                            <!-- Placeholder quand pas d'image -->
+                            <div id="produit-detail-no-image" class="hidden absolute inset-0 bg-gradient-to-br from-green-100 to-orange-100 dark:from-green-900/20 dark:to-orange-900/20 flex items-center justify-center">
+                                <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                 </svg>
-                                Commander
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
-                                Connectez-vous pour commander
-                            </a>
-                        @endauth
+                            </div>
+                            
+                            <!-- Navigation galerie -->
+                            <button onclick="prevProduitDetailImage(event)" class="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition hidden" id="produit-detail-prev">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <button onclick="nextProduitDetailImage(event)" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition hidden" id="produit-detail-next">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Indicateur de position -->
+                            <div id="produit-detail-indicator" class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/60 text-white text-xs sm:text-sm rounded-full hidden"></div>
+                        </div>
+                        
+                        <!-- Miniatures -->
+                        <div id="produit-detail-thumbnails" class="flex gap-1.5 sm:gap-2 p-2 sm:p-3 bg-slate-100 dark:bg-slate-900 overflow-x-auto border-t border-slate-200 dark:border-slate-700 hidden"></div>
+                    </div>
+                    
+                    <!-- Colonne droite : Contenu (50%) -->
+                    <div class="lg:w-1/2 flex flex-col overflow-y-auto">
+                        <div class="p-4 sm:p-6">
+                            <h3 id="produit-detail-nom" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2"></h3>
+                            
+                            <div class="flex flex-wrap items-center gap-3 mb-4">
+                                <div class="flex items-center gap-1.5">
+                                    <span id="produit-detail-prix" class="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400"></span>
+                                    <span id="produit-detail-prix-original" class="hidden text-xl line-through text-slate-400"></span>
+                                </div>
+                                <span class="text-slate-500 dark:text-slate-400 text-sm">•</span>
+                                <span id="produit-detail-stock" class="text-slate-600 dark:text-slate-400 text-sm"></span>
+                            </div>
+                            
+                            <div id="produit-detail-description" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mb-6 whitespace-pre-line"></div>
+                            
+                            <!-- Actions -->
+                            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                @auth
+                                    <a href="#" id="produit-commander-link-modal" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                        </svg>
+                                        Commander
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                        Connectez-vous pour commander
+                                    </a>
+                                @endauth
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -220,6 +246,7 @@
 
     <script>
         let currentProduitIndex = 0;
+        let currentProduitDetailImageIndex = 0;
         const produitsData = [
             @foreach($produits as $produit)
             @php
@@ -245,7 +272,9 @@
 
         function openProduitModal(produitIndex) {
             currentProduitIndex = produitIndex;
+            currentProduitDetailImageIndex = 0;
             updateProduitModal();
+            updateProduitDetailGallery();
             document.getElementById('produit-detail-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -254,6 +283,77 @@
             if (event && event.target !== event.currentTarget) return;
             document.getElementById('produit-detail-modal').classList.add('hidden');
             document.body.style.overflow = '';
+        }
+
+        function prevProduitDetailImage(event) {
+            event.stopPropagation();
+            const produit = produitsData[currentProduitIndex];
+            if (produit.images.length > 1) {
+                currentProduitDetailImageIndex = (currentProduitDetailImageIndex - 1 + produit.images.length) % produit.images.length;
+                updateProduitDetailGallery();
+            }
+        }
+
+        function nextProduitDetailImage(event) {
+            event.stopPropagation();
+            const produit = produitsData[currentProduitIndex];
+            if (produit.images.length > 1) {
+                currentProduitDetailImageIndex = (currentProduitDetailImageIndex + 1) % produit.images.length;
+                updateProduitDetailGallery();
+            }
+        }
+
+        function selectProduitDetailImage(index) {
+            currentProduitDetailImageIndex = index;
+            updateProduitDetailGallery();
+        }
+
+        function updateProduitDetailGallery() {
+            const produit = produitsData[currentProduitIndex];
+            const imageEl = document.getElementById('produit-detail-image');
+            const noImageEl = document.getElementById('produit-detail-no-image');
+            const prevBtn = document.getElementById('produit-detail-prev');
+            const nextBtn = document.getElementById('produit-detail-next');
+            const indicator = document.getElementById('produit-detail-indicator');
+            const thumbnails = document.getElementById('produit-detail-thumbnails');
+            
+            if (produit.images && produit.images.length > 0) {
+                imageEl.src = produit.images[currentProduitDetailImageIndex];
+                imageEl.classList.remove('hidden');
+                noImageEl.classList.add('hidden');
+                
+                // Afficher/masquer les boutons de navigation
+                if (produit.images.length > 1) {
+                    prevBtn.classList.remove('hidden');
+                    nextBtn.classList.remove('hidden');
+                    indicator.classList.remove('hidden');
+                    indicator.textContent = `${currentProduitDetailImageIndex + 1} / ${produit.images.length}`;
+                    
+                    // Afficher les miniatures
+                    thumbnails.classList.remove('hidden');
+                    thumbnails.innerHTML = produit.images.map((img, idx) => `
+                        <div class="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                            idx === currentProduitDetailImageIndex 
+                                ? 'border-green-500 dark:border-green-400 shadow-md' 
+                                : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'
+                        }" onclick="selectProduitDetailImage(${idx})">
+                            <img src="${img}" alt="Miniature ${idx + 1}" class="w-full h-full object-cover">
+                        </div>
+                    `).join('');
+                } else {
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    indicator.classList.add('hidden');
+                    thumbnails.classList.add('hidden');
+                }
+            } else {
+                imageEl.classList.add('hidden');
+                noImageEl.classList.remove('hidden');
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                indicator.classList.add('hidden');
+                thumbnails.classList.add('hidden');
+            }
         }
 
         function updateProduitModal() {
@@ -282,26 +382,19 @@
                 document.getElementById('produit-detail-prix').classList.remove('text-red-600', 'dark:text-red-400');
                 document.getElementById('produit-detail-prix').classList.add('text-green-600', 'dark:text-green-400');
             }
-            
-            // Galerie
-            const imageEl = document.getElementById('produit-detail-image');
-            const noImageEl = document.getElementById('produit-detail-no-image');
-            
-            if (produit.images && produit.images.length > 0) {
-                imageEl.src = produit.images[0];
-                imageEl.classList.remove('hidden');
-                noImageEl.classList.add('hidden');
-            } else {
-                imageEl.classList.add('hidden');
-                noImageEl.classList.remove('hidden');
-            }
         }
 
         // Navigation au clavier
         document.addEventListener('keydown', function(e) {
             const modal = document.getElementById('produit-detail-modal');
             if (!modal.classList.contains('hidden')) {
-                if (e.key === 'Escape') closeProduitModal();
+                if (e.key === 'Escape') {
+                    closeProduitModal();
+                } else if (e.key === 'ArrowLeft') {
+                    prevProduitDetailImage({ stopPropagation: () => {} });
+                } else if (e.key === 'ArrowRight') {
+                    nextProduitDetailImage({ stopPropagation: () => {} });
+                }
             }
         });
     </script>

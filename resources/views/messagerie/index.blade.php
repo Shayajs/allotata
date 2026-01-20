@@ -7,6 +7,16 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <script>
+            // Configuration Reverb pour la présence en temps réel
+            window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
+            window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
+            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.1") }}';
+            window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
+            window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
+            window.currentUserId = {{ auth()->id() ?? 'null' }};
+        </script>
         @include('partials.theme-script')
         <style>
             .conversation-item {
@@ -211,8 +221,11 @@
                                     class="block conversation-item p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-all cursor-pointer"
                                 >
                                     <div class="flex items-start gap-4">
-                                        <div class="relative flex-shrink-0">
+                                        <div class="relative flex-shrink-0" data-user-id="{{ $conversation->user->id }}">
                                             <x-avatar :user="$conversation->user" size="xl" class="shadow-md" />
+                                            <div class="absolute bottom-0 right-0">
+                                                <x-presence-badge :user="$conversation->user" size="sm" />
+                                            </div>
                                             @if($conversation->messagesNonLus(Auth::id()) > 0)
                                                 <span class="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
                                                     <span class="text-xs font-bold text-white">{{ $conversation->messagesNonLus(Auth::id()) > 9 ? '9+' : $conversation->messagesNonLus(Auth::id()) }}</span>
@@ -221,9 +234,11 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center justify-between mb-1">
-                                                <h3 class="font-bold text-slate-900 dark:text-white truncate text-lg">
-                                                    {{ $conversation->user->name }}
-                                                </h3>
+                                                <div class="flex items-center gap-2">
+                                                    <h3 class="font-bold text-slate-900 dark:text-white truncate text-lg">
+                                                        {{ $conversation->user->name }}
+                                                    </h3>
+                                                </div>
                                                 @if($conversation->dernierMessage)
                                                     <span class="text-xs text-slate-500 dark:text-slate-500 flex-shrink-0 ml-2">
                                                         {{ $conversation->dernierMessage->created_at->format('H:i') }}

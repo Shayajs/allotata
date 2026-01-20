@@ -103,14 +103,67 @@ class Produit extends Model
      */
     public function estDisponible(): bool
     {
+        // #region agent log
+        try {
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'Produit.php:' . __LINE__,
+                'message' => 'Vérification disponibilité produit',
+                'data' => [
+                    'produit_id' => $this->id,
+                    'est_actif' => $this->est_actif,
+                    'gestion_stock' => $this->gestion_stock,
+                ],
+                'timestamp' => time() * 1000,
+            ];
+            @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+        } catch (\Exception $e) {}
+        // #endregion
+        
         if (!$this->est_actif) {
+            // #region agent log
+            $logData = [
+                'sessionId' => 'debug-session',
+                'runId' => 'run1',
+                'hypothesisId' => 'B2',
+                'location' => 'Produit.php:' . __LINE__,
+                'message' => 'Produit non actif',
+                'data' => ['produit_id' => $this->id],
+                'timestamp' => time() * 1000,
+            ];
+            file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            // #endregion
             return false;
         }
 
         // Si gestion immédiate, vérifier le stock
         if ($this->gestion_stock === 'disponible_immediatement') {
             $stock = $this->stock;
-            return $stock && $stock->quantite_disponible > 0;
+            $disponible = $stock && $stock->quantite_disponible > 0;
+            
+            // #region agent log
+            try {
+                $logData = [
+                    'sessionId' => 'debug-session',
+                    'runId' => 'run1',
+                    'hypothesisId' => 'B2',
+                    'location' => 'Produit.php:' . __LINE__,
+                    'message' => 'Vérification stock',
+                    'data' => [
+                        'produit_id' => $this->id,
+                        'has_stock' => $stock ? true : false,
+                        'quantite_disponible' => $stock ? $stock->quantite_disponible : null,
+                        'disponible' => $disponible,
+                    ],
+                    'timestamp' => time() * 1000,
+                ];
+                @file_put_contents('/home/espin/prog/allotata/.cursor/debug.log', json_encode($logData) . "\n", FILE_APPEND);
+            } catch (\Exception $e) {}
+            // #endregion
+            
+            return $disponible;
         }
 
         // Si en attente de commandes, toujours disponible

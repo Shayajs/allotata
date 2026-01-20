@@ -4,6 +4,15 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <script>
+            // Configuration Reverb pour la présence en temps réel
+            window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
+            window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
+            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.1") }}';
+            window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
+            window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
+            window.currentUserId = {{ auth()->id() ?? 'null' }};
+        </script>
         <title>{{ $entreprise->nom }} - Dashboard - Allo Tata</title>
         @include('partials.favicon')
         <link rel="preconnect" href="https://fonts.bunny.net">

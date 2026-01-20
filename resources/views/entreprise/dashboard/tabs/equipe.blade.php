@@ -140,13 +140,20 @@
                 @endphp
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
                     <div class="flex items-center gap-4 mb-4">
-                        @if($membre->user && $membre->user->photo_profil)
-                            <img src="{{ asset('storage/' . $membre->user->photo_profil) }}" alt="{{ $membre->user->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600">
-                        @else
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
-                                {{ strtoupper(substr($membre->user->name ?? '?', 0, 1)) }}
-                            </div>
-                        @endif
+                        <div class="relative" data-user-id="{{ $membre->user->id ?? null }}">
+                            @if($membre->user && $membre->user->photo_profil)
+                                <img src="{{ asset('storage/' . $membre->user->photo_profil) }}" alt="{{ $membre->user->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600">
+                            @else
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+                                    {{ strtoupper(substr($membre->user->name ?? '?', 0, 1)) }}
+                                </div>
+                            @endif
+                            @if($membre->user)
+                                <div class="absolute bottom-0 right-0">
+                                    <x-presence-badge :user="$membre->user" size="sm" />
+                                </div>
+                            @endif
+                        </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
                                 <h3 class="font-semibold text-slate-900 dark:text-white truncate">{{ $membre->user->name ?? 'Utilisateur' }}</h3>
