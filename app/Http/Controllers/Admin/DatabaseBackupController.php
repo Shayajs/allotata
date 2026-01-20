@@ -186,9 +186,11 @@ class DatabaseBackupController extends Controller
                 return view('admin.database.table-data', [
                     'tableName' => $tableName,
                     'data' => $tableData['data'],
+                    'columns' => $tableData['columns'],
                     'total' => $tableData['total'],
                     'page' => $tableData['page'],
                     'perPage' => $tableData['perPage'],
+                    'totalPages' => $tableData['totalPages'],
                 ]);
             }
             
