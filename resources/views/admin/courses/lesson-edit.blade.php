@@ -123,7 +123,8 @@
             {{-- Indicateur de statut --}}
             @if($lesson->isPublished())
                 <span class="course-status-badge published">
-                    Publié le {{ $lesson->published_at->format('d/m/Y') }}
+                    <span class="hidden sm:inline">Publié le {{ $lesson->published_at->format('d/m/Y') }}</span>
+                    <span class="sm:hidden">Publié</span>
                 </span>
             @else
                 <span class="course-status-badge draft">
@@ -156,7 +157,8 @@
                 type="button"
                 class="px-4 py-2 text-sm font-medium text-white bg-slate-700 hover:bg-slate-600 rounded-lg transition course-action-button"
             >
-                Enregistrer comme brouillon
+                <span class="hidden sm:inline">Enregistrer comme brouillon</span>
+                <span class="sm:hidden">Sauvegarder</span>
             </button>
             
             {{-- Bouton publier --}}

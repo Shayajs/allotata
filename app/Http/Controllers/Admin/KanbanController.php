@@ -111,6 +111,7 @@ class KanbanController extends Controller
         $validated = $request->validate([
             'titre' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
+            'column_id' => 'sometimes|exists:kanban_columns,id',
             'assignee_id' => 'nullable|exists:users,id',
             'priorite' => 'nullable|in:basse,normale,haute,urgente',
             'couleur' => 'nullable|string',

@@ -88,8 +88,28 @@ function kanbanData(boardId) {
         
         openCreateModal() {
             // Réinitialiser le formulaire
+            // Pré-sélectionner la première colonne par défaut
+            const firstColumn = document.querySelector('[data-column]');
+            let firstColumnId = null;
+            
+            if (firstColumn && firstColumn.dataset.column) {
+                firstColumnId = parseInt(firstColumn.dataset.column);
+            } else {
+                // Fallback: récupérer depuis le select du modal s'il existe
+                const selectElement = document.querySelector('[x-model="cardForm.column_id"]');
+                if (selectElement) {
+                    const options = selectElement.querySelectorAll('option');
+                    for (let option of options) {
+                        if (option.value && option.value !== '') {
+                            firstColumnId = parseInt(option.value);
+                            break;
+                        }
+                    }
+                }
+            }
+            
             this.cardForm = {
-                column_id: null,
+                column_id: firstColumnId,
                 board_id: this.boardId,
                 titre: '',
                 description: '',
@@ -101,6 +121,9 @@ function kanbanData(boardId) {
             };
             this.editingCardId = null;
             this.showCreateCardModal = true;
+            this.showEditCardModal = false;
+            
+            console.log('Modal de création ouvert', { column_id: firstColumnId, form: this.cardForm });
         },
         
         async saveCard() {
@@ -133,7 +156,16 @@ function kanbanData(boardId) {
                     body: JSON.stringify(this.cardForm)
                 });
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    // Si la réponse n'est pas du JSON, c'est peut-être une erreur HTML
+                    const text = await response.text();
+                    console.error('Réponse non-JSON:', text);
+                    alert('Erreur lors de la sauvegarde: Réponse invalide du serveur');
+                    return;
+                }
                 
                 if (response.ok && data.success) {
                     // Fermer le modal et recharger
@@ -148,6 +180,8 @@ function kanbanData(boardId) {
                     } else if (data.errors) {
                         const errors = Object.values(data.errors).flat();
                         errorMessage = errors.join('\n');
+                    } else if (data.error) {
+                        errorMessage = data.error;
                     }
                     alert(errorMessage);
                     console.error('Erreur de sauvegarde:', data);
