@@ -23,11 +23,12 @@
     </div>
 
     <!-- Liste des notes -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="notes-list">
         @forelse($notes as $note)
             <a 
                 href="{{ route('admin.notes.show', $note) }}"
                 class="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition"
+                data-note-id="{{ $note->id }}"
             >
                 <div class="flex items-start justify-between mb-3">
                     <h3 class="font-semibold text-slate-900 dark:text-white text-lg">{{ $note->titre }}</h3>
@@ -52,10 +53,10 @@
                         <span class="text-xs text-slate-600 dark:text-slate-400">{{ $note->creator->name }}</span>
                     </div>
                     
-                    @if(isset($note->activeCollaborators) && $note->activeCollaborators->count() > 0)
-                        <div class="flex items-center gap-2" data-note-id="{{ $note->id }}" data-note-presence>
+                    <div class="flex items-center gap-2" data-note-{{ $note->id }}-collaborators>
+                        @if(isset($note->activeCollaborators) && $note->activeCollaborators->count() > 0)
                             <span class="text-xs text-slate-500 dark:text-slate-400">En ligne:</span>
-                            <div class="flex -space-x-2" data-note-avatars="{{ $note->id }}">
+                            <div class="flex -space-x-2" data-note-{{ $note->id }}-avatars>
                                 @foreach($note->activeCollaborators->take(3) as $activeUser)
                                     @php
                                         $firstName = explode(' ', $activeUser->name)[0] ?? $activeUser->name;
@@ -63,29 +64,30 @@
                                         $avatarColor = '#' . substr(md5($activeUser->id), 0, 6);
                                     @endphp
                                     <div 
-                                        class="note-avatar w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800 transition-opacity duration-300"
+                                        class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800 transition-all duration-300"
                                         style="background-color: {{ $avatarColor }}20; color: {{ $avatarColor }};"
                                         title="{{ $activeUser->name }}"
                                         data-user-id="{{ $activeUser->id }}"
+                                        data-user-name="{{ $activeUser->name }}"
                                     >
                                         {{ $initial }}
                                     </div>
                                 @endforeach
                                 @if($note->activeCollaborators->count() > 3)
-                                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800" data-note-count="{{ $note->id }}">
+                                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800" data-note-{{ $note->id }}-count>
                                         +{{ $note->activeCollaborators->count() - 3 }}
                                     </div>
                                 @endif
                             </div>
-                            <span class="text-xs text-green-600 dark:text-green-400 font-medium" data-note-count-text="{{ $note->id }}">
+                            <span class="text-xs text-green-600 dark:text-green-400 font-medium" data-note-{{ $note->id }}-count-text>
                                 {{ $note->activeCollaborators->count() }}
                             </span>
-                        </div>
-                    @elseif($note->collaborators->count() > 1)
-                        <span class="text-xs text-slate-500 dark:text-slate-400">
-                            {{ $note->collaborators->count() }} collaborateurs
-                        </span>
-                    @endif
+                        @elseif($note->collaborators->count() > 1)
+                            <span class="text-xs text-slate-500 dark:text-slate-400">
+                                {{ $note->collaborators->count() }} collaborateurs
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </a>
         @empty
@@ -113,18 +115,21 @@
 </div>
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser Pusher si disponible
-    if (typeof window.PUSHER_APP_KEY === 'undefined' || !window.PUSHER_APP_KEY) {
-        console.warn('⚠️ Pusher non configuré, présence en temps réel désactivée');
-        return;
-    }
+<script type="module">
+    import Pusher from 'pusher-js';
 
-    // Importer Pusher dynamiquement
-    import('pusher-js').then(({ default: Pusher }) => {
-        const pusher = new Pusher(window.PUSHER_APP_KEY, {
-            cluster: window.PUSHER_APP_CLUSTER || 'eu',
+    // Initialiser Pusher pour la présence en temps réel dans le dashboard
+    function initNotesPresence() {
+        const key = window.PUSHER_APP_KEY;
+        const cluster = window.PUSHER_APP_CLUSTER || 'mt1';
+
+        if (!key || key === '' || key === 'null' || key === 'undefined') {
+            console.warn('⚠️ Pusher non configuré pour la présence en temps réel');
+            return;
+        }
+
+        const pusher = new Pusher(String(key).trim(), {
+            cluster: String(cluster).trim(),
             forceTLS: true,
             encrypted: true,
             authEndpoint: '/broadcasting/auth',
@@ -136,105 +141,227 @@ document.addEventListener('DOMContentLoaded', function() {
             },
         });
 
-        // Écouter les événements de déconnexion pour toutes les notes affichées
-        const notes = document.querySelectorAll('[data-note-id]');
-        
-        notes.forEach(noteElement => {
-            const noteId = noteElement.getAttribute('data-note-id');
-            
-            // S'abonner au canal de présence de la note
-            const channel = pusher.subscribe(`presence-note.${noteId}`);
-            
-            // Écouter quand un utilisateur quitte
-            channel.bind('App\\Events\\UserLeftNote', (data) => {
-                console.log('➖ Utilisateur a quitté la note', data);
+        // Récupérer toutes les notes visibles sur la page
+        const noteElements = document.querySelectorAll('[data-note-id]');
+        const noteIds = Array.from(noteElements).map(el => el.getAttribute('data-note-id'));
+
+        console.log('📡 Connexion à Pusher pour', noteIds.length, 'notes');
+
+        // Fonction pour mettre à jour les collaborateurs depuis les membres Pusher
+        function updateCollaborators(noteId, members) {
+            // Convertir les membres en tableau
+            const activeUsers = Object.values(members).map(member => ({
+                id: Number(member.id || member.user_id),
+                name: member.info?.name || member.name || 'Utilisateur',
+            }));
+
+            // Mettre à jour l'affichage (cette fonction gère aussi le cas où il n'y a pas encore d'avatars)
+            renderCollaborators(noteId, activeUsers);
+        }
+
+        // Fonction pour ajouter un collaborateur
+        function addCollaborator(noteId, member) {
+            const memberData = {
+                id: Number(member.id || member.user_id),
+                name: member.info?.name || member.name || 'Utilisateur',
+            };
+
+            // Récupérer les collaborateurs actuels
+            const avatarsContainer = document.querySelector(`[data-note-${noteId}-avatars]`);
+            if (!avatarsContainer) return;
+
+            const existingIds = Array.from(avatarsContainer.querySelectorAll('[data-user-id]'))
+                .map(el => Number(el.getAttribute('data-user-id')));
+
+            // Si déjà présent, ne rien faire
+            if (existingIds.includes(memberData.id)) return;
+
+            // Récupérer tous les collaborateurs actifs (depuis les éléments DOM + le nouveau)
+            const activeUsers = Array.from(avatarsContainer.querySelectorAll('[data-user-id]'))
+                .map(el => ({
+                    id: Number(el.getAttribute('data-user-id')),
+                    name: el.getAttribute('data-user-name') || 'Utilisateur',
+                }));
+
+            activeUsers.push(memberData);
+
+            // Mettre à jour l'affichage
+            renderCollaborators(noteId, activeUsers);
+        }
+
+        // Fonction pour retirer un collaborateur
+        function removeCollaborator(noteId, member) {
+            const userId = Number(member.id || member.user_id);
+            const avatarsContainer = document.querySelector(`[data-note-${noteId}-avatars]`);
+
+            if (!avatarsContainer) return;
+
+            // Retirer l'avatar avec animation
+            const avatarEl = avatarsContainer.querySelector(`[data-user-id="${userId}"]`);
+            if (avatarEl) {
+                avatarEl.style.transition = 'opacity 0.3s, transform 0.3s';
+                avatarEl.style.opacity = '0';
+                avatarEl.style.transform = 'scale(0)';
                 
-                if (data.note && data.note.id == noteId && data.user) {
-                    const userId = data.user.id;
-                    const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
-                    const countText = document.querySelector(`[data-note-count-text="${noteId}"]`);
-                    
-                    if (avatarsContainer) {
-                        // Retirer l'avatar de l'utilisateur qui a quitté
-                        const avatar = avatarsContainer.querySelector(`[data-user-id="${userId}"]`);
-                        if (avatar) {
-                            // Animation de disparition
-                            avatar.style.opacity = '0';
-                            avatar.style.transform = 'scale(0)';
-                            
-                            setTimeout(() => {
-                                avatar.remove();
-                                updatePresenceCount(noteId);
-                            }, 300);
-                        }
-                    }
-                }
-            });
-            
-            // Écouter les événements de présence Pusher (member_removed)
-            channel.bind('pusher:member_removed', (member) => {
-                const userId = member.id || member.user_id;
-                console.log('➖ Membre retiré du canal Presence', userId);
-                
-                const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
-                if (avatarsContainer) {
-                    const avatar = avatarsContainer.querySelector(`[data-user-id="${userId}"]`);
-                    if (avatar) {
-                        // Animation de disparition
-                        avatar.style.opacity = '0';
-                        avatar.style.transform = 'scale(0)';
-                        
-                        setTimeout(() => {
-                            avatar.remove();
-                            updatePresenceCount(noteId);
-                        }, 300);
-                    }
-                }
-            });
-        });
-        
-        // Fonction pour mettre à jour le compteur de présence
-        function updatePresenceCount(noteId) {
-            const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
-            const countText = document.querySelector(`[data-note-count-text="${noteId}"]`);
-            
-            if (avatarsContainer && countText) {
-                const avatarCount = avatarsContainer.querySelectorAll('.note-avatar').length;
-                const countBadge = avatarsContainer.querySelector(`[data-note-count="${noteId}"]`);
-                
-                if (avatarCount > 0) {
-                    countText.textContent = avatarCount;
-                    
-                    // Mettre à jour ou retirer le badge "+X"
-                    if (avatarCount > 3) {
-                        if (!countBadge) {
-                            const badge = document.createElement('div');
-                            badge.className = 'w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800';
-                            badge.setAttribute('data-note-count', noteId);
-                            badge.textContent = `+${avatarCount - 3}`;
-                            avatarsContainer.appendChild(badge);
-                        } else {
-                            countBadge.textContent = `+${avatarCount - 3}`;
-                        }
-                    } else if (countBadge) {
-                        countBadge.remove();
-                    }
-                } else {
-                    // Plus personne en ligne, masquer toute la section
-                    const presenceContainer = document.querySelector(`[data-note-presence][data-note-id="${noteId}"]`);
-                    if (presenceContainer) {
-                        presenceContainer.style.opacity = '0';
-                        setTimeout(() => {
-                            presenceContainer.style.display = 'none';
-                        }, 300);
-                    }
-                }
+                setTimeout(() => {
+                    avatarEl.remove();
+                    updateCollaboratorsCount(noteId);
+                }, 300);
+            } else {
+                // Si pas trouvé directement, recalculer depuis tous les collaborateurs
+                const activeUsers = Array.from(avatarsContainer.querySelectorAll('[data-user-id]'))
+                    .map(el => ({
+                        id: Number(el.getAttribute('data-user-id')),
+                        name: el.getAttribute('data-user-name') || 'Utilisateur',
+                    }))
+                    .filter(user => user.id !== userId);
+
+                renderCollaborators(noteId, activeUsers);
             }
         }
-    }).catch(e => {
-        console.error('❌ Erreur lors du chargement de Pusher:', e);
-    });
-});
+
+        // Fonction pour rendre les collaborateurs
+        function renderCollaborators(noteId, activeUsers) {
+            const avatarsContainer = document.querySelector(`[data-note-${noteId}-avatars]`);
+            const countText = document.querySelector(`[data-note-${noteId}-count-text]`);
+            const collaboratorsContainer = document.querySelector(`[data-note-${noteId}-collaborators]`);
+
+            if (!collaboratorsContainer) return;
+
+            // Si aucun collaborateur actif
+            if (activeUsers.length === 0) {
+                avatarsContainer?.remove();
+                if (countText) countText.remove();
+                return;
+            }
+
+            // Créer ou mettre à jour le conteneur d'avatars
+            if (!avatarsContainer) {
+                const newContainer = document.createElement('div');
+                newContainer.className = 'flex -space-x-2';
+                newContainer.setAttribute(`data-note-${noteId}-avatars`, '');
+                
+                const label = document.createElement('span');
+                label.className = 'text-xs text-slate-500 dark:text-slate-400';
+                label.textContent = 'En ligne:';
+                
+                collaboratorsContainer.prepend(label);
+                collaboratorsContainer.appendChild(newContainer);
+            }
+
+            const container = avatarsContainer || document.querySelector(`[data-note-${noteId}-avatars]`);
+            if (!container) return;
+
+            // Vider le conteneur
+            container.innerHTML = '';
+
+            // Ajouter les avatars (max 3)
+            activeUsers.slice(0, 3).forEach(user => {
+                const firstName = user.name.split(' ')[0] || user.name;
+                const initial = firstName.charAt(0).toUpperCase();
+                const avatarColor = '#' + user.id.toString(16).padStart(6, '0').slice(-6);
+
+                const avatarEl = document.createElement('div');
+                avatarEl.className = 'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800 transition-all duration-300';
+                avatarEl.style.backgroundColor = avatarColor + '20';
+                avatarEl.style.color = avatarColor;
+                avatarEl.setAttribute('data-user-id', user.id);
+                avatarEl.setAttribute('data-user-name', user.name);
+                avatarEl.setAttribute('title', user.name);
+                avatarEl.textContent = initial;
+
+                // Animation d'apparition
+                avatarEl.style.opacity = '0';
+                avatarEl.style.transform = 'scale(0)';
+                container.appendChild(avatarEl);
+
+                setTimeout(() => {
+                    avatarEl.style.opacity = '1';
+                    avatarEl.style.transform = 'scale(1)';
+                }, 10);
+            });
+
+            // Ajouter le badge de compteur si plus de 3
+            if (activeUsers.length > 3) {
+                const countBadge = document.createElement('div');
+                countBadge.className = 'w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800';
+                countBadge.setAttribute(`data-note-${noteId}-count`, '');
+                countBadge.textContent = `+${activeUsers.length - 3}`;
+                container.appendChild(countBadge);
+            }
+
+            // Mettre à jour le compteur
+            updateCollaboratorsCount(noteId, activeUsers.length);
+        }
+
+        // Fonction pour mettre à jour le compteur
+        function updateCollaboratorsCount(noteId, count) {
+            const countText = document.querySelector(`[data-note-${noteId}-count-text]`);
+            const collaboratorsContainer = document.querySelector(`[data-note-${noteId}-collaborators]`);
+
+            if (!count) {
+                // Compter depuis les avatars actuels
+                const avatarsContainer = document.querySelector(`[data-note-${noteId}-avatars]`);
+                if (avatarsContainer) {
+                    count = avatarsContainer.querySelectorAll('[data-user-id]').length;
+                    const countBadge = document.querySelector(`[data-note-${noteId}-count]`);
+                    if (countBadge) {
+                        const overflow = parseInt(countBadge.textContent.replace('+', '')) || 0;
+                        count += overflow;
+                    }
+                } else {
+                    count = 0;
+                }
+            }
+
+            if (count === 0) {
+                if (countText) countText.remove();
+                return;
+            }
+
+            if (!countText && count > 0) {
+                const newCountText = document.createElement('span');
+                newCountText.className = 'text-xs text-green-600 dark:text-green-400 font-medium';
+                newCountText.setAttribute(`data-note-${noteId}-count-text`, '');
+                newCountText.textContent = count;
+                if (collaboratorsContainer) {
+                    collaboratorsContainer.appendChild(newCountText);
+                }
+            } else if (countText) {
+                countText.textContent = count;
+            }
+        }
+
+        // Se connecter à chaque canal de note
+        noteIds.forEach(noteId => {
+            const channelName = `presence-note.${noteId}`;
+            const channel = pusher.subscribe(channelName);
+
+            // Canal souscrit avec succès
+            channel.bind('pusher:subscription_succeeded', (members) => {
+                updateCollaborators(noteId, members.members || {});
+            });
+
+            // Utilisateur rejoint
+            channel.bind('pusher:member_added', (member) => {
+                console.log('➕ Utilisateur rejoint la note', noteId, ':', member);
+                addCollaborator(noteId, member);
+            });
+
+            // Utilisateur part
+            channel.bind('pusher:member_removed', (member) => {
+                console.log('➖ Utilisateur quitte la note', noteId, ':', member);
+                removeCollaborator(noteId, member);
+            });
+        });
+    }
+
+    // Initialiser quand le DOM est prêt
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNotesPresence);
+    } else {
+        initNotesPresence();
+    }
 </script>
 @endpush
 @endsection
