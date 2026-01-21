@@ -2,6 +2,7 @@
  * Éditeur de notes collaboratif - CodeMirror 6
  * Architecture Master/Slave : Synchronisation par frappes de touches
  * Connexion DIRECTE à Pusher (sans Laravel Echo)
+ * OPTIMISATION : Throttling et Debounce pour limiter les messages Pusher
  */
 
 import { EditorView } from '@codemirror/view';
@@ -12,6 +13,41 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
+
+/**
+ * Fonction utilitaire de throttling (limite la fréquence d'appel)
+ * @param {Function} func - Fonction à limiter
+ * @param {number} limit - Délai minimum entre deux appels (en ms)
+ */
+function throttle(func, limit) {
+    let inThrottle;
+    return function(...args) {
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => {
+                inThrottle = false;
+            }, limit);
+        }
+    };
+}
+
+/**
+ * Fonction utilitaire de debounce (attend la fin de l'action)
+ * @param {Function} func - Fonction à différer
+ * @param {number} wait - Temps d'attente (en ms)
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
+}
 
 // Instance Pusher globale
 let pusherInstance = null;
@@ -120,6 +156,10 @@ function notesEditor(noteId) {
         isApplyingRemote: false,
         isHandlingRemoteChange: false,
         
+        // Fonctions optimisées avec throttling/debounce
+        throttledCursorUpdate: null, // Sera initialisé avec throttle
+        debouncedTextChange: null, // Sera initialisé avec debounce
+        
         pusher: null, // Instance Pusher directe (sans Laravel Echo)
         channel: null,
         isChannelSubscribed: false, // Flag pour vérifier si le canal est souscrit
@@ -144,6 +184,17 @@ function notesEditor(noteId) {
             
             // Initialiser notre propre heartbeat
             this.userHeartbeats[window.currentUserId] = Date.now();
+            
+            // Initialiser les fonctions optimisées avec throttling/debounce
+            // Throttling pour les curseurs : max 1 message toutes les 100ms (10 messages/seconde)
+            this.throttledCursorUpdate = throttle((position) => {
+                this.sendCursorUpdate(position);
+            }, 100);
+            
+            // Debounce pour les changements de texte : attendre 300ms après le dernier changement
+            this.debouncedTextChange = debounce((change) => {
+                this.sendTextChange(change);
+            }, 300);
             
             // Détecter la fermeture de page pour envoyer un message de déconnexion
             window.addEventListener('beforeunload', () => {
@@ -525,7 +576,7 @@ function notesEditor(noteId) {
             }
         },
 
-        // Gérer les changements locaux (envoyer via client event)
+        // Gérer les changements locaux (envoyer via client event avec DEBOUNCE)
         handleLocalChange(update) {
             if (!this.channel || !this.isChannelSubscribed) {
                 console.warn('⚠️ handleLocalChange: canal non disponible ou non souscrit');
@@ -539,38 +590,31 @@ function notesEditor(noteId) {
 
             // Extraire les changements de la transaction
             let hasLocalChanges = false;
+            const allChanges = [];
+            
             update.transactions.forEach(tr => {
                 if (tr.changes && !tr.annotation('remote')) {
                     hasLocalChanges = true;
                     const changes = tr.changes;
                     
-                    // Parcourir les changements individuels
+                    // Collecter tous les changements pour les envoyer en une fois (debounce)
                     changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-                        const change = {
-                            userId: Number(window.currentUserId), // S'assurer que c'est un nombre
-                            from: Number(fromA), // S'assurer que c'est un nombre
-                            to: Number(toA), // S'assurer que c'est un nombre
-                            insert: String(inserted.toString() || ''), // S'assurer que c'est une string
-                            timestamp: Number(Date.now()) // S'assurer que c'est un nombre
-                        };
-
-                        // Envoyer via client event (événement client-client, pas serveur)
-                        // Vérifier que le canal est souscrit avant d'envoyer
-                        if (!this.isChannelSubscribed) {
-                            console.warn('⚠️ Canal non encore souscrit, skip text-change');
-                            return;
-                        }
-                        
-                        try {
-                            console.log('📤 [Pusher Direct] Envoi text-change:', { from: change.from, to: change.to, insertLength: change.insert.length });
-                            // Utiliser trigger() directement avec Pusher (client events)
-                            this.channel.trigger('client-text-change', change);
-                        } catch (e) {
-                            console.error('❌ Erreur client event text-change:', e);
-                        }
+                        allChanges.push({
+                            userId: Number(window.currentUserId),
+                            from: Number(fromA),
+                            to: Number(toA),
+                            insert: String(inserted.toString() || ''),
+                            timestamp: Number(Date.now())
+                        });
                     });
                 }
             });
+
+            // OPTIMISATION : Utiliser debounce pour envoyer tous les changements ensemble
+            // après 300ms d'inactivité (au lieu d'envoyer à chaque caractère)
+            if (hasLocalChanges && allChanges.length > 0) {
+                this.debouncedTextChange(allChanges);
+            }
 
             // Si on a la clé Master ET qu'il y a des changements locaux, programmer la sauvegarde
             if (hasLocalChanges) {
@@ -607,6 +651,29 @@ function notesEditor(noteId) {
                         collaboratorsCount: this.collaborators.length
                     });
                 }
+            }
+        },
+
+        // Envoyer un changement de texte (appelé par debounce)
+        sendTextChange(changes) {
+            if (!this.channel || !this.isChannelSubscribed) {
+                console.warn('⚠️ sendTextChange: canal non disponible ou non souscrit');
+                return;
+            }
+
+            // Envoyer tous les changements en une seule fois (ou un par un si nécessaire)
+            changes.forEach(change => {
+                try {
+                    // Utiliser trigger() directement avec Pusher (client events)
+                    this.channel.trigger('client-text-change', change);
+                } catch (e) {
+                    console.error('❌ Erreur client event text-change:', e);
+                }
+            });
+            
+            // Log uniquement le premier et dernier changement pour ne pas saturer la console
+            if (changes.length > 0) {
+                console.log(`📤 [Pusher Optimisé] Envoi ${changes.length} changement(s) de texte en une fois`);
             }
         },
 
@@ -792,39 +859,36 @@ function notesEditor(noteId) {
         },
 
         queueCursorUpdate() {
-            clearTimeout(this.cursorTimer);
-            this.cursorTimer = setTimeout(() => this.updateCursor(), 200);
+            // OPTIMISATION : Utiliser throttle pour limiter à 10 messages/seconde max
+            if (!this.editorView) return;
+            
+            const selection = this.editorView.state.selection.main;
+            const pos = selection.head;
+            
+            // Utiliser la fonction throttled pour limiter l'envoi
+            this.throttledCursorUpdate(pos);
         },
 
-        async updateCursor() {
-            if (!this.editorView || !this.channel || !this.isChannelSubscribed) {
-                console.warn('⚠️ updateCursor: canal non disponible ou non souscrit');
+        // Envoyer la mise à jour du curseur (appelé par throttle)
+        sendCursorUpdate(position) {
+            if (!this.channel || !this.isChannelSubscribed) {
                 return;
             }
             
             try {
-                const selection = this.editorView.state.selection.main;
-                const pos = selection.head;
-                
                 // Trouver notre info utilisateur depuis les collaborateurs
                 const currentUser = this.collaborators.find(u => u.id === window.currentUserId);
                 const userName = currentUser?.name || 'Utilisateur';
                 
-                // Vérification déjà faite au début de la fonction, mais double-check pour sécurité
-                if (!this.isChannelSubscribed || !this.channel) {
-                    console.warn('⚠️ Canal non disponible ou non souscrit, skip cursor-moved');
-                    return;
-                }
-                
                 const cursorData = {
-                    userId: Number(window.currentUserId), // S'assurer que c'est un nombre
+                    userId: Number(window.currentUserId),
                     user: {
                         id: Number(window.currentUserId),
-                        name: String(userName || 'Utilisateur') // S'assurer que c'est une string
+                        name: String(userName || 'Utilisateur')
                     },
-                    position: Number(pos) // S'assurer que c'est un nombre
+                    position: Number(position)
                 };
-                console.log('📤 [Pusher Direct] Envoi cursor-moved:', { userId: cursorData.userId, position: cursorData.position });
+                
                 try {
                     // Utiliser trigger() directement avec Pusher (client events)
                     this.channel.trigger('client-cursor-moved', cursorData);
@@ -832,7 +896,7 @@ function notesEditor(noteId) {
                     console.error('❌ Erreur client event cursor-moved:', e);
                 }
             } catch (e) {
-                console.error('Erreur updateCursor:', e);
+                console.error('Erreur sendCursorUpdate:', e);
             }
         },
 
