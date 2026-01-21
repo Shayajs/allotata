@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     adminSelect.addEventListener('change', function() {
         if (this.value) {
-            fetch('{{ route("api.messagerie-interne.conversations") }}', {
+            fetch('{{ route("admin.api.messagerie-interne.conversations") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

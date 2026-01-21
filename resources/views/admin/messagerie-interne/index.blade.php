@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     adminSelect.addEventListener('change', function() {
         if (this.value) {
             // Créer ou obtenir la conversation
-            fetch('{{ route("api.messagerie-interne.conversations") }}', {
+            fetch('{{ route("admin.api.messagerie-interne.conversations") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
