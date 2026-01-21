@@ -153,7 +153,7 @@
                     
                     <!-- Zone de recherche -->
                     <div class="max-w-3xl mx-auto mb-10">
-                        <form action="{{ route('search') }}" method="GET" class="relative" id="search-form">
+                        <form action="{{ route('search') }}" method="GET" class="relative" id="search-form" onsubmit="if(this.querySelector('#search-input-home').value.trim()) saveSearchHistory(this.querySelector('#search-input-home').value.trim());">
                             <div class="relative">
                                 <input 
                                     type="text" 
@@ -169,13 +169,21 @@
                                     </svg>
                                 <button 
                                     type="submit"
-                                    class="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all"
+                                    class="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 sm:px-6 py-2 text-sm sm:text-base bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all"
                                 >
                                     Rechercher
                                 </button>
                             </div>
                             <!-- Résultats en temps réel -->
                             <div id="autocomplete-results-home" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto">
+                                <!-- Historique des recherches -->
+                                <div id="search-history-home" class="hidden p-3 border-b border-slate-200 dark:border-slate-700">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Historique récent (48h)</h4>
+                                        <button onclick="clearSearchHistory()" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Effacer</button>
+                                    </div>
+                                    <div id="search-history-list" class="space-y-1"></div>
+                                </div>
                                 <div id="autocomplete-list-home" class="p-2"></div>
                             </div>
                         </form>
@@ -186,8 +194,12 @@
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="px-8 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                                Accéder au dashboard
+                            <a href="{{ route('dashboard') }}" class="px-8 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span class="hidden sm:inline">Accéder au dashboard</span>
+                                <span class="sm:hidden">Dashboard</span>
                             </a>
                         @else
                             @if (Route::has('signup'))
@@ -392,6 +404,88 @@
         @include('partials.cookie-banner')
 
         <script>
+            // Gestion de l'historique des recherches (48h)
+            const SEARCH_HISTORY_KEY = 'search_history_allotata';
+            const SEARCH_HISTORY_MAX_AGE = 48 * 60 * 60 * 1000; // 48 heures en millisecondes
+
+            function getSearchHistory() {
+                try {
+                    const history = localStorage.getItem(SEARCH_HISTORY_KEY);
+                    if (!history) return [];
+                    const items = JSON.parse(history);
+                    const now = Date.now();
+                    // Filtrer les éléments de plus de 48h
+                    return items.filter(item => (now - item.timestamp) < SEARCH_HISTORY_MAX_AGE);
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveSearchHistory(query) {
+                if (!query || query.trim().length < 2) return;
+                query = query.trim().toLowerCase();
+                let history = getSearchHistory();
+                // Retirer les doublons
+                history = history.filter(item => item.query !== query);
+                // Ajouter au début
+                history.unshift({ query: query, timestamp: Date.now() });
+                // Limiter à 10 éléments
+                history = history.slice(0, 10);
+                try {
+                    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+                } catch (e) {
+                    console.error('Erreur lors de la sauvegarde de l\'historique:', e);
+                }
+            }
+
+            function displaySearchHistory() {
+                const history = getSearchHistory();
+                const historyContainer = document.getElementById('search-history-home');
+                const historyList = document.getElementById('search-history-list');
+                const searchInput = document.getElementById('search-input-home');
+                const currentQuery = searchInput.value.trim().toLowerCase();
+
+                if (history.length === 0 || currentQuery.length > 0) {
+                    historyContainer.classList.add('hidden');
+                    return;
+                }
+
+                historyList.innerHTML = '';
+                history.slice(0, 5).forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer flex items-center gap-2 group';
+                    div.innerHTML = `
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-sm text-slate-700 dark:text-slate-300 flex-1">${escapeHtml(item.query)}</span>
+                    `;
+                    div.addEventListener('click', () => {
+                        searchInput.value = item.query;
+                        searchInput.dispatchEvent(new Event('input'));
+                        document.getElementById('search-form').submit();
+                    });
+                    historyList.appendChild(div);
+                });
+
+                historyContainer.classList.remove('hidden');
+            }
+
+            function clearSearchHistory() {
+                try {
+                    localStorage.removeItem(SEARCH_HISTORY_KEY);
+                    displaySearchHistory();
+                } catch (e) {
+                    console.error('Erreur lors de la suppression de l\'historique:', e);
+                }
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
             // Recherche en temps réel
             (function() {
                 const searchInput = document.getElementById('search-input-home');
@@ -401,6 +495,14 @@
                 let currentRequest = null;
 
                 if (!searchInput) return;
+
+                // Afficher l'historique quand l'input est focus et vide
+                searchInput.addEventListener('focus', function() {
+                    if (this.value.trim().length === 0) {
+                        displaySearchHistory();
+                        resultsContainer.classList.remove('hidden');
+                    }
+                });
 
                 searchInput.addEventListener('input', function() {
                     const query = this.value.trim();
@@ -412,13 +514,24 @@
 
                     // Masquer les résultats si la requête est trop courte
                     if (query.length < 2) {
-                        resultsContainer.classList.add('hidden');
+                        if (query.length === 0) {
+                            displaySearchHistory();
+                            resultsContainer.classList.remove('hidden');
+                        } else {
+                            resultsContainer.classList.add('hidden');
+                        }
                         return;
                     }
+
+                    // Masquer l'historique quand on tape
+                    document.getElementById('search-history-home').classList.add('hidden');
 
                     // Délai pour éviter trop de requêtes
                     clearTimeout(searchTimeout);
                     searchTimeout = setTimeout(() => {
+                        // Sauvegarder dans l'historique après un délai (éviter les recherches trop rapides)
+                        setTimeout(() => saveSearchHistory(query), 2000);
+                        
                         fetch(`{{ route('search.autocomplete') }}?q=${encodeURIComponent(query)}`)
                             .then(response => response.json())
                             .then(data => {

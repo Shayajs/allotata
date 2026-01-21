@@ -82,17 +82,25 @@ class SecurityController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'preference_recovery_method' => ['required', 'in:email,sms'],
+            'recovery_methods' => ['required', 'array', 'min:1'],
+            'recovery_methods.*' => ['in:email,sms'],
         ]);
 
+        $methods = $validated['recovery_methods'];
+        $hasEmail = in_array('email', $methods);
+        $hasSms = in_array('sms', $methods);
+
         // Vérifier si SMS est choisi mais pas de téléphone
-        if ($validated['preference_recovery_method'] === 'sms' && !$user->telephone) {
+        if ($hasSms && !$user->telephone) {
             return back()->withErrors([
-                'preference_recovery_method' => 'Vous devez d\'abord ajouter un numéro de téléphone dans vos paramètres pour utiliser la récupération par SMS.',
+                'recovery_methods' => 'Vous devez d\'abord ajouter un numéro de téléphone dans vos paramètres pour utiliser la récupération par SMS.',
             ]);
         }
 
-        $user->update($validated);
+        $user->update([
+            'recovery_method_email' => $hasEmail,
+            'recovery_method_sms' => $hasSms,
+        ]);
 
         SecurityLog::log(
             $user->id,
@@ -100,12 +108,13 @@ class SecurityController extends Controller
             $request->ip(),
             $request->userAgent(),
             null,
-            ['method' => $validated['preference_recovery_method']],
+            ['methods' => $methods],
             'low',
             false
         );
 
-        return back()->with('success', 'Votre préférence de méthode de récupération a été mise à jour.');
+        $methodsText = implode(' et ', array_map(function($m) { return strtoupper($m); }, $methods));
+        return back()->with('success', 'Vos préférences de méthode de récupération ont été mises à jour (' . $methodsText . ').');
     }
 
     /**
@@ -117,19 +126,25 @@ class SecurityController extends Controller
 
         $validated = $request->validate([
             'a2f_enabled' => ['required', 'boolean'],
-            'a2f_method' => ['required_if:a2f_enabled,1', 'in:email,sms'],
+            'a2f_methods' => ['required_if:a2f_enabled,1', 'array', 'min:1'],
+            'a2f_methods.*' => ['in:email,sms'],
         ]);
 
+        $methods = $validated['a2f_enabled'] ? ($validated['a2f_methods'] ?? ['email']) : [];
+        $hasEmail = in_array('email', $methods);
+        $hasSms = in_array('sms', $methods);
+
         // Vérifier si SMS est choisi mais pas de téléphone
-        if ($validated['a2f_enabled'] && ($validated['a2f_method'] ?? 'email') === 'sms' && !$user->telephone) {
+        if ($validated['a2f_enabled'] && $hasSms && !$user->telephone) {
             return back()->withErrors([
-                'a2f_method' => 'Vous devez d\'abord ajouter un numéro de téléphone dans vos paramètres pour utiliser l\'A2F par SMS.',
+                'a2f_methods' => 'Vous devez d\'abord ajouter un numéro de téléphone dans vos paramètres pour utiliser l\'A2F par SMS.',
             ]);
         }
 
         $user->update([
             'a2f_enabled' => $validated['a2f_enabled'],
-            'a2f_method' => $validated['a2f_enabled'] ? ($validated['a2f_method'] ?? 'email') : 'email',
+            'a2f_method_email' => $validated['a2f_enabled'] ? $hasEmail : false,
+            'a2f_method_sms' => $validated['a2f_enabled'] ? $hasSms : false,
         ]);
 
         SecurityLog::log(
@@ -138,14 +153,17 @@ class SecurityController extends Controller
             $request->ip(),
             $request->userAgent(),
             null,
-            ['method' => $validated['a2f_method'] ?? 'email'],
+            ['methods' => $methods],
             'medium',
             false
         );
 
-        $message = $validated['a2f_enabled'] 
-            ? 'L\'authentification à deux facteurs a été activée. Vous devrez saisir un code à chaque connexion.'
-            : 'L\'authentification à deux facteurs a été désactivée.';
+        if ($validated['a2f_enabled']) {
+            $methodsText = implode(' et ', array_map(function($m) { return strtoupper($m); }, $methods));
+            $message = 'L\'authentification à deux facteurs a été activée (' . $methodsText . '). Vous devrez saisir un code à chaque connexion.';
+        } else {
+            $message = 'L\'authentification à deux facteurs a été désactivée.';
+        }
 
         return back()->with('success', $message);
     }

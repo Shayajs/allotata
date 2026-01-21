@@ -664,7 +664,7 @@ class AdminController extends Controller
      */
     public function showEntreprise(Entreprise $entreprise)
     {
-        $entreprise->load(['user', 'reservations.user']);
+        $entreprise->load(['user', 'reservations.user', 'typesServices.images']);
         
         // Charger l'historique de sécurité
         $securityHistory = \App\Models\EntrepriseSecurityHistory::where('entreprise_id', $entreprise->id)
@@ -673,6 +673,99 @@ class AdminController extends Controller
             ->get();
         
         return view('admin.entreprises.show', compact('entreprise', 'securityHistory'));
+    }
+
+    /**
+     * Uploader une image de service (admin)
+     */
+    public function uploadServiceImage(Request $request, Entreprise $entreprise, $serviceId)
+    {
+        $typeService = \App\Models\TypeService::where('id', $serviceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $imageService = app(\App\Services\ImageService::class);
+        $imagePath = $imageService->processAndStore($request->file('image'), 'services');
+
+        $maxOrdre = \App\Models\ServiceImage::where('type_service_id', $typeService->id)->max('ordre') ?? 0;
+        $estCouverture = \App\Models\ServiceImage::where('type_service_id', $typeService->id)->count() === 0;
+
+        $serviceImage = \App\Models\ServiceImage::create([
+            'type_service_id' => $typeService->id,
+            'image_path' => $imagePath,
+            'est_couverture' => $estCouverture,
+            'ordre' => $maxOrdre + 1,
+        ]);
+
+        return back()->with('success', 'Image uploadée avec succès.');
+    }
+
+    /**
+     * Définir une image comme couverture (admin)
+     */
+    public function setServiceImageCover(Request $request, Entreprise $entreprise, $serviceId, $imageId)
+    {
+        $typeService = \App\Models\TypeService::where('id', $serviceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $image = \App\Models\ServiceImage::where('id', $imageId)
+            ->where('type_service_id', $typeService->id)
+            ->firstOrFail();
+
+        \App\Models\ServiceImage::where('type_service_id', $typeService->id)
+            ->update(['est_couverture' => false]);
+
+        $image->update(['est_couverture' => true]);
+
+        return back()->with('success', 'Image de couverture mise à jour.');
+    }
+
+    /**
+     * Supprimer une image de service (admin)
+     */
+    public function deleteServiceImage(Request $request, Entreprise $entreprise, $serviceId, $imageId)
+    {
+        $typeService = \App\Models\TypeService::where('id', $serviceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        $image = \App\Models\ServiceImage::where('id', $imageId)
+            ->where('type_service_id', $typeService->id)
+            ->firstOrFail();
+
+        $imagePath = $image->image_path;
+        $estCouverture = $image->est_couverture;
+
+        $image->delete();
+
+        if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+            try {
+                $imageService = app(\App\Services\ImageService::class);
+                $imageService->delete($imagePath);
+            } catch (\Exception $e) {
+                \Log::warning('Erreur lors de la suppression de l\'image de service', [
+                    'path' => $imagePath,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if ($estCouverture) {
+            $premiereImage = \App\Models\ServiceImage::where('type_service_id', $typeService->id)
+                ->orderBy('ordre')
+                ->first();
+            
+            if ($premiereImage) {
+                $premiereImage->update(['est_couverture' => true]);
+            }
+        }
+
+        return back()->with('success', 'Image supprimée avec succès.');
     }
 
     /**

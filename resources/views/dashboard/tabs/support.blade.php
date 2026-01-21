@@ -16,19 +16,19 @@
             Questions fréquentes
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="{{ route('home') }}#faq" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
+            <a href="{{ route('support.faq') }}" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
                 <p class="font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Comment créer une entreprise ?</p>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Guide de création étape par étape</p>
             </a>
-            <a href="{{ route('home') }}#faq" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
+            <a href="{{ route('support.faq') }}" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
                 <p class="font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Comment fonctionne le paiement ?</p>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Modes de paiement et facturation</p>
             </a>
-            <a href="{{ route('home') }}#faq" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
+            <a href="{{ route('support.faq') }}" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
                 <p class="font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Comment modifier une réservation ?</p>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Modification et annulation</p>
             </a>
-            <a href="{{ route('home') }}#faq" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
+            <a href="{{ route('support.faq') }}" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-500 transition-all group">
                 <p class="font-medium text-slate-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">Voir toute la FAQ</p>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Toutes les questions et réponses</p>
             </a>

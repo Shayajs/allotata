@@ -53,18 +53,18 @@
                     <div id="a2f-method-container" class="{{ $user->a2f_enabled ? '' : 'hidden' }} space-y-3">
                         <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Méthode de réception du code :</p>
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="radio" name="a2f_method" value="email" 
-                                   {{ ($user->a2f_method ?? 'email') === 'email' ? 'checked' : '' }}
-                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500">
+                            <input type="checkbox" name="a2f_methods[]" value="email" 
+                                   {{ ($user->a2f_method_email ?? true) ? 'checked' : '' }}
+                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 rounded">
                             <div>
                                 <span class="font-medium text-slate-900 dark:text-white">Email</span>
                                 <p class="text-sm text-slate-600 dark:text-slate-400">Recevoir le code par email</p>
                             </div>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="radio" name="a2f_method" value="sms" 
-                                   {{ ($user->a2f_method ?? 'email') === 'sms' ? 'checked' : '' }}
-                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500"
+                            <input type="checkbox" name="a2f_methods[]" value="sms" 
+                                   {{ ($user->a2f_method_sms ?? false) ? 'checked' : '' }}
+                                   class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 rounded"
                                    {{ !$user->telephone ? 'disabled' : '' }}>
                             <div>
                                 <span class="font-medium text-slate-900 dark:text-white">SMS</span>
@@ -76,6 +76,7 @@
                                 </p>
                             </div>
                         </label>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 italic">Vous pouvez sélectionner les deux méthodes pour recevoir le code par email ET par SMS.</p>
                     </div>
                 </div>
                 <button type="submit" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
@@ -216,18 +217,18 @@
                 @csrf
                 <div class="space-y-3">
                     <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="radio" name="preference_recovery_method" value="email" 
-                               {{ ($user->preference_recovery_method ?? 'email') === 'email' ? 'checked' : '' }}
-                               class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500">
+                        <input type="checkbox" name="recovery_methods[]" value="email" 
+                               {{ ($user->recovery_method_email ?? true) ? 'checked' : '' }}
+                               class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 rounded">
                         <div>
                             <span class="font-medium text-slate-900 dark:text-white">Email</span>
                             <p class="text-sm text-slate-600 dark:text-slate-400">Recevoir les codes de réinitialisation par email</p>
                         </div>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="radio" name="preference_recovery_method" value="sms" 
-                               {{ ($user->preference_recovery_method ?? 'email') === 'sms' ? 'checked' : '' }}
-                               class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500"
+                        <input type="checkbox" name="recovery_methods[]" value="sms" 
+                               {{ ($user->recovery_method_sms ?? false) ? 'checked' : '' }}
+                               class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 rounded"
                                {{ !$user->telephone ? 'disabled' : '' }}>
                         <div>
                             <span class="font-medium text-slate-900 dark:text-white">SMS</span>
@@ -239,6 +240,7 @@
                             </p>
                         </div>
                     </label>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 italic">Vous pouvez sélectionner les deux méthodes pour recevoir les codes par email ET par SMS.</p>
                 </div>
                 <button type="submit" class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
                     Enregistrer

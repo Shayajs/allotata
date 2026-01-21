@@ -223,20 +223,22 @@
                             <div id="produit-detail-description" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mb-6 whitespace-pre-line"></div>
                             
                             <!-- Actions -->
-                            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                @auth
-                                    <a href="#" id="produit-commander-link-modal" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                        </svg>
-                                        Commander
-                                    </a>
-                                @else
-                                    <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
-                                        Connectez-vous pour commander
-                                    </a>
-                                @endauth
-                            </div>
+                            @if($entreprise->livraison_disponible)
+                                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    @auth
+                                        <a href="#" id="produit-commander-link-modal" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                            </svg>
+                                            Commander
+                                        </a>
+                                    @else
+                                        <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg transition text-sm sm:text-base">
+                                            Connectez-vous pour commander
+                                        </a>
+                                    @endauth
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
