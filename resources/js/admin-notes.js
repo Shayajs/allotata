@@ -474,8 +474,10 @@ function notesEditor(noteId) {
             }
 
             // Extraire les changements de la transaction
+            let hasLocalChanges = false;
             update.transactions.forEach(tr => {
                 if (tr.changes && !tr.annotation('remote')) {
+                    hasLocalChanges = true;
                     const changes = tr.changes;
                     
                     // Parcourir les changements individuels
@@ -506,13 +508,41 @@ function notesEditor(noteId) {
                 }
             });
 
-            // Si on a la clé Master, programmer la sauvegarde
-            if (this.hasMasterKey) {
-                const content = update.state.doc.toString();
-                console.log('💾 [Master] Changement détecté, sauvegarde programmée...');
-                this.queueSave(content);
-            } else {
-                console.log('⚠️ [Slave] Changement détecté mais pas Master, pas de sauvegarde. hasMasterKey:', this.hasMasterKey);
+            // Si on a la clé Master ET qu'il y a des changements locaux, programmer la sauvegarde
+            if (hasLocalChanges) {
+                // Vérifier à nouveau hasMasterKey au moment de la sauvegarde
+                // (au cas où il aurait changé entre temps)
+                const currentUserId = Number(window.currentUserId);
+                const masterUserId = window.noteMasterUserId ? Number(window.noteMasterUserId) : null;
+                
+                // Si on est seul ou si on est le Master, on sauvegarde
+                const shouldSave = this.hasMasterKey || 
+                                   (this.collaborators.length <= 1) ||
+                                   (masterUserId === currentUserId) ||
+                                   (!masterUserId && this.collaborators.length > 0 && Number(this.collaborators[0].id) === currentUserId);
+                
+                if (shouldSave) {
+                    // Mettre à jour hasMasterKey si nécessaire
+                    if (!this.hasMasterKey && shouldSave) {
+                        this.hasMasterKey = true;
+                        console.log('💾 [Auto-Master] Vous êtes maintenant le Master (sauvegarde activée)');
+                    }
+                    
+                    const content = update.state.doc.toString();
+                    console.log('💾 [Master] Changement détecté, sauvegarde programmée...', { 
+                        hasMasterKey: this.hasMasterKey, 
+                        contentLength: content.length,
+                        shouldSave: shouldSave
+                    });
+                    this.queueSave(content);
+                } else {
+                    console.log('⚠️ [Slave] Changement détecté mais pas Master, pas de sauvegarde.', { 
+                        hasMasterKey: this.hasMasterKey, 
+                        currentUserId: currentUserId,
+                        masterUserId: masterUserId,
+                        collaboratorsCount: this.collaborators.length
+                    });
+                }
             }
         },
 
@@ -819,6 +849,9 @@ function notesEditor(noteId) {
                         margin-left: -1px;
                         pointer-events: auto;
                         transition: opacity 0.2s;
+                        /* Zone de hover plus tolérante */
+                        padding: 8px 12px;
+                        margin: -8px -12px;
                     `;
                     cursorEl.style.setProperty('--cursor-color', color);
 

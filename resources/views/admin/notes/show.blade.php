@@ -82,6 +82,9 @@
         z-index: 10;
         cursor: default;
         transition: opacity 0.2s;
+        /* Zone de hover plus tolérante : padding invisible pour faciliter le survol */
+        padding: 8px 12px;
+        margin: -8px -12px;
     }
 
     .collaborator-cursor:hover {
@@ -90,45 +93,47 @@
 
     .collaborator-name-tag {
         position: absolute;
-        top: -28px;
+        top: -36px;
         left: 50%;
-        padding: 4px 10px;
-        font-size: 11px;
+        padding: 8px 14px;
+        font-size: 13px;
         font-weight: 600;
-        border-radius: 6px;
+        border-radius: 8px;
         white-space: nowrap;
         z-index: 12;
         color: white;
         transform: translateX(-50%);
         pointer-events: none;
         opacity: 0;
-        transition: opacity 0.2s ease-in-out, top 0.2s ease-in-out;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: opacity 0.2s ease-in-out, top 0.2s ease-in-out, transform 0.2s ease-in-out;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
 
     .collaborator-cursor:hover .collaborator-name-tag {
         opacity: 1;
-        top: -32px;
+        top: -42px;
+        transform: translateX(-50%) scale(1.05);
     }
 
     /* Goutte au survol */
     .collaborator-cursor::before {
         content: '';
         position: absolute;
-        top: -6px;
+        top: -8px;
         left: 50%;
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50% 50% 50% 0;
         transform: translateX(-50%) rotate(-45deg);
         background-color: var(--cursor-color, #3b82f6);
         opacity: 0;
-        transition: opacity 0.2s ease-in-out;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         z-index: 11;
     }
 
     .collaborator-cursor:hover::before {
         opacity: 1;
+        transform: translateX(-50%) rotate(-45deg) scale(1.2);
     }
 </style>
 @endpush
