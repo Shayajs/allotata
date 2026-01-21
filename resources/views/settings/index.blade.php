@@ -172,6 +172,10 @@
                     <div id="tab-account" class="tab-content">
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Informations du compte</h2>
                         
+                        <p class="text-sm italic text-slate-500 dark:text-slate-400 mb-6">
+                            Toutes les informations enregistrées sont visibles uniquement par vous.
+                        </p>
+                        
                         <form action="{{ route('settings.account.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                             @csrf
                             

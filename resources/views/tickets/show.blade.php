@@ -72,7 +72,9 @@
                 <!-- Messages -->
                 @if($messages->count() > 0)
                     <div class="space-y-4">
-                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Messages</h2>
+                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+                            {{ ($unreadCount ?? 0) > 0 ? 'Nouveaux messages' : 'Messages' }}
+                        </h2>
                         @foreach($messages as $message)
                             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                                 <div class="flex items-center gap-3 mb-3">

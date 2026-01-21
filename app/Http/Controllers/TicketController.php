@@ -87,13 +87,19 @@ class TicketController extends Controller
             })
             ->get();
 
+        // Compter les messages non lus avant de les marquer comme lus
+        $unreadCount = $ticket->messages()
+            ->where('user_id', '!=', Auth::id())
+            ->where('est_lu', false)
+            ->count();
+
         // Marquer les messages comme lus
         $ticket->messages()
             ->where('user_id', '!=', Auth::id())
             ->where('est_lu', false)
             ->update(['est_lu' => true]);
 
-        return view('tickets.show', compact('ticket', 'messages'));
+        return view('tickets.show', compact('ticket', 'messages', 'unreadCount'));
     }
 
     /**

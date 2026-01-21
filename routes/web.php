@@ -18,6 +18,11 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\CourseController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Support / FAQ
+Route::get('/support/faq', function() {
+    return view('support.faq');
+})->name('support.faq');
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
 Route::get('/fonctionnalites', [\App\Http\Controllers\PageController::class, 'fonctionnalites'])->name('pages.fonctionnalites');
 
@@ -504,6 +509,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/entreprises/{entreprise}/membres', [AdminController::class, 'ajouterMembreEntreprise'])->name('entreprises.membres.store');
     Route::put('/entreprises/{entreprise}/membres/{membre}', [AdminController::class, 'mettreAJourRoleMembre'])->name('entreprises.membres.update');
     Route::delete('/entreprises/{entreprise}/membres/{membre}', [AdminController::class, 'supprimerMembreEntreprise'])->name('entreprises.membres.destroy');
+    
+    // Gestion des images de services (admin)
+    Route::post('/entreprises/{entreprise}/services/{service}/images/upload', [AdminController::class, 'uploadServiceImage'])->name('entreprises.services.images.upload');
+    Route::post('/entreprises/{entreprise}/services/{service}/images/{image}/set-cover', [AdminController::class, 'setServiceImageCover'])->name('entreprises.services.images.set-cover');
+    Route::delete('/entreprises/{entreprise}/services/{service}/images/{image}', [AdminController::class, 'deleteServiceImage'])->name('entreprises.services.images.delete');
     
     // Gestion des abonnements utilisateurs
     Route::get('/users/{user}/subscription', [AdminController::class, 'showSubscription'])->name('users.subscription.show');

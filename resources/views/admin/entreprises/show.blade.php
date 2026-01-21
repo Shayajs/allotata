@@ -398,6 +398,67 @@
         </h2>
     </div>
     <div class="p-6 space-y-6">
+        <!-- Gestion des images de prestations -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Images des prestations
+                </h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Gérer les images des services de cette entreprise</p>
+            </div>
+            <div class="p-6">
+                @php
+                    $services = $entreprise->typesServices;
+                @endphp
+                @if($services->count() > 0)
+                    <div class="space-y-6">
+                        @foreach($services as $service)
+                            <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                                <h3 class="font-semibold text-slate-900 dark:text-white mb-3">{{ $service->nom }}</h3>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                                    @foreach($service->images as $image)
+                                        <div class="relative group">
+                                            <img src="{{ asset('media/' . $image->image_path) }}" alt="{{ $service->nom }}" class="w-full h-32 object-cover rounded-lg border-2 {{ $image->est_couverture ? 'border-green-500' : 'border-slate-200 dark:border-slate-700' }}">
+                                            @if($image->est_couverture)
+                                                <span class="absolute top-2 left-2 px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded">Couverture</span>
+                                            @endif
+                                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                                                <form action="{{ route('admin.entreprises.services.images.set-cover', [$entreprise->id, $service->id, $image->id]) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @if(!$image->est_couverture)
+                                                        <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">Définir couverture</button>
+                                                    @endif
+                                                </form>
+                                                <form action="{{ route('admin.entreprises.services.images.delete', [$entreprise->id, $service->id, $image->id]) }}" method="POST" onsubmit="return confirm('Supprimer cette image ?');" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <form action="{{ route('admin.entreprises.services.images.upload', [$entreprise->id, $service->id]) }}" method="POST" enctype="multipart/form-data" class="mt-4">
+                                    @csrf
+                                    <div class="flex gap-3">
+                                        <input type="file" name="image" accept="image/*" required class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white text-sm">
+                                        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                            Ajouter une image
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-8">Aucun service trouvé pour cette entreprise.</p>
+                @endif
+            </div>
+        </div>
+
         <!-- Actions Administrateur -->
         <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-6 border border-slate-700 shadow-lg">
             <h3 class="text-lg font-bold text-white mb-4">Actions Administrateur</h3>
