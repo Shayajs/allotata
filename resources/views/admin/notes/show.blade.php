@@ -82,12 +82,6 @@
         z-index: 10;
         cursor: default;
         transition: opacity 0.2s;
-        /* Zone de hover plus tolérante : padding invisible pour faciliter le survol */
-        /* Le padding crée une zone invisible de 24px de large (12px de chaque côté) */
-        padding: 0 12px;
-        margin: 0 -12px;
-        /* S'assurer que le curseur lui-même reste à 2px de large */
-        box-sizing: content-box;
     }
 
     .collaborator-cursor:hover {
@@ -96,47 +90,45 @@
 
     .collaborator-name-tag {
         position: absolute;
-        top: -36px;
+        top: -28px;
         left: 50%;
-        padding: 8px 14px;
-        font-size: 13px;
+        padding: 4px 10px;
+        font-size: 11px;
         font-weight: 600;
-        border-radius: 8px;
+        border-radius: 6px;
         white-space: nowrap;
         z-index: 12;
         color: white;
         transform: translateX(-50%);
         pointer-events: none;
         opacity: 0;
-        transition: opacity 0.2s ease-in-out, top 0.2s ease-in-out, transform 0.2s ease-in-out;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        transition: opacity 0.2s ease-in-out, top 0.2s ease-in-out;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .collaborator-cursor:hover .collaborator-name-tag {
         opacity: 1;
-        top: -42px;
-        transform: translateX(-50%) scale(1.05);
+        top: -32px;
     }
 
     /* Goutte au survol */
     .collaborator-cursor::before {
         content: '';
         position: absolute;
-        top: -8px;
+        top: -6px;
         left: 50%;
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50% 50% 50% 0;
         transform: translateX(-50%) rotate(-45deg);
         background-color: var(--cursor-color, #3b82f6);
         opacity: 0;
-        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        transition: opacity 0.2s ease-in-out;
         z-index: 11;
     }
 
     .collaborator-cursor:hover::before {
         opacity: 1;
-        transform: translateX(-50%) rotate(-45deg) scale(1.2);
     }
 </style>
 @endpush

@@ -849,10 +849,6 @@ function notesEditor(noteId) {
                         margin-left: -1px;
                         pointer-events: auto;
                         transition: opacity 0.2s;
-                        /* Zone de hover plus tolérante : padding horizontal uniquement */
-                        padding: 0 12px;
-                        margin: 0 -12px;
-                        box-sizing: content-box;
                     `;
                     cursorEl.style.setProperty('--cursor-color', color);
 
