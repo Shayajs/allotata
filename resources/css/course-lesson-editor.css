@@ -833,9 +833,12 @@
         height: 100vh;
     }
     
-    /* Ajuster le padding-top du conteneur pour compenser la hauteur de la toolbar (environ 80-100px selon le contenu) */
+    /* Le padding-top sera ajusté dynamiquement par JavaScript selon la hauteur de la toolbar */
     #blocks-container {
-        padding-top: calc(1rem + env(safe-area-inset-top));
+        /* Le padding sera ajusté dynamiquement */
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 1rem;
     }
     
     /* Zone de preview mobile - padding réduit mais carré */

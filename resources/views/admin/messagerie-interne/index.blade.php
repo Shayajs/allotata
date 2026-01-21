@@ -7,7 +7,7 @@
 @section('content')
 <div class="flex h-[calc(100vh-12rem)] gap-4">
     <!-- Liste des conversations -->
-    <div class="w-80 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+    <div class="w-full lg:w-80 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
         <!-- Header avec bouton nouveau chat -->
         <div class="p-4 border-b border-slate-200 dark:border-slate-700">
             <div class="flex items-center justify-between mb-4">
@@ -88,7 +88,7 @@
     </div>
 
     <!-- Zone de chat -->
-    <div class="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+    <div class="hidden lg:flex flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
         <div class="flex-1 flex items-center justify-center text-slate-500 dark:text-slate-400">
             <div class="text-center">
                 <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
