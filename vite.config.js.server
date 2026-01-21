@@ -16,7 +16,8 @@ export default defineConfig({
                 'resources/js/course-blocks.js',
                 'resources/js/tracking-visite.js',
                 'resources/js/admin-kanban.js',
-                'resources/js/admin-notes.js'
+                'resources/js/admin-notes.js',
+                'resources/js/admin-internal-messaging.js'
             ],
             refresh: true,
         }),

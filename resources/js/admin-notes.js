@@ -125,6 +125,7 @@ function notesEditor(noteId) {
         isChannelSubscribed: false, // Flag pour vérifier si le canal est souscrit
         hasMasterKey: false, // Clé de sauvegarde Master
         userHeartbeats: {}, // Track des derniers heartbeats de chaque utilisateur { userId: timestamp }
+        activeUserIds: new Set(), // Set des IDs des utilisateurs actuellement présents (pour optimiser les messages)
         
         init() {
             const titleInput = this.$el.querySelector('input[type="text"]');
@@ -144,6 +145,10 @@ function notesEditor(noteId) {
             
             // Initialiser notre propre heartbeat
             this.userHeartbeats[window.currentUserId] = Date.now();
+            
+            // Ajouter notre propre ID à la liste des actifs
+            this.activeUserIds.add(Number(window.currentUserId));
+            console.log('📋 Notre ID ajouté aux actifs:', window.currentUserId, 'Total:', this.activeUserIds.size);
             
             // Détecter la fermeture de page pour envoyer un message de déconnexion
             window.addEventListener('beforeunload', () => {
@@ -232,6 +237,10 @@ function notesEditor(noteId) {
             if (this.cursorTimer) {
                 clearTimeout(this.cursorTimer);
             }
+            
+            // Retirer notre ID de la liste des actifs (le Master se retire lui-même en dernier)
+            this.activeUserIds.delete(Number(window.currentUserId));
+            console.log('➖ Retrait de notre ID des actifs, Total:', this.activeUserIds.size);
             
             // Se désabonner du canal Pusher
             if (this.channel && this.pusher) {
@@ -373,6 +382,15 @@ function notesEditor(noteId) {
                     
                     console.log('👥 Utilisateurs présents:', users.length);
                     this.collaborators = users;
+                    
+                    // Mettre à jour la liste des IDs actifs
+                    this.activeUserIds.clear();
+                    users.forEach(user => {
+                        this.activeUserIds.add(Number(user.id));
+                    });
+                    
+                    console.log('📋 IDs actifs:', Array.from(this.activeUserIds));
+                    
                     this.determineMaster(users);
                     
                     // Initialiser les heartbeats des utilisateurs présents
@@ -419,7 +437,14 @@ function notesEditor(noteId) {
                 channel.bind('pusher:member_removed', (member) => {
                     const userId = Number(member.id || member.user_id);
                     console.log('➖ Utilisateur part (Pusher):', userId);
+                    
+                    // Retirer de la liste des collaborateurs
                     this.collaborators = this.collaborators.filter(u => Number(u.id) !== userId);
+                    
+                    // Retirer de la liste des IDs actifs
+                    this.activeUserIds.delete(userId);
+                    console.log('➖ Utilisateur retiré des IDs actifs:', userId, 'Total:', this.activeUserIds.size);
+                    
                     delete this.remoteCursors[userId];
                     delete this.userHeartbeats[userId];
                     this.determineMaster(this.collaborators);
@@ -448,8 +473,21 @@ function notesEditor(noteId) {
                 channel.bind('client-isAlive', (data) => {
                     const senderId = Number(data.userId);
                     const currentId = Number(window.currentUserId);
+                    
                     if (senderId !== currentId) {
+                        // Mettre à jour le heartbeat de l'utilisateur
                         this.userHeartbeats[senderId] = Date.now();
+                        
+                        // Ajouter à la liste des IDs actifs si pas déjà présent
+                        if (!this.activeUserIds.has(senderId)) {
+                            this.activeUserIds.add(senderId);
+                            console.log('➕ Utilisateur détecté via isAlive, ajouté aux IDs actifs:', senderId, 'Total:', this.activeUserIds.size);
+                            
+                            // Si on est Master, on passe en mode normal (plusieurs utilisateurs)
+                            if (this.hasMasterKey) {
+                                console.log('🔄 [Master] Passage en mode normal (plusieurs utilisateurs détectés)');
+                            }
+                        }
                         
                         // Détecter les conflits de Master : si quelqu'un d'autre se déclare Master
                         if (data.isMaster && this.hasMasterKey) {
@@ -1043,9 +1081,9 @@ function notesEditor(noteId) {
                     console.error('❌ Erreur client event isAlive:', e);
                 }
 
-                // OPTIMISATION : Si on est seul, ne pas envoyer de heartbeat HTTP au serveur
-                // Cela évite de saturer les 200 000 messages/jour de Pusher
-                const isAlone = !this.collaborators || this.collaborators.length <= 1;
+                // OPTIMISATION : Vérifier si on est seul en utilisant activeUserIds
+                // activeUserIds contient les IDs des utilisateurs actuellement présents
+                const isAlone = this.activeUserIds.size <= 1;
                 
                 if (isAlone) {
                     // Seul : juste le client event Pusher, pas de requête HTTP
@@ -1175,6 +1213,12 @@ function notesEditor(noteId) {
             // Mettre à jour la liste des collaborateurs si des changements
             if (removedUserIds.length > 0 || activeCollaborators.length !== this.collaborators.length) {
                 this.collaborators = activeCollaborators;
+                
+                // Mettre à jour activeUserIds : retirer les utilisateurs inactifs
+                removedUserIds.forEach(userId => {
+                    this.activeUserIds.delete(userId);
+                    console.log('➖ Utilisateur inactif retiré des IDs actifs:', userId, 'Total:', this.activeUserIds.size);
+                });
                 
                 // Si on est Master, notifier le serveur des collaborateurs inactifs retirés
                 if (this.hasMasterKey && removedUserIds.length > 0) {

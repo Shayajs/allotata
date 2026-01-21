@@ -436,6 +436,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/notes/{note}/leave', [\App\Http\Controllers\Admin\NotesController::class, 'leave'])->name('notes.leave');
     Route::post('/notes/{note}/remove-collaborator', [\App\Http\Controllers\Admin\NotesController::class, 'removeInactiveCollaborator'])->name('notes.remove-collaborator');
     
+    // Messagerie interne admin
+    Route::get('/messagerie-interne', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'index'])->name('messagerie-interne.index');
+    Route::get('/messagerie-interne/{conversation}', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'show'])->name('messagerie-interne.show');
+    Route::post('/api/messagerie-interne/conversations', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'createOrGetConversation'])->name('api.messagerie-interne.conversations');
+    Route::post('/api/messagerie-interne/messages', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'storeMessage'])->name('api.messagerie-interne.store');
+    Route::get('/api/messagerie-interne/conversations/{conversation}/messages', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'getMessages'])->name('api.messagerie-interne.messages');
+    Route::post('/api/messagerie-interne/conversations/{conversation}/typing', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'updateTyping'])->name('api.messagerie-interne.typing');
+    Route::get('/api/messagerie-interne/conversations/{conversation}/typing', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'getTyping'])->name('api.messagerie-interne.get-typing');
+    Route::post('/api/messagerie-interne/messages/{message}/reactions', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'addReaction'])->name('api.messagerie-interne.reaction');
+    Route::delete('/api/messagerie-interne/messages/{message}/reactions/{reaction}', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'removeReaction'])->name('api.messagerie-interne.reaction.remove');
+    Route::post('/api/messagerie-interne/upload', [\App\Http\Controllers\Admin\InternalMessagingController::class, 'upload'])->name('api.messagerie-interne.upload');
+    
     // Gestion des finances globales
     Route::get('/finances', [AdminController::class, 'finances'])->name('finances.index');
     
