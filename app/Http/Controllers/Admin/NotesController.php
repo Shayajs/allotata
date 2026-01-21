@@ -198,8 +198,33 @@ class NotesController extends Controller
 
         // Si l'utilisateur est Master selon lui, vérifier et mettre à jour en base
         if ($isMaster) {
-            // Si le Master actuel est différent, le changer
-            if ($note->master_user_id !== $user->id) {
+            // Résolution de conflit : si un autre utilisateur est déjà Master,
+            // utiliser l'ID le plus petit comme critère de départage
+            if ($note->master_user_id !== $user->id && $note->master_user_id !== null) {
+                $currentMasterId = $note->master_user_id;
+                
+                // Si l'utilisateur actuel a un ID plus petit, il devient Master
+                // Sinon, on garde le Master actuel
+                if ($user->id < $currentMasterId) {
+                    \Log::info('🔄 [Résolution conflit Master] Changement de Master', [
+                        'note_id' => $note->id,
+                        'ancien_master' => $currentMasterId,
+                        'nouveau_master' => $user->id,
+                        'raison' => 'ID plus petit'
+                    ]);
+                    $note->update(['master_user_id' => $user->id]);
+                    event(new \App\Events\MasterChanged($note, $user));
+                } else {
+                    // L'autre utilisateur reste Master (ID plus petit)
+                    \Log::info('🔄 [Résolution conflit Master] Master conservé', [
+                        'note_id' => $note->id,
+                        'master_actuel' => $currentMasterId,
+                        'utilisateur_requerant' => $user->id,
+                        'raison' => 'ID plus petit'
+                    ]);
+                }
+            } elseif ($note->master_user_id !== $user->id) {
+                // Pas de Master actuel, on peut devenir Master
                 $note->update(['master_user_id' => $user->id]);
                 event(new \App\Events\MasterChanged($note, $user));
             }

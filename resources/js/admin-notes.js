@@ -387,8 +387,25 @@ function notesEditor(noteId) {
                     const currentId = Number(window.currentUserId);
                     if (senderId !== currentId) {
                         this.userHeartbeats[senderId] = Date.now();
-                        // Si ce n'est pas nous qui sommes Master et que le Master actuel n'envoie plus de heartbeat
-                        if (data.isMaster && !this.hasMasterKey) {
+                        
+                        // Détecter les conflits de Master : si quelqu'un d'autre se déclare Master
+                        if (data.isMaster && this.hasMasterKey) {
+                            // Conflit détecté : deux Masters en même temps
+                            console.warn('⚠️ [Conflit Master] Détecté : utilisateur', senderId, 'se déclare aussi Master');
+                            // Résoudre le conflit : utiliser l'ID le plus petit comme critère
+                            if (senderId < currentId) {
+                                // L'autre utilisateur a un ID plus petit, il devient Master
+                                console.log('🔄 [Résolution conflit] Céder le Master à l\'utilisateur', senderId, '(ID plus petit)');
+                                this.hasMasterKey = false;
+                                // Notifier le serveur du changement
+                                this.resolveMasterConflict(senderId);
+                            } else {
+                                // Nous avons un ID plus petit, nous restons Master
+                                console.log('🔄 [Résolution conflit] Nous restons Master (ID plus petit)');
+                                // L'autre utilisateur devrait recevoir notre heartbeat et céder
+                            }
+                        } else if (data.isMaster && !this.hasMasterKey) {
+                            // Quelqu'un d'autre est Master, vérifier si on doit transférer
                             this.checkAndTransferMasterIfNeeded();
                         }
                     }
@@ -422,7 +439,7 @@ function notesEditor(noteId) {
             }
         },
 
-        // Déterminer qui est le Master (priorité: master_user_id en base, sinon premier arrivé)
+        // Déterminer qui est le Master (priorité: master_user_id en base, sinon ID le plus petit pour éviter les conflits)
         determineMaster(users) {
             if (!users || users.length === 0) {
                 this.hasMasterKey = false;
@@ -447,17 +464,26 @@ function notesEditor(noteId) {
                 }
             }
 
-            // Sinon, utiliser le premier arrivé
-            const sorted = users.sort((a, b) => (a.joined_at || 0) - (b.joined_at || 0));
+            // Sinon, utiliser l'ID le plus petit comme critère déterministe pour éviter les conflits
+            // Cela garantit que tous les clients choisiront le même Master
+            const sorted = users.sort((a, b) => {
+                const idA = Number(a.id);
+                const idB = Number(b.id);
+                // Si même ID, utiliser joined_at comme critère secondaire
+                if (idA === idB) {
+                    return (a.joined_at || 0) - (b.joined_at || 0);
+                }
+                return idA - idB;
+            });
             const master = sorted[0];
             
             const wasMaster = this.hasMasterKey;
             this.hasMasterKey = Number(master.id) === currentUserId;
             
-            console.log(`🔍 [determineMaster] Premier arrivé: ${master.id}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
+            console.log(`🔍 [determineMaster] Master choisi (ID le plus petit): ${master.id}, nous: ${currentUserId}, hasMasterKey: ${this.hasMasterKey}`);
             
             if (this.hasMasterKey && !wasMaster) {
-                console.log('💾 Vous êtes le Master (premier arrivé)');
+                console.log('💾 Vous êtes le Master (ID le plus petit)');
             }
         },
 
@@ -941,7 +967,7 @@ function notesEditor(noteId) {
                     return;
                 }
                 
-                // Envoyer via client event aux autres clients (pour détection rapide)
+                // Toujours envoyer isAlive via Pusher (client event) pour la présence
                 // S'assurer que toutes les valeurs sont des types primitifs valides
                 try {
                     // Utiliser trigger() directement avec Pusher (client events)
@@ -954,7 +980,18 @@ function notesEditor(noteId) {
                     console.error('❌ Erreur client event isAlive:', e);
                 }
 
-                // Envoyer au serveur pour mettre à jour en base de données
+                // OPTIMISATION : Si on est seul, ne pas envoyer de heartbeat HTTP au serveur
+                // Cela évite de saturer les 200 000 messages/jour de Pusher
+                const isAlone = !this.collaborators || this.collaborators.length <= 1;
+                
+                if (isAlone) {
+                    // Seul : juste le client event Pusher, pas de requête HTTP
+                    // On économise ~86 400 requêtes/jour par utilisateur seul
+                    return;
+                }
+
+                // Plusieurs utilisateurs : envoyer le heartbeat HTTP au serveur
+                // pour la synchronisation du Master et la mise à jour de la base de données
                 const response = await fetch(`/admin/notes/${this.noteId}/heartbeat`, {
                     method: 'POST',
                     headers: {
@@ -997,6 +1034,28 @@ function notesEditor(noteId) {
             this.heartbeatCheckTimer = setInterval(() => {
                 this.checkAndTransferMasterIfNeeded();
             }, 3000);
+        },
+
+        // Résoudre un conflit de Master en notifiant le serveur
+        async resolveMasterConflict(newMasterId) {
+            try {
+                const response = await fetch(`/admin/notes/${this.noteId}/master`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        master_user_id: newMasterId,
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log('✅ [Résolution conflit] Master mis à jour côté serveur');
+                }
+            } catch (e) {
+                console.error('❌ Erreur lors de la résolution du conflit:', e);
+            }
         },
 
         // Vérifier et transférer le Master si le Master actuel est mort
