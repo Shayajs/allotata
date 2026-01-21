@@ -326,6 +326,85 @@ class InternalMessagingController extends Controller
     }
 
     /**
+     * Toggle une réaction (ajouter ou supprimer)
+     */
+    public function toggleReaction(Request $request, AdminMessage $message)
+    {
+        $user = Auth::user();
+
+        // Vérifier que l'utilisateur est membre de la conversation
+        if (!$message->conversation->isMember($user->id)) {
+            return response()->json(['error' => 'Vous n\'avez pas accès à cette conversation.'], 403);
+        }
+
+        $validated = $request->validate([
+            'emoji' => 'required|string|max:10',
+        ]);
+
+        // Chercher si la réaction existe déjà
+        $reaction = AdminMessageReaction::where('message_id', $message->id)
+            ->where('user_id', $user->id)
+            ->where('emoji', $validated['emoji'])
+            ->first();
+
+        if ($reaction) {
+            // Supprimer la réaction (toggle off)
+            $reaction->delete();
+            return response()->json([
+                'action' => 'removed',
+                'success' => true,
+            ]);
+        } else {
+            // Ajouter la réaction (toggle on)
+            $reaction = AdminMessageReaction::create([
+                'message_id' => $message->id,
+                'user_id' => $user->id,
+                'emoji' => $validated['emoji'],
+            ]);
+
+            $reaction->load('user');
+
+            return response()->json([
+                'action' => 'added',
+                'reaction' => $reaction,
+            ]);
+        }
+    }
+
+    /**
+     * Modifier un message
+     */
+    public function updateMessage(Request $request, AdminMessage $message)
+    {
+        $user = Auth::user();
+
+        // Vérifier que l'utilisateur est l'auteur du message
+        if ($message->user_id != $user->id) {
+            return response()->json(['error' => 'Vous ne pouvez modifier que vos propres messages.'], 403);
+        }
+
+        // Vérifier que l'utilisateur est membre de la conversation
+        if (!$message->conversation->isMember($user->id)) {
+            return response()->json(['error' => 'Vous n\'avez pas accès à cette conversation.'], 403);
+        }
+
+        $validated = $request->validate([
+            'contenu' => 'required|string|max:5000',
+        ]);
+
+        // Mettre à jour le message
+        $message->update([
+            'contenu' => $validated['contenu'],
+        ]);
+
+        $message->load(['user', 'reactions.user']);
+
+        return response()->json([
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Upload d'image ou vidéo
      */
     public function upload(Request $request)

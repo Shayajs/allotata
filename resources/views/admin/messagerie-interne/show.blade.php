@@ -48,8 +48,22 @@
                 <a href="{{ route('admin.messagerie-interne.show', $conv->id) }}" 
                    class="block p-4 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition {{ $conversation->id == $conv->id ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                            {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                        <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500 flex-shrink-0">
+                            @if($otherMember && $otherMember->photo_profil)
+                                <img 
+                                    src="/media/{{ $otherMember->photo_profil }}" 
+                                    alt="{{ $otherMember->name }}" 
+                                    class="w-full h-full object-cover"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                >
+                                <span class="text-white font-bold text-sm hidden">
+                                    {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                                </span>
+                            @else
+                                <span class="text-white font-bold text-sm">
+                                    {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                                </span>
+                            @endif
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center justify-between mb-1">
@@ -89,8 +103,22 @@
                 $otherMember = $conversation->members->where('id', '!=', auth()->id())->first();
             @endphp
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold">
-                    {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500">
+                    @if($otherMember && $otherMember->photo_profil)
+                        <img 
+                            src="/media/{{ $otherMember->photo_profil }}" 
+                            alt="{{ $otherMember->name }}" 
+                            class="w-full h-full object-cover"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        <span class="text-white font-bold text-sm hidden">
+                            {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                        </span>
+                    @else
+                        <span class="text-white font-bold text-sm">
+                            {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                        </span>
+                    @endif
                 </div>
                 <div>
                     <h3 class="font-semibold text-slate-900 dark:text-white">{{ $otherMember->name ?? 'Conversation' }}</h3>
@@ -155,9 +183,39 @@
     </div>
 </div>
 
+<!-- Modal pour agrandir l'image -->
+<div id="image-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onclick="closeImageModal()">
+    <div class="relative max-w-[95%] max-h-[95%] flex items-center justify-center" onclick="event.stopPropagation()">
+        <button 
+            onclick="closeImageModal()" 
+            class="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition z-10"
+        >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        <img id="modal-image" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg">
+    </div>
+</div>
+
+<!-- Picker de réactions -->
+<div id="reaction-picker" class="hidden absolute bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 p-2 z-50">
+    <div class="flex gap-2">
+        <button onclick="addReactionToMessage('👍')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="👍">👍</button>
+        <button onclick="addReactionToMessage('❤️')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="❤️">❤️</button>
+        <button onclick="addReactionToMessage('😂')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="😂">😂</button>
+        <button onclick="addReactionToMessage('😮')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="😮">😮</button>
+        <button onclick="addReactionToMessage('😢')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="😢">😢</button>
+        <button onclick="addReactionToMessage('🔥')" class="text-2xl hover:scale-110 transition p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="🔥">🔥</button>
+    </div>
+</div>
+
 @push('scripts')
 @vite(['resources/js/admin-internal-messaging.js'])
 <script>
+let currentEditingMessageId = null;
+let currentReactionMessageId = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const conversationId = {{ $conversation->id }};
     const currentUserId = {{ auth()->id() }};
@@ -166,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof AdminInternalMessaging !== 'undefined') {
         const messaging = new AdminInternalMessaging(conversationId, currentUserId);
         messaging.init();
+        window.messagingInstance = messaging; // Exposer pour les fonctions globales
     }
 
     // Nouveau chat
@@ -199,7 +258,215 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // Fermer le picker de réactions si on clique ailleurs
+    document.addEventListener('click', function(e) {
+        const picker = document.getElementById('reaction-picker');
+        if (picker && !picker.contains(e.target) && !e.target.closest('[onclick*="showReactionPicker"]')) {
+            picker.classList.add('hidden');
+            currentReactionMessageId = null;
+        }
+    });
+    
+    // Fermer la modale d'image avec Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
 });
+
+// Fonctions globales pour la modification de messages
+function editMessage(messageId) {
+    // Annuler l'édition en cours si il y en a une
+    if (currentEditingMessageId && currentEditingMessageId !== messageId) {
+        cancelMessageEdit(currentEditingMessageId);
+    }
+    
+    const messageBubble = document.querySelector(`[data-message-id="${messageId}"] .message-bubble`);
+    if (!messageBubble) return;
+    
+    const content = messageBubble.querySelector('.message-content');
+    const editForm = messageBubble.querySelector('.message-edit-form');
+    const textarea = editForm.querySelector('textarea');
+    
+    if (content && editForm && textarea) {
+        content.classList.add('hidden');
+        editForm.classList.remove('hidden');
+        textarea.value = content.textContent.trim();
+        textarea.focus();
+        currentEditingMessageId = messageId;
+    }
+}
+
+function cancelMessageEdit(messageId) {
+    const messageBubble = document.querySelector(`[data-message-id="${messageId}"] .message-bubble`);
+    if (!messageBubble) return;
+    
+    const content = messageBubble.querySelector('.message-content');
+    const editForm = messageBubble.querySelector('.message-edit-form');
+    
+    if (content && editForm) {
+        content.classList.remove('hidden');
+        editForm.classList.add('hidden');
+        currentEditingMessageId = null;
+    }
+}
+
+function saveMessageEdit(messageId) {
+    const messageBubble = document.querySelector(`[data-message-id="${messageId}"] .message-bubble`);
+    if (!messageBubble) return;
+    
+    const editForm = messageBubble.querySelector('.message-edit-form');
+    const textarea = editForm.querySelector('textarea');
+    const content = messageBubble.querySelector('.message-content');
+    
+    const newContent = textarea.value.trim();
+    
+    if (!newContent) {
+        alert('Le message ne peut pas être vide');
+        return;
+    }
+    
+    fetch(`/admin/api/messagerie-interne/messages/${messageId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            contenu: newContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            content.textContent = data.message.contenu;
+            content.classList.remove('hidden');
+            editForm.classList.add('hidden');
+            currentEditingMessageId = null;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la modification du message');
+    });
+}
+
+// Fonctions globales pour les réactions
+function showReactionPicker(event, messageId) {
+    event.stopPropagation();
+    
+    const picker = document.getElementById('reaction-picker');
+    if (!picker) return;
+    
+    // Fermer le picker s'il est déjà ouvert pour ce message
+    if (currentReactionMessageId === messageId && !picker.classList.contains('hidden')) {
+        picker.classList.add('hidden');
+        currentReactionMessageId = null;
+        return;
+    }
+    
+    // Positionner le picker près du bouton
+    const button = event.target.closest('button');
+    const rect = button.getBoundingClientRect();
+    picker.style.top = (rect.top - picker.offsetHeight - 5) + 'px';
+    picker.style.left = rect.left + 'px';
+    
+    picker.classList.remove('hidden');
+    currentReactionMessageId = messageId;
+    
+    // Fermer automatiquement après 5 secondes
+    setTimeout(() => {
+        if (currentReactionMessageId === messageId) {
+            picker.classList.add('hidden');
+            currentReactionMessageId = null;
+        }
+    }, 5000);
+}
+
+function addReactionToMessage(emoji) {
+    if (!currentReactionMessageId) return;
+    
+    const messageId = currentReactionMessageId;
+    
+    fetch(`/admin/api/messagerie-interne/messages/${messageId}/reactions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            emoji: emoji
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.reaction) {
+            // Fermer le picker
+            document.getElementById('reaction-picker').classList.add('hidden');
+            currentReactionMessageId = null;
+            
+            // Recharger la page ou mettre à jour les réactions
+            window.location.reload();
+        } else if (data.error) {
+            // Si l'erreur est que la réaction existe déjà, on peut la supprimer (toggle)
+            if (data.error.includes('déjà')) {
+                toggleReaction(messageId, emoji);
+            } else {
+                alert(data.error);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'ajout de la réaction');
+    });
+}
+
+function toggleReaction(messageId, emoji) {
+    // Toggle la réaction (ajouter ou supprimer)
+    fetch(`/admin/api/messagerie-interne/messages/${messageId}/reactions/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            emoji: emoji
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success || data.action) {
+            // Recharger la page pour mettre à jour les réactions
+            window.location.reload();
+        } else if (data.error) {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la modification de la réaction');
+    });
+}
+
+// Fonctions globales pour la modale d'image
+function openImageModal(src) {
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('modal-image');
+    if (modal && img) {
+        img.src = src;
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('image-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 </script>
 @endpush
 @endsection

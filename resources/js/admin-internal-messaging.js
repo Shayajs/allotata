@@ -307,7 +307,21 @@ class AdminInternalMessaging {
         // Avatar
         if (!isMine) {
             const initial = (message.user?.name || '?')[0].toUpperCase();
-            html += `<div class="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">${initial}</div>`;
+            if (message.user?.photo_profil) {
+                html += `<div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500 flex-shrink-0">
+                    <img 
+                        src="/media/${message.user.photo_profil}" 
+                        alt="${this.escapeHtml(message.user?.name || '?')}" 
+                        class="w-full h-full object-cover"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                    >
+                    <span class="text-white font-bold text-sm hidden">${initial}</span>
+                </div>`;
+            } else {
+                html += `<div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500 flex-shrink-0">
+                    <span class="text-white font-bold text-sm">${initial}</span>
+                </div>`;
+            }
         }
 
         html += `<div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">`;
@@ -318,11 +332,35 @@ class AdminInternalMessaging {
         }
 
         // Bulle
-        html += `<div class="rounded-lg px-4 py-2 ${isMine ? 'bg-green-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'}">`;
+        html += `<div class="rounded-lg px-4 py-2 message-bubble ${isMine ? 'bg-green-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'}" data-message-id="${message.id}">`;
         
         // Contenu
         if (message.contenu) {
-            html += `<p class="whitespace-pre-wrap break-words">${this.escapeHtml(message.contenu)}</p>`;
+            html += `<p class="whitespace-pre-wrap break-words message-content">${this.escapeHtml(message.contenu)}</p>`;
+        }
+        
+        // Zone d'édition (pour les messages de l'utilisateur)
+        if (isMine && message.contenu) {
+            html += `<div class="message-edit-form hidden mt-2">
+                <textarea 
+                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"
+                    rows="3"
+                >${this.escapeHtml(message.contenu)}</textarea>
+                <div class="flex gap-2 mt-2">
+                    <button 
+                        onclick="saveMessageEdit(${message.id})"
+                        class="px-3 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded transition"
+                    >
+                        Enregistrer
+                    </button>
+                    <button 
+                        onclick="cancelMessageEdit(${message.id})"
+                        class="px-3 py-1 text-xs bg-slate-500 hover:bg-slate-600 text-white rounded transition"
+                    >
+                        Annuler
+                    </button>
+                </div>
+            </div>`;
         }
 
         // Fichier
@@ -330,17 +368,62 @@ class AdminInternalMessaging {
             // Le fichier est déjà stocké dans public, donc l'URL est /storage/...
             const fileUrl = message.fichier.startsWith('http') ? message.fichier : `/storage/${message.fichier}`;
             if (message.type === 'image') {
-                html += `<img src="${fileUrl}" alt="Image" class="mt-2 max-w-full h-auto rounded-lg cursor-pointer" onclick="openImageModal('${fileUrl}')">`;
+                html += `<img src="${fileUrl}" alt="Image" class="mt-2 max-w-xs max-h-64 rounded-lg cursor-pointer object-cover" onclick="openImageModal('${fileUrl}')">`;
             } else if (message.type === 'video') {
-                html += `<video src="${fileUrl}" controls class="mt-2 max-w-full h-auto rounded-lg"></video>`;
+                html += `<video src="${fileUrl}" controls class="mt-2 max-w-xs max-h-64 rounded-lg object-contain"></video>`;
             }
+        }
+        
+        // Réactions
+        if (message.reactions && message.reactions.length > 0) {
+            // Grouper les réactions par emoji
+            const reactionsGrouped = {};
+            message.reactions.forEach(reaction => {
+                if (!reactionsGrouped[reaction.emoji]) {
+                    reactionsGrouped[reaction.emoji] = [];
+                }
+                reactionsGrouped[reaction.emoji].push(reaction);
+            });
+            
+            html += '<div class="flex flex-wrap gap-1 mt-2 pt-2 border-t ' + 
+                   (isMine ? 'border-green-400/50' : 'border-slate-300 dark:border-slate-600') + '">';
+            Object.keys(reactionsGrouped).forEach(emoji => {
+                const count = reactionsGrouped[emoji].length;
+                html += `<button 
+                    class="text-xs px-2 py-1 rounded-full bg-white/20 dark:bg-black/20 hover:bg-white/30 dark:hover:bg-black/30 transition"
+                    onclick="toggleReaction(${message.id}, '${emoji}')"
+                    title="Cliquer pour retirer votre réaction"
+                >${emoji} ${count}</button>`;
+            });
+            html += '</div>';
         }
 
         html += '</div>';
 
-        // Timestamp
+        // Timestamp et actions
         const time = new Date(message.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        html += `<span class="text-xs text-slate-500 dark:text-slate-400 mt-1 px-2">${time}</span>`;
+        const isModified = message.updated_at && message.updated_at !== message.created_at;
+        html += `<div class="flex items-center gap-2 mt-1 px-2">
+            <span class="text-xs text-slate-500 dark:text-slate-400">${time}${isModified ? ' <span class="italic">(modifié)</span>' : ''}</span>`;
+        
+        if (isMine && message.contenu) {
+            html += `<button 
+                class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
+                onclick="editMessage(${message.id})"
+                title="Modifier le message"
+            >
+                ✏️
+            </button>`;
+        }
+        
+        html += `<button 
+            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
+            onclick="showReactionPicker(event, ${message.id})"
+            title="Réagir"
+        >
+            😊
+        </button>
+        </div>`;
         
         html += '</div></div>';
 
@@ -359,18 +442,7 @@ class AdminInternalMessaging {
     }
 }
 
-// Fonctions globales pour les réactions (à implémenter si nécessaire)
-function showReactionPicker(messageId) {
-    // TODO: Afficher le picker de réactions
-}
-
-function addReaction(messageId, emoji) {
-    // TODO: Ajouter une réaction
-}
-
-function toggleReaction(messageId, emoji) {
-    // TODO: Toggle une réaction
-}
+// Ces fonctions sont maintenant définies dans show.blade.php pour avoir accès aux routes Laravel
 
 // Export pour utilisation globale
 window.AdminInternalMessaging = AdminInternalMessaging;
