@@ -43,7 +43,7 @@ class StorageController extends Controller
         }
         
         // Vérification de sécurité simplifiée pour le développement
-        $allowedDirs = ['logos', 'site_logos', 'profils', 'images_fond', 'realisations', 'messages', 'temp', 'services', 'media', 'produits'];
+        $allowedDirs = ['logos', 'site_logos', 'profils', 'images_fond', 'realisations', 'messages', 'admin-messages', 'temp', 'services', 'media', 'produits'];
         $firstSegment = explode('/', $path)[0] ?? '';
         
         // Vérification minimale : juste s'assurer que c'est dans un dossier autorisé

@@ -458,7 +458,7 @@ class InternalMessagingController extends Controller
         return response()->json([
             'fichier' => $path,
             'type' => $type,
-            'url' => Storage::disk('public')->url($path),
+            'url' => '/media/' . $path,
         ]);
     }
 }
