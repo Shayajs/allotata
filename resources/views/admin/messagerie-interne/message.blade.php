@@ -1,7 +1,7 @@
 @php
     $isMine = $message->user_id == $currentUserId;
 @endphp
-<div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }} message-item" data-message-id="{{ $message->id }}">
+<div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }} message-item group" data-message-id="{{ $message->id }}">
     <div class="flex items-start gap-2 max-w-[70%] {{ $isMine ? 'flex-row-reverse' : '' }}">
         <!-- Avatar -->
         @if(!$isMine)
@@ -106,7 +106,7 @@
                 @endif
             </div>
 
-            <!-- Timestamp et actions -->
+            <!-- Timestamp -->
             <div class="flex items-center gap-2 mt-1 px-2">
                 <span class="text-xs text-slate-500 dark:text-slate-400">
                     {{ $message->created_at->format('H:i') }}
@@ -114,21 +114,38 @@
                         <span class="italic">(modifié)</span>
                     @endif
                 </span>
+            </div>
+
+            <!-- Actions (icônes SVG) -->
+            <div class="flex items-center gap-3 mt-1 px-2 message-actions opacity-0 group-hover:opacity-100 transition-opacity">
                 @if($isMine)
                     <button 
-                        class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
+                        class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition"
                         onclick="editMessage({{ $message->id }})"
                         title="Modifier le message"
                     >
-                        ✏️
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
                     </button>
                 @endif
                 <button 
-                    class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition relative"
+                    class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition"
+                    onclick="replyToMessage({{ $message->id }}, '{{ addslashes($message->user->name) }}', '{{ addslashes($message->contenu ?? '') }}')"
+                    title="Répondre"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                    </svg>
+                </button>
+                <button 
+                    class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition relative"
                     onclick="showReactionPicker(event, {{ $message->id }})"
                     title="Réagir"
                 >
-                    😊
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                 </button>
             </div>
         </div>
