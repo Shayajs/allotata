@@ -53,9 +53,9 @@
                     </div>
                     
                     @if(isset($note->activeCollaborators) && $note->activeCollaborators->count() > 0)
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2" data-note-id="{{ $note->id }}" data-note-presence>
                             <span class="text-xs text-slate-500 dark:text-slate-400">En ligne:</span>
-                            <div class="flex -space-x-2">
+                            <div class="flex -space-x-2" data-note-avatars="{{ $note->id }}">
                                 @foreach($note->activeCollaborators->take(3) as $activeUser)
                                     @php
                                         $firstName = explode(' ', $activeUser->name)[0] ?? $activeUser->name;
@@ -63,20 +63,21 @@
                                         $avatarColor = '#' . substr(md5($activeUser->id), 0, 6);
                                     @endphp
                                     <div 
-                                        class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800"
+                                        class="note-avatar w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800 transition-opacity duration-300"
                                         style="background-color: {{ $avatarColor }}20; color: {{ $avatarColor }};"
                                         title="{{ $activeUser->name }}"
+                                        data-user-id="{{ $activeUser->id }}"
                                     >
                                         {{ $initial }}
                                     </div>
                                 @endforeach
                                 @if($note->activeCollaborators->count() > 3)
-                                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800">
+                                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800" data-note-count="{{ $note->id }}">
                                         +{{ $note->activeCollaborators->count() - 3 }}
                                     </div>
                                 @endif
                             </div>
-                            <span class="text-xs text-green-600 dark:text-green-400 font-medium">
+                            <span class="text-xs text-green-600 dark:text-green-400 font-medium" data-note-count-text="{{ $note->id }}">
                                 {{ $note->activeCollaborators->count() }}
                             </span>
                         </div>
@@ -110,4 +111,130 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser Pusher si disponible
+    if (typeof window.PUSHER_APP_KEY === 'undefined' || !window.PUSHER_APP_KEY) {
+        console.warn('⚠️ Pusher non configuré, présence en temps réel désactivée');
+        return;
+    }
+
+    // Importer Pusher dynamiquement
+    import('pusher-js').then(({ default: Pusher }) => {
+        const pusher = new Pusher(window.PUSHER_APP_KEY, {
+            cluster: window.PUSHER_APP_CLUSTER || 'eu',
+            forceTLS: true,
+            encrypted: true,
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                },
+            },
+        });
+
+        // Écouter les événements de déconnexion pour toutes les notes affichées
+        const notes = document.querySelectorAll('[data-note-id]');
+        
+        notes.forEach(noteElement => {
+            const noteId = noteElement.getAttribute('data-note-id');
+            
+            // S'abonner au canal de présence de la note
+            const channel = pusher.subscribe(`presence-note.${noteId}`);
+            
+            // Écouter quand un utilisateur quitte
+            channel.bind('App\\Events\\UserLeftNote', (data) => {
+                console.log('➖ Utilisateur a quitté la note', data);
+                
+                if (data.note && data.note.id == noteId && data.user) {
+                    const userId = data.user.id;
+                    const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
+                    const countText = document.querySelector(`[data-note-count-text="${noteId}"]`);
+                    
+                    if (avatarsContainer) {
+                        // Retirer l'avatar de l'utilisateur qui a quitté
+                        const avatar = avatarsContainer.querySelector(`[data-user-id="${userId}"]`);
+                        if (avatar) {
+                            // Animation de disparition
+                            avatar.style.opacity = '0';
+                            avatar.style.transform = 'scale(0)';
+                            
+                            setTimeout(() => {
+                                avatar.remove();
+                                updatePresenceCount(noteId);
+                            }, 300);
+                        }
+                    }
+                }
+            });
+            
+            // Écouter les événements de présence Pusher (member_removed)
+            channel.bind('pusher:member_removed', (member) => {
+                const userId = member.id || member.user_id;
+                console.log('➖ Membre retiré du canal Presence', userId);
+                
+                const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
+                if (avatarsContainer) {
+                    const avatar = avatarsContainer.querySelector(`[data-user-id="${userId}"]`);
+                    if (avatar) {
+                        // Animation de disparition
+                        avatar.style.opacity = '0';
+                        avatar.style.transform = 'scale(0)';
+                        
+                        setTimeout(() => {
+                            avatar.remove();
+                            updatePresenceCount(noteId);
+                        }, 300);
+                    }
+                }
+            });
+        });
+        
+        // Fonction pour mettre à jour le compteur de présence
+        function updatePresenceCount(noteId) {
+            const avatarsContainer = document.querySelector(`[data-note-avatars="${noteId}"]`);
+            const countText = document.querySelector(`[data-note-count-text="${noteId}"]`);
+            
+            if (avatarsContainer && countText) {
+                const avatarCount = avatarsContainer.querySelectorAll('.note-avatar').length;
+                const countBadge = avatarsContainer.querySelector(`[data-note-count="${noteId}"]`);
+                
+                if (avatarCount > 0) {
+                    countText.textContent = avatarCount;
+                    
+                    // Mettre à jour ou retirer le badge "+X"
+                    if (avatarCount > 3) {
+                        if (!countBadge) {
+                            const badge = document.createElement('div');
+                            badge.className = 'w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800';
+                            badge.setAttribute('data-note-count', noteId);
+                            badge.textContent = `+${avatarCount - 3}`;
+                            avatarsContainer.appendChild(badge);
+                        } else {
+                            countBadge.textContent = `+${avatarCount - 3}`;
+                        }
+                    } else if (countBadge) {
+                        countBadge.remove();
+                    }
+                } else {
+                    // Plus personne en ligne, masquer toute la section
+                    const presenceContainer = document.querySelector(`[data-note-presence][data-note-id="${noteId}"]`);
+                    if (presenceContainer) {
+                        presenceContainer.style.opacity = '0';
+                        setTimeout(() => {
+                            presenceContainer.style.display = 'none';
+                        }, 300);
+                    }
+                }
+            }
+        }
+    }).catch(e => {
+        console.error('❌ Erreur lors du chargement de Pusher:', e);
+    });
+});
+</script>
+@endpush
 @endsection
