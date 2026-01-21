@@ -296,8 +296,6 @@ class NotesController extends Controller
             ], 403);
         }
 
-        $removedUser = \App\Models\User::find($userId);
-
         // Retirer le collaborateur inactif
         NoteCollaborator::where('note_id', $note->id)
             ->where('user_id', $userId)
@@ -308,9 +306,6 @@ class NotesController extends Controller
             'user_id' => $userId,
             'removed_by' => $user->id,
         ]);
-
-        // Émettre un événement pour notifier que le collaborateur a quitté
-        event(new \App\Events\UserLeftNote($note, $removedUser));
 
         return response()->json([
             'success' => true,
@@ -334,9 +329,6 @@ class NotesController extends Controller
             'note_id' => $note->id,
             'user_id' => $user->id,
         ]);
-
-        // Émettre un événement pour notifier que l'utilisateur a quitté
-        event(new \App\Events\UserLeftNote($note, $user));
 
         return response()->json([
             'success' => true,
