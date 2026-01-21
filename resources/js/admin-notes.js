@@ -215,6 +215,17 @@ function notesEditor(noteId) {
                                 this.queueCursorUpdate();
                                 this.drawCursors();
                             }
+                            
+                            // Si c'est un changement distant, forcer un rafraîchissement de la syntaxe
+                            if (update.docChanged && this.isApplyingRemote) {
+                                // Forcer CodeMirror à recalculer la syntaxe après un changement distant
+                                // Cela préserve la colorisation syntaxique
+                                setTimeout(() => {
+                                    if (this.editorView) {
+                                        this.editorView.requestMeasure();
+                                    }
+                                }, 0);
+                            }
                         }),
                         EditorView.theme({
                             '&': { height: '100%' },
@@ -522,9 +533,18 @@ function notesEditor(noteId) {
 
             try {
                 const state = this.editorView.state;
+                const docLength = state.doc.length;
                 const from = Number(data.from) || 0;
                 const to = Number(data.to) || Number(data.from) || 0;
                 const insert = String(data.insert || '');
+                
+                // Vérifier que les positions sont valides
+                if (from < 0 || from > docLength || to < 0 || to > docLength || from > to) {
+                    console.warn('⚠️ [handleRemoteTextChange] Positions invalides, ignoré:', { from, to, docLength });
+                    this.isApplyingRemote = false;
+                    this.isHandlingRemoteChange = false;
+                    return;
+                }
                 
                 console.log(`🔄 [handleRemoteTextChange] Application: from=${from}, to=${to}, insert="${insert.substring(0, 20)}..."`);
                 
@@ -540,10 +560,21 @@ function notesEditor(noteId) {
                     annotations: [Transaction.remote.of(true)]
                 });
                 
+                // Forcer CodeMirror à se resynchroniser avec le DOM après le changement distant
+                // Cela évite les erreurs "Invalid child in posBefore"
+                this.editorView.requestMeasure();
+                
                 console.log('✅ [handleRemoteTextChange] Changement appliqué avec succès');
             } catch (e) {
                 console.error('❌ Erreur application changement distant:', e);
                 console.error('   Détails:', { from: data.from, to: data.to, insert: data.insert?.substring(0, 50) });
+                
+                // En cas d'erreur, forcer un rafraîchissement complet de l'éditeur
+                try {
+                    this.editorView.requestMeasure();
+                } catch (refreshError) {
+                    console.error('❌ Erreur lors du rafraîchissement:', refreshError);
+                }
             }
 
             this.isApplyingRemote = false;
