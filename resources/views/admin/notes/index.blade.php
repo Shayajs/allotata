@@ -51,7 +51,36 @@
                         </div>
                         <span class="text-xs text-slate-600 dark:text-slate-400">{{ $note->creator->name }}</span>
                     </div>
-                    @if($note->collaborators->count() > 1)
+                    
+                    @if(isset($note->activeCollaborators) && $note->activeCollaborators->count() > 0)
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 dark:text-slate-400">En ligne:</span>
+                            <div class="flex -space-x-2">
+                                @foreach($note->activeCollaborators->take(3) as $activeUser)
+                                    @php
+                                        $firstName = explode(' ', $activeUser->name)[0] ?? $activeUser->name;
+                                        $initial = strtoupper(substr($firstName, 0, 1));
+                                        $avatarColor = '#' . substr(md5($activeUser->id), 0, 6);
+                                    @endphp
+                                    <div 
+                                        class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800"
+                                        style="background-color: {{ $avatarColor }}20; color: {{ $avatarColor }};"
+                                        title="{{ $activeUser->name }}"
+                                    >
+                                        {{ $initial }}
+                                    </div>
+                                @endforeach
+                                @if($note->activeCollaborators->count() > 3)
+                                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-medium border-2 border-white dark:border-slate-800">
+                                        +{{ $note->activeCollaborators->count() - 3 }}
+                                    </div>
+                                @endif
+                            </div>
+                            <span class="text-xs text-green-600 dark:text-green-400 font-medium">
+                                {{ $note->activeCollaborators->count() }}
+                            </span>
+                        </div>
+                    @elseif($note->collaborators->count() > 1)
                         <span class="text-xs text-slate-500 dark:text-slate-400">
                             {{ $note->collaborators->count() }} collaborateurs
                         </span>

@@ -16,9 +16,22 @@ class NotesController extends Controller
      */
     public function index()
     {
-        $notes = Note::with(['creator', 'updater'])
+        $notes = Note::with(['creator', 'updater', 'collaborators.user'])
             ->orderBy('updated_at', 'desc')
             ->paginate(20);
+
+        // Pour chaque note, déterminer les collaborateurs actuellement présents
+        // (dernière activité < 10 secondes)
+        $notes->getCollection()->transform(function ($note) {
+            $note->activeCollaborators = $note->collaborators->filter(function ($collaborator) {
+                // Considérer comme actif si dernière activité < 10 secondes
+                return $collaborator->derniere_activite && 
+                       $collaborator->derniere_activite->gt(now()->subSeconds(10));
+            })->map(function ($collaborator) {
+                return $collaborator->user;
+            });
+            return $note;
+        });
 
         return view('admin.notes.index', compact('notes'));
     }
@@ -264,6 +277,62 @@ class NotesController extends Controller
             'success' => true,
             'master_user_id' => $newMasterId,
             'master_user_name' => $masterUser->name,
+        ]);
+    }
+
+    /**
+     * Retirer un collaborateur inactif de la note (appelé par le Master)
+     */
+    public function removeInactiveCollaborator(Request $request, Note $note)
+    {
+        $userId = $request->input('user_id');
+        $user = auth()->user();
+
+        // Seul le Master peut retirer un collaborateur inactif
+        if ($note->master_user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Seul le Master peut retirer un collaborateur inactif.',
+            ], 403);
+        }
+
+        // Retirer le collaborateur inactif
+        NoteCollaborator::where('note_id', $note->id)
+            ->where('user_id', $userId)
+            ->delete();
+
+        \Log::info('🗑️ Collaborateur inactif retiré de la note', [
+            'note_id' => $note->id,
+            'user_id' => $userId,
+            'removed_by' => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Collaborateur inactif retiré avec succès.',
+        ]);
+    }
+
+    /**
+     * Quitter une note (déconnexion normale)
+     */
+    public function leave(Request $request, Note $note)
+    {
+        $user = auth()->user();
+
+        // Retirer le collaborateur
+        NoteCollaborator::where('note_id', $note->id)
+            ->where('user_id', $user->id)
+            ->delete();
+
+        \Log::info('👋 Utilisateur a quitté la note', [
+            'note_id' => $note->id,
+            'user_id' => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vous avez quitté la note avec succès.',
         ]);
     }
 }

@@ -145,6 +145,16 @@ function notesEditor(noteId) {
             // Initialiser notre propre heartbeat
             this.userHeartbeats[window.currentUserId] = Date.now();
             
+            // Détecter la fermeture de page pour envoyer un message de déconnexion
+            window.addEventListener('beforeunload', () => {
+                this.leaveNote();
+            });
+            
+            // Détecter aussi la navigation (si l'utilisateur change de page)
+            window.addEventListener('pagehide', () => {
+                this.leaveNote();
+            });
+            
             this.$nextTick(() => {
                 this.setupEditor();
                 this.setupWebSocket();
@@ -153,6 +163,9 @@ function notesEditor(noteId) {
 
         // Nettoyer les timers lors de la destruction
         destroy() {
+            // Envoyer un message de déconnexion normale avant de quitter
+            this.leaveNote();
+            
             if (this.heartbeatTimer) {
                 clearInterval(this.heartbeatTimer);
                 this.heartbeatTimer = null;
@@ -166,24 +179,49 @@ function notesEditor(noteId) {
             }
             if (this.cursorTimer) {
                 clearTimeout(this.cursorTimer);
+            }
+            
+            // Se désabonner du canal Pusher
+            if (this.channel && this.pusher) {
+                try {
+                    this.pusher.unsubscribe(`presence-note.${this.noteId}`);
+                } catch (e) {
+                    console.error('❌ Erreur lors de la déconnexion Pusher:', e);
+                }
             }
         },
 
-        // Nettoyer les timers lors de la destruction
-        destroy() {
-            if (this.heartbeatTimer) {
-                clearInterval(this.heartbeatTimer);
-                this.heartbeatTimer = null;
-            }
-            if (this.heartbeatCheckTimer) {
-                clearInterval(this.heartbeatCheckTimer);
-                this.heartbeatCheckTimer = null;
-            }
-            if (this.saveTimer) {
-                clearTimeout(this.saveTimer);
-            }
-            if (this.cursorTimer) {
-                clearTimeout(this.cursorTimer);
+        // Quitter la note normalement (envoi d'un message au serveur)
+        async leaveNote() {
+            try {
+                // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
+                const url = `/admin/notes/${this.noteId}/leave`;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                
+                // Utiliser sendBeacon pour garantir l'envoi
+                if (navigator.sendBeacon) {
+                    const formData = new FormData();
+                    formData.append('_token', csrfToken);
+                    
+                    if (navigator.sendBeacon(url, formData)) {
+                        console.log('👋 Message de déconnexion envoyé (sendBeacon)');
+                    }
+                } else {
+                    // Fallback : requête fetch avec keepalive
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({}),
+                        keepalive: true, // Important pour garantir l'envoi
+                    });
+                    console.log('👋 Message de déconnexion envoyé (fetch)');
+                }
+            } catch (e) {
+                console.error('❌ Erreur lors de la déconnexion:', e);
             }
         },
 
@@ -352,10 +390,10 @@ function notesEditor(noteId) {
                     }
                 });
 
-                // Utilisateur part
+                // Utilisateur part (déconnexion normale détectée par Pusher)
                 channel.bind('pusher:member_removed', (member) => {
                     const userId = Number(member.id || member.user_id);
-                    console.log('➖ Utilisateur part:', userId);
+                    console.log('➖ Utilisateur part (Pusher):', userId);
                     this.collaborators = this.collaborators.filter(u => Number(u.id) !== userId);
                     delete this.remoteCursors[userId];
                     delete this.userHeartbeats[userId];
@@ -1058,6 +1096,28 @@ function notesEditor(noteId) {
             }
         },
 
+        // Retirer un collaborateur inactif (appelé par le Master)
+        async removeInactiveCollaborator(userId) {
+            try {
+                const response = await fetch(`/admin/notes/${this.noteId}/remove-collaborator`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log(`🗑️ [Master] Collaborateur inactif ${userId} retiré de la base de données`);
+                }
+            } catch (e) {
+                console.error('❌ Erreur lors de la suppression du collaborateur inactif:', e);
+            }
+        },
+
         // Vérifier et transférer le Master si le Master actuel est mort
         async checkAndTransferMasterIfNeeded() {
             if (!this.collaborators || this.collaborators.length === 0) return;
@@ -1091,11 +1151,20 @@ function notesEditor(noteId) {
             if (removedUserIds.length > 0 || activeCollaborators.length !== this.collaborators.length) {
                 this.collaborators = activeCollaborators;
                 
-                // Nettoyer les curseurs et heartbeats des utilisateurs retirés
-                removedUserIds.forEach(userId => {
-                    delete this.remoteCursors[userId];
-                    delete this.userHeartbeats[userId];
-                });
+                // Si on est Master, notifier le serveur des collaborateurs inactifs retirés
+                if (this.hasMasterKey && removedUserIds.length > 0) {
+                    removedUserIds.forEach(userId => {
+                        this.removeInactiveCollaborator(userId);
+                        delete this.remoteCursors[userId];
+                        delete this.userHeartbeats[userId];
+                    });
+                } else {
+                    // Sinon, juste nettoyer localement
+                    removedUserIds.forEach(userId => {
+                        delete this.remoteCursors[userId];
+                        delete this.userHeartbeats[userId];
+                    });
+                }
                 
                 // Redessiner les curseurs après nettoyage
                 this.drawCursors();
