@@ -64,13 +64,13 @@
                 @if($message->aFichier())
                     @if($message->estImage())
                         <div class="mt-2">
-                            <img src="{{ Storage::disk('public')->url($message->fichier) }}" 
+                            <img src="/media/{{ $message->fichier }}" 
                                  alt="Image" 
                                  class="max-w-xs max-h-64 rounded-lg cursor-pointer object-cover hover:opacity-90 transition"
-                                 onclick="openImageModal('{{ Storage::disk('public')->url($message->fichier) }}')">
+                                 onclick="openImageModal('/media/{{ $message->fichier }}')">
                         </div>
                     @elseif($message->estVideo())
-                        <video src="{{ Storage::disk('public')->url($message->fichier) }}" 
+                        <video src="/media/{{ $message->fichier }}" 
                                controls 
                                class="mt-2 max-w-xs max-h-64 rounded-lg object-contain">
                             Votre navigateur ne supporte pas la lecture de vidéos.

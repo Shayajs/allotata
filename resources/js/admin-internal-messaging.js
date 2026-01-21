@@ -365,8 +365,10 @@ class AdminInternalMessaging {
 
         // Fichier
         if (message.fichier) {
-            // Le fichier est déjà stocké dans public, donc l'URL est /storage/...
-            const fileUrl = message.fichier.startsWith('http') ? message.fichier : `/storage/${message.fichier}`;
+            // Les fichiers sont accessibles via /media/ et non /storage/
+            const fileUrl = message.fichier.startsWith('http') || message.fichier.startsWith('/') 
+                ? message.fichier 
+                : `/media/${message.fichier}`;
             if (message.type === 'image') {
                 html += `<img src="${fileUrl}" alt="Image" class="mt-2 max-w-xs max-h-64 rounded-lg cursor-pointer object-cover" onclick="openImageModal('${fileUrl}')">`;
             } else if (message.type === 'video') {
