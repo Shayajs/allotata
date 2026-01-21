@@ -194,35 +194,60 @@ function notesEditor(noteId) {
         // Quitter la note normalement (envoi d'un message au serveur)
         async leaveNote() {
             try {
-                // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
                 const url = `/admin/notes/${this.noteId}/leave`;
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
                 
-                // Utiliser sendBeacon pour garantir l'envoi
-                if (navigator.sendBeacon) {
-                    const formData = new FormData();
-                    formData.append('_token', csrfToken);
-                    
-                    if (navigator.sendBeacon(url, formData)) {
-                        console.log('👋 Message de déconnexion envoyé (sendBeacon)');
-                    }
-                } else {
-                    // Fallback : requête fetch avec keepalive
-                    await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({}),
-                        keepalive: true, // Important pour garantir l'envoi
-                    });
-                    console.log('👋 Message de déconnexion envoyé (fetch)');
-                }
+                // Envoyer la requête de déconnexion
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({}),
+                });
+                console.log('👋 Message de déconnexion envoyé');
             } catch (e) {
                 console.error('❌ Erreur lors de la déconnexion:', e);
             }
+        },
+
+        // Retourner à la liste des notes (avec déconnexion propre)
+        async goBack() {
+            console.log('🔙 Retour à la liste des notes...');
+            
+            // Nettoyer les timers
+            if (this.heartbeatTimer) {
+                clearInterval(this.heartbeatTimer);
+                this.heartbeatTimer = null;
+            }
+            if (this.heartbeatCheckTimer) {
+                clearInterval(this.heartbeatCheckTimer);
+                this.heartbeatCheckTimer = null;
+            }
+            if (this.saveTimer) {
+                clearTimeout(this.saveTimer);
+            }
+            if (this.cursorTimer) {
+                clearTimeout(this.cursorTimer);
+            }
+            
+            // Se désabonner du canal Pusher
+            if (this.channel && this.pusher) {
+                try {
+                    this.pusher.unsubscribe(`presence-note.${this.noteId}`);
+                    console.log('📡 Désabonnement du canal Pusher');
+                } catch (e) {
+                    console.error('❌ Erreur lors de la déconnexion Pusher:', e);
+                }
+            }
+            
+            // Envoyer le message de déconnexion au serveur
+            await this.leaveNote();
+            
+            // Rediriger vers la liste des notes
+            window.location.href = '/admin/notes';
         },
 
         setupEditor() {
