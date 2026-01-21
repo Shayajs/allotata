@@ -53,18 +53,26 @@ class KanbanController extends Controller
      */
     public function storeCard(Request $request)
     {
-        $validated = $request->validate([
-            'column_id' => 'required|exists:kanban_columns,id',
-            'board_id' => 'required|exists:kanban_boards,id',
-            'titre' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'nullable|in:tache,reservation,ticket',
-            'reference_id' => 'nullable|integer',
-            'assignee_id' => 'nullable|exists:users,id',
-            'priorite' => 'nullable|in:basse,normale,haute,urgente',
-            'couleur' => 'nullable|string',
-            'due_date' => 'nullable|date',
-        ]);
+        try {
+            $validated = $request->validate([
+                'column_id' => 'required|exists:kanban_columns,id',
+                'board_id' => 'required|exists:kanban_boards,id',
+                'titre' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'type' => 'nullable|in:tache,reservation,ticket',
+                'reference_id' => 'nullable|integer',
+                'assignee_id' => 'nullable|exists:users,id',
+                'priorite' => 'nullable|in:basse,normale,haute,urgente',
+                'couleur' => 'nullable|string',
+                'due_date' => 'nullable|date',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreurs de validation',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         // Déterminer l'ordre (dernier de la colonne)
         $lastCard = KanbanCard::where('column_id', $validated['column_id'])
