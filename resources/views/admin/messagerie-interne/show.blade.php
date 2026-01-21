@@ -4,10 +4,115 @@
 @section('header', 'Messagerie interne')
 @section('subheader', 'Communiquez avec les autres administrateurs')
 
+@push('styles')
+<style>
+/* Optimisations mobile pour la messagerie */
+@media (max-width: 1024px) {
+    /* Sidebar des conversations sur mobile */
+    #conversations-sidebar {
+        width: 100%;
+        max-width: 320px;
+        z-index: 50;
+    }
+    
+    /* Zone de chat sur mobile */
+    .flex.h-\[calc\(100vh-12rem\)\] {
+        height: calc(100vh - 8rem);
+    }
+    
+    /* Messages plus larges sur mobile */
+    .message-item .max-w-\[70\%\] {
+        max-width: 85%;
+    }
+    
+    /* Images plus petites sur mobile */
+    .message-item img.max-w-xs {
+        max-width: 100%;
+        max-height: 200px;
+    }
+    
+    .message-item video.max-w-xs {
+        max-width: 100%;
+        max-height: 200px;
+    }
+    
+    /* Zone de saisie optimisée mobile */
+    #message-input {
+        font-size: 16px; /* Évite le zoom automatique sur iOS */
+    }
+    
+    /* Bouton envoyer plus compact sur mobile */
+    #btn-send {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Header conversation optimisé mobile */
+    .p-4.border-b {
+        padding: 0.75rem;
+    }
+    
+    /* Actions des messages toujours visibles sur mobile */
+    .message-actions {
+        opacity: 1 !important;
+    }
+    
+    /* Zone de messages avec padding réduit sur mobile */
+    #messages-container {
+        padding: 0.75rem;
+    }
+    
+    /* Prévisualisation de fichier optimisée mobile */
+    #file-preview {
+        margin-bottom: 0.5rem;
+    }
+    
+    #file-preview-img,
+    #file-preview-video {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* Très petits écrans */
+@media (max-width: 640px) {
+    .message-item .max-w-\[70\%\] {
+        max-width: 90%;
+    }
+    
+    .message-item img.max-w-xs {
+        max-height: 150px;
+    }
+    
+    .message-item video.max-w-xs {
+        max-height: 150px;
+    }
+    
+    /* Header avec padding minimal */
+    .p-4.border-b.lg\:pl-4.pl-14 {
+        padding-left: 3.5rem;
+        padding-right: 0.75rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+    
+    /* Zone de saisie avec padding minimal */
+    .p-4.border-t {
+        padding: 0.75rem;
+    }
+    
+    /* Texte des messages plus petit */
+    .message-content {
+        font-size: 0.875rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="flex h-[calc(100vh-12rem)] gap-4">
+<div class="flex h-[calc(100vh-12rem)] gap-4 relative">
     <!-- Liste des conversations -->
-    <div class="w-80 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+    <div id="conversations-sidebar" class="w-80 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col absolute inset-y-0 left-0 z-40 lg:relative lg:z-auto transition-transform duration-300 lg:translate-x-0 -translate-x-full">
         <!-- Header avec bouton nouveau chat -->
         <div class="p-4 border-b border-slate-200 dark:border-slate-700">
             <div class="flex items-center justify-between mb-4">
@@ -96,9 +201,20 @@
     </div>
 
     <!-- Zone de chat -->
-    <div class="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+    <div class="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col relative">
+        <!-- Bouton toggle sidebar sur mobile -->
+        <button 
+            id="toggle-sidebar-mobile" 
+            class="lg:hidden absolute top-4 left-4 z-10 p-2 bg-white dark:bg-slate-700 rounded-lg shadow-md border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition"
+            onclick="toggleConversationsSidebar()"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+        
         <!-- Header de la conversation -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 lg:pl-4 pl-14">
             @php
                 $otherMember = $conversation->members->where('id', '!=', auth()->id())->first();
             @endphp
@@ -189,14 +305,17 @@
                     id="message-input" 
                     rows="1" 
                     placeholder="Tapez votre message..."
-                    class="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                    class="flex-1 px-3 py-2 lg:px-4 lg:py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-green-500 text-sm lg:text-base"
                 ></textarea>
                 <button 
                     id="btn-send" 
-                    class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-4 py-2 lg:px-6 lg:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base whitespace-nowrap min-h-[44px] flex items-center justify-center"
                     data-conversation-id="{{ $conversation->id }}"
                 >
-                    Envoyer
+                    <span class="hidden sm:inline">Envoyer</span>
+                    <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -267,6 +386,43 @@
 @push('scripts')
 @vite(['resources/js/admin-internal-messaging.js'])
 <script>
+// Toggle sidebar des conversations sur mobile
+function toggleConversationsSidebar() {
+    const sidebar = document.getElementById('conversations-sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('-translate-x-full');
+    }
+}
+
+// Fermer la sidebar quand on clique sur une conversation sur mobile
+function closeSidebarOnMobile() {
+    if (window.innerWidth < 1024) {
+        const sidebar = document.getElementById('conversations-sidebar');
+        if (sidebar) {
+            sidebar.classList.add('-translate-x-full');
+        }
+    }
+}
+
+// Écouter les clics sur les liens de conversation
+document.addEventListener('DOMContentLoaded', function() {
+    const conversationLinks = document.querySelectorAll('#conversations-sidebar a[href*="messagerie-interne"]');
+    conversationLinks.forEach(link => {
+        link.addEventListener('click', closeSidebarOnMobile);
+    });
+    
+    // Fermer la sidebar si on clique en dehors sur mobile
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth < 1024) {
+            const sidebar = document.getElementById('conversations-sidebar');
+            const toggleBtn = document.getElementById('toggle-sidebar-mobile');
+            if (sidebar && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        }
+    });
+});
+
 let currentEditingMessageId = null;
 let currentReactionMessageId = null;
 let currentReplyMessageId = null;

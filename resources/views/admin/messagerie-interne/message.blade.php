@@ -2,7 +2,7 @@
     $isMine = $message->user_id == $currentUserId;
 @endphp
 <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }} message-item group" data-message-id="{{ $message->id }}">
-    <div class="flex items-start gap-2 max-w-[70%] {{ $isMine ? 'flex-row-reverse' : '' }}">
+    <div class="flex items-start gap-2 max-w-[70%] lg:max-w-[70%] w-full {{ $isMine ? 'flex-row-reverse' : '' }}">
         <!-- Avatar -->
         @if(!$isMine)
             <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500 flex-shrink-0">
@@ -28,11 +28,11 @@
         <div class="flex flex-col {{ $isMine ? 'items-end' : 'items-start' }}">
             <!-- Nom et timestamp -->
             @if(!$isMine)
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1 px-2">{{ $message->user->name }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-1 px-2 truncate max-w-full">{{ $message->user->name }}</p>
             @endif
 
             <!-- Bulle de message -->
-            <div class="rounded-lg px-4 py-2 {{ $isMine ? 'bg-green-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white' }} message-bubble" data-message-id="{{ $message->id }}">
+            <div class="rounded-lg px-3 py-2 lg:px-4 lg:py-2 {{ $isMine ? 'bg-green-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white' }} message-bubble" data-message-id="{{ $message->id }}">
                 @if($message->contenu)
                     <p class="whitespace-pre-wrap break-words message-content">{{ $message->contenu }}</p>
                 @endif
