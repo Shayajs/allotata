@@ -40,8 +40,22 @@
                 <a href="{{ route('admin.messagerie-interne.show', $conv->id) }}" 
                    class="block p-4 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition {{ request()->route('conversation') == $conv->id ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                            {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                        <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-green-500 to-orange-500 flex-shrink-0">
+                            @if($otherMember && $otherMember->photo_profil)
+                                <img 
+                                    src="/media/{{ $otherMember->photo_profil }}" 
+                                    alt="{{ $otherMember->name }}" 
+                                    class="w-full h-full object-cover"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                >
+                                <span class="text-white font-bold text-sm hidden">
+                                    {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                                </span>
+                            @else
+                                <span class="text-white font-bold text-sm">
+                                    {{ strtoupper(substr($otherMember->name ?? '?', 0, 1)) }}
+                                </span>
+                            @endif
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center justify-between mb-1">
