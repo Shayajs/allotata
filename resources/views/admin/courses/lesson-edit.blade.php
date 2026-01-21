@@ -401,10 +401,26 @@
     @vite(['resources/js/app.js', 'resources/js/course-lesson-editor.js'])
     
     <script>
+        // Ajuster le padding-top du conteneur de blocs selon la hauteur de la toolbar sur mobile
+        function adjustBlocksContainerPadding() {
+            const toolbar = document.querySelector('.course-editor-toolbar');
+            const blocksContainer = document.getElementById('blocks-container');
+            
+            if (toolbar && blocksContainer && window.innerWidth <= 768) {
+                const toolbarHeight = toolbar.offsetHeight;
+                blocksContainer.style.paddingTop = (toolbarHeight + 16) + 'px';
+            }
+        }
+        
+        // Ajuster au chargement et au redimensionnement
+        window.addEventListener('resize', adjustBlocksContainerPadding);
+        
         // Initialiser l'éditeur après le chargement (UNE SEULE FOIS)
         let courseEditor = null;
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Ajuster le padding pour mobile
+            adjustBlocksContainerPadding();
             // Attendre que CourseLessonEditor soit disponible
             if (typeof CourseLessonEditor === 'undefined') {
                 console.error('CourseLessonEditor non trouvé. Vérifiez que le fichier JS est bien chargé.');
