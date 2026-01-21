@@ -132,8 +132,10 @@
 <div 
     x-show="showCreateCardModal || showEditCardModal"
     x-cloak
+    x-transition
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     @click.self="showCreateCardModal = false; showEditCardModal = false"
+    style="display: none;"
 >
     <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-bold mb-4 text-slate-900 dark:text-white">
@@ -217,25 +219,38 @@
 </div>
 
 @push('head-scripts')
-@vite(['resources/js/admin-kanban.js'])
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+@vite(['resources/js/admin-kanban.js'])
 <script>
     // S'assurer que kanbanData est enregistré avec Alpine.js après le chargement
     document.addEventListener('DOMContentLoaded', function() {
         function registerKanbanData() {
             if (window.Alpine && window.kanbanData) {
                 window.Alpine.data('kanbanData', window.kanbanData);
+                console.log('Kanban data enregistré avec Alpine.js');
             } else if (window.kanbanData) {
                 // Si Alpine n'est pas encore chargé, attendre
                 document.addEventListener('alpine:init', function() {
-                    window.Alpine.data('kanbanData', window.kanbanData);
+                    if (window.Alpine && window.kanbanData) {
+                        window.Alpine.data('kanbanData', window.kanbanData);
+                        console.log('Kanban data enregistré avec Alpine.js (alpine:init)');
+                    }
                 });
             } else {
                 // Si le script n'est pas encore chargé, réessayer
                 setTimeout(registerKanbanData, 100);
             }
         }
-        registerKanbanData();
+        
+        // Vérifier si Alpine est déjà disponible
+        if (window.Alpine) {
+            registerKanbanData();
+        } else {
+            // Attendre qu'Alpine soit disponible
+            document.addEventListener('alpine:init', registerKanbanData);
+            // Fallback: essayer quand même après un délai
+            setTimeout(registerKanbanData, 500);
+        }
     });
 </script>
 @endpush
