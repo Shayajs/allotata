@@ -5,7 +5,7 @@
  */
 
 import { EditorView } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Transaction } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -530,13 +530,14 @@ function notesEditor(noteId) {
                 
                 // Dans CodeMirror 6, on peut passer directement un objet {from, to, insert}
                 // sans avoir besoin de créer un ChangeSet
+                // Utiliser Transaction.remote pour marquer que c'est un changement distant
                 this.editorView.dispatch({
                     changes: {
                         from: from,
                         to: to,
                         insert: insert
                     },
-                    annotations: [EditorState.transactionMeta.of({ remote: true })]
+                    annotations: [Transaction.remote.of(true)]
                 });
                 
                 console.log('✅ [handleRemoteTextChange] Changement appliqué avec succès');
@@ -738,7 +739,21 @@ function notesEditor(noteId) {
                     const pos = cursorData.position;
                     if (pos === undefined || pos === null) return;
                     
-                    const coords = view.coordsAtPos(pos);
+                    // Vérifier que la position est valide (dans les limites du document)
+                    const docLength = view.state.doc.length;
+                    if (pos < 0 || pos > docLength) {
+                        // Position invalide, ignorer silencieusement
+                        return;
+                    }
+                    
+                    // Essayer d'obtenir les coordonnées, mais gérer l'erreur si la "tile" n'est pas encore rendue
+                    let coords;
+                    try {
+                        coords = view.coordsAtPos(pos);
+                    } catch (e) {
+                        // La position n'est pas encore rendue (rendu lazy), ignorer
+                        return;
+                    }
                     
                     if (!coords) return;
 
