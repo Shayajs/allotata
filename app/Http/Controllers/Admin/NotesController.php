@@ -47,8 +47,8 @@ class NotesController extends Controller
             'derniere_activite' => now(),
         ]);
 
-        // Émettre l'événement de création
-        event(new \App\Events\UserJoinedNote($note, auth()->user()));
+        // Note: Plus besoin d'émettre UserJoinedNote car Pusher gère automatiquement
+        // la présence via pusher:member_added quand on se connecte au canal Presence
 
         return redirect()->route('admin.notes.show', $note)
             ->with('success', 'Note créée avec succès.');
@@ -99,8 +99,9 @@ class NotesController extends Controller
 
         $note->load(['creator', 'updater', 'collaborators.user', 'cursors.user', 'master']);
 
-        // Émettre l'événement de connexion
-        event(new \App\Events\UserJoinedNote($note, auth()->user()));
+        // Note: Plus besoin d'émettre UserJoinedNote car Pusher gère automatiquement
+        // la présence via pusher:member_added quand on se connecte au canal Presence
+        // Cela évite aussi l'erreur "data content exceeds 10240 bytes" de Pusher
 
         return view('admin.notes.show', compact('note'));
     }
@@ -142,8 +143,8 @@ class NotesController extends Controller
     {
         $note->delete();
 
-        // Émettre l'événement de suppression
-        event(new \App\Events\UserLeftNote($note, auth()->user()));
+        // Note: Plus besoin d'émettre UserLeftNote car Pusher gère automatiquement
+        // la présence via pusher:member_removed quand on quitte le canal Presence
 
         return redirect()->route('admin.notes.index')
             ->with('success', 'Note supprimée avec succès.');
