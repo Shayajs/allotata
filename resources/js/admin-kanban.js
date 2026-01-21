@@ -86,7 +86,36 @@ function kanbanData(boardId) {
                 });
         },
         
+        openCreateModal() {
+            // Réinitialiser le formulaire
+            this.cardForm = {
+                column_id: null,
+                board_id: this.boardId,
+                titre: '',
+                description: '',
+                type: 'tache',
+                priorite: 'normale',
+                assignee_id: null,
+                couleur: null,
+                due_date: null,
+            };
+            this.editingCardId = null;
+            this.showCreateCardModal = true;
+        },
+        
         async saveCard() {
+            // Vérifier que la colonne est sélectionnée
+            if (!this.cardForm.column_id) {
+                alert('Veuillez sélectionner une colonne');
+                return;
+            }
+            
+            // Vérifier que le titre est rempli
+            if (!this.cardForm.titre || this.cardForm.titre.trim() === '') {
+                alert('Veuillez saisir un titre');
+                return;
+            }
+            
             const url = this.editingCardId 
                 ? `/admin/kanban/cards/${this.editingCardId}`
                 : '/admin/kanban/cards';
@@ -98,17 +127,34 @@ function kanbanData(boardId) {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(this.cardForm)
                 });
                 
                 const data = await response.json();
-                if (data.success) {
+                
+                if (response.ok && data.success) {
+                    // Fermer le modal et recharger
+                    this.showCreateCardModal = false;
+                    this.showEditCardModal = false;
                     location.reload();
+                } else {
+                    // Afficher les erreurs
+                    let errorMessage = 'Erreur lors de la sauvegarde';
+                    if (data.message) {
+                        errorMessage = data.message;
+                    } else if (data.errors) {
+                        const errors = Object.values(data.errors).flat();
+                        errorMessage = errors.join('\n');
+                    }
+                    alert(errorMessage);
+                    console.error('Erreur de sauvegarde:', data);
                 }
             } catch (error) {
                 console.error('Erreur:', error);
+                alert('Une erreur est survenue lors de la sauvegarde: ' + error.message);
             }
         },
         

@@ -46,7 +46,7 @@
                 Synchroniser Tickets
             </button>
             <button 
-                @click="showCreateCardModal = true"
+                @click="openCreateModal()"
                 class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition"
             >
                 + Nouvelle Carte

@@ -83,8 +83,11 @@
         cursor: default;
         transition: opacity 0.2s;
         /* Zone de hover plus tolérante : padding invisible pour faciliter le survol */
-        padding: 8px 12px;
-        margin: -8px -12px;
+        /* Le padding crée une zone invisible de 24px de large (12px de chaque côté) */
+        padding: 0 12px;
+        margin: 0 -12px;
+        /* S'assurer que le curseur lui-même reste à 2px de large */
+        box-sizing: content-box;
     }
 
     .collaborator-cursor:hover {
