@@ -181,11 +181,19 @@ class AdminInternalMessaging {
             return;
         }
 
+        // Vérifier si on répond à un message
+        let replyMessageId = null;
+        const replyPreview = document.getElementById('reply-preview');
+        if (replyPreview && !replyPreview.classList.contains('hidden') && typeof currentReplyMessageId !== 'undefined' && currentReplyMessageId) {
+            replyMessageId = currentReplyMessageId;
+        }
+
         const messageData = {
             conversation_id: this.conversationId,
             contenu: contenu || null,
             type: this.uploadedFileType || 'texte',
-            fichier: this.uploadedFile || null
+            fichier: this.uploadedFile || null,
+            reply_message_id: replyMessageId || null
         };
 
         try {
@@ -209,6 +217,11 @@ class AdminInternalMessaging {
             this.messageInput.value = '';
             this.messageInput.style.height = 'auto';
             this.clearFilePreview();
+            
+            // Annuler la réponse si on était en train de répondre
+            if (typeof cancelReply === 'function') {
+                cancelReply();
+            }
 
             // Ajouter le message immédiatement
             this.addMessage(data.message);
@@ -402,34 +415,66 @@ class AdminInternalMessaging {
 
         html += '</div>';
 
-        // Timestamp et actions
+        // Timestamp
         const time = new Date(message.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
         const isModified = message.updated_at && message.updated_at !== message.created_at;
         html += `<div class="flex items-center gap-2 mt-1 px-2">
-            <span class="text-xs text-slate-500 dark:text-slate-400">${time}${isModified ? ' <span class="italic">(modifié)</span>' : ''}</span>`;
+            <span class="text-xs text-slate-500 dark:text-slate-400">${time}${isModified ? ' <span class="italic">(modifié)</span>' : ''}</span>
+        </div>`;
+
+        // Actions (icônes SVG)
+        html += '<div class="flex items-center gap-3 mt-1 px-2 message-actions opacity-0 group-hover:opacity-100 transition-opacity">';
         
         if (isMine && message.contenu) {
             html += `<button 
-                class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
+                class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition"
                 onclick="editMessage(${message.id})"
                 title="Modifier le message"
             >
-                ✏️
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
             </button>`;
         }
         
+        const authorName = message.user?.name || 'Utilisateur';
+        const messageContent = message.contenu || '';
+        
         html += `<button 
-            class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
+            class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition"
+            onclick="replyToMessage(${message.id}, '${this.escapeHtml(authorName).replace(/'/g, "\\'")}', '${this.escapeHtml(messageContent).replace(/'/g, "\\'")}')"
+            title="Répondre"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+            </svg>
+        </button>`;
+        
+        html += `<button 
+            class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition relative"
             onclick="showReactionPicker(event, ${message.id})"
             title="Réagir"
         >
-            😊
-        </button>
-        </div>`;
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </button>`;
+        
+        html += '</div>';
         
         html += '</div></div>';
 
         div.innerHTML = html;
+        div.classList.add('group'); // Ajouter la classe group pour le hover
+        
+        // Ajouter le gestionnaire de clic droit
+        div.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            if (typeof showContextMenu === 'function') {
+                showContextMenu(e, div);
+            }
+        });
+        
         return div;
     }
 

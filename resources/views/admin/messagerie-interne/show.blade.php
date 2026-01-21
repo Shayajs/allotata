@@ -163,6 +163,26 @@
                 <input type="file" id="input-file" accept="image/*,video/*" class="hidden">
             </div>
 
+            <!-- Zone de réponse (citation) -->
+            <div id="reply-preview" class="hidden mb-2 p-3 bg-slate-100 dark:bg-slate-700 rounded-lg border-l-4 border-blue-500">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Répondre à <span id="reply-author"></span></p>
+                        <p id="reply-content" class="text-sm text-slate-600 dark:text-slate-400 truncate"></p>
+                    </div>
+                    <button 
+                        id="reply-cancel" 
+                        class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition flex-shrink-0"
+                        onclick="cancelReply()"
+                        title="Annuler la réponse"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             <!-- Zone de saisie -->
             <div class="flex items-end gap-2">
                 <textarea 
@@ -210,11 +230,49 @@
     </div>
 </div>
 
+<!-- Menu contextuel (clic droit) -->
+<div id="context-menu" class="hidden fixed bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50 min-w-[160px]">
+    <button 
+        id="ctx-edit"
+        class="hidden w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+        onclick="contextMenuEdit()"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        Modifier
+    </button>
+    <button 
+        id="ctx-reply"
+        class="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+        onclick="contextMenuReply()"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+        </svg>
+        Répondre
+    </button>
+    <button 
+        id="ctx-react"
+        class="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+        onclick="contextMenuReact()"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Réagir
+    </button>
+</div>
+
 @push('scripts')
 @vite(['resources/js/admin-internal-messaging.js'])
 <script>
 let currentEditingMessageId = null;
 let currentReactionMessageId = null;
+let currentReplyMessageId = null;
+let currentReplyData = null;
+let contextMenuMessageId = null;
+let contextMenuIsMine = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const conversationId = {{ $conversation->id }};
@@ -272,6 +330,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeImageModal();
+            hideContextMenu();
+            cancelReply();
+        }
+    });
+    
+    // Gérer le clic droit sur les messages
+    document.addEventListener('contextmenu', function(e) {
+        const messageItem = e.target.closest('.message-item');
+        if (messageItem) {
+            e.preventDefault();
+            showContextMenu(e, messageItem);
+        } else {
+            hideContextMenu();
+        }
+    });
+    
+    // Fermer le menu contextuel au clic ailleurs
+    document.addEventListener('click', function(e) {
+        const contextMenu = document.getElementById('context-menu');
+        if (contextMenu && !contextMenu.contains(e.target) && !e.target.closest('.message-item')) {
+            hideContextMenu();
         }
     });
 });
@@ -465,6 +544,131 @@ function closeImageModal() {
     const modal = document.getElementById('image-modal');
     if (modal) {
         modal.classList.add('hidden');
+    }
+}
+
+// Fonction pour répondre à un message
+function replyToMessage(messageId, authorName, content) {
+    currentReplyMessageId = messageId;
+    currentReplyData = {
+        id: messageId,
+        author: authorName,
+        content: content
+    };
+    
+    const replyPreview = document.getElementById('reply-preview');
+    const replyAuthor = document.getElementById('reply-author');
+    const replyContent = document.getElementById('reply-content');
+    
+    if (replyPreview && replyAuthor && replyContent) {
+        replyAuthor.textContent = authorName;
+        // Limiter le contenu à 100 caractères avec ellipsis
+        const displayContent = content ? (content.length > 100 ? content.substring(0, 100) + '...' : content) : 'Image/vidéo';
+        replyContent.textContent = displayContent;
+        replyPreview.classList.remove('hidden');
+        
+        // Scroll vers la zone de texte pour être sûr qu'elle est visible
+        const messageInput = document.getElementById('message-input');
+        if (messageInput) {
+            messageInput.focus();
+            messageInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+}
+
+function cancelReply() {
+    currentReplyMessageId = null;
+    currentReplyData = null;
+    const replyPreview = document.getElementById('reply-preview');
+    if (replyPreview) {
+        replyPreview.classList.add('hidden');
+    }
+}
+
+// Menu contextuel
+function showContextMenu(event, messageItem) {
+    const contextMenu = document.getElementById('context-menu');
+    const messageId = parseInt(messageItem.dataset.messageId);
+    const messageBubble = messageItem.querySelector('.message-bubble');
+    
+    // Déterminer si c'est notre message
+    const isMine = messageBubble && messageBubble.classList.contains('bg-green-500');
+    
+    contextMenuMessageId = messageId;
+    contextMenuIsMine = isMine;
+    
+    // Afficher/cacher le bouton Modifier selon si c'est notre message
+    const ctxEdit = document.getElementById('ctx-edit');
+    if (ctxEdit) {
+        if (isMine) {
+            ctxEdit.classList.remove('hidden');
+        } else {
+            ctxEdit.classList.add('hidden');
+        }
+    }
+    
+    // Positionner le menu
+    if (contextMenu) {
+        contextMenu.style.left = event.pageX + 'px';
+        contextMenu.style.top = event.pageY + 'px';
+        contextMenu.classList.remove('hidden');
+        
+        // Ajuster si le menu dépasse de l'écran
+        setTimeout(() => {
+            const rect = contextMenu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                contextMenu.style.left = (event.pageX - rect.width) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+                contextMenu.style.top = (event.pageY - rect.height) + 'px';
+            }
+        }, 0);
+    }
+}
+
+function hideContextMenu() {
+    const contextMenu = document.getElementById('context-menu');
+    if (contextMenu) {
+        contextMenu.classList.add('hidden');
+    }
+    contextMenuMessageId = null;
+}
+
+function contextMenuEdit() {
+    if (contextMenuMessageId) {
+        hideContextMenu();
+        editMessage(contextMenuMessageId);
+    }
+}
+
+function contextMenuReply() {
+    if (contextMenuMessageId) {
+        hideContextMenu();
+        // Trouver le message dans le DOM
+        const messageItem = document.querySelector(`[data-message-id="${contextMenuMessageId}"]`);
+        if (messageItem) {
+            const messageContent = messageItem.querySelector('.message-content');
+            const messageUser = messageItem.querySelector('p.text-xs.text-slate-500');
+            const authorName = messageUser ? messageUser.textContent.trim() : 'Utilisateur';
+            const content = messageContent ? messageContent.textContent.trim() : '';
+            
+            replyToMessage(contextMenuMessageId, authorName, content);
+        }
+    }
+}
+
+function contextMenuReact() {
+    if (contextMenuMessageId) {
+        hideContextMenu();
+        // Simuler un clic sur le bouton de réaction
+        const messageItem = document.querySelector(`[data-message-id="${contextMenuMessageId}"]`);
+        if (messageItem) {
+            const reactButton = messageItem.querySelector('button[onclick*="showReactionPicker"]');
+            if (reactButton) {
+                const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+                reactButton.dispatchEvent(event);
+            }
+        }
     }
 }
 </script>
