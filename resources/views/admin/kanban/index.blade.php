@@ -46,7 +46,7 @@
                 Synchroniser Tickets
             </button>
             <button 
-                @click="openCreateModal()"
+                @click="openCreateModal(); console.log('Bouton cliqué, showCreateCardModal:', showCreateCardModal)"
                 class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition"
             >
                 + Nouvelle Carte
@@ -126,95 +126,94 @@
             </div>
         @endforeach
     </div>
-</div>
 
-<!-- Modal Création/Édition Carte -->
-<div 
-    x-show="showCreateCardModal || showEditCardModal"
-    x-cloak
-    x-transition
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    @click.self="showCreateCardModal = false; showEditCardModal = false"
-    style="display: none;"
->
-    <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-bold mb-4 text-slate-900 dark:text-white">
-            <span x-text="showEditCardModal ? 'Modifier la carte' : 'Nouvelle carte'"></span>
-        </h3>
-        <form @submit.prevent="saveCard()">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Titre</label>
-                    <input 
-                        type="text" 
-                        x-model="cardForm.titre"
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        required
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                    <textarea 
-                        x-model="cardForm.description"
-                        rows="3"
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    ></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Colonne</label>
-                    <select 
-                        x-model="cardForm.column_id"
-                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        required
-                    >
-                        <option value="">Sélectionner une colonne</option>
-                        @foreach($board->columns as $column)
-                            <option value="{{ $column->id }}">{{ $column->nom }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
+    <!-- Modal Création/Édition Carte -->
+    <div 
+        x-show="showCreateCardModal || showEditCardModal"
+        x-cloak
+        x-transition
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showCreateCardModal = false; showEditCardModal = false"
+    >
+        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4" @click.stop>
+            <h3 class="text-lg font-bold mb-4 text-slate-900 dark:text-white">
+                <span x-text="showEditCardModal ? 'Modifier la carte' : 'Nouvelle carte'"></span>
+            </h3>
+            <form @submit.prevent="saveCard()">
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorité</label>
-                        <select 
-                            x-model="cardForm.priorite"
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Titre</label>
+                        <input 
+                            type="text" 
+                            x-model="cardForm.titre"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            required
                         >
-                            <option value="basse">Basse</option>
-                            <option value="normale">Normale</option>
-                            <option value="haute">Haute</option>
-                            <option value="urgente">Urgente</option>
-                        </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
-                        <select 
-                            x-model="cardForm.type"
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                        <textarea 
+                            x-model="cardForm.description"
+                            rows="3"
                             class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Colonne</label>
+                        <select 
+                            x-model="cardForm.column_id"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            required
                         >
-                            <option value="tache">Tâche</option>
-                            <option value="reservation">Réservation</option>
-                            <option value="ticket">Ticket</option>
+                            <option value="">Sélectionner une colonne</option>
+                            @foreach($board->columns as $column)
+                                <option value="{{ $column->id }}">{{ $column->nom }}</option>
+                            @endforeach
                         </select>
                     </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorité</label>
+                            <select 
+                                x-model="cardForm.priorite"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                                <option value="basse">Basse</option>
+                                <option value="normale">Normale</option>
+                                <option value="haute">Haute</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
+                            <select 
+                                x-model="cardForm.type"
+                                class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                                <option value="tache">Tâche</option>
+                                <option value="reservation">Réservation</option>
+                                <option value="ticket">Ticket</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="flex justify-end gap-2 mt-6">
-                <button 
-                    type="button"
-                    @click="showCreateCardModal = false; showEditCardModal = false"
-                    class="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                >
-                    Annuler
-                </button>
-                <button 
-                    type="submit"
-                    class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
-                >
-                    Enregistrer
-                </button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button 
+                        type="button"
+                        @click="showCreateCardModal = false; showEditCardModal = false"
+                        class="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                    >
+                        Annuler
+                    </button>
+                    <button 
+                        type="submit"
+                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
+                    >
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -222,35 +221,49 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 @vite(['resources/js/admin-kanban.js'])
 <script>
-    // S'assurer que kanbanData est enregistré avec Alpine.js après le chargement
-    document.addEventListener('DOMContentLoaded', function() {
-        function registerKanbanData() {
-            if (window.Alpine && window.kanbanData) {
+    // S'assurer que kanbanData est enregistré avec Alpine.js
+    // Alpine.js est chargé avec defer dans le layout, donc on doit attendre qu'il soit disponible
+    function registerKanbanData() {
+        if (window.Alpine && window.kanbanData) {
+            // Enregistrer uniquement si pas déjà enregistré
+            if (!window.Alpine._x_dataStack) {
                 window.Alpine.data('kanbanData', window.kanbanData);
-                console.log('Kanban data enregistré avec Alpine.js');
-            } else if (window.kanbanData) {
-                // Si Alpine n'est pas encore chargé, attendre
-                document.addEventListener('alpine:init', function() {
-                    if (window.Alpine && window.kanbanData) {
-                        window.Alpine.data('kanbanData', window.kanbanData);
-                        console.log('Kanban data enregistré avec Alpine.js (alpine:init)');
-                    }
+            } else {
+                // Vérifier si déjà enregistré
+                const existing = window.Alpine.data('kanbanData');
+                if (!existing) {
+                    window.Alpine.data('kanbanData', window.kanbanData);
+                }
+            }
+            console.log('✅ Kanban data enregistré avec Alpine.js');
+        } else if (window.kanbanData) {
+            // Si Alpine n'est pas encore chargé, attendre
+            console.log('⏳ Attente d\'Alpine.js...');
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.addEventListener('alpine:init', registerKanbanData);
                 });
             } else {
-                // Si le script n'est pas encore chargé, réessayer
-                setTimeout(registerKanbanData, 100);
+                document.addEventListener('alpine:init', registerKanbanData);
             }
-        }
-        
-        // Vérifier si Alpine est déjà disponible
-        if (window.Alpine) {
-            registerKanbanData();
         } else {
-            // Attendre qu'Alpine soit disponible
-            document.addEventListener('alpine:init', registerKanbanData);
-            // Fallback: essayer quand même après un délai
-            setTimeout(registerKanbanData, 500);
+            // Si le script n'est pas encore chargé, réessayer
+            console.log('⏳ Attente du script admin-kanban.js...');
+            setTimeout(registerKanbanData, 100);
         }
+    }
+    
+    // Démarrer l'enregistrement
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', registerKanbanData);
+    } else {
+        // DOM déjà chargé
+        registerKanbanData();
+    }
+    
+    // Fallback supplémentaire pour s'assurer que ça fonctionne
+    window.addEventListener('load', function() {
+        setTimeout(registerKanbanData, 200);
     });
 </script>
 @endpush

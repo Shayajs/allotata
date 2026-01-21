@@ -87,6 +87,8 @@ function kanbanData(boardId) {
         },
         
         openCreateModal() {
+            console.log('openCreateModal appelé');
+            
             // Réinitialiser le formulaire
             // Pré-sélectionner la première colonne par défaut
             const firstColumn = document.querySelector('[data-column]');
@@ -123,7 +125,12 @@ function kanbanData(boardId) {
             this.showCreateCardModal = true;
             this.showEditCardModal = false;
             
-            console.log('Modal de création ouvert', { column_id: firstColumnId, form: this.cardForm });
+            console.log('Modal de création ouvert', { 
+                column_id: firstColumnId, 
+                showCreateCardModal: this.showCreateCardModal,
+                showEditCardModal: this.showEditCardModal,
+                form: this.cardForm 
+            });
         },
         
         async saveCard() {
