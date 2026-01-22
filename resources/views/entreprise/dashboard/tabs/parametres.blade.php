@@ -20,7 +20,7 @@
                 @if($entreprise->logo)
                     <div class="mb-4 relative inline-block">
                         <img 
-                            src="{{ asset('storage/' . $entreprise->logo) }}" 
+                            src="{{ asset('media/' . $entreprise->logo) }}" 
                             alt="Logo {{ $entreprise->nom }}"
                             class="w-32 h-32 object-contain rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2"
                         >
@@ -68,7 +68,7 @@
                 @if($entreprise->image_fond)
                     <div class="mb-4 relative inline-block">
                         <img 
-                            src="{{ asset('storage/' . $entreprise->image_fond) }}" 
+                            src="{{ asset('media/' . $entreprise->image_fond) }}" 
                             alt="Image de fond {{ $entreprise->nom }}"
                             class="w-full max-w-md h-48 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-600"
                         >
@@ -246,7 +246,7 @@
                         </p>
                         <button 
                             type="button"
-                            onclick="if(confirm('Supprimer la vidéo ?')) { document.getElementById('video_url').value = ''; document.getElementById('afficher_video').checked = false; document.getElementById('parametres-form').submit(); }"
+                            onclick="if(confirm('Supprimer la vidéo ?')) { document.getElementById('video_url').value = ''; const afficherVideo = document.getElementById('afficher_video'); if(afficherVideo) afficherVideo.checked = false; document.getElementById('parametres-form').submit(); }"
                             class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
                         >
                             Supprimer la vidéo
@@ -275,6 +275,7 @@
                     <input 
                         type="checkbox" 
                         name="afficher_video" 
+                        id="afficher_video"
                         value="1"
                         {{ old('afficher_video', $entreprise->afficher_video ?? true) ? 'checked' : '' }}
                         class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
@@ -559,7 +560,7 @@
                 @foreach($entreprise->realisationPhotos as $photo)
                     <div class="relative group">
                         <img 
-                            src="{{ asset('storage/' . $photo->photo_path) }}" 
+                            src="{{ asset('media/' . $photo->photo_path) }}" 
                             alt="{{ $photo->titre ? $photo->titre : 'Réalisation' }}"
                             class="w-full h-32 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
                         >

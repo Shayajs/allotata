@@ -14,7 +14,7 @@
     @if($entreprise->image_fond)
         <div class="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full overflow-hidden">
             <img 
-                src="{{ asset('storage/' . $entreprise->image_fond) }}" 
+                src="{{ asset('media/' . $entreprise->image_fond) }}" 
                 alt="Image de fond {{ $entreprise->nom }}"
                 class="w-full h-full object-cover"
             >
@@ -30,7 +30,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         @if($entreprise->logo)
                             <img 
-                                src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                src="{{ asset('media/' . $entreprise->logo) }}" 
                                 alt="Logo {{ $entreprise->nom }}"
                                 class="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg object-cover border-2 border-white/20 shadow-lg flex-shrink-0"
                             >
@@ -101,7 +101,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         @if($entreprise->logo)
                             <img 
-                                src="{{ asset('storage/' . $entreprise->logo) }}" 
+                                src="{{ asset('media/' . $entreprise->logo) }}" 
                                 alt="Logo {{ $entreprise->nom }}"
                                 class="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700 flex-shrink-0"
                             >
@@ -370,7 +370,7 @@
                             @foreach($entreprise->realisationPhotos as $photo)
                                 <div class="group relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer aspect-square" onclick="openModal({{ $loop->index }})">
                                     <img 
-                                        src="{{ asset('storage/' . $photo->photo_path) }}" 
+                                        src="{{ asset('media/' . $photo->photo_path) }}" 
                                         alt="{{ $photo->titre ? $photo->titre : 'Réalisation' }}"
                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                     >
@@ -417,7 +417,7 @@
                         const photos = [
                             @foreach($entreprise->realisationPhotos as $photo)
                             {
-                                path: '{{ asset('storage/' . $photo->photo_path) }}',
+                                path: '{{ asset('media/' . $photo->photo_path) }}',
                                 titre: @json($photo->titre ? $photo->titre : ''),
                                 description: @json($photo->description ? $photo->description : ''),
                             },
@@ -650,7 +650,7 @@
                             @if($imageAffichee)
                                 <div class="relative h-36 sm:h-48 w-full overflow-hidden">
                                     <img 
-                                        src="{{ asset('storage/' . $imageAffichee->image_path) }}" 
+                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
                                         alt="{{ $service->nom }}"
                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                     >
@@ -1183,7 +1183,7 @@
                                         <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-green-500 to-orange-500 flex items-center justify-center overflow-hidden">
                                             @if($unAvis->user->photo_profil)
                                                 <img 
-                                                    src="{{ asset('storage/' . $unAvis->user->photo_profil) }}" 
+                                                    src="{{ asset('media/' . $unAvis->user->photo_profil) }}" 
                                                     alt="{{ $unAvis->user->name }}"
                                                     class="h-full w-full object-cover"
                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -1233,9 +1233,9 @@
                                     </p>
                                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
                                         @foreach($unAvis->photos as $photo)
-                                            <div class="relative overflow-hidden rounded-lg cursor-pointer group aspect-square" onclick="openAvisPhoto('{{ asset('storage/' . $photo->photo_path) }}')">
+                                            <div class="relative overflow-hidden rounded-lg cursor-pointer group aspect-square" onclick="openAvisPhoto('{{ asset('media/' . $photo->photo_path) }}')">
                                                 <img 
-                                                    src="{{ asset('storage/' . $photo->photo_path) }}" 
+                                                    src="{{ asset('media/' . $photo->photo_path) }}" 
                                                     alt="Photo avis"
                                                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                                 >
