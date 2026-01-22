@@ -38,6 +38,8 @@ class Entreprise extends Model
         'email',
         'telephone',
         'description',
+        'video_url',
+        'afficher_video',
         'mots_cles',
         'logo',
         'ville',
@@ -97,6 +99,7 @@ class Entreprise extends Model
             'livraison_disponible' => 'boolean',
             'livraison_disponible_par_defaut' => 'boolean',
             'vente_sur_place_disponible_par_defaut' => 'boolean',
+            'afficher_video' => 'boolean',
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web

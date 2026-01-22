@@ -330,6 +330,11 @@
                             expandIcon.classList.remove('rotate-180');
                         }
                     }
+
+                    window.enableReorderProduits = function() {
+                        alert('Fonctionnalité de réordonnancement à venir. Pour l\'instant, vous pouvez modifier l\'ordre manuellement en éditant chaque produit.');
+                        // TODO: Implémenter le drag & drop avec Sortable.js ou similaire
+                    };
                 </script>
             @endif
         @else
