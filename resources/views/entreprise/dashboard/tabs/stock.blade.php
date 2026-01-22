@@ -43,7 +43,7 @@
                 Produits
             </h3>
             <button 
-                onclick="document.getElementById('modal-produit').classList.remove('hidden')"
+                onclick="openProduitModal()"
                 class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
             >
                 + Ajouter un produit
@@ -132,7 +132,16 @@
 
                         <div class="flex gap-2">
                             <button 
-                                onclick="editProduit({{ $produit->id }}, '{{ addslashes($produit->nom) }}', '{{ addslashes($produit->description ?? '') }}', {{ $produit->prix }}, '{{ $produit->gestion_stock }}', {{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}, {{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}, {{ $produit->est_actif ? 'true' : 'false' }})"
+                                onclick="editProduitFromButton(this)"
+                                data-produit-id="{{ $produit->id }}"
+                                data-produit-nom="{{ addslashes($produit->nom) }}"
+                                data-produit-description="{{ addslashes($produit->description ?? '') }}"
+                                data-produit-prix="{{ $produit->prix }}"
+                                data-produit-gestion-stock="{{ $produit->gestion_stock }}"
+                                data-produit-quantite-disponible="{{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}"
+                                data-produit-quantite-minimum="{{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}"
+                                data-produit-actif="{{ $produit->est_actif ? 'true' : 'false' }}"
+                                data-produit-images="{{ base64_encode(json_encode($produit->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                             >
                                 Modifier
@@ -224,7 +233,16 @@
 
                             <div class="flex gap-2">
                                 <button 
-                                    onclick="editProduit({{ $produit->id }}, '{{ addslashes($produit->nom) }}', '{{ addslashes($produit->description ?? '') }}', {{ $produit->prix }}, '{{ $produit->gestion_stock }}', {{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}, {{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}, {{ $produit->est_actif ? 'true' : 'false' }})"
+                                    onclick="editProduitFromButton(this)"
+                                    data-produit-id="{{ $produit->id }}"
+                                    data-produit-nom="{{ addslashes($produit->nom) }}"
+                                    data-produit-description="{{ addslashes($produit->description ?? '') }}"
+                                    data-produit-prix="{{ $produit->prix }}"
+                                    data-produit-gestion-stock="{{ $produit->gestion_stock }}"
+                                    data-produit-quantite-disponible="{{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}"
+                                    data-produit-quantite-minimum="{{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}"
+                                    data-produit-actif="{{ $produit->est_actif ? 'true' : 'false' }}"
+                                    data-produit-images="{{ base64_encode(json_encode($produit->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
                                     class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                                 >
                                     Modifier
@@ -294,166 +312,4 @@
     </div>
 </div>
 
-<!-- Modal Ajout/Modification Produit -->
-<div id="modal-produit" class="hidden fixed inset-0 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
-    <div class="modal-content rounded-2xl shadow-2xl p-6 max-w-2xl w-full">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-slate-900 dark:text-white" id="modal-produit-title">Ajouter un produit</h3>
-            <button onclick="document.getElementById('modal-produit').classList.add('hidden')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
-                <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        <form id="form-produit" action="{{ route('stock.produit.store', $entreprise->slug) }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="produit_id" id="produit_id">
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom *</label>
-                    <input 
-                        type="text" 
-                        name="nom" 
-                        id="produit_nom"
-                        required
-                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Description</label>
-                    <textarea 
-                        name="description" 
-                        id="produit_description"
-                        rows="3"
-                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    ></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Prix (€) *</label>
-                    <input 
-                        type="number" 
-                        name="prix" 
-                        id="produit_prix"
-                        step="0.01"
-                        min="0"
-                        required
-                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Type de gestion *</label>
-                    <select 
-                        name="gestion_stock" 
-                        id="produit_gestion_stock"
-                        onchange="toggleStockFields()"
-                        required
-                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
-                        <option value="disponible_immediatement">Disponible immédiatement (gestion stock)</option>
-                        <option value="en_attente_commandes">En attente de commandes</option>
-                    </select>
-                </div>
-
-                <div id="stock-fields" class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Quantité disponible</label>
-                        <input 
-                            type="number" 
-                            name="quantite_disponible" 
-                            id="produit_quantite_disponible"
-                            min="0"
-                            value="0"
-                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Quantité minimum (alerte)</label>
-                        <input 
-                            type="number" 
-                            name="quantite_minimum" 
-                            id="produit_quantite_minimum"
-                            min="0"
-                            value="0"
-                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Images</label>
-                    <input 
-                        type="file" 
-                        name="images[]" 
-                        multiple
-                        accept="image/*"
-                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
-                </div>
-
-                <label class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                    <input 
-                        type="checkbox" 
-                        name="est_actif" 
-                        id="produit_est_actif"
-                        value="1"
-                        checked
-                        class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
-                    >
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Produit actif</span>
-                </label>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button type="button" onclick="document.getElementById('modal-produit').classList.add('hidden')" class="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition">
-                    Annuler
-                </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-                    Enregistrer
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-    function editProduit(id, nom, description, prix, gestionStock, quantiteDisponible, quantiteMinimum, estActif) {
-        document.getElementById('modal-produit-title').textContent = 'Modifier le produit';
-        document.getElementById('produit_id').value = id;
-        document.getElementById('produit_nom').value = nom;
-        document.getElementById('produit_description').value = description;
-        document.getElementById('produit_prix').value = prix;
-        document.getElementById('produit_gestion_stock').value = gestionStock;
-        document.getElementById('produit_quantite_disponible').value = quantiteDisponible || 0;
-        document.getElementById('produit_quantite_minimum').value = quantiteMinimum || 0;
-        document.getElementById('produit_est_actif').checked = estActif === 'true';
-        toggleStockFields();
-        document.getElementById('modal-produit').classList.remove('hidden');
-    }
-
-    function toggleStockFields() {
-        const gestionStock = document.getElementById('produit_gestion_stock').value;
-        const stockFields = document.getElementById('stock-fields');
-        if (gestionStock === 'disponible_immediatement') {
-            stockFields.style.display = 'grid';
-            document.getElementById('produit_quantite_disponible').required = true;
-        } else {
-            stockFields.style.display = 'none';
-            document.getElementById('produit_quantite_disponible').required = false;
-        }
-    }
-
-    // Initialiser l'affichage des champs stock
-    toggleStockFields();
-
-    // Réinitialiser le formulaire à l'ouverture
-    document.querySelector('[onclick*="modal-produit"]')?.addEventListener('click', function() {
-        document.getElementById('modal-produit-title').textContent = 'Ajouter un produit';
-        document.getElementById('form-produit').reset();
-        document.getElementById('produit_id').value = '';
-        document.getElementById('produit_est_actif').checked = true;
-        toggleStockFields();
-    });
-</script>
+@include('entreprise.dashboard.tabs.stock-modal-content')
