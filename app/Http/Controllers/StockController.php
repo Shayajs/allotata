@@ -93,10 +93,16 @@ class StockController extends Controller
 
             // Gérer le stock si gestion immédiate
             if ($validated['gestion_stock'] === 'disponible_immediatement') {
+                $quantiteDisponible = $validated['quantite_disponible'] ?? 0;
+                // S'assurer qu'on a au moins 1 en stock si aucune quantité n'est spécifiée (pour éviter que le produit disparaisse)
+                if ($quantiteDisponible <= 0 && !$request->has('quantite_disponible')) {
+                    $quantiteDisponible = 1;
+                }
+                
                 $stock = Stock::firstOrCreate(
                     ['produit_id' => $produit->id],
                     [
-                        'quantite_disponible' => $validated['quantite_disponible'] ?? 0,
+                        'quantite_disponible' => $quantiteDisponible,
                         'quantite_minimum' => $validated['quantite_minimum'] ?? 0,
                         'alerte_stock' => false,
                     ]
@@ -104,13 +110,20 @@ class StockController extends Controller
                 
                 if ($request->has('quantite_disponible')) {
                     $stock->quantite_disponible = $validated['quantite_disponible'];
+                } else {
+                    // Si pas de quantité spécifiée et stock existant, ne pas le mettre à 0
+                    if ($stock->wasRecentlyCreated) {
+                        $stock->quantite_disponible = $quantiteDisponible;
+                    }
                 }
                 if ($request->has('quantite_minimum')) {
                     $stock->quantite_minimum = $validated['quantite_minimum'];
-                    // Vérifier si alerte nécessaire
-                    if ($stock->quantite_disponible <= $stock->quantite_minimum) {
-                        $stock->alerte_stock = true;
-                    }
+                }
+                // Vérifier si alerte nécessaire
+                if ($stock->quantite_disponible <= $stock->quantite_minimum) {
+                    $stock->alerte_stock = true;
+                } else {
+                    $stock->alerte_stock = false;
                 }
                 $stock->save();
             } else {
@@ -247,6 +260,24 @@ class StockController extends Controller
             'ordre' => $maxOrdre + 1,
         ]);
 
+        // S'assurer que le produit a un stock si gestion immédiate
+        // Cela évite que le produit disparaisse de /p/ après l'upload d'image
+        if ($produit->gestion_stock === 'disponible_immediatement') {
+            $stock = Stock::firstOrCreate(
+                ['produit_id' => $produit->id],
+                [
+                    'quantite_disponible' => 1, // Initialiser à 1 pour éviter la disparition
+                    'quantite_minimum' => 0,
+                    'alerte_stock' => false,
+                ]
+            );
+            // Si le stock existait déjà mais était à 0, on le met à 1 pour éviter la disparition
+            if ($stock->quantite_disponible <= 0) {
+                $stock->quantite_disponible = 1;
+                $stock->save();
+            }
+        }
+
         // #region agent log
         try {
             $produit->refresh();
@@ -262,6 +293,7 @@ class StockController extends Controller
                     'images_count_after' => $produit->images()->count(),
                     'est_disponible' => $produit->estDisponible(),
                     'a_image_couverture' => $produit->imageCouverture ? true : false,
+                    'stock_quantite' => $produit->stock ? $produit->stock->quantite_disponible : null,
                 ],
                 'timestamp' => time() * 1000,
             ];

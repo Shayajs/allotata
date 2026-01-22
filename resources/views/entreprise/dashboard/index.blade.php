@@ -548,6 +548,9 @@
 
         <!-- Modal Services (Déplacé ici pour éviter les problèmes de z-index/transform) -->
         @include('entreprise.dashboard.tabs.services-modal-content')
+        
+        <!-- Modal Produits (Déplacé ici pour éviter les problèmes de z-index/transform) -->
+        @include('entreprise.dashboard.tabs.stock-modal-content')
 
         @include('partials.footer')
         @include('partials.cookie-banner')
