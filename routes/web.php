@@ -16,8 +16,133 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\BrightShellController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// ==========================================
+// BRIGHTSHELL ERP (Admin uniquement)
+// ==========================================
+Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.')->group(function () {
+    // Dashboard
+    Route::get('/', [BrightShellController::class, 'index'])->name('index');
+    
+    // Clients
+    Route::get('/clients', [BrightShellController::class, 'clients'])->name('clients');
+    Route::get('/clients/create', [BrightShellController::class, 'clientCreate'])->name('clients.create');
+    Route::post('/clients', [BrightShellController::class, 'clientStore'])->name('clients.store');
+    Route::get('/clients/{id}/edit', [BrightShellController::class, 'clientEdit'])->name('clients.edit');
+    Route::put('/clients/{id}', [BrightShellController::class, 'clientUpdate'])->name('clients.update');
+    Route::delete('/clients/{id}', [BrightShellController::class, 'clientDelete'])->name('clients.delete');
+    
+    // Devis
+    Route::get('/devis', [BrightShellController::class, 'devis'])->name('devis');
+    Route::get('/devis/create', [BrightShellController::class, 'devisCreate'])->name('devis.create');
+    Route::post('/devis', [BrightShellController::class, 'devisStore'])->name('devis.store');
+    Route::get('/devis/{id}', [BrightShellController::class, 'devisShow'])->name('devis.show');
+    Route::get('/devis/{id}/edit', [BrightShellController::class, 'devisEdit'])->name('devis.edit');
+    Route::put('/devis/{id}', [BrightShellController::class, 'devisUpdate'])->name('devis.update');
+    Route::delete('/devis/{id}', [BrightShellController::class, 'devisDelete'])->name('devis.delete');
+    Route::post('/devis/{id}/status', [BrightShellController::class, 'devisUpdateStatus'])->name('devis.status');
+    Route::get('/devis/{id}/pdf', [BrightShellController::class, 'devisPdf'])->name('devis.pdf');
+    Route::post('/devis/{id}/convert', [BrightShellController::class, 'devisConvertToFacture'])->name('devis.convert');
+
+    
+    // Factures
+    Route::get('/factures', [BrightShellController::class, 'factures'])->name('factures');
+    Route::get('/factures/create', [BrightShellController::class, 'factureCreate'])->name('factures.create');
+    Route::post('/factures', [BrightShellController::class, 'factureStore'])->name('factures.store');
+    Route::get('/factures/{id}', [BrightShellController::class, 'factureShow'])->name('factures.show');
+    Route::get('/factures/{id}/pdf', [BrightShellController::class, 'facturePdf'])->name('factures.pdf');
+    Route::post('/factures/{id}/paid', [BrightShellController::class, 'factureMarkPaid'])->name('factures.paid');
+    Route::post('/factures/{id}/echeances', [BrightShellController::class, 'factureCreateEcheances'])->name('factures.echeances.create');
+    Route::post('/factures/{id}/echeances/{echeanceId}/paid', [BrightShellController::class, 'echeanceMarkPaid'])->name('factures.echeances.paid');
+
+    
+    // Projets
+    Route::get('/projets', [BrightShellController::class, 'projets'])->name('projets');
+    Route::get('/projets/create', [BrightShellController::class, 'projetCreate'])->name('projets.create');
+    Route::post('/projets', [BrightShellController::class, 'projetStore'])->name('projets.store');
+    
+    // Comptabilité
+    Route::get('/comptabilite', [BrightShellController::class, 'comptabilite'])->name('comptabilite');
+    
+    // Ressources / Trésorerie
+    Route::get('/ressources', [BrightShellController::class, 'ressources'])->name('ressources');
+    Route::post('/ressources/tresorerie', [BrightShellController::class, 'ressourcesTresorerieUpdate'])->name('ressources.tresorerie');
+    Route::post('/ressources/reserves', [BrightShellController::class, 'ressourcesReserveStore'])->name('ressources.reserves.store');
+    Route::put('/ressources/reserves/{id}', [BrightShellController::class, 'ressourcesReserveUpdate'])->name('ressources.reserves.update');
+    Route::delete('/ressources/reserves/{id}', [BrightShellController::class, 'ressourcesReserveDelete'])->name('ressources.reserves.delete');
+    Route::post('/ressources/reserves/{id}/toggle-paid', [BrightShellController::class, 'ressourcesReserveTogglePaid'])->name('ressources.reserves.toggle-paid');
+    Route::post('/ressources/mouvements', [BrightShellController::class, 'ressourcesMouvementStore'])->name('ressources.mouvements.store');
+    Route::delete('/ressources/mouvements/{id}', [BrightShellController::class, 'ressourcesMouvementDelete'])->name('ressources.mouvements.delete');
+    Route::post('/ressources/abonnements', [BrightShellController::class, 'ressourcesAbonnementStore'])->name('ressources.abonnements.store');
+    Route::put('/ressources/abonnements/{id}', [BrightShellController::class, 'ressourcesAbonnementUpdate'])->name('ressources.abonnements.update');
+    Route::delete('/ressources/abonnements/{id}', [BrightShellController::class, 'ressourcesAbonnementDelete'])->name('ressources.abonnements.delete');
+    
+    // Mailing
+    Route::get('/mailing', [BrightShellController::class, 'mailing'])->name('mailing');
+    Route::get('/mailing/compose', [BrightShellController::class, 'mailCompose'])->name('mailing.compose');
+    Route::post('/mailing/send', [BrightShellController::class, 'mailSend'])->name('mailing.send');
+    Route::get('/mailing/received/{id}', [BrightShellController::class, 'mailShowReceived'])->name('mailing.received.show');
+    
+    // Paramètres
+    Route::get('/settings', [BrightShellController::class, 'settings'])->name('settings');
+    Route::post('/settings/logo', [BrightShellController::class, 'uploadLogo'])->name('settings.logo');
+    Route::post('/settings/favicon', [BrightShellController::class, 'uploadFavicon'])->name('settings.favicon');
+    Route::post('/settings/signature', [BrightShellController::class, 'uploadSignature'])->name('settings.signature');
+    Route::post('/settings/pdf-colors', [BrightShellController::class, 'updatePdfColors'])->name('settings.pdf-colors');
+    
+    // Tâches
+    Route::get('/taches', [BrightShellController::class, 'taches'])->name('taches');
+    Route::post('/taches', [BrightShellController::class, 'tacheStore'])->name('taches.store');
+    Route::put('/taches/{id}/toggle', [BrightShellController::class, 'tacheToggle'])->name('taches.toggle');
+    Route::delete('/taches/{id}', [BrightShellController::class, 'tacheDelete'])->name('taches.delete');
+    
+    // Documents Légaux (Générateur : attestation, etc)
+    Route::get('/legals', [BrightShellController::class, 'legals'])->name('legals');
+    Route::get('/legals/create', [BrightShellController::class, 'legalCreate'])->name('legals.create');
+    Route::post('/legals', [BrightShellController::class, 'legalStore'])->name('legals.store');
+    Route::get('/legals/{id}', [BrightShellController::class, 'legalShow'])->name('legals.show');
+    Route::get('/legals/{id}/pdf', [BrightShellController::class, 'legalPdf'])->name('legals.pdf');
+    Route::delete('/legals/{id}', [BrightShellController::class, 'legalDelete'])->name('legals.delete');
+
+    // Documents (Fichiers uploadés)
+    Route::get('/documents', [BrightShellController::class, 'documents'])->name('documents');
+    Route::post('/documents', [BrightShellController::class, 'documentUpload'])->name('documents.upload');
+    Route::delete('/documents/{id}', [BrightShellController::class, 'documentDestroy'])->name('documents.destroy');
+
+    
+    // Notes
+    Route::get('/notes', [BrightShellController::class, 'notes'])->name('notes');
+    Route::get('/notes/create', [BrightShellController::class, 'noteCreate'])->name('notes.create');
+    Route::post('/notes', [BrightShellController::class, 'noteStore'])->name('notes.store');
+    Route::get('/notes/{id}', [BrightShellController::class, 'noteShow'])->name('notes.show');
+    Route::put('/notes/{id}', [BrightShellController::class, 'noteUpdate'])->name('notes.update');
+    Route::delete('/notes/{id}', [BrightShellController::class, 'noteDelete'])->name('notes.delete');
+    
+    // Agenda
+    Route::get('/agenda', [BrightShellController::class, 'agenda'])->name('agenda');
+    Route::post('/agenda', [BrightShellController::class, 'eventStore'])->name('agenda.store');
+    Route::delete('/agenda/{id}', [BrightShellController::class, 'eventDelete'])->name('agenda.delete');
+    
+    // Statistiques
+    Route::get('/statistiques', [BrightShellController::class, 'statistiques'])->name('statistiques');
+    
+    // Fournisseurs
+    Route::get('/fournisseurs', [BrightShellController::class, 'fournisseurs'])->name('fournisseurs');
+    Route::get('/fournisseurs/create', [BrightShellController::class, 'fournisseurCreate'])->name('fournisseurs.create');
+    Route::post('/fournisseurs', [BrightShellController::class, 'fournisseurStore'])->name('fournisseurs.store');
+    Route::delete('/fournisseurs/{id}', [BrightShellController::class, 'fournisseurDelete'])->name('fournisseurs.delete');
+    
+    // Achats
+    Route::get('/achats/create', [BrightShellController::class, 'achatCreate'])->name('achats.create');
+    Route::post('/achats', [BrightShellController::class, 'achatStore'])->name('achats.store');
+    
+    // Exports
+    Route::get('/exports', [BrightShellController::class, 'exports'])->name('exports');
+    Route::get('/exports/{type}', [BrightShellController::class, 'exportDownload'])->name('exports.download');
+});
 
 // Support / FAQ
 Route::get('/support/faq', function() {

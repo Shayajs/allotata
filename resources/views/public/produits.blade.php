@@ -1687,6 +1687,10 @@
             const modeLivraison = document.querySelector('input[name="mode_livraison"]:checked')?.value;
             const livraisonFields = document.getElementById('livraison-fields');
             
+            if (!livraisonFields) {
+                return; // L'élément n'existe pas encore, on sort de la fonction
+            }
+            
             if (modeLivraison === 'livraison') {
                 livraisonFields.classList.remove('hidden');
                 // Rendre les champs requis
