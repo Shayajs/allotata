@@ -448,8 +448,8 @@
                                     'taux_conversion' => 0,
                                     'temps_moyen_avant_reservation' => 0,
                                     'evolution_visites' => [],
-                                    'repartition_pages' => ['accueil' => 0, 'agenda' => 0, 'store' => 0],
-                                    'temps_moyen_par_page' => ['accueil' => 0, 'agenda' => 0, 'store' => 0],
+                                    'repartition_pages' => ['accueil' => 0, 'agenda' => 0, 'store' => 0, 'services' => 0, 'produits' => 0],
+                                    'temps_moyen_par_page' => ['accueil' => 0, 'agenda' => 0, 'store' => 0, 'services' => 0, 'produits' => 0],
                                     'taux_rebond' => 0
                                 ],
                                 'visiteursSansReservation' => $visiteursSansReservation ?? collect([]),
@@ -504,7 +504,7 @@
 
         <script>
             // Gestion des onglets
-            function showTab(tabName) {
+            async function showTab(tabName) {
                 // Masquer tous les contenus
                 document.querySelectorAll('.tab-content').forEach(content => {
                     content.classList.add('hidden');
@@ -520,6 +520,88 @@
                 const tabContent = document.getElementById('tab-' + tabName);
                 if (tabContent) {
                     tabContent.classList.remove('hidden');
+                    
+                    // Recharger le contenu via Ajax (surtout pour les stocks)
+                    // Liste des onglets qui peuvent être rechargés
+                    const reloadableTabs = ['stock', 'mes-services', 'services', 'commandes', 'reservations', 'agenda'];
+                    
+                    if (reloadableTabs.includes(tabName)) {
+                        // Cache pour éviter les rechargements trop fréquents (délai de 2 secondes)
+                        const now = Date.now();
+                        const lastReload = window.tabReloadCache = window.tabReloadCache || {};
+                        const lastReloadTime = lastReload[tabName] || 0;
+                        const RELOAD_DELAY = 2000; // 2 secondes
+                        
+                        // Ne recharger que si ça fait plus de 2 secondes depuis le dernier rechargement
+                        if (now - lastReloadTime > RELOAD_DELAY) {
+                            lastReload[tabName] = now;
+                            
+                            // Afficher un indicateur de chargement discret (petit point vert en haut à droite)
+                            const existingIndicator = tabContent.querySelector('#tab-loading-indicator');
+                            if (!existingIndicator) {
+                                const loadingIndicator = document.createElement('div');
+                                loadingIndicator.id = 'tab-loading-indicator';
+                                loadingIndicator.className = 'absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse opacity-75';
+                                loadingIndicator.style.zIndex = '1000';
+                                if (getComputedStyle(tabContent).position === 'static') {
+                                    tabContent.style.position = 'relative';
+                                }
+                                tabContent.appendChild(loadingIndicator);
+                            }
+                            
+                            // Recharger le contenu en arrière-plan
+                            fetch(`{{ route('entreprise.dashboard.reload-tab', ['slug' => $entreprise->slug, 'tab' => '']) }}${tabName}`, {
+                                method: 'GET',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                },
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success && data.html) {
+                                    // Remplacer le contenu de l'onglet
+                                    tabContent.innerHTML = data.html;
+                                    
+                                    // Réexécuter les scripts dans le nouveau contenu
+                                    const scripts = tabContent.querySelectorAll('script');
+                                    scripts.forEach(oldScript => {
+                                        const newScript = document.createElement('script');
+                                        Array.from(oldScript.attributes).forEach(attr => {
+                                            newScript.setAttribute(attr.name, attr.value);
+                                        });
+                                        newScript.textContent = oldScript.textContent;
+                                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                                    });
+                                    
+                                    // Réinitialiser les fonctions spécifiques selon l'onglet
+                                    if (tabName === 'agenda' && typeof initCalendar === 'function') {
+                                        setTimeout(initCalendar, 100);
+                                    }
+                                    
+                                    // Déclencher un événement personnalisé pour permettre aux scripts de se réinitialiser
+                                    const reloadEvent = new CustomEvent('tabReloaded', { detail: { tab: tabName } });
+                                    window.dispatchEvent(reloadEvent);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Erreur lors du rechargement de l\'onglet:', error);
+                                // En cas d'erreur, on garde le contenu existant (silencieux)
+                            })
+                            .finally(() => {
+                                // Retirer l'indicateur de chargement
+                                const indicator = tabContent.querySelector('#tab-loading-indicator');
+                                if (indicator) {
+                                    indicator.remove();
+                                }
+                            });
+                        }
+                    }
                 }
 
                 // Activer le bouton sélectionné

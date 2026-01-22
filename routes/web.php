@@ -233,6 +233,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     
     // Dashboard entreprise (centralisé)
     Route::get('/m/{slug}', [EntrepriseDashboardController::class, 'index'])->name('entreprise.dashboard');
+    Route::get('/m/{slug}/reload-tab/{tab}', [EntrepriseDashboardController::class, 'reloadTab'])->name('entreprise.dashboard.reload-tab');
     
     // Finances d'entreprise
     Route::get('/m/{slug}/finances', [\App\Http\Controllers\EntrepriseFinanceController::class, 'index'])->name('entreprise.finances.index');

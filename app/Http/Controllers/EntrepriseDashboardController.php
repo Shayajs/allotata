@@ -450,6 +450,108 @@ class EntrepriseDashboardController extends Controller
     }
 
     /**
+     * Recharger le contenu d'un onglet spécifique (Ajax)
+     */
+    public function reloadTab(Request $request, $slug, $tab)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture'])
+            ->firstOrFail();
+        
+        // Vérifier les permissions
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        // Préparer les données nécessaires pour l'onglet demandé
+        $data = [
+            'entreprise' => $entreprise, 
+            'activeTab' => $tab,
+            'errors' => new \Illuminate\Support\MessageBag(), // Pour éviter les erreurs dans les vues
+            // Variables par défaut pour éviter les erreurs
+            'produits' => collect([]),
+            'typesServices' => collect([]),
+            'commandes' => collect([]),
+            'commandesEnAttente' => 0,
+        ];
+        
+        // Charger les données spécifiques selon l'onglet
+        switch ($tab) {
+            case 'stock':
+                $data['produits'] = $entreprise->produits()
+                    ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
+                    ->orderBy('nom')
+                    ->get();
+                break;
+                
+            case 'mes-services':
+            case 'services':
+                $data['typesServices'] = $entreprise->typesServices()
+                    ->with(['images', 'imageCouverture'])
+                    ->orderBy('nom')
+                    ->get();
+                break;
+                
+            case 'commandes':
+                $data['commandes'] = \App\Models\CommandeProduit::where('entreprise_id', $entreprise->id)
+                    ->with(['user', 'produit.stock', 'produit.images', 'membre.user'])
+                    ->orderBy('date_commande', 'desc')
+                    ->get();
+                $data['commandesEnAttente'] = $data['commandes']->where('statut', 'en_attente')->count();
+                $data['produits'] = $entreprise->produits()
+                    ->where('est_actif', true)
+                    ->orderBy('nom')
+                    ->get();
+                break;
+                
+            case 'reservations':
+                // Les réservations sont gérées par ReservationController
+                // On retourne juste un indicateur pour recharger
+                break;
+                
+            case 'agenda':
+                $data['horaires'] = $entreprise->horairesOuverture()
+                    ->where('est_exceptionnel', false)
+                    ->orderBy('jour_semaine')
+                    ->orderBy('ordre_plage')
+                    ->get();
+                $data['typesServices'] = $entreprise->typesServices()
+                    ->with(['images', 'imageCouverture'])
+                    ->orderBy('nom')
+                    ->get();
+                break;
+        }
+
+        // Rendre la vue correspondante
+        $viewMap = [
+            'stock' => 'entreprise.dashboard.tabs.stock',
+            'mes-services' => 'entreprise.dashboard.tabs.services',
+            'services' => 'entreprise.dashboard.tabs.services',
+            'commandes' => 'entreprise.dashboard.tabs.commandes',
+            'reservations' => 'entreprise.dashboard.tabs.reservations',
+            'agenda' => 'entreprise.dashboard.tabs.agenda',
+        ];
+
+        if (isset($viewMap[$tab])) {
+            try {
+                // Utiliser la méthode render() pour obtenir le HTML
+                $html = view($viewMap[$tab], $data)->render();
+                return response()->json(['success' => true, 'html' => $html]);
+            } catch (\Exception $e) {
+                \Log::error('Erreur lors du rechargement de l\'onglet', [
+                    'tab' => $tab,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                return response()->json(['error' => 'Erreur lors du chargement: ' . $e->getMessage()], 500);
+            }
+        }
+
+        return response()->json(['error' => 'Onglet non trouvé'], 404);
+    }
+
+    /**
      * Calculer les statistiques de l'entreprise
      */
     private function getStats(Entreprise $entreprise): array

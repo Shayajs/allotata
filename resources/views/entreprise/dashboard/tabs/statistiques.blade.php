@@ -307,7 +307,7 @@
     <!-- Scripts pour les graphiques et actualisation -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Encapsulé pour éviter les conflits avec d'autres onglets
+        // Variables encapsulées pour éviter les conflits avec d'autres onglets
         (function() {
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#e2e8f0' : '#1e293b';
@@ -354,14 +354,16 @@
             new Chart(repartitionCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Accueil', 'Agenda', 'Store'],
+                    labels: ['Accueil', 'Agenda', 'Store', 'Services', 'Produits'],
                     datasets: [{
                         data: [
                             statsData.repartition_pages?.accueil || 0,
                             statsData.repartition_pages?.agenda || 0,
-                            statsData.repartition_pages?.store || 0
+                            statsData.repartition_pages?.store || 0,
+                            statsData.repartition_pages?.services || 0,
+                            statsData.repartition_pages?.produits || 0
                         ],
-                        backgroundColor: ['#22c55e', '#3b82f6', '#f97316']
+                        backgroundColor: ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ec4899']
                     }]
                 },
                 options: {
@@ -380,15 +382,17 @@
             new Chart(tempsCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['Accueil', 'Agenda', 'Store'],
+                    labels: ['Accueil', 'Agenda', 'Store', 'Services', 'Produits'],
                     datasets: [{
                         label: 'Temps moyen (s)',
                         data: [
                             Math.round(statsData.temps_moyen_par_page?.accueil || 0),
                             Math.round(statsData.temps_moyen_par_page?.agenda || 0),
-                            Math.round(statsData.temps_moyen_par_page?.store || 0)
+                            Math.round(statsData.temps_moyen_par_page?.store || 0),
+                            Math.round(statsData.temps_moyen_par_page?.services || 0),
+                            Math.round(statsData.temps_moyen_par_page?.produits || 0)
                         ],
-                        backgroundColor: ['#22c55e', '#3b82f6', '#f97316']
+                        backgroundColor: ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ec4899']
                     }]
                 },
                 options: {
@@ -486,8 +490,9 @@
 
         // Actualiser toutes les 30 secondes
         updateInterval = setInterval(actualiserStats, 30000);
-
-        // Fonctions modal
+        })();
+        
+        // Fonctions modal (doivent être globales pour être accessibles depuis le HTML)
         function ouvrirModalContact(visiteId, userId, userName) {
             document.getElementById('contact-visite-id').value = visiteId;
             document.getElementById('modal-contact').classList.remove('hidden');
@@ -505,6 +510,5 @@
                 fermerModalContact();
             }
         });
-        })();
     </script>
 </div>
