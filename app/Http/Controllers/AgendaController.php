@@ -727,15 +727,10 @@ class AgendaController extends Controller
             }
         }
 
-        // Si on vient du dashboard, rediriger vers l'onglet services
-        if (request()->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Image supprimée avec succès.',
-            ]);
-        }
-        
-        return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
-            ->with('success', 'Image supprimée avec succès.');
+        // Retourner du JSON pour les requêtes Ajax (toujours pour les images)
+        return response()->json([
+            'success' => true,
+            'message' => 'Image supprimée avec succès.',
+        ]);
     }
 }
