@@ -3,7 +3,7 @@
 @section('title', isset($facture) ? 'Modifier la facture' : 'Nouvelle facture')
 
 @section('content')
-<div class="grid grid-2" style="gap: 2rem; align-items: start;">
+<div class="grid grid-2" id="billing-grid">
     <!-- Formulaire -->
     <div class="card">
         <form action="{{ isset($facture) ? route('brightshell.factures.update', $facture->id) : route('brightshell.factures.store') }}" method="POST" id="facture-form">
@@ -37,7 +37,7 @@
             <div class="form-group">
                 <label class="form-label">Lignes de facture</label>
                 <div id="lignes-container">
-                    <div class="ligne-header" style="display: grid; grid-template-columns: 1fr 80px 120px 40px; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <div class="ligne-header">
                         <span class="form-label text-xs">Description</span>
                         <span class="form-label text-xs">Qté</span>
                         <span class="form-label text-xs">Prix unit. €</span>
@@ -97,7 +97,7 @@
     </div>
     
     <!-- Prévisualisation -->
-    <div class="card" style="position: sticky; top: 1rem; background: white; color: #1a1a1a;">
+    <div class="card preview-card" style="background: white; color: #1a1a1a;">
         <div style="text-align: center; margin-bottom: 1rem;">
             <span class="badge badge-info">Prévisualisation</span>
         </div>
@@ -160,6 +160,32 @@
 </div>
 
 <style>
+#billing-grid { gap: 2rem; align-items: start; }
+.ligne-header, .ligne-item {
+    display: grid;
+    grid-template-columns: 1fr 80px 120px 40px;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.preview-card { position: sticky; top: 1rem; }
+
+@media (max-width: 768px) {
+    #billing-grid { gap: 1rem; }
+    .preview-card { position: static; margin-top: 1rem; }
+    .ligne-header { display: none; }
+    .ligne-item {
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+        background: var(--bs-bg-dark);
+        border: 1px solid var(--bs-border);
+        border-radius: 8px;
+    }
+    .ligne-item input[name*="description"] { grid-column: span 2; }
+    .ligne-item input[name*="quantite"] { grid-column: span 1; }
+    .ligne-item input[name*="prix_unitaire"] { grid-column: span 1; }
+    .ligne-item .btn-danger { grid-column: span 2; }
+}
+
 .radio-card {
     display: flex;
     flex-direction: column;
@@ -171,35 +197,21 @@
     transition: all 0.2s;
     text-align: center;
 }
-.radio-card:hover {
-    border-color: var(--bs-accent);
-}
+.radio-card:hover { border-color: var(--bs-accent); }
 .radio-card:has(input:checked) {
     border-color: var(--bs-accent);
     background: rgba(91, 188, 228, 0.1);
 }
-.radio-card input {
-    display: none;
-}
-.radio-card span {
-    font-weight: 600;
-    font-size: 0.875rem;
-}
-.radio-card small {
-    color: var(--bs-text-muted);
-    font-size: 0.75rem;
-}
-#lignes-container .ligne-item:hover {
-    background: #1f2937; /* Gris très foncé / Noir */
-}
+.radio-card input { display: none; }
+.radio-card span { font-weight: 600; font-size: 0.875rem; }
+.radio-card small { color: var(--bs-text-muted); font-size: 0.75rem; }
+#lignes-container .ligne-item:hover { background: #1f2937; }
 #lignes-container .ligne-item:hover input {
-    background: #374151; /* Gris foncé pour l'input */
-    color: white; /* Texte blanc */
+    background: #374151;
+    color: white;
     border-color: #4b5563;
 }
-#lignes-container .ligne-item:hover button.btn-danger {
-    opacity: 1;
-}
+#lignes-container .ligne-item:hover button.btn-danger { opacity: 1; }
 #lignes-container .ligne-item:hover button.btn-danger {
     background: #ef4444;
     color: white;
@@ -214,7 +226,6 @@ function ajouterLigne(description = '', quantite = 1, prixUnitaire = '') {
     const container = document.getElementById('lignes-container');
     const div = document.createElement('div');
     div.className = 'ligne-item';
-    div.style.cssText = 'display: grid; grid-template-columns: 1fr 80px 120px 40px; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.25rem; border-radius: 4px;';
     div.innerHTML = `
         <input type="text" name="lignes[${ligneIndex}][description]" class="form-input" placeholder="Description" value="${description}" required oninput="updatePreview()">
         <input type="number" name="lignes[${ligneIndex}][quantite]" class="form-input" value="${quantite}" min="0.01" step="0.01" required oninput="updatePreview()">

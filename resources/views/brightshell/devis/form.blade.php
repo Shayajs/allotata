@@ -23,6 +23,21 @@
         margin-bottom: 0.5rem;
         align-items: center;
     }
+
+    @media (max-width: 768px) {
+        .ligne-item {
+            grid-template-columns: 1fr 1fr;
+            padding: 1rem;
+            background: var(--bs-bg-dark);
+            border: 1px solid var(--bs-border);
+            border-radius: 8px;
+        }
+        .ligne-item input.ligne-desc { grid-column: span 2; }
+        .ligne-item input.ligne-qte { grid-column: span 1; }
+        .ligne-item input.ligne-prix { grid-column: span 1; }
+        .ligne-item .ligne-total { grid-column: span 1; text-align: right; }
+        .ligne-item button { grid-column: span 1; }
+    }
     
     .ligne-header {
         display: grid;
@@ -38,6 +53,10 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         color: var(--bs-text-muted);
+    }
+    
+    @media (max-width: 768px) {
+        .ligne-header { display: none; }
     }
     
     .ligne-total {
@@ -78,6 +97,15 @@
         top: 100px;
         max-height: calc(100vh - 130px);
         overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+        .preview-container {
+            position: static;
+            padding: 1rem;
+            max-height: none;
+            margin-top: 1rem;
+        }
     }
     
     .preview-header {
@@ -274,16 +302,16 @@
             </div>
             
             <!-- Options TVA -->
-            <div class="tva-toggle">
+            <div class="tva-toggle" style="flex-wrap: wrap;">
                 <div>
                     <label class="radio-option">
                         <input type="radio" name="mode_tva" value="non_assujetti" id="mode_non_assujetti" 
                                {{ old('mode_tva', $devis->mode_tva ?? 'non_assujetti') === 'non_assujetti' ? 'checked' : '' }}
                                onchange="updateTvaMode()">
-                        <span>Non assujetti à la TVA (art. 293 B du CGI)</span>
+                        <span>Non assujetti</span>
                     </label>
                 </div>
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                     <label class="radio-option">
                         <input type="radio" name="mode_tva" value="ht" id="mode_ht"
                                {{ old('mode_tva', $devis->mode_tva ?? '') === 'ht' ? 'checked' : '' }}

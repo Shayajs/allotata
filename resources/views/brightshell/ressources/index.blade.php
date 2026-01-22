@@ -116,13 +116,13 @@
             <tbody>
                 @foreach($entrees as $e)
                 <tr>
-                    <td class="text-muted">{{ \Carbon\Carbon::parse($e->date)->format('d/m/Y') }}</td>
-                    <td>{{ Str::limit($e->libelle, 50) }}</td>
-                    <td><span class="badge badge-info">{{ $e->type === 'recette' ? 'Recette' : 'Manuel' }}</span></td>
-                    <td class="font-bold text-success" style="text-align: right;">+{{ number_format($e->montant, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Date" class="text-muted">{{ \Carbon\Carbon::parse($e->date)->format('d/m/Y') }}</td>
+                    <td data-label="Libellé">{{ Str::limit($e->libelle, 50) }}</td>
+                    <td data-label="Type"><span class="badge badge-info">{{ $e->type === 'recette' ? 'Recette' : 'Manuel' }}</span></td>
+                    <td data-label="Montant" class="font-bold text-success" style="text-align: right;">+{{ number_format($e->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Actions">
                         @if(isset($e->id))
-                        <form action="{{ route('brightshell.ressources.mouvements.delete', $e->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce mouvement ?');">
+                        <form action="{{ route('brightshell.ressources.mouvements.delete', $e->id) }}" method="POST" style="display: flex; justify-content: flex-end;" onsubmit="return confirm('Supprimer ce mouvement ?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-secondary">Suppr.</button>
@@ -201,14 +201,14 @@
             <tbody>
                 @foreach($sorties as $s)
                 <tr>
-                    <td class="text-muted">{{ \Carbon\Carbon::parse($s->date)->format('d/m/Y') }}</td>
-                    <td>{{ Str::limit($s->libelle, 40) }}</td>
-                    <td>{{ $s->fournisseur ?? '-' }}</td>
-                    <td><span class="badge {{ $s->type === 'achat' ? 'badge-info' : 'badge-warning' }}">{{ $s->type === 'achat' ? 'Achat' : 'Manuel' }}</span></td>
-                    <td class="font-bold text-danger" style="text-align: right;">-{{ number_format($s->montant, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Date" class="text-muted">{{ \Carbon\Carbon::parse($s->date)->format('d/m/Y') }}</td>
+                    <td data-label="Libellé">{{ Str::limit($s->libelle, 40) }}</td>
+                    <td data-label="Fournisseur">{{ $s->fournisseur ?? '-' }}</td>
+                    <td data-label="Type"><span class="badge {{ $s->type === 'achat' ? 'badge-info' : 'badge-warning' }}">{{ $s->type === 'achat' ? 'Achat' : 'Manuel' }}</span></td>
+                    <td data-label="Montant" class="font-bold text-danger" style="text-align: right;">-{{ number_format($s->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Actions">
                         @if(isset($s->id))
-                        <form action="{{ route('brightshell.ressources.mouvements.delete', $s->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer ce mouvement ?');">
+                        <form action="{{ route('brightshell.ressources.mouvements.delete', $s->id) }}" method="POST" style="display: flex; justify-content: flex-end;" onsubmit="return confirm('Supprimer ce mouvement ?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-secondary">Suppr.</button>
@@ -269,26 +269,26 @@
             <tbody>
                 @foreach($reserves as $r)
                 <tr>
-                    <td>{{ $r->libelle }}</td>
-                    <td class="text-muted">{{ $r->date_prevue ? \Carbon\Carbon::parse($r->date_prevue)->format('d/m/Y') : '-' }}</td>
-                    <td class="font-bold" style="text-align: right;">{{ number_format($r->montant, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Libellé">{{ $r->libelle }}</td>
+                    <td data-label="Date prévue" class="text-muted">{{ $r->date_prevue ? \Carbon\Carbon::parse($r->date_prevue)->format('d/m/Y') : '-' }}</td>
+                    <td data-label="Montant" class="font-bold" style="text-align: right;">{{ number_format($r->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Statut">
                         @if($r->payee)
-                        <form action="{{ route('brightshell.ressources.reserves.toggle-paid', $r->id) }}" method="POST" style="display: inline;">
+                        <form action="{{ route('brightshell.ressources.reserves.toggle-paid', $r->id) }}" method="POST" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                             @csrf
                             <span class="badge badge-success">Payée</span>
                             <button type="submit" class="btn btn-sm btn-secondary">Non payée</button>
                         </form>
                         @else
-                        <form action="{{ route('brightshell.ressources.reserves.toggle-paid', $r->id) }}" method="POST" style="display: inline;">
+                        <form action="{{ route('brightshell.ressources.reserves.toggle-paid', $r->id) }}" method="POST" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
                             @csrf
                             <span class="badge badge-warning">À payer</span>
                             <button type="submit" class="btn btn-sm btn-success">Marquer payée</button>
                         </form>
                         @endif
                     </td>
-                    <td>
-                        <form action="{{ route('brightshell.ressources.reserves.delete', $r->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer cette réserve ?');">
+                    <td data-label="Actions">
+                        <form action="{{ route('brightshell.ressources.reserves.delete', $r->id) }}" method="POST" style="display: flex; justify-content: flex-end;" onsubmit="return confirm('Supprimer cette réserve ?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-secondary">Suppr.</button>
@@ -378,22 +378,22 @@
             <tbody>
                 @foreach($abonnements as $a)
                 <tr class="{{ !$a->actif ? 'opacity-50' : '' }}">
-                    <td><span class="badge {{ $a->type === 'entree' ? 'badge-success' : 'badge-danger' }}">{{ $a->type === 'entree' ? 'Entrée' : 'Sortie' }}</span></td>
-                    <td>{{ $a->libelle }}</td>
-                    <td>{{ $a->beneficiaire ?? '-' }}</td>
-                    <td>{{ number_format($a->montant, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Type"><span class="badge {{ $a->type === 'entree' ? 'badge-success' : 'badge-danger' }}">{{ $a->type === 'entree' ? 'Entrée' : 'Sortie' }}</span></td>
+                    <td data-label="Libellé">{{ $a->libelle }}</td>
+                    <td data-label="Bénéficiaire">{{ $a->beneficiaire ?? '-' }}</td>
+                    <td data-label="Montant">{{ number_format($a->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Fréquence">
                         @if($a->frequence === 'mensuel')
                         <span class="badge badge-info">Mensuel</span>
                         @else
                         <span class="badge badge-warning">Toutes les {{ $a->intervalle_semaines ?? 4 }} sem.</span>
                         @endif
                     </td>
-                    <td class="text-muted">{{ \Carbon\Carbon::parse($a->date_debut)->format('d/m/Y') }}</td>
-                    <td class="text-muted">{{ $a->date_fin ? \Carbon\Carbon::parse($a->date_fin)->format('d/m/Y') : '-' }}</td>
-                    <td>{{ $a->prochaine_echeance ? \Carbon\Carbon::parse($a->prochaine_echeance)->format('d/m/Y') : '-' }}</td>
-                    <td>
-                        <form action="{{ route('brightshell.ressources.abonnements.delete', $a->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Supprimer cet abonnement ?');">
+                    <td data-label="Début" class="text-muted">{{ \Carbon\Carbon::parse($a->date_debut)->format('d/m/Y') }}</td>
+                    <td data-label="Fin" class="text-muted">{{ $a->date_fin ? \Carbon\Carbon::parse($a->date_fin)->format('d/m/Y') : '-' }}</td>
+                    <td data-label="Prochaine échéance">{{ $a->prochaine_echeance ? \Carbon\Carbon::parse($a->prochaine_echeance)->format('d/m/Y') : '-' }}</td>
+                    <td data-label="Actions">
+                        <form action="{{ route('brightshell.ressources.abonnements.delete', $a->id) }}" method="POST" style="display: flex; justify-content: flex-end;" onsubmit="return confirm('Supprimer cet abonnement ?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-secondary">Suppr.</button>

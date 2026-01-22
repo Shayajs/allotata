@@ -25,16 +25,18 @@
         <tbody>
             @foreach($fournisseurs as $f)
             <tr>
-                <td class="font-bold">{{ $f->nom }}</td>
-                <td>{{ $f->email ?? '-' }}</td>
-                <td>{{ $f->telephone ?? '-' }}</td>
-                <td class="text-muted">{{ $f->siret ?? '-' }}</td>
-                <td>
-                    <form action="{{ route('brightshell.fournisseurs.delete', $f->id) }}" method="POST" onsubmit="return confirm('Supprimer ?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                    </form>
+                <td data-label="Nom" class="font-bold">{{ $f->nom }}</td>
+                <td data-label="Email">{{ $f->email ?? '-' }}</td>
+                <td data-label="Téléphone">{{ $f->telephone ?? '-' }}</td>
+                <td data-label="SIRET" class="text-muted">{{ $f->siret ?? '-' }}</td>
+                <td data-label="Actions">
+                    <div style="display: flex; justify-content: flex-end;">
+                        <form action="{{ route('brightshell.fournisseurs.delete', $f->id) }}" method="POST" onsubmit="return confirm('Supprimer ?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             @endforeach

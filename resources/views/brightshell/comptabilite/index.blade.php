@@ -67,13 +67,13 @@
             <tbody>
                 @foreach($recettes as $recette)
                 <tr>
-                    <td>{{ \Carbon\Carbon::parse($recette->date)->format('d/m/Y') }}</td>
-                    <td>
+                    <td data-label="Date">{{ \Carbon\Carbon::parse($recette->date)->format('d/m/Y') }}</td>
+                    <td data-label="Description">
                         <div class="font-bold">{{ $recette->nature }}</div>
                         <div class="text-xs text-muted">{{ $recette->reference }} - {{ $recette->client_nom }}</div>
                     </td>
-                    <td>{{ ucfirst($recette->mode_reglement ?? 'N/A') }}</td>
-                    <td class="font-bold text-success">+{{ number_format($recette->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Mode">{{ ucfirst($recette->mode_reglement ?? 'N/A') }}</td>
+                    <td data-label="Montant" class="font-bold text-success">+{{ number_format($recette->montant, 2, ',', ' ') }} €</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -103,10 +103,10 @@
             <tbody>
                 @foreach($achats as $achat)
                 <tr>
-                    <td>{{ \Carbon\Carbon::parse($achat->date)->format('d/m/Y') }}</td>
-                    <td>{{ $achat->description }}</td>
-                    <td>{{ $achat->fournisseur ?? 'N/A' }}</td>
-                    <td class="font-bold text-danger">-{{ number_format($achat->montant, 2, ',', ' ') }} €</td>
+                    <td data-label="Date">{{ \Carbon\Carbon::parse($achat->date)->format('d/m/Y') }}</td>
+                    <td data-label="Description">{{ $achat->description }}</td>
+                    <td data-label="Fournisseur">{{ $achat->fournisseur ?? 'N/A' }}</td>
+                    <td data-label="Montant" class="font-bold text-danger">-{{ number_format($achat->montant, 2, ',', ' ') }} €</td>
                 </tr>
                 @endforeach
             </tbody>
