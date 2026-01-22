@@ -177,6 +177,8 @@ class SettingsController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'description' => ['nullable', 'string'],
+            'video_url' => ['nullable', 'url', 'max:500'],
+            'afficher_video' => ['nullable'],
             'mots_cles' => ['nullable', 'string', 'max:500'],
             'ville' => ['nullable', 'string', 'max:255'],
             'adresse_rue' => ['nullable', 'string', 'max:255'],
@@ -228,6 +230,13 @@ class SettingsController extends Controller
         $validated['livraison_disponible_par_defaut'] = $request->has('livraison_disponible_par_defaut') && $request->input('livraison_disponible_par_defaut') == '1';
         $validated['vente_sur_place_disponible_par_defaut'] = $request->has('vente_sur_place_disponible_par_defaut') && $request->input('vente_sur_place_disponible_par_defaut') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
+        $validated['afficher_video'] = $request->has('afficher_video') && $request->input('afficher_video') == '1';
+
+        // Si video_url est vide, supprimer la vidéo et désactiver l'affichage
+        if (empty($validated['video_url'])) {
+            $validated['video_url'] = null;
+            $validated['afficher_video'] = false;
+        }
 
         // Gérer les valeurs vides pour latitude/longitude
         if (empty($validated['latitude'])) {

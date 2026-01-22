@@ -110,7 +110,7 @@
     </div>
 
     <!-- Formulaire principal -->
-    <form action="{{ route('settings.entreprise.update', $entreprise->slug) }}" method="POST" class="space-y-6">
+    <form id="parametres-form" action="{{ route('settings.entreprise.update', $entreprise->slug) }}" method="POST" class="space-y-6">
         @csrf
 
         <!-- Informations de base -->
@@ -225,6 +225,69 @@
                         class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
                 </div>
+            </div>
+
+            <!-- Section Vidéo -->
+            <div class="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h4 class="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Vidéo de présentation
+                </h4>
+                
+                @if($entreprise->video_url)
+                    <div class="mb-4 p-3 bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                            <strong>URL actuelle :</strong> 
+                            <a href="{{ $entreprise->video_url }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline break-all">
+                                {{ strlen($entreprise->video_url) > 60 ? substr($entreprise->video_url, 0, 60) . '...' : $entreprise->video_url }}
+                            </a>
+                        </p>
+                        <button 
+                            type="button"
+                            onclick="if(confirm('Supprimer la vidéo ?')) { document.getElementById('video_url').value = ''; document.getElementById('afficher_video').checked = false; document.getElementById('parametres-form').submit(); }"
+                            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
+                        >
+                            Supprimer la vidéo
+                        </button>
+                    </div>
+                @endif
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        URL de la vidéo (YouTube, Dailymotion, Vimeo, etc.)
+                    </label>
+                    <input 
+                        type="url" 
+                        name="video_url" 
+                        id="video_url"
+                        value="{{ old('video_url', $entreprise->video_url) }}"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    >
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Collez le lien complet de votre vidéo (YouTube, Dailymotion, Vimeo, etc.)
+                    </p>
+                </div>
+
+                <label class="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
+                    <input 
+                        type="checkbox" 
+                        name="afficher_video" 
+                        value="1"
+                        {{ old('afficher_video', $entreprise->afficher_video ?? true) ? 'checked' : '' }}
+                        class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                    >
+                    <div>
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">
+                            Afficher la vidéo sur la page publique
+                        </span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Si activé, la vidéo sera affichée juste au-dessus de la description sur votre page publique.
+                        </p>
+                    </div>
+                </label>
             </div>
 
             <div class="mb-6">

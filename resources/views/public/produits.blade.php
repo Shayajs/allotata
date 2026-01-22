@@ -1567,7 +1567,6 @@
             }
         });
 
-        // Gérer le hash lors du changement
         // Fonctions pour gérer les menus déroulants
         function toggleProduitsRestants() {
             const list = document.getElementById('produits-restants-list');

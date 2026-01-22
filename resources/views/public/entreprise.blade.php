@@ -244,6 +244,24 @@
                 <div class="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                     <h2 class="font-semibold text-lg sm:text-xl mb-3 sm:mb-4 text-slate-900 dark:text-slate-100">Informations</h2>
                     
+                    @php
+                        $embedUrl = \App\Helpers\VideoHelper::getEmbedUrl($entreprise->video_url);
+                    @endphp
+                    
+                    @if($embedUrl && $entreprise->afficher_video)
+                        <div class="mb-6">
+                            <div class="relative w-full" style="padding-bottom: 56.25%;">
+                                <iframe 
+                                    src="{{ $embedUrl }}" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen
+                                    class="absolute top-0 left-0 w-full h-full rounded-lg"
+                                ></iframe>
+                            </div>
+                        </div>
+                    @endif
+                    
                     @if($entreprise->description)
                         <div class="mb-4">
                             <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 whitespace-pre-line">{{ $entreprise->description }}</p>
