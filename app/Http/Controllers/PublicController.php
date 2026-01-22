@@ -417,7 +417,7 @@ class PublicController extends Controller
             ->with(['typesServices' => function($query) {
                 $query->where('est_actif', true)
                       ->with(['images', 'imageCouverture', 'serviceAvis' => function($q) {
-                          $q->with(['user:id,name', 'photos']);
+                          $q->with(['user:id,name', 'photos', 'reservation']);
                       }]);
             }])
             ->with('realisationPhotos')
@@ -467,7 +467,7 @@ class PublicController extends Controller
             ->with(['produits' => function($query) {
                 $query->where('est_actif', true)
                       ->with(['stock', 'images', 'imageCouverture', 'promotionActive', 'produitAvis' => function($q) {
-                          $q->with(['user:id,name', 'photos']);
+                          $q->with(['user:id,name', 'photos', 'reservation']);
                       }]);
             }])
             ->with('realisationPhotos')
