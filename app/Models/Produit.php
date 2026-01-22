@@ -21,6 +21,7 @@ class Produit extends Model
         'gestion_stock',
         'livraison_disponible',
         'vente_sur_place_disponible',
+        'ordre_affichage',
     ];
 
     protected function casts(): array
