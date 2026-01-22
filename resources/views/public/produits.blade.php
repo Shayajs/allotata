@@ -77,7 +77,11 @@
 
                 <!-- Onglet Liste (Mobile) -->
                 <div id="mobile-content-liste" class="p-4 space-y-4">
-                    @foreach($produits as $produit)
+                    @php
+                        $produitsPrincipaux = $produits->take(9);
+                        $produitsRestants = $produits->skip(9);
+                    @endphp
+                    @foreach($produitsPrincipaux as $produit)
                         @php
                             $imageCouverture = $produit->imageCouverture;
                             $premiereImage = $produit->images->first();
@@ -130,6 +134,76 @@
                             </div>
                         </div>
                     @endforeach
+                    
+                    @if($produitsRestants->count() > 0)
+                        <!-- Menu déroulant pour les produits restants -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <button 
+                                onclick="toggleProduitsRestants()"
+                                class="w-full px-4 py-3 flex items-center justify-between text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                            >
+                                <span class="font-semibold">Voir {{ $produitsRestants->count() }} autre(s) produit(s)</span>
+                                <svg id="produits-restants-arrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="produits-restants-list" class="hidden space-y-4 p-4 border-t border-slate-200 dark:border-slate-700">
+                                @foreach($produitsRestants as $produit)
+                                    @php
+                                        $imageCouverture = $produit->imageCouverture;
+                                        $premiereImage = $produit->images->first();
+                                        $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
+                                        $promotion = $produit->promotionActive()->first();
+                                        $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+                                    @endphp
+                                    <div 
+                                        class="bg-slate-50 dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                        onclick="selectProduit({{ $produit->id }}, true)"
+                                        data-produit-id="{{ $produit->id }}"
+                                    >
+                                        @if($imageAffichee)
+                                            <div class="relative h-48 w-full overflow-hidden">
+                                                <img 
+                                                    src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                                    alt="{{ $produit->nom }}"
+                                                    class="w-full h-full object-cover"
+                                                >
+                                                @if($promotion)
+                                                    <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                                        PROMO
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        <div class="p-4">
+                                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{{ $produit->nom }}</h3>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-4 text-sm">
+                                                    @if($promotion)
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="line-through text-slate-400 text-xs">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
+                                                            <span class="font-bold text-red-600 dark:text-red-400">{{ number_format($prixActuel, 2, ',', ' ') }} €</span>
+                                                        </div>
+                                                    @else
+                                                        <span class="font-bold text-green-600 dark:text-green-400">
+                                                            {{ number_format($prixActuel, 2, ',', ' ') }} €
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                @if($produit->gestion_stock === 'disponible_immediatement' && $produit->stock)
+                                                    <span class="text-xs text-slate-600 dark:text-slate-400">
+                                                        Stock: {{ $produit->stock->quantite_disponible }}
+                                                    </span>
+                                                @elseif($produit->gestion_stock === 'en_attente_commandes')
+                                                    <span class="text-xs text-orange-600 dark:text-orange-400">En attente</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Onglet Détails (Mobile) -->
@@ -145,7 +219,11 @@
                 <!-- Sidebar (20%) -->
                 <div class="w-1/5 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto">
                     <div class="p-4 space-y-4">
-                        @foreach($produits as $produit)
+                        @php
+                            $produitsPrincipauxDesktop = $produits->take(9);
+                            $produitsRestantsDesktop = $produits->skip(9);
+                        @endphp
+                        @foreach($produitsPrincipauxDesktop as $produit)
                             @php
                                 $imageCouverture = $produit->imageCouverture;
                                 $premiereImage = $produit->images->first();
@@ -197,6 +275,75 @@
                                 @endif
                             </div>
                         @endforeach
+                        
+                        @if($produitsRestantsDesktop->count() > 0)
+                            <!-- Menu déroulant pour les produits restants (Desktop) -->
+                            <div class="bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <button 
+                                    onclick="toggleProduitsRestantsDesktop()"
+                                    class="w-full px-4 py-3 flex items-center justify-between text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                >
+                                    <span class="font-semibold text-sm">Voir {{ $produitsRestantsDesktop->count() }} autre(s)</span>
+                                    <svg id="produits-restants-desktop-arrow" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="produits-restants-desktop-list" class="hidden space-y-4 p-4 border-t border-slate-200 dark:border-slate-700">
+                                    @foreach($produitsRestantsDesktop as $produit)
+                                        @php
+                                            $imageCouverture = $produit->imageCouverture;
+                                            $premiereImage = $produit->images->first();
+                                            $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
+                                            $promotion = $produit->promotionActive()->first();
+                                            $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
+                                        @endphp
+                                        <div 
+                                            class="produit-card bg-slate-50 dark:bg-slate-700/50 rounded-xl border-2 border-slate-200 dark:border-slate-700 p-4 cursor-pointer hover:border-green-500 dark:hover:border-green-600 hover:shadow-lg transition-all"
+                                            onclick="selectProduit({{ $produit->id }}, false)"
+                                            data-produit-id="{{ $produit->id }}"
+                                        >
+                                            @if($imageAffichee)
+                                                <div class="relative h-32 w-full rounded-lg overflow-hidden mb-3">
+                                                    <img 
+                                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                                        alt="{{ $produit->nom }}"
+                                                        class="w-full h-full object-cover"
+                                                    >
+                                                    @if($promotion)
+                                                        <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                                            PROMO
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{{ $produit->nom }}</h3>
+                                            <div class="flex items-center justify-between text-sm mb-2">
+                                                @if($promotion)
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="line-through text-slate-400 text-xs">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
+                                                        <span class="font-bold text-red-600 dark:text-red-400">{{ number_format($prixActuel, 2, ',', ' ') }} €</span>
+                                                    </div>
+                                                @else
+                                                    <span class="font-bold text-green-600 dark:text-green-400">
+                                                        {{ number_format($prixActuel, 2, ',', ' ') }} €
+                                                    </span>
+                                                @endif
+                                                @if($produit->gestion_stock === 'disponible_immediatement' && $produit->stock)
+                                                    <span class="text-xs text-slate-600 dark:text-slate-400">
+                                                        Stock: {{ $produit->stock->quantite_disponible }}
+                                                    </span>
+                                                @elseif($produit->gestion_stock === 'en_attente_commandes')
+                                                    <span class="text-xs text-orange-600 dark:text-orange-400">En attente</span>
+                                                @endif
+                                            </div>
+                                            @if(!$loop->last)
+                                                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"></div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1421,6 +1568,25 @@
         });
 
         // Gérer le hash lors du changement
+        // Fonctions pour gérer les menus déroulants
+        function toggleProduitsRestants() {
+            const list = document.getElementById('produits-restants-list');
+            const arrow = document.getElementById('produits-restants-arrow');
+            if (list && arrow) {
+                list.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+        }
+
+        function toggleProduitsRestantsDesktop() {
+            const list = document.getElementById('produits-restants-desktop-list');
+            const arrow = document.getElementById('produits-restants-desktop-arrow');
+            if (list && arrow) {
+                list.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+        }
+
         window.addEventListener('hashchange', function() {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#produit-')) {

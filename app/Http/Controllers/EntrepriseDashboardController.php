@@ -813,4 +813,76 @@ class EntrepriseDashboardController extends Controller
             'data' => $data,
         ];
     }
+
+    /**
+     * Mettre à jour le mode d'ordre (manuel, ventes, statistiques)
+     */
+    public function updateModeOrdre(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|in:services,produits',
+            'mode_ordre' => 'required|in:manuel,ventes,statistiques',
+        ]);
+
+        if ($validated['type'] === 'services') {
+            $entreprise->mode_ordre_services = $validated['mode_ordre'];
+        } else {
+            $entreprise->mode_ordre_produits = $validated['mode_ordre'];
+        }
+        
+        $entreprise->save();
+
+        return back()->with('success', 'Mode d\'ordre mis à jour avec succès.');
+    }
+
+    /**
+     * Mettre à jour l'ordre manuel (drag & drop)
+     */
+    public function updateOrdreManuel(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|in:services,produits',
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer',
+            'items.*.ordre' => 'required|integer',
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            if ($validated['type'] === 'services') {
+                foreach ($validated['items'] as $item) {
+                    \App\Models\TypeService::where('id', $item['id'])
+                        ->where('entreprise_id', $entreprise->id)
+                        ->update(['ordre_affichage' => $item['ordre']]);
+                }
+            } else {
+                foreach ($validated['items'] as $item) {
+                    \App\Models\Produit::where('id', $item['id'])
+                        ->where('entreprise_id', $entreprise->id)
+                        ->update(['ordre_affichage' => $item['ordre']]);
+                }
+            }
+
+            \DB::commit();
+            return response()->json(['success' => true, 'message' => 'Ordre mis à jour avec succès.']);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['error' => 'Erreur lors de la mise à jour'], 500);
+        }
+    }
 }
