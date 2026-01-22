@@ -219,4 +219,24 @@ class Produit extends Model
     {
         return $this->produitAvis()->count();
     }
+
+    /**
+     * Récupère les avis triés (payés en haut, autres en bas)
+     */
+    public function getAvisTriesAttribute()
+    {
+        $avis = $this->produitAvis()->with(['user:id,name', 'photos', 'reservation'])->get();
+        
+        // Séparer les avis avec paiement confirmé et les autres
+        $avisPayes = $avis->filter(function($avis) {
+            return $avis->aPaiementConfirme();
+        })->sortByDesc('created_at');
+        
+        $avisAutres = $avis->filter(function($avis) {
+            return !$avis->aPaiementConfirme();
+        })->sortByDesc('created_at');
+        
+        // Retourner les payés en premier, puis les autres
+        return $avisPayes->merge($avisAutres);
+    }
 }

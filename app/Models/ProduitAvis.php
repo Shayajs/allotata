@@ -60,7 +60,7 @@ class ProduitAvis extends Model
      */
     public function reservation(): BelongsTo
     {
-        return $this->belongsTo(Reservation::class);
+        return $this->belongsTo(Reservation::class)->withDefault();
     }
 
     /**
@@ -85,5 +85,23 @@ class ProduitAvis extends Model
             }
         }
         return $etoiles;
+    }
+
+    /**
+     * Vérifie si l'avis provient d'un utilisateur ayant payé
+     */
+    public function aPaiementConfirme(): bool
+    {
+        if (!$this->reservation_id) {
+            return false;
+        }
+
+        // Charger la relation si elle n'est pas déjà chargée
+        if (!$this->relationLoaded('reservation')) {
+            $this->load('reservation');
+        }
+
+        $reservation = $this->reservation;
+        return $reservation && $reservation->exists && $reservation->est_paye === true;
     }
 }

@@ -37,6 +37,24 @@
             </div>
         </nav>
 
+        @if(session('success'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <p class="text-green-800 dark:text-green-300">{{ session('success') }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    @foreach($errors->all() as $error)
+                        <p class="text-red-800 dark:text-red-300">{{ $error }}</p>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @if($typesServices && $typesServices->count() > 0)
             <!-- Mobile: Navigation par onglets -->
             <div class="lg:hidden">
@@ -262,17 +280,71 @@
                             @endif
 
                             <!-- Avis et notes -->
-                            @if($firstService->serviceAvis->count() > 0)
-                                <div class="mb-8">
-                                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                                        Avis et notes
-                                        <span class="text-lg font-normal text-slate-600 dark:text-slate-400">
-                                            ({{ $firstService->nombre_avis }} avis, note moyenne: {{ $firstService->note_moyenne }}/5)
-                                        </span>
-                                    </h2>
+                            @php
+                                $avisTries = $firstService->avis_tries;
+                                $userAvis = Auth::check() ? \App\Models\ServiceAvis::where('user_id', Auth::id())->where('type_service_id', $firstService->id)->first() : null;
+                                $userReservationsPayees = Auth::check() ? \App\Models\Reservation::where('user_id', Auth::id())
+                                    ->where('entreprise_id', $entreprise->id)
+                                    ->where('est_paye', true)
+                                    ->get() : collect();
+                            @endphp
+                            <div class="mb-8">
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                                    Avis et notes
+                                    <span class="text-lg font-normal text-slate-600 dark:text-slate-400">
+                                        ({{ $firstService->nombre_avis }} avis, note moyenne: {{ $firstService->note_moyenne }}/5)
+                                    </span>
+                                </h2>
+
+                                <!-- Formulaire pour laisser un avis -->
+                                @auth
+                                    @if(!$userAvis)
+                                        <div class="mb-6 bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Laisser un avis</h3>
+                                            <form action="{{ route('public.service.avis.store', ['slug' => $entreprise->slug, 'serviceId' => $firstService->id]) }}" method="POST">
+                                                @csrf
+                                                <div class="mb-4">
+                                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Note *</label>
+                                                    <div class="flex gap-2" id="note-stars-service">
+                                                        @for($i = 1; $i <= 5; $i++)
+                                                            <button type="button" onclick="setNoteService({{ $i }})" class="star-btn-service text-3xl text-slate-300 dark:text-slate-600 hover:text-yellow-400 transition-colors" data-note="{{ $i }}">☆</button>
+                                                        @endfor
+                                                    </div>
+                                                    <input type="hidden" name="note" id="note-input-service" required>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Commentaire</label>
+                                                    <textarea name="commentaire" rows="3" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Partagez votre expérience..."></textarea>
+                                                </div>
+                                                @if($userReservationsPayees->count() > 0)
+                                                    <div class="mb-4">
+                                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Lier à une réservation payée (optionnel)</label>
+                                                        <select name="reservation_id" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                                            <option value="">Aucune réservation</option>
+                                                            @foreach($userReservationsPayees as $reservation)
+                                                                <option value="{{ $reservation->id }}">Réservation du {{ $reservation->date_reservation->format('d/m/Y') }} - {{ number_format($reservation->prix, 2, ',', ' ') }} €</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                @endif
+                                                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                                                    Publier mon avis
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                                        <p class="text-sm text-blue-800 dark:text-blue-300">
+                                            <a href="{{ route('login') }}" class="font-semibold underline">Connectez-vous</a> pour laisser un avis
+                                        </p>
+                                    </div>
+                                @endauth
+
+                                @if($avisTries->count() > 0)
                                     <div class="space-y-4" id="service-avis-list">
-                                        @foreach($firstService->serviceAvis->take(5) as $avis)
-                                            <div class="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                                        @foreach($avisTries as $avis)
+                                            <div class="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 {{ $avis->aPaiementConfirme() ? 'ring-2 ring-green-500 dark:ring-green-600' : '' }}">
                                                 <div class="flex items-start justify-between mb-2">
                                                     <div class="flex items-center gap-3">
                                                         <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
@@ -281,7 +353,14 @@
                                                             </span>
                                                         </div>
                                                         <div>
-                                                            <p class="font-semibold text-slate-900 dark:text-white">{{ $avis->user->name ?? 'Utilisateur' }}</p>
+                                                            <div class="flex items-center gap-2">
+                                                                <p class="font-semibold text-slate-900 dark:text-white">{{ $avis->user->name ?? 'Utilisateur' }}</p>
+                                                                @if($avis->aPaiementConfirme())
+                                                                    <span class="px-2 py-0.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                                                                        ✓ Paiement confirmé
+                                                                    </span>
+                                                                @endif
+                                                            </div>
                                                             <p class="text-xs text-slate-500 dark:text-slate-400">{{ $avis->created_at->format('d/m/Y') }}</p>
                                                         </div>
                                                     </div>
@@ -297,8 +376,10 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                </div>
-                            @endif
+                                @else
+                                    <p class="text-slate-500 dark:text-slate-400">Aucun avis pour le moment.</p>
+                                @endif
+                            </div>
 
                             <!-- Bouton d'action -->
                             <div class="mt-8">
@@ -565,6 +646,22 @@
                 selectService(serviceId, window.innerWidth < 1024);
             }
         });
+        // Gestion des étoiles pour les avis services
+        function setNoteService(note) {
+            document.getElementById('note-input-service').value = note;
+            const stars = document.querySelectorAll('.star-btn-service');
+            stars.forEach((star, index) => {
+                if (index < note) {
+                    star.textContent = '★';
+                    star.classList.add('text-yellow-400');
+                    star.classList.remove('text-slate-300', 'dark:text-slate-600');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-slate-300', 'dark:text-slate-600');
+                }
+            });
+        }
     </script>
 </body>
 </html>

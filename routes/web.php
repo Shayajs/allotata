@@ -160,6 +160,12 @@ Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.
 Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
 Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
 
+// Avis produits et services (public, mais nécessite authentification pour créer)
+Route::middleware('auth')->group(function () {
+    Route::post("/p/{slug}/produits/{produitId}/avis", [\App\Http\Controllers\ProduitServiceAvisController::class, 'storeProduitAvis'])->name('public.produit.avis.store');
+    Route::post("/p/{slug}/services/{serviceId}/avis", [\App\Http\Controllers\ProduitServiceAvisController::class, 'storeServiceAvis'])->name('public.service.avis.store');
+});
+
 // API de tracking (accessible sans authentification)
 Route::prefix('api/tracking/visite')->group(function() {
     Route::post('/duree', [\App\Http\Controllers\TrackingController::class, 'mettreAJourDuree'])->name('api.tracking.visite.duree');
