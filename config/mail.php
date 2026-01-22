@@ -49,6 +49,20 @@ return [
             'verify_peer' => false, // Désactiver la vérification du certificat SSL si nécessaire
         ],
 
+        // BrightShell Mailer - Pour lucas.espinar@brightshell.fr
+        'brightshell' => [
+            'transport' => 'smtp',
+            'host' => env('BRIGHTSHELL_MAIL_HOST', 'mail.brightshell.fr'), // ou mail30.lwspanel.com
+            'port' => env('BRIGHTSHELL_MAIL_PORT', 465),
+            'encryption' => env('BRIGHTSHELL_MAIL_ENCRYPTION', 'ssl'),
+            'username' => env('BRIGHTSHELL_MAIL_USERNAME', 'lucas.espinar@brightshell.fr'),
+            'password' => env('BRIGHTSHELL_MAIL_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => 'brightshell.fr',
+            'verify_peer' => false,
+        ],
+
+
         'ses' => [
             'transport' => 'ses',
         ],

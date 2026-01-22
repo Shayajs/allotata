@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "sync:vite": "bash scripts/sync-vite-config.sh",
+        "prebuild": "npm run sync:vite"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
