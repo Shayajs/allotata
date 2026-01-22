@@ -550,7 +550,7 @@
                             }
                             
                             // Recharger le contenu en arrière-plan
-                            fetch(`{{ route('entreprise.dashboard.reload-tab', ['slug' => $entreprise->slug, 'tab' => '']) }}${tabName}`, {
+                            fetch(`/m/{{ $entreprise->slug }}/reload-tab/${tabName}`, {
                                 method: 'GET',
                                 headers: {
                                     'X-Requested-With': 'XMLHttpRequest',

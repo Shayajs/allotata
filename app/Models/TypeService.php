@@ -22,6 +22,7 @@ class TypeService extends Model
         'prix',
         'est_actif',
         'type_structure',
+        'ordre_affichage',
     ];
 
     protected function casts(): array
