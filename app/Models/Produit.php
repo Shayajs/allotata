@@ -19,6 +19,8 @@ class Produit extends Model
         'prix',
         'est_actif',
         'gestion_stock',
+        'livraison_disponible',
+        'vente_sur_place_disponible',
     ];
 
     protected function casts(): array
@@ -26,6 +28,8 @@ class Produit extends Model
         return [
             'prix' => 'decimal:2',
             'est_actif' => 'boolean',
+            'livraison_disponible' => 'boolean',
+            'vente_sur_place_disponible' => 'boolean',
         ];
     }
 
@@ -188,6 +192,14 @@ class Produit extends Model
     }
 
     /**
+     * Relation : Un produit peut avoir plusieurs commandes
+     */
+    public function commandes(): HasMany
+    {
+        return $this->hasMany(CommandeProduit::class);
+    }
+
+    /**
      * Relation : Un produit peut avoir plusieurs avis
      */
     public function produitAvis(): HasMany
@@ -238,5 +250,33 @@ class Produit extends Model
         
         // Retourner les payés en premier, puis les autres
         return $avisPayes->merge($avisAutres);
+    }
+
+    /**
+     * Vérifie si la livraison est disponible pour ce produit
+     */
+    public function livraisonDisponible(): bool
+    {
+        // Si défini au niveau produit, utiliser cette valeur
+        if ($this->livraison_disponible !== null) {
+            return $this->livraison_disponible;
+        }
+        
+        // Sinon, utiliser les paramètres par défaut de l'entreprise
+        return $this->entreprise->livraison_disponible_par_defaut ?? true;
+    }
+
+    /**
+     * Vérifie si la vente sur place est disponible pour ce produit
+     */
+    public function venteSurPlaceDisponible(): bool
+    {
+        // Si défini au niveau produit, utiliser cette valeur
+        if ($this->vente_sur_place_disponible !== null) {
+            return $this->vente_sur_place_disponible;
+        }
+        
+        // Sinon, utiliser les paramètres par défaut de l'entreprise
+        return $this->entreprise->vente_sur_place_disponible_par_defaut ?? true;
     }
 }

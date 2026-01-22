@@ -436,17 +436,154 @@
                                 @endif
                             </div>
 
-                            <!-- Bouton d'action -->
+                            <!-- Formulaire de commande -->
                             <div class="mt-8">
-                                <a 
-                                    href="{{ route('messagerie.commander-produit', ['slug' => $entreprise->slug, 'produitId' => $firstProduit->id]) }}"
-                                    class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Commander ce produit
-                                </a>
+                                @auth
+                                    <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Commander ce produit</h3>
+                                        <form action="{{ route('public.commande-produit.store', $entreprise->slug) }}" method="POST" id="commande-produit-form">
+                                            @csrf
+                                            <input type="hidden" name="produit_id" value="{{ $firstProduit->id }}">
+                                            
+                                            <div class="space-y-4">
+                                                <div>
+                                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Quantité *</label>
+                                                    <input 
+                                                        type="number" 
+                                                        name="quantite" 
+                                                        id="commande_quantite"
+                                                        min="1"
+                                                        value="1"
+                                                        required
+                                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                        onchange="updatePrixTotal()"
+                                                    >
+                                                </div>
+
+                                                @php
+                                                    $livraisonDispo = $firstProduit->livraisonDisponible();
+                                                    $ventePlaceDispo = $firstProduit->venteSurPlaceDisponible();
+                                                    $promotion = $firstProduit->promotionActive()->first();
+                                                    $prixUnitaire = $promotion ? $promotion->prix_promotion : $firstProduit->prix;
+                                                @endphp
+
+                                                <div>
+                                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mode de réception *</label>
+                                                    <div class="space-y-2">
+                                                        @if($livraisonDispo)
+                                                            <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                                                <input type="radio" name="mode_livraison" value="livraison" class="w-5 h-5 text-green-600" onchange="toggleLivraisonFields()">
+                                                                <div class="flex-1">
+                                                                    <span class="font-medium text-slate-900 dark:text-white">Livraison</span>
+                                                                    <p class="text-xs text-slate-500 dark:text-slate-400">Livraison à votre adresse</p>
+                                                                </div>
+                                                            </label>
+                                                        @endif
+                                                        @if($ventePlaceDispo)
+                                                            <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                                                <input type="radio" name="mode_livraison" value="vente_sur_place" class="w-5 h-5 text-green-600" onchange="toggleLivraisonFields()">
+                                                                <div class="flex-1">
+                                                                    <span class="font-medium text-slate-900 dark:text-white">Vente sur place</span>
+                                                                    <p class="text-xs text-slate-500 dark:text-slate-400">Retrait sur place</p>
+                                                                </div>
+                                                            </label>
+                                                        @endif
+                                                        <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                                            <input type="radio" name="mode_livraison" value="a_discuter" checked class="w-5 h-5 text-green-600" onchange="toggleLivraisonFields()">
+                                                            <div class="flex-1">
+                                                                <span class="font-medium text-slate-900 dark:text-white">À discuter</span>
+                                                                <p class="text-xs text-slate-500 dark:text-slate-400">Nous discuterons ensemble</p>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div id="livraison-fields" class="hidden space-y-4">
+                                                    <div>
+                                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Adresse de livraison *</label>
+                                                        <input 
+                                                            type="text" 
+                                                            name="adresse_livraison" 
+                                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                            placeholder="Numéro et nom de rue"
+                                                        >
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Code postal *</label>
+                                                            <input 
+                                                                type="text" 
+                                                                name="code_postal_livraison" 
+                                                                class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                            >
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ville *</label>
+                                                            <input 
+                                                                type="text" 
+                                                                name="ville_livraison" 
+                                                                class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                            >
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date de livraison souhaitée (optionnel)</label>
+                                                        <input 
+                                                            type="date" 
+                                                            name="date_livraison_souhaitee" 
+                                                            min="{{ date('Y-m-d') }}"
+                                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                        >
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notes (optionnel)</label>
+                                                    <textarea 
+                                                        name="notes" 
+                                                        rows="3"
+                                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                        placeholder="Informations supplémentaires..."
+                                                    ></textarea>
+                                                </div>
+
+                                                <div class="bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-slate-600 dark:text-slate-400">Prix unitaire :</span>
+                                                        <span class="font-semibold text-slate-900 dark:text-white">
+                                                            @if($promotion)
+                                                                <span class="line-through text-slate-400 text-sm mr-2">{{ number_format($firstProduit->prix, 2, ',', ' ') }} €</span>
+                                                                <span class="text-red-600 dark:text-red-400">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</span>
+                                                            @else
+                                                                {{ number_format($prixUnitaire, 2, ',', ' ') }} €
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-lg font-bold text-slate-900 dark:text-white">Total :</span>
+                                                        <span id="prix-total" class="text-xl font-bold text-green-600 dark:text-green-400">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</span>
+                                                    </div>
+                                                </div>
+
+                                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                                                    Passer la commande
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                @else
+                                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                                        <p class="text-sm text-blue-800 dark:text-blue-300 mb-4">
+                                            <a href="{{ route('login') }}" class="font-semibold underline">Connectez-vous</a> pour commander ce produit
+                                        </p>
+                                        <a 
+                                            href="{{ route('messagerie.commander-produit', ['slug' => $entreprise->slug, 'produitId' => $firstProduit->id]) }}"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                                        >
+                                            Ou discuter avec l'entreprise
+                                        </a>
+                                    </div>
+                                @endauth
                             </div>
                         </div>
                     </div>
@@ -484,6 +621,8 @@
                 'a_promotion' => $promotion ? true : false,
                 'gestion_stock' => $produit->gestion_stock,
                 'stock_quantite' => $produit->stock ? $produit->stock->quantite_disponible : null,
+                'livraison_disponible' => $produit->livraisonDisponible(),
+                'vente_sur_place_disponible' => $produit->venteSurPlaceDisponible(),
                 'images' => $produit->images->map(fn($img) => asset('media/' . $img->image_path))->toArray(),
                 'image_principale' => $imageAffichee ? asset('media/' . $imageAffichee->image_path) : null,
                 'avis' => $produitAvis->map(function($avis) {
@@ -621,6 +760,193 @@
                     avisList.innerHTML = '<p class="text-slate-500 dark:text-slate-400">Aucun avis pour le moment.</p>';
                 }
             }
+
+            // Mettre à jour le formulaire de commande
+            updateCommandeForm(produit);
+        }
+
+        function updateCommandeForm(produit) {
+            const formContainer = document.getElementById('commande-form-container');
+            if (!formContainer) return;
+
+            const livraisonDispo = produit.livraison_disponible !== undefined ? produit.livraison_disponible : true;
+            const ventePlaceDispo = produit.vente_sur_place_disponible !== undefined ? produit.vente_sur_place_disponible : true;
+
+            formContainer.innerHTML = `
+                @auth
+                    <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Commander ce produit</h3>
+                        <form action="{{ route('public.commande-produit.store', $entreprise->slug) }}" method="POST" id="commande-produit-form-dynamic">
+                            @csrf
+                            <input type="hidden" name="produit_id" value="${produit.id}">
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Quantité *</label>
+                                    <input 
+                                        type="number" 
+                                        name="quantite" 
+                                        id="commande_quantite_dynamic"
+                                        min="1"
+                                        value="1"
+                                        required
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        onchange="updatePrixTotalDynamic()"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mode de réception *</label>
+                                    <div class="space-y-2">
+                                        ${livraisonDispo ? `
+                                            <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                                <input type="radio" name="mode_livraison" value="livraison" class="w-5 h-5 text-green-600" onchange="toggleLivraisonFieldsDynamic()">
+                                                <div class="flex-1">
+                                                    <span class="font-medium text-slate-900 dark:text-white">Livraison</span>
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400">Livraison à votre adresse</p>
+                                                </div>
+                                            </label>
+                                        ` : ''}
+                                        ${ventePlaceDispo ? `
+                                            <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                                <input type="radio" name="mode_livraison" value="vente_sur_place" class="w-5 h-5 text-green-600" onchange="toggleLivraisonFieldsDynamic()">
+                                                <div class="flex-1">
+                                                    <span class="font-medium text-slate-900 dark:text-white">Vente sur place</span>
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400">Retrait sur place</p>
+                                                </div>
+                                            </label>
+                                        ` : ''}
+                                        <label class="flex items-center gap-3 p-3 border-2 border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:border-green-500 dark:hover:border-green-400 transition-colors">
+                                            <input type="radio" name="mode_livraison" value="a_discuter" checked class="w-5 h-5 text-green-600" onchange="toggleLivraisonFieldsDynamic()">
+                                            <div class="flex-1">
+                                                <span class="font-medium text-slate-900 dark:text-white">À discuter</span>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400">Nous discuterons ensemble</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="livraison-fields-dynamic" class="hidden space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Adresse de livraison *</label>
+                                        <input 
+                                            type="text" 
+                                            name="adresse_livraison" 
+                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            placeholder="Numéro et nom de rue"
+                                        >
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Code postal *</label>
+                                            <input 
+                                                type="text" 
+                                                name="code_postal_livraison" 
+                                                class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Ville *</label>
+                                            <input 
+                                                type="text" 
+                                                name="ville_livraison" 
+                                                class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date de livraison souhaitée (optionnel)</label>
+                                        <input 
+                                            type="date" 
+                                            name="date_livraison_souhaitee" 
+                                            min="${new Date().toISOString().split('T')[0]}"
+                                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        >
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notes (optionnel)</label>
+                                    <textarea 
+                                        name="notes" 
+                                        rows="3"
+                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                        placeholder="Informations supplémentaires..."
+                                    ></textarea>
+                                </div>
+
+                                <div class="bg-white dark:bg-slate-700 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-slate-600 dark:text-slate-400">Prix unitaire :</span>
+                                        <span class="font-semibold text-slate-900 dark:text-white">
+                                            ${produit.a_promotion ? `
+                                                <span class="line-through text-slate-400 text-sm mr-2">${numberFormat(produit.prix, 2, ',', ' ')} €</span>
+                                                <span class="text-red-600 dark:text-red-400" id="prix-unitaire-display-dynamic">${numberFormat(produit.prix_actuel, 2, ',', ' ')} €</span>
+                                            ` : `
+                                                <span id="prix-unitaire-display-dynamic">${numberFormat(produit.prix_actuel, 2, ',', ' ')} €</span>
+                                            `}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-lg font-bold text-slate-900 dark:text-white">Total :</span>
+                                        <span id="prix-total-dynamic" class="text-xl font-bold text-green-600 dark:text-green-400">${numberFormat(produit.prix_actuel, 2, ',', ' ')} €</span>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                                    Passer la commande
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @else
+                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                        <p class="text-sm text-blue-800 dark:text-blue-300 mb-4">
+                            <a href="{{ route('login') }}" class="font-semibold underline">Connectez-vous</a> pour commander ce produit
+                        </p>
+                        <a 
+                            href="${commanderProduitBaseUrl.replace('/0', '/' + produit.id)}"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                        >
+                            Ou discuter avec l'entreprise
+                        </a>
+                    </div>
+                @endauth
+            `;
+
+            // Réinitialiser les fonctions
+            toggleLivraisonFieldsDynamic();
+        }
+
+        function toggleLivraisonFieldsDynamic() {
+            const modeLivraison = document.querySelector('#commande-form-container input[name="mode_livraison"]:checked')?.value;
+            const livraisonFields = document.getElementById('livraison-fields-dynamic');
+            
+            if (livraisonFields) {
+                if (modeLivraison === 'livraison') {
+                    livraisonFields.classList.remove('hidden');
+                    livraisonFields.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+                        input.required = true;
+                    });
+                } else {
+                    livraisonFields.classList.add('hidden');
+                    livraisonFields.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+                        input.required = false;
+                        input.value = '';
+                    });
+                }
+            }
+        }
+
+        function updatePrixTotalDynamic() {
+            const quantite = parseInt(document.getElementById('commande_quantite_dynamic')?.value || 1);
+            const prixUnitaireText = document.getElementById('prix-unitaire-display-dynamic')?.textContent || '0 €';
+            const prixUnitaire = parseFloat(prixUnitaireText.replace(' €', '').replace(',', '.')) || 0;
+            const total = quantite * prixUnitaire;
+            const prixTotalEl = document.getElementById('prix-total-dynamic');
+            if (prixTotalEl) {
+                prixTotalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
+            }
         }
 
         function updateMobileProduitDetails(produit) {
@@ -661,9 +987,10 @@
                         </div>
                     </div>
                 ` : ''}
-                <a href="${commanderProduitBaseUrl.replace('/0', '/' + produit.id)}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
-                    Commander ce produit
-                </a>
+                // Formulaire de commande (sera mis à jour dynamiquement)
+                <div id="commande-form-container">
+                    <!-- Le formulaire sera injecté ici via updateCommandeForm() -->
+                </div>
             `;
         }
 
@@ -749,6 +1076,47 @@
                 }
             });
         }
+
+        // Gestion du formulaire de commande
+        function toggleLivraisonFields() {
+            const modeLivraison = document.querySelector('input[name="mode_livraison"]:checked')?.value;
+            const livraisonFields = document.getElementById('livraison-fields');
+            
+            if (modeLivraison === 'livraison') {
+                livraisonFields.classList.remove('hidden');
+                // Rendre les champs requis
+                livraisonFields.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+                    input.required = true;
+                });
+            } else {
+                livraisonFields.classList.add('hidden');
+                // Retirer le required
+                livraisonFields.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+                    input.required = false;
+                    input.value = '';
+                });
+            }
+        }
+
+        function updatePrixTotal() {
+            const quantite = parseInt(document.getElementById('commande_quantite')?.value || 1);
+            const prixUnitaireText = document.getElementById('prix-unitaire-display')?.textContent || '0 €';
+            const prixUnitaire = parseFloat(prixUnitaireText.replace(' €', '').replace(',', '.')) || {{ $prixUnitaire ?? $firstProduit->prix ?? 0 }};
+            const total = quantite * prixUnitaire;
+            const prixTotalEl = document.getElementById('prix-total');
+            if (prixTotalEl) {
+                prixTotalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
+            }
+        }
+
+        // Initialiser
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleLivraisonFields();
+            // Mettre à jour le formulaire de commande pour le premier produit
+            if (produitsData.length > 0) {
+                updateCommandeForm(produitsData[0]);
+            }
+        });
     </script>
 </body>
 </html>

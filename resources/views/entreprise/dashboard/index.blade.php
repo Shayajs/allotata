@@ -240,6 +240,22 @@
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Stock</span>
                         </button>
 
+                        <!-- Commandes Produits -->
+                        <button 
+                            onclick="showTab('commandes')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'commandes' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="commandes"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Commandes</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Commandes</span>
+                            @if(isset($commandesEnAttente) && $commandesEnAttente > 0)
+                                <span class="ml-auto px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">{{ $commandesEnAttente }}</span>
+                            @endif
+                        </button>
+
                         @if($aGestionMultiPersonnes)
                         <!-- Équipe -->
                         <button 
@@ -470,6 +486,11 @@
                         <!-- Onglet Stock -->
                         <div id="tab-stock" class="tab-content {{ $activeTab !== 'stock' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.stock')
+                        </div>
+
+                        <!-- Onglet Commandes Produits -->
+                        <div id="tab-commandes" class="tab-content {{ $activeTab !== 'commandes' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.commandes')
                         </div>
                         
                         <!-- Onglet Paramètres -->
