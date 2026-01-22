@@ -77,6 +77,26 @@
                                 </div>
                             </div>
                             
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Type de structure *</label>
+                                <select 
+                                    name="type_structure" 
+                                    id="service_type_structure"
+                                    required
+                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    onchange="toggleStructureFields()"
+                                >
+                                    <option value="ponctuel">Ponctuel (quelques heures dans une journée)</option>
+                                    <option value="multi_jours">Multi-jours (s'étend sur plusieurs jours)</option>
+                                    <option value="multi_rendez_vous">Multi-rendez-vous (plusieurs rendez-vous liés)</option>
+                                </select>
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    <span id="structure-help-ponctuel" class="structure-help">Service classique qui prend du temps dans une journée (ex: coiffure, massage)</span>
+                                    <span id="structure-help-multi_jours" class="structure-help hidden">Service qui s'étend sur plusieurs jours (ex: photographie de mariage, tournage)</span>
+                                    <span id="structure-help-multi_rendez_vous" class="structure-help hidden">Service avec plusieurs rendez-vous pour la même commande (ex: création de site web, suivi personnalisé)</span>
+                                </p>
+                            </div>
+                            
                             <!-- Upload d'images -->
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -191,6 +211,7 @@
         const duree = parseInt(button.getAttribute('data-service-duree')) || 30;
         const prix = parseFloat(button.getAttribute('data-service-prix')) || 0;
         const estActif = button.getAttribute('data-service-actif') === 'true';
+        const typeStructure = button.getAttribute('data-service-type-structure') || 'ponctuel';
         const imagesBase64 = button.getAttribute('data-service-images') || '';
         
         let images = [];
@@ -205,7 +226,7 @@
             images = [];
         }
         
-        editService(serviceId, nom, description, duree, prix, estActif, images);
+        editService(serviceId, nom, description, duree, prix, estActif, images, typeStructure);
     }
     
     function openServiceModal() {
@@ -219,17 +240,33 @@
         document.getElementById('service_description').value = '';
         document.getElementById('service_duree').value = '30';
         document.getElementById('service_prix').value = '25';
+        document.getElementById('service_type_structure').value = 'ponctuel';
         document.getElementById('service_actif').checked = true;
         document.getElementById('service_images').value = '';
         document.getElementById('modal-title').textContent = 'Ajouter un service';
+        
+        toggleStructureFields();
         
         // Cacher la zone d'upload direct quand on crée un nouveau service (car pas d'ID)
         document.getElementById('upload-zone').classList.add('hidden');
         
         updateImagesDisplay();
     }
+    
+    function toggleStructureFields() {
+        const typeStructure = document.getElementById('service_type_structure').value;
+        
+        // Masquer tous les messages d'aide
+        document.querySelectorAll('.structure-help').forEach(el => el.classList.add('hidden'));
+        
+        // Afficher le message d'aide correspondant
+        const helpElement = document.getElementById('structure-help-' + typeStructure);
+        if (helpElement) {
+            helpElement.classList.remove('hidden');
+        }
+    }
 
-    function editService(id, nom, description, duree, prix, estActif, images) {
+    function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel') {
         currentServiceId = id;
         currentServiceImages = images || [];
         
@@ -239,6 +276,8 @@
         document.getElementById('service_description').value = description || '';
         document.getElementById('service_duree').value = duree;
         document.getElementById('service_prix').value = prix;
+        document.getElementById('service_type_structure').value = typeStructure || 'ponctuel';
+        toggleStructureFields();
         document.getElementById('service_actif').checked = estActif;
         document.getElementById('service_images').value = '';
         document.getElementById('modal-title').textContent = 'Modifier le service';

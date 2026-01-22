@@ -258,10 +258,11 @@
     <!-- Scripts pour les graphiques -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Configuration des couleurs selon le thème
-        const isDark = document.documentElement.classList.contains('dark');
-        const textColor = isDark ? '#e2e8f0' : '#1e293b';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
+        // Configuration des couleurs selon le thème (encapsulé pour éviter les conflits)
+        (function() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e2e8f0' : '#1e293b';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
         
         // Graphique des revenus
         const revenusCtx = document.getElementById('revenusChart');
@@ -392,6 +393,6 @@
                     }
                 }
             });
-        }
+        })();
     </script>
 </div>

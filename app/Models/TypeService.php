@@ -21,6 +21,7 @@ class TypeService extends Model
         'duree_minutes',
         'prix',
         'est_actif',
+        'type_structure',
     ];
 
     protected function casts(): array
@@ -29,6 +30,7 @@ class TypeService extends Model
             'duree_minutes' => 'integer',
             'prix' => 'decimal:2',
             'est_actif' => 'boolean',
+            'type_structure' => 'string',
         ];
     }
 
@@ -115,5 +117,29 @@ class TypeService extends Model
         
         // Retourner les payés en premier, puis les autres
         return $avisPayes->merge($avisAutres);
+    }
+
+    /**
+     * Vérifie si le service est de type ponctuel
+     */
+    public function estPonctuel(): bool
+    {
+        return empty($this->type_structure) || $this->type_structure === 'ponctuel';
+    }
+
+    /**
+     * Vérifie si le service est de type multi-jours
+     */
+    public function estMultiJours(): bool
+    {
+        return $this->type_structure === 'multi_jours';
+    }
+
+    /**
+     * Vérifie si le service est de type multi-rendez-vous
+     */
+    public function estMultiRendezVous(): bool
+    {
+        return $this->type_structure === 'multi_rendez_vous';
     }
 }

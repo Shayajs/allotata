@@ -316,4 +316,4 @@
     </div>
 </div>
 
-@include('entreprise.dashboard.tabs.stock-modal-content')
+<!-- Le modal est inclus dans index.blade.php pour éviter les problèmes de z-index -->

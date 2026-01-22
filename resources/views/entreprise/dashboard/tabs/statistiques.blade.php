@@ -307,9 +307,11 @@
     <!-- Scripts pour les graphiques et actualisation -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        const isDark = document.documentElement.classList.contains('dark');
-        const textColor = isDark ? '#e2e8f0' : '#1e293b';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
+        // Encapsulé pour éviter les conflits avec d'autres onglets
+        (function() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e2e8f0' : '#1e293b';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
 
         // Données initiales
         const statsData = @json($stats);
@@ -503,5 +505,6 @@
                 fermerModalContact();
             }
         });
+        })();
     </script>
 </div>
