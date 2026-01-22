@@ -58,6 +58,8 @@ class StockController extends Controller
             'gestion_stock' => 'required|in:disponible_immediatement,en_attente_commandes',
             'quantite_disponible' => 'nullable|integer|min:0',
             'quantite_minimum' => 'nullable|integer|min:0',
+            'livraison_disponible' => 'nullable|boolean',
+            'vente_sur_place_disponible' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
@@ -77,6 +79,8 @@ class StockController extends Controller
                     'prix' => $validated['prix'],
                     'est_actif' => $validated['est_actif'],
                     'gestion_stock' => $validated['gestion_stock'],
+                    'livraison_disponible' => $request->has('livraison_disponible') && $request->livraison_disponible == '1' ? true : ($request->has('livraison_disponible') ? false : null),
+                    'vente_sur_place_disponible' => $request->has('vente_sur_place_disponible') && $request->vente_sur_place_disponible == '1' ? true : ($request->has('vente_sur_place_disponible') ? false : null),
                 ]);
                 $message = 'Le produit a été mis à jour avec succès.';
             } else {
@@ -87,6 +91,8 @@ class StockController extends Controller
                     'prix' => $validated['prix'],
                     'est_actif' => $validated['est_actif'],
                     'gestion_stock' => $validated['gestion_stock'],
+                    'livraison_disponible' => $request->has('livraison_disponible') && $request->livraison_disponible == '1' ? true : ($request->has('livraison_disponible') ? false : null),
+                    'vente_sur_place_disponible' => $request->has('vente_sur_place_disponible') && $request->vente_sur_place_disponible == '1' ? true : ($request->has('vente_sur_place_disponible') ? false : null),
                 ]);
                 $message = 'Le produit a été créé avec succès.';
             }

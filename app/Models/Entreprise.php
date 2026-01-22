@@ -59,6 +59,8 @@ class Entreprise extends Model
         'rdv_uniquement_messagerie',
         'accepter_reservations_auto',
         'livraison_disponible',
+        'livraison_disponible_par_defaut',
+        'vente_sur_place_disponible_par_defaut',
         'est_verifiee', // Permet la mise à jour par les contrôleurs admin
         'contenu_site_web',
         'phrase_accroche',
@@ -93,6 +95,8 @@ class Entreprise extends Model
             'rdv_uniquement_messagerie' => 'boolean',
             'accepter_reservations_auto' => 'boolean',
             'livraison_disponible' => 'boolean',
+            'livraison_disponible_par_defaut' => 'boolean',
+            'vente_sur_place_disponible_par_defaut' => 'boolean',
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web

@@ -159,6 +159,7 @@ Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation
 Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
 Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
 Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
+Route::post("/p/{slug}/commande-produit", [PublicController::class, 'storeCommandeProduit'])->name('public.commande-produit.store');
 
 // Avis produits et services (public, mais nécessite authentification pour créer)
 Route::middleware('auth')->group(function () {
@@ -263,6 +264,13 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/m/{slug}/stock/produit/{produitId}/stock', [\App\Http\Controllers\StockController::class, 'updateStock'])->name('stock.update');
     Route::post('/m/{slug}/stock/produit/{produitId}/promotion', [\App\Http\Controllers\StockController::class, 'storePromotion'])->name('stock.promotion.store');
     Route::delete('/m/{slug}/stock/produit/{produitId}/promotion/{promotionId}', [\App\Http\Controllers\StockController::class, 'deletePromotion'])->name('stock.promotion.delete');
+    
+    // Gestion des commandes produits
+    Route::get('/m/{slug}/commandes', [\App\Http\Controllers\CommandeProduitController::class, 'index'])->name('commandes.index');
+    Route::get('/m/{slug}/commandes/{id}', [\App\Http\Controllers\CommandeProduitController::class, 'show'])->name('commandes.show');
+    Route::post('/m/{slug}/commandes/{id}/accept', [\App\Http\Controllers\CommandeProduitController::class, 'accept'])->name('commandes.accept');
+    Route::post('/m/{slug}/commandes/{id}/reject', [\App\Http\Controllers\CommandeProduitController::class, 'reject'])->name('commandes.reject');
+    Route::post('/m/{slug}/commandes/{id}/marquer-payee', [\App\Http\Controllers\CommandeProduitController::class, 'marquerPayee'])->name('commandes.marquer-payee');
     
     // Gestion de l'équipe (multi-personnes)
     Route::prefix('m/{slug}/equipe')->name('entreprise.equipe.')->group(function() {

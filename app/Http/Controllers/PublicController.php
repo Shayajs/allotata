@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use App\Models\Reservation;
 use App\Models\TypeService;
+use App\Models\Produit;
+use App\Models\CommandeProduit;
 use App\Models\Notification;
 use App\Models\EntrepriseVisite;
 use App\Mail\ReservationConfirmationEmail;
@@ -575,6 +577,120 @@ class PublicController extends Controller
             'produits' => $produits,
             'isOwner' => $isOwner,
         ]);
+    }
+
+    /**
+     * Créer une commande de produit
+     */
+    public function storeCommandeProduit(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)
+            ->firstOrFail();
+
+        // Vérifier si l'entreprise a un abonnement actif
+        if (!$entreprise->aAbonnementActif() && (!$user || $user->id !== $entreprise->user_id)) {
+            abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
+        }
+
+        $validated = $request->validate([
+            'produit_id' => 'required|exists:produits,id',
+            'quantite' => 'required|integer|min:1',
+            'mode_livraison' => 'required|in:livraison,vente_sur_place,a_discuter',
+            'adresse_livraison' => 'required_if:mode_livraison,livraison|nullable|string|max:255',
+            'code_postal_livraison' => 'required_if:mode_livraison,livraison|nullable|string|max:10',
+            'ville_livraison' => 'required_if:mode_livraison,livraison|nullable|string|max:100',
+            'date_livraison_souhaitee' => 'nullable|date',
+            'notes' => 'nullable|string|max:1000',
+            'nom_client' => 'required_if:user_id,null|nullable|string|max:255',
+            'email_client' => 'nullable|email|max:255',
+            'telephone_client_non_inscrit' => 'required_if:user_id,null|nullable|string|max:20',
+        ]);
+
+        $produit = Produit::where('id', $validated['produit_id'])
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_actif', true)
+            ->with(['promotionActive', 'stock'])
+            ->firstOrFail();
+
+        // Vérifier la disponibilité
+        if (!$produit->estDisponible()) {
+            return back()->withErrors(['error' => 'Ce produit n\'est plus disponible.']);
+        }
+
+        // Vérifier les options de livraison/vente
+        if ($validated['mode_livraison'] === 'livraison' && !$produit->livraisonDisponible()) {
+            return back()->withErrors(['error' => 'La livraison n\'est pas disponible pour ce produit.']);
+        }
+
+        if ($validated['mode_livraison'] === 'vente_sur_place' && !$produit->venteSurPlaceDisponible()) {
+            return back()->withErrors(['error' => 'La vente sur place n\'est pas disponible pour ce produit.']);
+        }
+
+        // Calculer le prix
+        $promotion = $produit->promotionActive()->first();
+        $prixUnitaire = $promotion ? $promotion->prix_promotion : $produit->prix;
+        $prixTotal = $prixUnitaire * $validated['quantite'];
+
+        // Vérifier le stock si gestion immédiate
+        if ($produit->gestion_stock === 'disponible_immediatement') {
+            $stock = $produit->stock;
+            if (!$stock || $stock->quantite_disponible < $validated['quantite']) {
+                return back()->withErrors(['error' => 'Stock insuffisant pour cette quantité.']);
+            }
+        }
+
+        // Créer la commande
+        $commandeData = [
+            'entreprise_id' => $entreprise->id,
+            'produit_id' => $produit->id,
+            'quantite' => $validated['quantite'],
+            'prix_unitaire' => $prixUnitaire,
+            'prix_total' => $prixTotal,
+            'mode_livraison' => $validated['mode_livraison'],
+            'notes' => $validated['notes'] ?? null,
+            'date_livraison_souhaitee' => $validated['date_livraison_souhaitee'] ?? null,
+            'statut' => 'en_attente',
+        ];
+
+        if ($user) {
+            $commandeData['user_id'] = $user->id;
+            if ($user->telephone) {
+                $commandeData['telephone_client'] = $user->telephone;
+            }
+        } else {
+            $commandeData['nom_client'] = $validated['nom_client'];
+            $commandeData['email_client'] = $validated['email_client'] ?? null;
+            $commandeData['telephone_client_non_inscrit'] = $validated['telephone_client_non_inscrit'];
+        }
+
+        if ($validated['mode_livraison'] === 'livraison') {
+            $commandeData['adresse_livraison'] = $validated['adresse_livraison'];
+            $commandeData['code_postal_livraison'] = $validated['code_postal_livraison'];
+            $commandeData['ville_livraison'] = $validated['ville_livraison'];
+        }
+
+        $commande = CommandeProduit::create($commandeData);
+
+        // Créer une notification pour l'entreprise
+        Notification::creer(
+            $entreprise->user_id,
+            'commande',
+            'Nouvelle commande',
+            "Nouvelle commande de {$validated['quantite']}x {$produit->nom} pour " . ($user ? $user->name : $validated['nom_client']),
+            route('commandes.show', [$slug, $commande->id]),
+            ['commande_id' => $commande->id, 'entreprise_id' => $entreprise->id]
+        );
+
+        // Envoyer un email à l'entreprise
+        try {
+            // TODO: Créer EmailHelper::sendNouvelleCommandeEntreprise($commande);
+        } catch (\Exception $e) {
+            \Log::error("Erreur lors de l'envoi de l'email de nouvelle commande : " . $e->getMessage());
+        }
+
+        return redirect()->route('public.produits', $slug)
+            ->with('success', 'Votre commande a été enregistrée avec succès. L\'entreprise vous contactera bientôt.');
     }
 
     /**

@@ -191,6 +191,8 @@ class SettingsController extends Controller
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
             'accepter_reservations_auto' => ['nullable'],
+            'livraison_disponible_par_defaut' => ['nullable'],
+            'vente_sur_place_disponible_par_defaut' => ['nullable'],
             'site_web_externe' => ['nullable', 'url', 'max:255'],
         ]);
 
@@ -223,6 +225,8 @@ class SettingsController extends Controller
         $validated['prix_negociables'] = $request->has('prix_negociables') && $request->input('prix_negociables') == '1';
         $validated['rdv_uniquement_messagerie'] = $request->has('rdv_uniquement_messagerie') && $request->input('rdv_uniquement_messagerie') == '1';
         $validated['accepter_reservations_auto'] = $request->has('accepter_reservations_auto') && $request->input('accepter_reservations_auto') == '1';
+        $validated['livraison_disponible_par_defaut'] = $request->has('livraison_disponible_par_defaut') && $request->input('livraison_disponible_par_defaut') == '1';
+        $validated['vente_sur_place_disponible_par_defaut'] = $request->has('vente_sur_place_disponible_par_defaut') && $request->input('vente_sur_place_disponible_par_defaut') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
 
         // Gérer les valeurs vides pour latitude/longitude

@@ -141,6 +141,8 @@
                                 data-produit-quantite-disponible="{{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}"
                                 data-produit-quantite-minimum="{{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}"
                                 data-produit-actif="{{ $produit->est_actif ? 'true' : 'false' }}"
+                                data-produit-livraison-disponible="{{ $produit->livraison_disponible !== null ? ($produit->livraison_disponible ? 'true' : 'false') : 'null' }}"
+                                data-produit-vente-sur-place-disponible="{{ $produit->vente_sur_place_disponible !== null ? ($produit->vente_sur_place_disponible ? 'true' : 'false') : 'null' }}"
                                 data-produit-images="{{ base64_encode(json_encode($produit->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                             >
@@ -242,6 +244,8 @@
                                     data-produit-quantite-disponible="{{ $produit->stock ? ($produit->stock->quantite_disponible ?? 0) : 0 }}"
                                     data-produit-quantite-minimum="{{ $produit->stock ? ($produit->stock->quantite_minimum ?? 0) : 0 }}"
                                     data-produit-actif="{{ $produit->est_actif ? 'true' : 'false' }}"
+                                    data-produit-livraison-disponible="{{ $produit->livraison_disponible !== null ? ($produit->livraison_disponible ? 'true' : 'false') : 'null' }}"
+                                    data-produit-vente-sur-place-disponible="{{ $produit->vente_sur_place_disponible !== null ? ($produit->vente_sur_place_disponible ? 'true' : 'false') : 'null' }}"
                                     data-produit-images="{{ base64_encode(json_encode($produit->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
                                     class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                                 >

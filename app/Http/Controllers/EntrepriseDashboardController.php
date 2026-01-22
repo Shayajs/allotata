@@ -249,6 +249,19 @@ class EntrepriseDashboardController extends Controller
         } catch (\Exception $e) {}
         // #endregion
         
+        // ===== Données pour l'onglet Commandes =====
+        $commandes = collect([]);
+        $commandesEnAttente = 0;
+        
+        if ($activeTab === 'commandes') {
+            $commandes = \App\Models\CommandeProduit::where('entreprise_id', $entreprise->id)
+                ->with(['user', 'produit.stock', 'produit.images', 'membre.user'])
+                ->orderBy('date_commande', 'desc')
+                ->get();
+            
+            $commandesEnAttente = $commandes->where('statut', 'en_attente')->count();
+        }
+        
         if ($activeTab === 'stock') {
             $produits = $entreprise->produits()
                 ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
@@ -418,6 +431,9 @@ class EntrepriseDashboardController extends Controller
             'subscriptionPrices' => $subscriptionPrices,
             // Stock
             'produits' => $produits,
+            // Commandes
+            'commandes' => $commandes,
+            'commandesEnAttente' => $commandesEnAttente,
             // Fidélisation
             'fidelisationData' => $fidelisationData,
             'fidelisationClientsARisque' => $fidelisationClientsARisque,

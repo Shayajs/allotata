@@ -99,6 +99,36 @@
                                     >
                                 </div>
                             </div>
+
+                            <!-- Options de livraison/vente pour ce produit -->
+                            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                                <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Options de livraison/vente</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                    Si non spécifié, les paramètres par défaut de l'entreprise seront utilisés
+                                </p>
+                                <div class="space-y-2">
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            name="livraison_disponible" 
+                                            id="produit_livraison_disponible"
+                                            value="1"
+                                            class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                                        >
+                                        <span class="text-sm text-slate-700 dark:text-slate-300">Livraison disponible pour ce produit</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            name="vente_sur_place_disponible" 
+                                            id="produit_vente_sur_place_disponible"
+                                            value="1"
+                                            class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                                        >
+                                        <span class="text-sm text-slate-700 dark:text-slate-300">Vente sur place disponible pour ce produit</span>
+                                    </label>
+                                </div>
+                            </div>
                             
                             <!-- Upload d'images (pour nouveau produit) -->
                             <div>
@@ -216,6 +246,8 @@
         const quantiteDisponible = parseInt(button.getAttribute('data-produit-quantite-disponible')) || 0;
         const quantiteMinimum = parseInt(button.getAttribute('data-produit-quantite-minimum')) || 0;
         const estActif = button.getAttribute('data-produit-actif') === 'true';
+        const livraisonDisponible = button.getAttribute('data-produit-livraison-disponible');
+        const venteSurPlaceDisponible = button.getAttribute('data-produit-vente-sur-place-disponible');
         const imagesBase64 = button.getAttribute('data-produit-images') || '';
         
         let images = [];
@@ -229,7 +261,17 @@
             images = [];
         }
         
-        editProduit(produitId, nom, description, prix, gestionStock, quantiteDisponible, quantiteMinimum, estActif, images);
+        // Convertir les valeurs de livraison/vente
+        let livraison = null;
+        if (livraisonDisponible && livraisonDisponible !== 'null') {
+            livraison = livraisonDisponible === 'true';
+        }
+        let ventePlace = null;
+        if (venteSurPlaceDisponible && venteSurPlaceDisponible !== 'null') {
+            ventePlace = venteSurPlaceDisponible === 'true';
+        }
+        
+        editProduit(produitId, nom, description, prix, gestionStock, quantiteDisponible, quantiteMinimum, estActif, images, livraison, ventePlace);
     }
     
     function openProduitModal() {
@@ -256,7 +298,7 @@
         updateImagesDisplayProduit();
     }
 
-    function editProduit(id, nom, description, prix, gestionStock, quantiteDisponible, quantiteMinimum, estActif, images) {
+    function editProduit(id, nom, description, prix, gestionStock, quantiteDisponible, quantiteMinimum, estActif, images, livraisonDisponible, venteSurPlaceDisponible) {
         currentProduitId = id;
         currentProduitImages = images || [];
         
@@ -271,6 +313,14 @@
         document.getElementById('produit_est_actif').checked = estActif;
         document.getElementById('produit_images').value = '';
         document.getElementById('modal-produit-title').textContent = 'Modifier le produit';
+        
+        // Options de livraison/vente
+        if (livraisonDisponible !== undefined && livraisonDisponible !== null) {
+            document.getElementById('produit_livraison_disponible').checked = livraisonDisponible === true || livraisonDisponible === 'true' || livraisonDisponible === 1;
+        }
+        if (venteSurPlaceDisponible !== undefined && venteSurPlaceDisponible !== null) {
+            document.getElementById('produit_vente_sur_place_disponible').checked = venteSurPlaceDisponible === true || venteSurPlaceDisponible === 'true' || venteSurPlaceDisponible === 1;
+        }
         
         // Afficher la zone d'upload direct
         document.getElementById('upload-zone-produit').classList.remove('hidden');
