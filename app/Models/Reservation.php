@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,6 +19,7 @@ class Reservation extends Model
         'entreprise_id',
         'membre_id',
         'date_reservation',
+        'date_fin',
         'lieu',
         'telephone_client',
         'telephone_cache',
@@ -40,6 +42,7 @@ class Reservation extends Model
     {
         return [
             'date_reservation' => 'datetime',
+            'date_fin' => 'datetime',
             'date_paiement' => 'datetime',
             'prix' => 'decimal:2',
             'est_paye' => 'boolean',
@@ -112,6 +115,38 @@ class Reservation extends Model
     public function conversation()
     {
         return $this->hasOne(Conversation::class);
+    }
+
+    /**
+     * Relation : Une réservation peut avoir plusieurs rendez-vous (pour services multi-rendez-vous)
+     */
+    public function rendezVous(): HasMany
+    {
+        return $this->hasMany(RendezVous::class)->orderBy('date_heure');
+    }
+
+    /**
+     * Vérifie si la réservation est de type multi-rendez-vous
+     */
+    public function estMultiRendezVous(): bool
+    {
+        return $this->typeService && $this->typeService->type_structure === 'multi_rendez_vous';
+    }
+
+    /**
+     * Vérifie si la réservation est de type multi-jours
+     */
+    public function estMultiJours(): bool
+    {
+        return $this->typeService && $this->typeService->type_structure === 'multi_jours';
+    }
+
+    /**
+     * Vérifie si la réservation est de type ponctuel (comportement classique)
+     */
+    public function estPonctuel(): bool
+    {
+        return !$this->typeService || $this->typeService->type_structure === 'ponctuel';
     }
 
     /**

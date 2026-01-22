@@ -513,6 +513,7 @@ class AgendaController extends Controller
             'description' => 'nullable|string',
             'duree_minutes' => 'required|integer|min:1',
             'prix' => 'required|numeric|min:0',
+            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous',
             'est_actif' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
