@@ -1794,13 +1794,14 @@ class BrightShellController extends Controller
         $dir = public_path('media/brightshell/docs');
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         
+        $size = $file->getSize();
         $file->move($dir, $fileName);
         
         DB::table('brightshell_documents')->insert([
             'nom' => $request->input('nom') ?: $originalName,
             'fichier' => $fileName,
             'extension' => $extension,
-            'taille' => $file->getSize(),
+            'taille' => $size,
             'categorie' => $request->input('categorie'),
             'client_id' => $request->input('client_id'),
             'created_at' => now(),
