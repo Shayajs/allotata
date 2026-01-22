@@ -1333,5 +1333,8 @@
 
     <!-- Padding en bas pour éviter que le contenu soit masqué par le bouton fixe -->
     <div class="h-20 lg:hidden"></div>
+
+    @include('partials.footer')
+    @include('partials.cookie-banner')
 </body>
 </html>

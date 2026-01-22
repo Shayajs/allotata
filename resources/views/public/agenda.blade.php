@@ -989,5 +989,8 @@
             renderCalendar();
         });
     </script>
+
+    @include('partials.footer')
+    @include('partials.cookie-banner')
 </body>
 </html>
