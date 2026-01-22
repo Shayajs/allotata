@@ -212,18 +212,91 @@
                             $prixActuel = $promotion ? $promotion->prix_promotion : $firstProduit->prix;
                         @endphp
                         <div class="max-w-4xl mx-auto">
-                            <!-- Image principale -->
-                            @if($imageAffichee)
-                                <div class="relative h-96 w-full rounded-2xl overflow-hidden mb-6 shadow-xl">
-                                    <img 
-                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
-                                        alt="{{ $firstProduit->nom }}"
-                                        class="w-full h-full object-cover"
-                                        id="produit-main-image"
-                                    >
-                                    @if($promotion)
-                                        <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                                            PROMOTION
+                            <!-- Carousel d'images -->
+                            @if($firstProduit->images->count() > 0)
+                                <div class="relative mb-6 group" id="produit-image-carousel-container">
+                                    <div class="relative h-96 w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 dark:bg-slate-700">
+                                        <!-- Image principale -->
+                                        <div class="relative w-full h-full" id="produit-carousel-wrapper">
+                                            @foreach($firstProduit->images as $index => $image)
+                                                <img 
+                                                    src="{{ asset('media/' . $image->image_path) }}" 
+                                                    alt="{{ $firstProduit->nom }}"
+                                                    class="produit-carousel-image w-full h-full object-cover transition-opacity duration-500 {{ $index === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0' }}"
+                                                    data-index="{{ $index }}"
+                                                    onclick="openLightboxProduit({{ $index }})"
+                                                    style="cursor: {{ $firstProduit->images->count() > 1 ? 'zoom-in' : 'default' }}"
+                                                >
+                                            @endforeach
+                                        </div>
+
+                                        <!-- Badge nombre d'images (si plusieurs) -->
+                                        @if($firstProduit->images->count() > 1)
+                                            <div class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 z-10">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                                <span id="produit-image-counter">1 / {{ $firstProduit->images->count() }}</span>
+                                            </div>
+                                        @endif
+
+                                        <!-- Badge promotion -->
+                                        @if($promotion)
+                                            <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold z-10 shadow-lg">
+                                                PROMOTION
+                                            </div>
+                                        @endif
+
+                                        <!-- Boutons navigation (si plusieurs images) -->
+                                        @if($firstProduit->images->count() > 1)
+                                            <button 
+                                                onclick="previousImageProduit()" 
+                                                class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                                                aria-label="Image précédente"
+                                            >
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                onclick="nextImageProduit()" 
+                                                class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                                                aria-label="Image suivante"
+                                            >
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+
+                                            <!-- Indicateurs de position (points) -->
+                                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                                @foreach($firstProduit->images as $index => $image)
+                                                    <button 
+                                                        onclick="goToImageProduit({{ $index }})"
+                                                        class="produit-carousel-dot w-2 h-2 rounded-full transition-all {{ $index === 0 ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75' }}"
+                                                        aria-label="Image {{ $index + 1 }}"
+                                                    ></button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Miniatures (si plusieurs images) -->
+                                    @if($firstProduit->images->count() > 1)
+                                        <div class="mt-4 flex gap-2 overflow-x-auto pb-2" id="produit-thumbnails" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
+                                            @foreach($firstProduit->images as $index => $image)
+                                                <button 
+                                                    onclick="goToImageProduit({{ $index }})"
+                                                    class="produit-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all {{ $index === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400' }}"
+                                                    data-index="{{ $index }}"
+                                                >
+                                                    <img 
+                                                        src="{{ asset('media/' . $image->image_path) }}" 
+                                                        alt="{{ $firstProduit->nom }}"
+                                                        class="w-full h-full object-cover"
+                                                    >
+                                                </button>
+                                            @endforeach
                                         </div>
                                     @endif
                                 </div>
@@ -271,23 +344,6 @@
                                 </p>
                             </div>
 
-                            <!-- Galerie d'images -->
-                            @if($firstProduit->images->count() > 1)
-                                <div class="mb-8">
-                                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Galerie</h2>
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="produit-gallery">
-                                        @foreach($firstProduit->images as $image)
-                                            <div class="relative h-32 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onclick="changeMainImage('{{ asset('media/' . $image->image_path) }}')">
-                                                <img 
-                                                    src="{{ asset('media/' . $image->image_path) }}" 
-                                                    alt="{{ $firstProduit->nom }}"
-                                                    class="w-full h-full object-cover"
-                                                >
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
 
                             <!-- Photos des clients (avis) -->
                             @php
@@ -657,6 +713,8 @@
             if (isMobile) {
                 // Mobile: Afficher dans l'onglet détails
                 switchMobileTab('details');
+                mobileProduitImagesData = produit.images || [];
+                currentMobileProduitImageIndex = 0;
                 updateMobileProduitDetails(produit);
             } else {
                 // Desktop: Mettre à jour le contenu principal
@@ -673,6 +731,9 @@
                     selectedCard.classList.add('border-green-500', 'dark:border-green-600', 'shadow-md');
                 }
             }
+
+            // Mettre à jour le carousel
+            updateProduitCarousel(produit);
 
             // Mettre à jour l'URL avec le hash
             window.location.hash = `produit-${produitId}`;
@@ -706,20 +767,8 @@
             
             document.getElementById('produit-description').textContent = produit.description || 'Aucune description disponible.';
 
-            // Image principale
-            if (produit.image_principale) {
-                document.getElementById('produit-main-image').src = produit.image_principale;
-            }
-
-            // Galerie
-            const gallery = document.getElementById('produit-gallery');
-            if (gallery && produit.images.length > 1) {
-                gallery.innerHTML = produit.images.map((img, idx) => `
-                    <div class="relative h-32 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onclick="changeMainImage('${img}')">
-                        <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
-                    </div>
-                `).join('');
-            }
+            // Mettre à jour le carousel d'images
+            updateProduitCarousel(produit);
 
             // Photos avis
             const avisPhotos = document.getElementById('produit-avis-photos');
@@ -951,11 +1000,58 @@
 
         function updateMobileProduitDetails(produit) {
             const detailsDiv = document.getElementById('mobile-produit-details');
+            const hasMultipleImages = produit.images && produit.images.length > 1;
+            
             detailsDiv.innerHTML = `
-                ${produit.image_principale ? `
-                    <div class="relative h-64 w-full rounded-xl overflow-hidden mb-4">
-                        <img src="${produit.image_principale}" alt="${produit.nom}" class="w-full h-full object-cover">
-                        ${produit.a_promotion ? '<div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">PROMO</div>' : ''}
+                ${produit.images && produit.images.length > 0 ? `
+                    <div class="relative mb-6 group" id="mobile-produit-image-carousel-container">
+                        <div class="relative h-80 w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 dark:bg-slate-700">
+                            <div class="relative w-full h-full" id="mobile-produit-carousel-wrapper">
+                                ${produit.images.map((img, idx) => `
+                                    <img 
+                                        src="${img}" 
+                                        alt="${produit.nom}"
+                                        class="mobile-produit-carousel-image w-full h-full object-cover transition-opacity duration-500 ${idx === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0'}"
+                                        data-index="${idx}"
+                                        onclick="openLightboxProduit(${idx})"
+                                        style="cursor: ${hasMultipleImages ? 'zoom-in' : 'default'}"
+                                    >
+                                `).join('')}
+                            </div>
+                            ${hasMultipleImages ? `
+                                <div class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 z-10">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span id="mobile-produit-image-counter">1 / ${produit.images.length}</span>
+                                </div>
+                                <button onclick="previousMobileImageProduit()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10 shadow-lg" aria-label="Image précédente">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <button onclick="nextMobileImageProduit()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10 shadow-lg" aria-label="Image suivante">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                    ${produit.images.map((img, idx) => `
+                                        <button onclick="goToMobileImageProduit(${idx})" class="mobile-produit-carousel-dot w-2 h-2 rounded-full transition-all ${idx === 0 ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75'}" aria-label="Image ${idx + 1}"></button>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            ${produit.a_promotion ? '<div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-semibold z-10 shadow-lg">PROMOTION</div>' : ''}
+                        </div>
+                        ${hasMultipleImages ? `
+                            <div class="mt-4 flex gap-2 overflow-x-auto pb-2" id="mobile-produit-thumbnails" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
+                                ${produit.images.map((img, idx) => `
+                                    <button onclick="goToMobileImageProduit(${idx})" class="mobile-produit-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}" data-index="${idx}">
+                                        <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 ` : ''}
                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">${produit.nom}</h2>
@@ -975,23 +1071,16 @@
                     ` : ''}
                 </div>
                 <p class="text-slate-700 dark:text-slate-300 mb-6">${produit.description || 'Aucune description disponible.'}</p>
-                ${produit.images.length > 1 ? `
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Galerie</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            ${produit.images.map(img => `
-                                <div class="relative h-24 rounded-lg overflow-hidden">
-                                    <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                // Formulaire de commande (sera mis à jour dynamiquement)
+                <!-- Formulaire de commande (sera mis à jour dynamiquement) -->
                 <div id="commande-form-container">
                     <!-- Le formulaire sera injecté ici via updateCommandeForm() -->
                 </div>
             `;
+            
+            // Initialiser les gestes tactiles pour le carrousel mobile
+            if (hasMultipleImages) {
+                initMobileProduitSwipe();
+            }
         }
 
         function switchMobileTab(tab) {
@@ -1017,8 +1106,287 @@
             }
         }
 
-        function changeMainImage(imageSrc) {
-            document.getElementById('produit-main-image').src = imageSrc;
+        // Variables pour le carousel produit
+        let currentProduitImageIndex = 0;
+        let produitImagesData = [];
+
+        function updateProduitCarousel(produit) {
+            produitImagesData = produit.images || [];
+            currentProduitImageIndex = 0;
+            
+            const container = document.getElementById('produit-image-carousel-container');
+            if (!container || produitImagesData.length === 0) return;
+
+            // Mettre à jour le wrapper d'images
+            const wrapper = document.getElementById('produit-carousel-wrapper');
+            if (wrapper) {
+                wrapper.innerHTML = produitImagesData.map((img, idx) => `
+                    <img 
+                        src="${img}" 
+                        alt="${produit.nom}"
+                        class="produit-carousel-image w-full h-full object-cover transition-opacity duration-500 ${idx === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0'}"
+                        data-index="${idx}"
+                        onclick="openLightboxProduit(${idx})"
+                        style="cursor: ${produitImagesData.length > 1 ? 'zoom-in' : 'default'}"
+                    >
+                `).join('');
+            }
+
+            // Mettre à jour le compteur
+            const counter = document.getElementById('produit-image-counter');
+            if (counter && produitImagesData.length > 1) {
+                counter.textContent = `1 / ${produitImagesData.length}`;
+            }
+
+            // Mettre à jour les indicateurs
+            updateProduitCarouselIndicators();
+
+            // Mettre à jour les miniatures
+            const thumbnails = document.getElementById('produit-thumbnails');
+            if (thumbnails && produitImagesData.length > 1) {
+                thumbnails.innerHTML = produitImagesData.map((img, idx) => `
+                    <button 
+                        onclick="goToImageProduit(${idx})"
+                        class="produit-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}"
+                        data-index="${idx}"
+                    >
+                        <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
+                    </button>
+                `).join('');
+            }
+        }
+
+        function goToImageProduit(index) {
+            if (produitImagesData.length === 0 || index < 0 || index >= produitImagesData.length) return;
+            
+            currentProduitImageIndex = index;
+            showImageProduit(index);
+        }
+
+        function previousImageProduit() {
+            if (produitImagesData.length === 0) return;
+            currentProduitImageIndex = (currentProduitImageIndex - 1 + produitImagesData.length) % produitImagesData.length;
+            showImageProduit(currentProduitImageIndex);
+        }
+
+        function nextImageProduit() {
+            if (produitImagesData.length === 0) return;
+            currentProduitImageIndex = (currentProduitImageIndex + 1) % produitImagesData.length;
+            showImageProduit(currentProduitImageIndex);
+        }
+
+        function showImageProduit(index) {
+            const images = document.querySelectorAll('.produit-carousel-image');
+            const dots = document.querySelectorAll('.produit-carousel-dot');
+            const thumbnails = document.querySelectorAll('.produit-thumbnail');
+            const counter = document.getElementById('produit-image-counter');
+
+            // Mettre à jour les images
+            images.forEach((img, idx) => {
+                if (idx === index) {
+                    img.classList.remove('opacity-0', 'absolute');
+                    img.classList.add('opacity-100');
+                } else {
+                    img.classList.remove('opacity-100');
+                    img.classList.add('opacity-0', 'absolute');
+                }
+            });
+
+            // Mettre à jour les indicateurs
+            dots.forEach((dot, idx) => {
+                if (idx === index) {
+                    dot.classList.remove('bg-white/50', 'w-2');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+
+            // Mettre à jour les miniatures
+            thumbnails.forEach((thumb, idx) => {
+                if (idx === index) {
+                    thumb.classList.remove('border-slate-200', 'dark:border-slate-600');
+                    thumb.classList.add('border-green-500', 'ring-2', 'ring-green-500');
+                } else {
+                    thumb.classList.remove('border-green-500', 'ring-2', 'ring-green-500');
+                    thumb.classList.add('border-slate-200', 'dark:border-slate-600');
+                }
+            });
+
+            // Mettre à jour le compteur
+            if (counter) {
+                counter.textContent = `${index + 1} / ${produitImagesData.length}`;
+            }
+        }
+
+        function updateProduitCarouselIndicators() {
+            const dots = document.querySelectorAll('.produit-carousel-dot');
+            dots.forEach((dot, idx) => {
+                if (idx === currentProduitImageIndex) {
+                    dot.classList.remove('bg-white/50', 'w-2');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+        }
+
+        // Lightbox pour voir les images en grand
+        function openLightboxProduit(index) {
+            if (produitImagesData.length === 0) return;
+            currentProduitImageIndex = index;
+            const lightbox = document.getElementById('produit-lightbox');
+            if (lightbox) {
+                lightbox.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                showLightboxImageProduit(index);
+            }
+        }
+
+        function closeLightboxProduit() {
+            const lightbox = document.getElementById('produit-lightbox');
+            if (lightbox) {
+                lightbox.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function showLightboxImageProduit(index) {
+            const lightboxImage = document.getElementById('produit-lightbox-image');
+            const lightboxCounter = document.getElementById('produit-lightbox-counter');
+            
+            if (lightboxImage && produitImagesData[index]) {
+                lightboxImage.src = produitImagesData[index];
+            }
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = `${index + 1} / ${produitImagesData.length}`;
+            }
+        }
+
+        // Navigation au clavier
+        document.addEventListener('keydown', function(e) {
+            const lightbox = document.getElementById('produit-lightbox');
+            if (lightbox && !lightbox.classList.contains('hidden')) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    previousLightboxImageProduit();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextLightboxImageProduit();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeLightboxProduit();
+                }
+            }
+        });
+
+        function previousLightboxImageProduit() {
+            currentProduitImageIndex = (currentProduitImageIndex - 1 + produitImagesData.length) % produitImagesData.length;
+            showLightboxImageProduit(currentProduitImageIndex);
+        }
+
+        function nextLightboxImageProduit() {
+            currentProduitImageIndex = (currentProduitImageIndex + 1) % produitImagesData.length;
+            showLightboxImageProduit(currentProduitImageIndex);
+        }
+
+        // Fonctions pour le carousel mobile produit
+        let currentMobileProduitImageIndex = 0;
+        let mobileProduitImagesData = [];
+
+        function goToMobileImageProduit(index) {
+            if (mobileProduitImagesData.length === 0 || index < 0 || index >= mobileProduitImagesData.length) return;
+            currentMobileProduitImageIndex = index;
+            showMobileImageProduit(index);
+        }
+
+        function previousMobileImageProduit() {
+            if (mobileProduitImagesData.length === 0) return;
+            currentMobileProduitImageIndex = (currentMobileProduitImageIndex - 1 + mobileProduitImagesData.length) % mobileProduitImagesData.length;
+            showMobileImageProduit(currentMobileProduitImageIndex);
+        }
+
+        function nextMobileImageProduit() {
+            if (mobileProduitImagesData.length === 0) return;
+            currentMobileProduitImageIndex = (currentMobileProduitImageIndex + 1) % mobileProduitImagesData.length;
+            showMobileImageProduit(currentMobileProduitImageIndex);
+        }
+
+        function showMobileImageProduit(index) {
+            const images = document.querySelectorAll('.mobile-produit-carousel-image');
+            const dots = document.querySelectorAll('.mobile-produit-carousel-dot');
+            const thumbnails = document.querySelectorAll('.mobile-produit-thumbnail');
+            const counter = document.getElementById('mobile-produit-image-counter');
+
+            images.forEach((img, idx) => {
+                if (idx === index) {
+                    img.classList.remove('opacity-0', 'absolute');
+                    img.classList.add('opacity-100');
+                } else {
+                    img.classList.remove('opacity-100');
+                    img.classList.add('opacity-0', 'absolute');
+                }
+            });
+
+            dots.forEach((dot, idx) => {
+                if (idx === index) {
+                    dot.classList.remove('bg-white/50', 'w-1.5');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+
+            thumbnails.forEach((thumb, idx) => {
+                if (idx === index) {
+                    thumb.classList.remove('border-slate-200', 'dark:border-slate-600');
+                    thumb.classList.add('border-green-500', 'ring-2', 'ring-green-500');
+                } else {
+                    thumb.classList.remove('border-green-500', 'ring-2', 'ring-green-500');
+                    thumb.classList.add('border-slate-200', 'dark:border-slate-600');
+                }
+            });
+
+            if (counter) {
+                counter.textContent = `${index + 1} / ${mobileProduitImagesData.length}`;
+            }
+        }
+
+        // Gestion des gestes tactiles (swipe) pour le carrousel mobile produit
+        let touchStartXProduit = 0;
+        let touchEndXProduit = 0;
+
+        function initMobileProduitSwipe() {
+            const carouselWrapper = document.getElementById('mobile-produit-carousel-wrapper');
+            if (!carouselWrapper) return;
+
+            carouselWrapper.addEventListener('touchstart', function(e) {
+                touchStartXProduit = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            carouselWrapper.addEventListener('touchend', function(e) {
+                touchEndXProduit = e.changedTouches[0].screenX;
+                handleMobileProduitSwipe();
+            }, { passive: true });
+        }
+
+        function handleMobileProduitSwipe() {
+            const swipeThreshold = 50; // Minimum distance for a swipe
+            const diff = touchStartXProduit - touchEndXProduit;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left - next image
+                    nextMobileImageProduit();
+                } else {
+                    // Swipe right - previous image
+                    previousMobileImageProduit();
+                }
+            }
         }
 
         function numberFormat(number, decimals, decPoint, thousandsSep) {
@@ -1116,7 +1484,76 @@
             if (produitsData.length > 0) {
                 updateCommandeForm(produitsData[0]);
             }
+
+            // Initialiser le carousel avec les données du premier produit
+            if (produitsData.length > 0) {
+                updateProduitCarousel(produitsData[0]);
+            }
+
+            // Navigation au clavier pour le carousel (hors lightbox)
+            document.addEventListener('keydown', function(e) {
+                const lightbox = document.getElementById('produit-lightbox');
+                if (lightbox && !lightbox.classList.contains('hidden')) return; // Ne pas interférer avec la lightbox
+                
+                if (produitImagesData.length > 1) {
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        previousImageProduit();
+                    } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        nextImageProduit();
+                    }
+                }
+            });
         });
     </script>
+
+    <!-- Lightbox pour les images produits -->
+    <div id="produit-lightbox" class="fixed inset-0 z-[200] hidden bg-black/95 backdrop-blur-sm" onclick="closeLightboxProduit()">
+        <div class="relative w-full h-full flex items-center justify-center p-4" onclick="event.stopPropagation()">
+            <button 
+                onclick="closeLightboxProduit()" 
+                class="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10"
+                aria-label="Fermer"
+            >
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            @if($firstProduit->images->count() > 1)
+                <button 
+                    onclick="event.stopPropagation(); previousLightboxImageProduit()" 
+                    class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-4 rounded-full transition-all z-10"
+                    aria-label="Image précédente"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button 
+                    onclick="event.stopPropagation(); nextLightboxImageProduit()" 
+                    class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-4 rounded-full transition-all z-10"
+                    aria-label="Image suivante"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold z-10">
+                    <span id="produit-lightbox-counter">1 / {{ $firstProduit->images->count() }}</span>
+                </div>
+            @endif
+
+            <img 
+                id="produit-lightbox-image"
+                src="" 
+                alt="{{ $firstProduit->nom }}"
+                class="max-w-full max-h-[90vh] object-contain rounded-lg"
+                onclick="event.stopPropagation()"
+            >
+        </div>
+    </div>
 </body>
 </html>

@@ -260,6 +260,14 @@ class EntrepriseDashboardController extends Controller
                 ->get();
             
             $commandesEnAttente = $commandes->where('statut', 'en_attente')->count();
+            
+            // Charger les produits pour les filtres
+            if ($produits->isEmpty()) {
+                $produits = $entreprise->produits()
+                    ->where('est_actif', true)
+                    ->orderBy('nom')
+                    ->get();
+            }
         }
         
         if ($activeTab === 'stock') {

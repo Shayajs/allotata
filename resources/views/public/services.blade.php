@@ -180,15 +180,86 @@
                             $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
                         @endphp
                         <div class="max-w-4xl mx-auto">
-                            <!-- Image principale -->
-                            @if($imageAffichee)
-                                <div class="relative h-96 w-full rounded-2xl overflow-hidden mb-6 shadow-xl">
-                                    <img 
-                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
-                                        alt="{{ $firstService->nom }}"
-                                        class="w-full h-full object-cover"
-                                        id="service-main-image"
-                                    >
+                            <!-- Carousel d'images -->
+                            @if($firstService->images->count() > 0)
+                                <div class="relative mb-6 group" id="service-image-carousel-container">
+                                    <div class="relative h-96 w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 dark:bg-slate-700">
+                                        <!-- Image principale -->
+                                        <div class="relative w-full h-full" id="service-carousel-wrapper">
+                                            @foreach($firstService->images as $index => $image)
+                                                <img 
+                                                    src="{{ asset('media/' . $image->image_path) }}" 
+                                                    alt="{{ $firstService->nom }}"
+                                                    class="service-carousel-image w-full h-full object-cover transition-opacity duration-500 {{ $index === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0' }}"
+                                                    data-index="{{ $index }}"
+                                                    onclick="openLightboxService({{ $index }})"
+                                                    style="cursor: {{ $firstService->images->count() > 1 ? 'zoom-in' : 'default' }}"
+                                                >
+                                            @endforeach
+                                        </div>
+
+                                        <!-- Badge nombre d'images (si plusieurs) -->
+                                        @if($firstService->images->count() > 1)
+                                            <div class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 z-10">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                                <span id="service-image-counter">1 / {{ $firstService->images->count() }}</span>
+                                            </div>
+                                        @endif
+
+                                        <!-- Boutons navigation (si plusieurs images) -->
+                                        @if($firstService->images->count() > 1)
+                                            <button 
+                                                onclick="previousImageService()" 
+                                                class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                                                aria-label="Image précédente"
+                                            >
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                            </button>
+                                            <button 
+                                                onclick="nextImageService()" 
+                                                class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10 shadow-lg"
+                                                aria-label="Image suivante"
+                                            >
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+
+                                            <!-- Indicateurs de position (points) -->
+                                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                                @foreach($firstService->images as $index => $image)
+                                                    <button 
+                                                        onclick="goToImageService({{ $index }})"
+                                                        class="service-carousel-dot w-2 h-2 rounded-full transition-all {{ $index === 0 ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75' }}"
+                                                        aria-label="Image {{ $index + 1 }}"
+                                                    ></button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Miniatures (si plusieurs images) -->
+                                    @if($firstService->images->count() > 1)
+                                        <div class="mt-4 flex gap-2 overflow-x-auto pb-2" id="service-thumbnails" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
+                                            @foreach($firstService->images as $index => $image)
+                                                <button 
+                                                    onclick="goToImageService({{ $index }})"
+                                                    class="service-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all {{ $index === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400' }}"
+                                                    data-index="{{ $index }}"
+                                                >
+                                                    <img 
+                                                        src="{{ asset('media/' . $image->image_path) }}" 
+                                                        alt="{{ $firstService->nom }}"
+                                                        class="w-full h-full object-cover"
+                                                    >
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
 
@@ -216,23 +287,6 @@
                                 </p>
                             </div>
 
-                            <!-- Galerie d'images -->
-                            @if($firstService->images->count() > 1)
-                                <div class="mb-8">
-                                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Galerie</h2>
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="service-gallery">
-                                        @foreach($firstService->images as $image)
-                                            <div class="relative h-32 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onclick="changeMainImage('{{ asset('media/' . $image->image_path) }}')">
-                                                <img 
-                                                    src="{{ asset('media/' . $image->image_path) }}" 
-                                                    alt="{{ $firstService->nom }}"
-                                                    class="w-full h-full object-cover"
-                                                >
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
 
                             <!-- Photos des clients (avis) -->
                             @php
@@ -459,6 +513,8 @@
             if (isMobile) {
                 // Mobile: Afficher dans l'onglet détails
                 switchMobileTab('details');
+                mobileServiceImagesData = service.images || [];
+                currentMobileServiceImageIndex = 0;
                 updateMobileServiceDetails(service);
             } else {
                 // Desktop: Mettre à jour le contenu principal
@@ -476,6 +532,9 @@
                 }
             }
 
+            // Mettre à jour le carousel
+            updateServiceCarousel(service);
+
             // Mettre à jour l'URL avec le hash
             window.location.hash = `service-${serviceId}`;
         }
@@ -486,20 +545,8 @@
             document.getElementById('service-prix').textContent = numberFormat(service.prix, 0, ',', ' ') + ' €';
             document.getElementById('service-description').textContent = service.description || 'Aucune description disponible.';
 
-            // Image principale
-            if (service.image_principale) {
-                document.getElementById('service-main-image').src = service.image_principale;
-            }
-
-            // Galerie
-            const gallery = document.getElementById('service-gallery');
-            if (gallery && service.images.length > 1) {
-                gallery.innerHTML = service.images.map((img, idx) => `
-                    <div class="relative h-32 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onclick="changeMainImage('${img}')">
-                        <img src="${img}" alt="${service.nom}" class="w-full h-full object-cover">
-                    </div>
-                `).join('');
-            }
+            // Mettre à jour le carousel d'images
+            updateServiceCarousel(service);
 
             // Photos avis
             const avisPhotos = document.getElementById('service-avis-photos');
@@ -550,10 +597,57 @@
 
         function updateMobileServiceDetails(service) {
             const detailsDiv = document.getElementById('mobile-service-details');
+            const hasMultipleImages = service.images && service.images.length > 1;
+            
             detailsDiv.innerHTML = `
-                ${service.image_principale ? `
-                    <div class="relative h-64 w-full rounded-xl overflow-hidden mb-4">
-                        <img src="${service.image_principale}" alt="${service.nom}" class="w-full h-full object-cover">
+                ${service.images && service.images.length > 0 ? `
+                    <div class="relative mb-6 group" id="mobile-service-image-carousel-container">
+                        <div class="relative h-80 w-full rounded-2xl overflow-hidden shadow-xl bg-slate-200 dark:bg-slate-700">
+                            <div class="relative w-full h-full" id="mobile-service-carousel-wrapper">
+                                ${service.images.map((img, idx) => `
+                                    <img 
+                                        src="${img}" 
+                                        alt="${service.nom}"
+                                        class="mobile-service-carousel-image w-full h-full object-cover transition-opacity duration-500 ${idx === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0'}"
+                                        data-index="${idx}"
+                                        onclick="openLightboxService(${idx})"
+                                        style="cursor: ${hasMultipleImages ? 'zoom-in' : 'default'}"
+                                    >
+                                `).join('')}
+                            </div>
+                            ${hasMultipleImages ? `
+                                <div class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 z-10">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span id="mobile-service-image-counter">1 / ${service.images.length}</span>
+                                </div>
+                                <button onclick="previousMobileImageService()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10 shadow-lg" aria-label="Image précédente">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <button onclick="nextMobileImageService()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white p-3 rounded-full transition-all z-10 shadow-lg" aria-label="Image suivante">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                    ${service.images.map((img, idx) => `
+                                        <button onclick="goToMobileImageService(${idx})" class="mobile-service-carousel-dot w-2 h-2 rounded-full transition-all ${idx === 0 ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75'}" aria-label="Image ${idx + 1}"></button>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${hasMultipleImages ? `
+                            <div class="mt-4 flex gap-2 overflow-x-auto pb-2" id="mobile-service-thumbnails" style="scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent;">
+                                ${service.images.map((img, idx) => `
+                                    <button onclick="goToMobileImageService(${idx})" class="mobile-service-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}" data-index="${idx}">
+                                        <img src="${img}" alt="${service.nom}" class="w-full h-full object-cover">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 ` : ''}
                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">${service.nom}</h2>
@@ -562,22 +656,15 @@
                     <span class="text-xl font-bold text-green-600 dark:text-green-400">${numberFormat(service.prix, 0, ',', ' ')} €</span>
                 </div>
                 <p class="text-slate-700 dark:text-slate-300 mb-6">${service.description || 'Aucune description disponible.'}</p>
-                ${service.images.length > 1 ? `
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Galerie</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            ${service.images.map(img => `
-                                <div class="relative h-24 rounded-lg overflow-hidden">
-                                    <img src="${img}" alt="${service.nom}" class="w-full h-full object-cover">
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
                 <a href="${agendaBaseUrl}?service=${service.id}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
                     Réserver ce service
                 </a>
             `;
+            
+            // Initialiser les gestes tactiles pour le carrousel mobile
+            if (hasMultipleImages) {
+                initMobileServiceSwipe();
+            }
         }
 
         function switchMobileTab(tab) {
@@ -603,8 +690,287 @@
             }
         }
 
-        function changeMainImage(imageSrc) {
-            document.getElementById('service-main-image').src = imageSrc;
+        // Variables pour le carousel service
+        let currentServiceImageIndex = 0;
+        let serviceImagesData = [];
+
+        function updateServiceCarousel(service) {
+            serviceImagesData = service.images || [];
+            currentServiceImageIndex = 0;
+            
+            const container = document.getElementById('service-image-carousel-container');
+            if (!container || serviceImagesData.length === 0) return;
+
+            // Mettre à jour le wrapper d'images
+            const wrapper = document.getElementById('service-carousel-wrapper');
+            if (wrapper) {
+                wrapper.innerHTML = serviceImagesData.map((img, idx) => `
+                    <img 
+                        src="${img}" 
+                        alt="${service.nom}"
+                        class="service-carousel-image w-full h-full object-cover transition-opacity duration-500 ${idx === 0 ? 'opacity-100' : 'opacity-0 absolute inset-0'}"
+                        data-index="${idx}"
+                        onclick="openLightboxService(${idx})"
+                        style="cursor: ${serviceImagesData.length > 1 ? 'zoom-in' : 'default'}"
+                    >
+                `).join('');
+            }
+
+            // Mettre à jour le compteur
+            const counter = document.getElementById('service-image-counter');
+            if (counter && serviceImagesData.length > 1) {
+                counter.textContent = `1 / ${serviceImagesData.length}`;
+            }
+
+            // Mettre à jour les indicateurs
+            updateServiceCarouselIndicators();
+
+            // Mettre à jour les miniatures
+            const thumbnails = document.getElementById('service-thumbnails');
+            if (thumbnails && serviceImagesData.length > 1) {
+                thumbnails.innerHTML = serviceImagesData.map((img, idx) => `
+                    <button 
+                        onclick="goToImageService(${idx})"
+                        class="service-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}"
+                        data-index="${idx}"
+                    >
+                        <img src="${img}" alt="${service.nom}" class="w-full h-full object-cover">
+                    </button>
+                `).join('');
+            }
+        }
+
+        function goToImageService(index) {
+            if (serviceImagesData.length === 0 || index < 0 || index >= serviceImagesData.length) return;
+            
+            currentServiceImageIndex = index;
+            showImageService(index);
+        }
+
+        function previousImageService() {
+            if (serviceImagesData.length === 0) return;
+            currentServiceImageIndex = (currentServiceImageIndex - 1 + serviceImagesData.length) % serviceImagesData.length;
+            showImageService(currentServiceImageIndex);
+        }
+
+        function nextImageService() {
+            if (serviceImagesData.length === 0) return;
+            currentServiceImageIndex = (currentServiceImageIndex + 1) % serviceImagesData.length;
+            showImageService(currentServiceImageIndex);
+        }
+
+        function showImageService(index) {
+            const images = document.querySelectorAll('.service-carousel-image');
+            const dots = document.querySelectorAll('.service-carousel-dot');
+            const thumbnails = document.querySelectorAll('.service-thumbnail');
+            const counter = document.getElementById('service-image-counter');
+
+            // Mettre à jour les images
+            images.forEach((img, idx) => {
+                if (idx === index) {
+                    img.classList.remove('opacity-0', 'absolute');
+                    img.classList.add('opacity-100');
+                } else {
+                    img.classList.remove('opacity-100');
+                    img.classList.add('opacity-0', 'absolute');
+                }
+            });
+
+            // Mettre à jour les indicateurs
+            dots.forEach((dot, idx) => {
+                if (idx === index) {
+                    dot.classList.remove('bg-white/50', 'w-2');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+
+            // Mettre à jour les miniatures
+            thumbnails.forEach((thumb, idx) => {
+                if (idx === index) {
+                    thumb.classList.remove('border-slate-200', 'dark:border-slate-600');
+                    thumb.classList.add('border-green-500', 'ring-2', 'ring-green-500');
+                } else {
+                    thumb.classList.remove('border-green-500', 'ring-2', 'ring-green-500');
+                    thumb.classList.add('border-slate-200', 'dark:border-slate-600');
+                }
+            });
+
+            // Mettre à jour le compteur
+            if (counter) {
+                counter.textContent = `${index + 1} / ${serviceImagesData.length}`;
+            }
+        }
+
+        function updateServiceCarouselIndicators() {
+            const dots = document.querySelectorAll('.service-carousel-dot');
+            dots.forEach((dot, idx) => {
+                if (idx === currentServiceImageIndex) {
+                    dot.classList.remove('bg-white/50', 'w-2');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+        }
+
+        // Lightbox pour voir les images en grand
+        function openLightboxService(index) {
+            if (serviceImagesData.length === 0) return;
+            currentServiceImageIndex = index;
+            const lightbox = document.getElementById('service-lightbox');
+            if (lightbox) {
+                lightbox.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                showLightboxImageService(index);
+            }
+        }
+
+        function closeLightboxService() {
+            const lightbox = document.getElementById('service-lightbox');
+            if (lightbox) {
+                lightbox.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function showLightboxImageService(index) {
+            const lightboxImage = document.getElementById('service-lightbox-image');
+            const lightboxCounter = document.getElementById('service-lightbox-counter');
+            
+            if (lightboxImage && serviceImagesData[index]) {
+                lightboxImage.src = serviceImagesData[index];
+            }
+            
+            if (lightboxCounter) {
+                lightboxCounter.textContent = `${index + 1} / ${serviceImagesData.length}`;
+            }
+        }
+
+        // Navigation au clavier
+        document.addEventListener('keydown', function(e) {
+            const lightbox = document.getElementById('service-lightbox');
+            if (lightbox && !lightbox.classList.contains('hidden')) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    previousLightboxImageService();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    nextLightboxImageService();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeLightboxService();
+                }
+            }
+        });
+
+        function previousLightboxImageService() {
+            currentServiceImageIndex = (currentServiceImageIndex - 1 + serviceImagesData.length) % serviceImagesData.length;
+            showLightboxImageService(currentServiceImageIndex);
+        }
+
+        function nextLightboxImageService() {
+            currentServiceImageIndex = (currentServiceImageIndex + 1) % serviceImagesData.length;
+            showLightboxImageService(currentServiceImageIndex);
+        }
+
+        // Fonctions pour le carousel mobile
+        let currentMobileServiceImageIndex = 0;
+        let mobileServiceImagesData = [];
+
+        function goToMobileImageService(index) {
+            if (mobileServiceImagesData.length === 0 || index < 0 || index >= mobileServiceImagesData.length) return;
+            currentMobileServiceImageIndex = index;
+            showMobileImageService(index);
+        }
+
+        function previousMobileImageService() {
+            if (mobileServiceImagesData.length === 0) return;
+            currentMobileServiceImageIndex = (currentMobileServiceImageIndex - 1 + mobileServiceImagesData.length) % mobileServiceImagesData.length;
+            showMobileImageService(currentMobileServiceImageIndex);
+        }
+
+        function nextMobileImageService() {
+            if (mobileServiceImagesData.length === 0) return;
+            currentMobileServiceImageIndex = (currentMobileServiceImageIndex + 1) % mobileServiceImagesData.length;
+            showMobileImageService(currentMobileServiceImageIndex);
+        }
+
+        function showMobileImageService(index) {
+            const images = document.querySelectorAll('.mobile-service-carousel-image');
+            const dots = document.querySelectorAll('.mobile-service-carousel-dot');
+            const thumbnails = document.querySelectorAll('.mobile-service-thumbnail');
+            const counter = document.getElementById('mobile-service-image-counter');
+
+            images.forEach((img, idx) => {
+                if (idx === index) {
+                    img.classList.remove('opacity-0', 'absolute');
+                    img.classList.add('opacity-100');
+                } else {
+                    img.classList.remove('opacity-100');
+                    img.classList.add('opacity-0', 'absolute');
+                }
+            });
+
+            dots.forEach((dot, idx) => {
+                if (idx === index) {
+                    dot.classList.remove('bg-white/50', 'w-1.5');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white', 'w-6');
+                    dot.classList.add('bg-white/50', 'w-2');
+                }
+            });
+
+            thumbnails.forEach((thumb, idx) => {
+                if (idx === index) {
+                    thumb.classList.remove('border-slate-200', 'dark:border-slate-600');
+                    thumb.classList.add('border-green-500', 'ring-2', 'ring-green-500');
+                } else {
+                    thumb.classList.remove('border-green-500', 'ring-2', 'ring-green-500');
+                    thumb.classList.add('border-slate-200', 'dark:border-slate-600');
+                }
+            });
+
+            if (counter) {
+                counter.textContent = `${index + 1} / ${mobileServiceImagesData.length}`;
+            }
+        }
+
+        // Gestion des gestes tactiles (swipe) pour le carrousel mobile service
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function initMobileServiceSwipe() {
+            const carouselWrapper = document.getElementById('mobile-service-carousel-wrapper');
+            if (!carouselWrapper) return;
+
+            carouselWrapper.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            carouselWrapper.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleMobileServiceSwipe();
+            }, { passive: true });
+        }
+
+        function handleMobileServiceSwipe() {
+            const swipeThreshold = 50; // Minimum distance for a swipe
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left - next image
+                    nextMobileImageService();
+                } else {
+                    // Swipe right - previous image
+                    previousMobileImageService();
+                }
+            }
         }
 
         function numberFormat(number, decimals, decPoint, thousandsSep) {
@@ -663,5 +1029,53 @@
             });
         }
     </script>
+
+    <!-- Lightbox pour les images services -->
+    <div id="service-lightbox" class="fixed inset-0 z-[200] hidden bg-black/95 backdrop-blur-sm" onclick="closeLightboxService()">
+        <div class="relative w-full h-full flex items-center justify-center p-4" onclick="event.stopPropagation()">
+            <button 
+                onclick="closeLightboxService()" 
+                class="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10"
+                aria-label="Fermer"
+            >
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            @if($firstService->images->count() > 1)
+                <button 
+                    onclick="event.stopPropagation(); previousLightboxImageService()" 
+                    class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-4 rounded-full transition-all z-10"
+                    aria-label="Image précédente"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button 
+                    onclick="event.stopPropagation(); nextLightboxImageService()" 
+                    class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-4 rounded-full transition-all z-10"
+                    aria-label="Image suivante"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold z-10">
+                    <span id="service-lightbox-counter">1 / {{ $firstService->images->count() }}</span>
+                </div>
+            @endif
+
+            <img 
+                id="service-lightbox-image"
+                src="" 
+                alt="{{ $firstService->nom }}"
+                class="max-w-full max-h-[90vh] object-contain rounded-lg"
+                onclick="event.stopPropagation()"
+            >
+        </div>
+    </div>
 </body>
 </html>
