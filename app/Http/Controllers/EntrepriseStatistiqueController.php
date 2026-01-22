@@ -125,6 +125,8 @@ class EntrepriseStatistiqueController extends Controller
                 'accueil' => $visites->where('page_type', 'accueil')->count(),
                 'agenda' => $visites->where('page_type', 'agenda')->count(),
                 'store' => $visites->where('page_type', 'store')->count(),
+                'services' => $visites->where('page_type', 'services')->count(),
+                'produits' => $visites->where('page_type', 'produits')->count(),
             ];
 
             // Temps moyen par page
@@ -132,6 +134,8 @@ class EntrepriseStatistiqueController extends Controller
                 'accueil' => $visites->where('page_type', 'accueil')->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0,
                 'agenda' => $visites->where('page_type', 'agenda')->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0,
                 'store' => $visites->where('page_type', 'store')->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0,
+                'services' => $visites->where('page_type', 'services')->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0,
+                'produits' => $visites->where('page_type', 'produits')->where('duree_seconde', '>', 0)->avg('duree_seconde') ?? 0,
             ];
 
             // Taux de rebond

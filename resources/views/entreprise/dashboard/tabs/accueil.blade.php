@@ -263,8 +263,8 @@
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#e2e8f0' : '#1e293b';
             const gridColor = isDark ? '#334155' : '#e2e8f0';
-        
-        // Graphique des revenus
+            
+            // Graphique des revenus
         const revenusCtx = document.getElementById('revenusChart');
         if (revenusCtx) {
             new Chart(revenusCtx, {
@@ -339,9 +339,9 @@
                     }
                 }
             });
-        }
+            }
 
-        // Graphique par jour de la semaine
+            // Graphique par jour de la semaine
         const dayOfWeekCtx = document.getElementById('dayOfWeekChart');
         if (dayOfWeekCtx) {
             new Chart(dayOfWeekCtx, {
@@ -393,6 +393,6 @@
                     }
                 }
             });
-        })();
+            })();
     </script>
 </div>
