@@ -1262,7 +1262,18 @@
             currentProduitImageIndex = 0;
             
             const container = document.getElementById('produit-image-carousel-container');
-            if (!container || produitImagesData.length === 0) return;
+            if (!container) {
+                console.warn('Conteneur du carousel non trouvé');
+                return;
+            }
+
+            // Si pas d'images, cacher le conteneur
+            if (produitImagesData.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
 
             // Mettre à jour le wrapper d'images
             const wrapper = document.getElementById('produit-carousel-wrapper');
@@ -1281,25 +1292,86 @@
 
             // Mettre à jour le compteur
             const counter = document.getElementById('produit-image-counter');
-            if (counter && produitImagesData.length > 1) {
-                counter.textContent = `1 / ${produitImagesData.length}`;
+            if (counter) {
+                if (produitImagesData.length > 1) {
+                    counter.textContent = `1 / ${produitImagesData.length}`;
+                    counter.style.display = 'block';
+                } else {
+                    counter.style.display = 'none';
+                }
             }
 
-            // Mettre à jour les indicateurs
-            updateProduitCarouselIndicators();
+            // Mettre à jour les indicateurs (dots) - les recréer complètement
+            // Chercher le conteneur des dots - il est dans un div avec les classes absolute bottom-4
+            let dotsContainer = container.querySelector('div.absolute.bottom-4');
+            if (!dotsContainer) {
+                // Chercher par sélecteur plus large
+                dotsContainer = container.querySelector('div[class*="bottom-4"]');
+            }
+            if (!dotsContainer) {
+                // Chercher tous les divs et trouver celui qui contient les dots
+                const allDivs = container.querySelectorAll('div');
+                for (let div of allDivs) {
+                    if (div.classList.contains('absolute') && (div.classList.contains('bottom-4') || div.textContent.includes('Image'))) {
+                        dotsContainer = div;
+                        break;
+                    }
+                }
+            }
+            if (!dotsContainer && produitImagesData.length > 1) {
+                // Créer le conteneur des dots s'il n'existe pas
+                const groupDiv = container.querySelector('.group');
+                if (groupDiv) {
+                    dotsContainer = document.createElement('div');
+                    dotsContainer.className = 'absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10';
+                    groupDiv.appendChild(dotsContainer);
+                }
+            }
+            if (dotsContainer) {
+                if (produitImagesData.length > 1) {
+                    dotsContainer.innerHTML = produitImagesData.map((img, idx) => `
+                        <button 
+                            onclick="goToImageProduit(${idx})"
+                            class="produit-carousel-dot w-2 h-2 rounded-full transition-all ${idx === 0 ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75'}"
+                            aria-label="Image ${idx + 1}"
+                        ></button>
+                    `).join('');
+                    dotsContainer.style.display = 'flex';
+                } else {
+                    dotsContainer.style.display = 'none';
+                }
+            }
 
             // Mettre à jour les miniatures
             const thumbnails = document.getElementById('produit-thumbnails');
-            if (thumbnails && produitImagesData.length > 1) {
-                thumbnails.innerHTML = produitImagesData.map((img, idx) => `
-                    <button 
-                        onclick="goToImageProduit(${idx})"
-                        class="produit-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}"
-                        data-index="${idx}"
-                    >
-                        <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
-                    </button>
-                `).join('');
+            if (thumbnails) {
+                if (produitImagesData.length > 1) {
+                    thumbnails.innerHTML = produitImagesData.map((img, idx) => `
+                        <button 
+                            onclick="goToImageProduit(${idx})"
+                            class="produit-thumbnail flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${idx === 0 ? 'border-green-500 ring-2 ring-green-500' : 'border-slate-200 dark:border-slate-600 hover:border-green-400'}"
+                            data-index="${idx}"
+                        >
+                            <img src="${img}" alt="${produit.nom}" class="w-full h-full object-cover">
+                        </button>
+                    `).join('');
+                    thumbnails.style.display = 'flex';
+                } else {
+                    thumbnails.style.display = 'none';
+                }
+            }
+
+            // Mettre à jour les boutons de navigation
+            const prevBtn = container.querySelector('button[onclick="previousImageProduit()"]');
+            const nextBtn = container.querySelector('button[onclick="nextImageProduit()"]');
+            if (prevBtn && nextBtn) {
+                if (produitImagesData.length > 1) {
+                    prevBtn.style.display = 'block';
+                    nextBtn.style.display = 'block';
+                } else {
+                    prevBtn.style.display = 'none';
+                    nextBtn.style.display = 'none';
+                }
             }
         }
 
