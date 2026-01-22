@@ -27,11 +27,11 @@
             <tbody>
                 @foreach($factures as $facture)
                 <tr>
-                    <td class="font-bold">{{ $facture->numero }}</td>
-                    <td>{{ $facture->client_societe ?? $facture->client_nom }}</td>
-                    <td>{{ Str::limit($facture->objet, 40) }}</td>
-                    <td class="font-bold">{{ number_format($facture->montant_total, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Numéro" class="font-bold">{{ $facture->numero }}</td>
+                    <td data-label="Client">{{ $facture->client_societe ?? $facture->client_nom }}</td>
+                    <td data-label="Objet">{{ Str::limit($facture->objet, 40) }}</td>
+                    <td data-label="Montant" class="font-bold">{{ number_format($facture->montant_total, 2, ',', ' ') }} €</td>
+                    <td data-label="Statut">
                         @switch($facture->statut)
                             @case('brouillon')
                                 <span class="badge badge-info">Brouillon</span>
@@ -47,9 +47,9 @@
                                 @break
                         @endswitch
                     </td>
-                    <td class="text-muted">{{ \Carbon\Carbon::parse($facture->created_at)->format('d/m/Y') }}</td>
-                    <td>
-                        <div class="flex gap-2">
+                    <td data-label="Date" class="text-muted">{{ \Carbon\Carbon::parse($facture->created_at)->format('d/m/Y') }}</td>
+                    <td data-label="Actions">
+                        <div class="flex gap-2" style="justify-content: flex-end;">
                             <a href="{{ route('brightshell.factures.show', $facture->id) }}" class="btn btn-secondary btn-sm">Voir</a>
                             @if($facture->statut !== 'payee')
                             <form action="{{ route('brightshell.factures.paid', $facture->id) }}" method="POST">

@@ -27,11 +27,11 @@
             <tbody>
                 @foreach($devis as $d)
                 <tr>
-                    <td class="font-bold">{{ $d->numero }}</td>
-                    <td>{{ $d->client_societe ?? $d->client_nom }}</td>
-                    <td>{{ Str::limit($d->objet, 40) }}</td>
-                    <td>{{ number_format($d->montant_ht, 2, ',', ' ') }} €</td>
-                    <td>
+                    <td data-label="Numéro" class="font-bold">{{ $d->numero }}</td>
+                    <td data-label="Client">{{ $d->client_societe ?? $d->client_nom }}</td>
+                    <td data-label="Objet">{{ Str::limit($d->objet, 40) }}</td>
+                    <td data-label="Montant HT">{{ number_format($d->montant_ht, 2, ',', ' ') }} €</td>
+                    <td data-label="Statut">
                         @switch($d->statut)
                             @case('brouillon')
                                 <span class="badge badge-info">Brouillon</span>
@@ -47,9 +47,9 @@
                                 @break
                         @endswitch
                     </td>
-                    <td class="text-muted">{{ \Carbon\Carbon::parse($d->created_at)->format('d/m/Y') }}</td>
-                    <td>
-                        <div class="flex gap-2">
+                    <td data-label="Date" class="text-muted">{{ \Carbon\Carbon::parse($d->created_at)->format('d/m/Y') }}</td>
+                    <td data-label="Actions">
+                        <div class="flex gap-2" style="justify-content: flex-end;">
                             <a href="{{ route('brightshell.devis.show', $d->id) }}" class="btn btn-secondary btn-sm">Voir</a>
                             @if($d->statut !== 'accepte')
                             <form action="{{ route('brightshell.devis.convert', $d->id) }}" method="POST">

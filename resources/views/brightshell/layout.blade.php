@@ -51,7 +51,20 @@
             top: 0;
             left: 0;
             bottom: 0;
-            z-index: 100;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
         }
         
         .sidebar-header {
@@ -162,6 +175,16 @@
             position: sticky;
             top: 0;
             z-index: 50;
+            gap: 1rem;
+        }
+        
+        .burger-menu {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--bs-text);
+            cursor: pointer;
+            padding: 0.5rem;
         }
         
         .page-title {
@@ -522,8 +545,69 @@
         
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.open { display: block; }
             .main { margin-left: 0; }
+            .topbar { padding: 0.75rem 1rem; }
+            .burger-menu { display: block; }
+            .content { padding: 1rem; }
             .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .page-title { font-size: 1.1rem; }
+            
+            /* Table mobile styles */
+            .table-container {
+                border: none;
+                background: transparent;
+            }
+            
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            
+            tr {
+                background: var(--bs-bg-card);
+                border: 1px solid var(--bs-border);
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                padding: 0.5rem;
+            }
+            
+            td {
+                border: none;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+                min-height: 3rem;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+            
+            td:last-child {
+                border-bottom: none;
+            }
+            
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 600;
+                color: var(--bs-text-muted);
+                font-size: 0.75rem;
+                text-transform: uppercase;
+            }
         }
         
         /* Utilities */
@@ -625,8 +709,9 @@
     @stack('styles')
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             @php
                 $logoPath = public_path('media/brightshell/logo.png');
@@ -745,8 +830,13 @@
     <!-- Main content -->
     <main class="main">
         <header class="topbar">
-            <h1 class="page-title">@yield('title', 'Dashboard')</h1>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <button class="burger-menu" onclick="toggleSidebar()">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                </button>
+                <h1 class="page-title">@yield('title', 'Dashboard')</h1>
+            </div>
+            <div class="flex items-center gap-2">
                 @yield('actions')
                 <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
@@ -784,6 +874,12 @@
         </div>
     </main>
     
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('open');
+        }
+    </script>
     @stack('scripts')
 </body>
 </html>

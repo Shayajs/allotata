@@ -26,15 +26,15 @@
             <tbody>
                 @foreach($clients as $client)
                 <tr>
-                    <td>
+                    <td data-label="Client">
                         <div class="font-bold">{{ $client->nom }} {{ $client->prenom }}</div>
                     </td>
-                    <td>{{ $client->societe ?? '-' }}</td>
-                    <td>{{ $client->email ?? '-' }}</td>
-                    <td>{{ $client->telephone ?? '-' }}</td>
-                    <td>{{ $client->ville ?? '-' }}</td>
-                    <td>
-                        <div class="flex gap-2">
+                    <td data-label="Société">{{ $client->societe ?? '-' }}</td>
+                    <td data-label="Email">{{ $client->email ?? '-' }}</td>
+                    <td data-label="Téléphone">{{ $client->telephone ?? '-' }}</td>
+                    <td data-label="Ville">{{ $client->ville ?? '-' }}</td>
+                    <td data-label="Actions">
+                        <div class="flex gap-2" style="justify-content: flex-end;">
                             <a href="{{ route('brightshell.clients.edit', $client->id) }}" class="btn btn-secondary btn-sm">Modifier</a>
                             <form action="{{ route('brightshell.clients.delete', $client->id) }}" method="POST" onsubmit="return confirm('Supprimer ce client ?')">
                                 @csrf
@@ -75,15 +75,15 @@
                 <tbody>
                     @foreach($potentiels as $p)
                     <tr>
-                        <td>
+                        <td data-label="Entreprise">
                             <div class="font-bold">{{ $p->nom }}</div>
                             <div class="text-xs text-muted">{{ $p->siren }}</div>
                         </td>
-                        <td>{{ $p->owner_name ?? '-' }}</td>
-                        <td>{{ $p->owner_email ?? '-' }}</td>
-                        <td>{{ $p->ville ?? '-' }}</td>
-                        <td>
-                            <form action="{{ route('brightshell.clients.store') }}" method="POST">
+                        <td data-label="Propriétaire">{{ $p->owner_name ?? '-' }}</td>
+                        <td data-label="Email">{{ $p->owner_email ?? '-' }}</td>
+                        <td data-label="Ville">{{ $p->ville ?? '-' }}</td>
+                        <td data-label="Actions">
+                            <form action="{{ route('brightshell.clients.store') }}" method="POST" style="display: flex; justify-content: flex-end;">
                                 @csrf
                                 <input type="hidden" name="nom" value="{{ $p->owner_name ?? $p->nom }}">
                                 <input type="hidden" name="prenom" value="">

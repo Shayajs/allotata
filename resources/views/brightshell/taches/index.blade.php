@@ -67,7 +67,7 @@
     @if(count($taches) > 0)
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
         @foreach($taches as $tache)
-        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bs-bg-dark); border-radius: 8px; {{ $tache->completed ? 'opacity: 0.6;' : '' }}">
+        <div class="tache-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bs-bg-dark); border-radius: 8px; flex-wrap: wrap; {{ $tache->completed ? 'opacity: 0.6;' : '' }}">
             <form action="{{ route('brightshell.taches.toggle', $tache->id) }}" method="POST">
                 @csrf
                 @method('PUT')
@@ -77,23 +77,25 @@
                     @endif
                 </button>
             </form>
-            <div style="flex: 1;">
+            <div style="flex: 1; min-width: 200px;">
                 <p style="font-weight: 600; margin: 0; {{ $tache->completed ? 'text-decoration: line-through;' : '' }}">{{ $tache->titre }}</p>
                 @if($tache->description)
                 <p class="text-muted text-sm" style="margin: 0.25rem 0 0;">{{ Str::limit($tache->description, 80) }}</p>
                 @endif
             </div>
-            @if($tache->echeance)
-            <span class="text-muted text-sm">{{ \Carbon\Carbon::parse($tache->echeance)->format('d/m') }}</span>
-            @endif
-            <span class="badge {{ $tache->priorite === 'urgente' ? 'badge-danger' : ($tache->priorite === 'haute' ? 'badge-warning' : ($tache->priorite === 'basse' ? 'badge-info' : 'badge-success')) }}">
-                {{ ucfirst($tache->priorite ?? 'normale') }}
-            </span>
-            <form action="{{ route('brightshell.taches.delete', $tache->id) }}" method="POST" onsubmit="return confirm('Supprimer ?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm">×</button>
-            </form>
+            <div class="flex items-center gap-2" style="margin-left: auto;">
+                @if($tache->echeance)
+                <span class="text-muted text-sm">{{ \Carbon\Carbon::parse($tache->echeance)->format('d/m') }}</span>
+                @endif
+                <span class="badge {{ $tache->priorite === 'urgente' ? 'badge-danger' : ($tache->priorite === 'haute' ? 'badge-warning' : ($tache->priorite === 'basse' ? 'badge-info' : 'badge-success')) }}">
+                    {{ ucfirst($tache->priorite ?? 'normale') }}
+                </span>
+                <form action="{{ route('brightshell.taches.delete', $tache->id) }}" method="POST" onsubmit="return confirm('Supprimer ?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm">×</button>
+                </form>
+            </div>
         </div>
         @endforeach
     </div>
