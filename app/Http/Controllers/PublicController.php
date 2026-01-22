@@ -439,7 +439,7 @@ class PublicController extends Controller
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
-        $typesServices = $entreprise->typesServices;
+        $typesServices = $this->trierServices($entreprise->typesServices, $entreprise);
 
         return view('public.services', [
             'entreprise' => $entreprise,
@@ -548,6 +548,9 @@ class PublicController extends Controller
             
             return $estDisponible;
         });
+
+        // Trier les produits selon le mode choisi
+        $produits = $this->trierProduits($produits, $entreprise);
 
         // #region agent log
         try {
@@ -1072,6 +1075,136 @@ class PublicController extends Controller
         }
 
         return back()->with('success', 'La réservation a été annulée avec succès.');
+    }
+
+    /**
+     * Trier les services selon le mode choisi par l'entreprise
+     */
+    private function trierServices($services, Entreprise $entreprise)
+    {
+        $mode = $entreprise->mode_ordre_services ?? 'manuel';
+
+        switch ($mode) {
+            case 'ventes':
+                return $this->trierServicesParVentes($services);
+            case 'statistiques':
+                return $this->trierServicesParStatistiques($services, $entreprise);
+            case 'manuel':
+            default:
+                return $this->trierServicesManuel($services);
+        }
+    }
+
+    /**
+     * Trier les produits selon le mode choisi par l'entreprise
+     */
+    private function trierProduits($produits, Entreprise $entreprise)
+    {
+        $mode = $entreprise->mode_ordre_produits ?? 'manuel';
+
+        switch ($mode) {
+            case 'ventes':
+                return $this->trierProduitsParVentes($produits);
+            case 'statistiques':
+                return $this->trierProduitsParStatistiques($produits, $entreprise);
+            case 'manuel':
+            default:
+                return $this->trierProduitsManuel($produits);
+        }
+    }
+
+    /**
+     * Trier les services manuellement (par ordre_affichage)
+     */
+    private function trierServicesManuel($services)
+    {
+        return $services->sortBy([
+            ['ordre_affichage', 'asc'],
+            ['nom', 'asc']
+        ])->values();
+    }
+
+    /**
+     * Trier les produits manuellement (par ordre_affichage)
+     */
+    private function trierProduitsManuel($produits)
+    {
+        return $produits->sortBy([
+            ['ordre_affichage', 'asc'],
+            ['nom', 'asc']
+        ])->values();
+    }
+
+    /**
+     * Trier les services par nombre de réservations terminées
+     */
+    private function trierServicesParVentes($services)
+    {
+        return $services->map(function($service) {
+            // Compter les réservations terminées (confirmées ou terminées)
+            $nbVentes = Reservation::where('type_service_id', $service->id)
+                ->whereIn('statut', ['confirmee', 'terminee'])
+                ->count();
+            
+            $service->nb_ventes = $nbVentes;
+            return $service;
+        })->sortByDesc('nb_ventes')->values();
+    }
+
+    /**
+     * Trier les produits par nombre de commandes terminées
+     */
+    private function trierProduitsParVentes($produits)
+    {
+        return $produits->map(function($produit) {
+            // Compter les commandes terminées (statut = 'terminee')
+            $nbVentes = CommandeProduit::where('produit_id', $produit->id)
+                ->where('statut', 'terminee')
+                ->count();
+            
+            $produit->nb_ventes = $nbVentes;
+            return $produit;
+        })->sortByDesc('nb_ventes')->values();
+    }
+
+    /**
+     * Trier les services par statistiques (clics)
+     */
+    private function trierServicesParStatistiques($services, Entreprise $entreprise)
+    {
+        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController();
+        $topServices = $statsController->getTopServices($entreprise->id, 365); // 1 an
+        
+        // Créer un tableau de mapping id => nb_clics
+        $clicsParService = [];
+        foreach ($topServices as $top) {
+            $clicsParService[$top['id']] = $top['nb_clics'];
+        }
+
+        return $services->map(function($service) use ($clicsParService) {
+            $service->nb_clics = $clicsParService[$service->id] ?? 0;
+            return $service;
+        })->sortByDesc('nb_clics')->values();
+    }
+
+    /**
+     * Trier les produits par statistiques (clics)
+     */
+    private function trierProduitsParStatistiques($produits, Entreprise $entreprise)
+    {
+        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController();
+        $topProduits = $statsController->getTopProduits($entreprise->id, 365); // 1 an
+        
+        // Créer un tableau de mapping id => nb_clics
+        $clicsParProduit = [];
+        foreach ($topProduits as $top) {
+            $clicsParProduit[$top['id']] = $top['nb_clics'];
+        }
+
+        return $produits->map(function($produit) use ($clicsParProduit) {
+            $produit->nb_clics = $clicsParProduit[$produit->id] ?? 0;
+            return $produit;
+        })->sortByDesc('nb_clics')->values();
     }
 }
 

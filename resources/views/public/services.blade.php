@@ -77,7 +77,11 @@
 
                 <!-- Onglet Liste (Mobile) -->
                 <div id="mobile-content-liste" class="p-4 space-y-4">
-                    @foreach($typesServices as $service)
+                    @php
+                        $servicesPrincipaux = $typesServices->take(9);
+                        $servicesRestants = $typesServices->skip(9);
+                    @endphp
+                    @foreach($servicesPrincipaux as $service)
                         @php
                             $imageCouverture = $service->imageCouverture;
                             $premiereImage = $service->images->first();
@@ -115,6 +119,61 @@
                             </div>
                         </div>
                     @endforeach
+                    
+                    @if($servicesRestants->count() > 0)
+                        <!-- Menu déroulant pour les services restants -->
+                        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <button 
+                                onclick="toggleServicesRestants()"
+                                class="w-full px-4 py-3 flex items-center justify-between text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                            >
+                                <span class="font-semibold">Voir {{ $servicesRestants->count() }} autre(s) service(s)</span>
+                                <svg id="services-restants-arrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="services-restants-list" class="hidden space-y-4 p-4 border-t border-slate-200 dark:border-slate-700">
+                                @foreach($servicesRestants as $service)
+                                    @php
+                                        $imageCouverture = $service->imageCouverture;
+                                        $premiereImage = $service->images->first();
+                                        $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
+                                    @endphp
+                                    <div 
+                                        class="bg-slate-50 dark:bg-slate-700/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                        onclick="selectService({{ $service->id }}, true)"
+                                        data-service-id="{{ $service->id }}"
+                                    >
+                                        @if($imageAffichee)
+                                            <div class="relative h-48 w-full overflow-hidden">
+                                                <img 
+                                                    src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                                    alt="{{ $service->nom }}"
+                                                    class="w-full h-full object-cover"
+                                                >
+                                            </div>
+                                        @endif
+                                        <div class="p-4">
+                                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{{ $service->nom }}</h3>
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-4 text-sm">
+                                                    <span class="text-slate-600 dark:text-slate-400">
+                                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                        </svg>
+                                                        {{ $service->duree_minutes }} min
+                                                    </span>
+                                                    <span class="font-bold text-green-600 dark:text-green-400">
+                                                        {{ number_format($service->prix, 0, ',', ' ') }} €
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Onglet Détails (Mobile) -->
@@ -130,7 +189,11 @@
                 <!-- Sidebar (20%) -->
                 <div class="w-1/5 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-y-auto">
                     <div class="p-4 space-y-4">
-                        @foreach($typesServices as $service)
+                        @php
+                            $servicesPrincipauxDesktop = $typesServices->take(9);
+                            $servicesRestantsDesktop = $typesServices->skip(9);
+                        @endphp
+                        @foreach($servicesPrincipauxDesktop as $service)
                             @php
                                 $imageCouverture = $service->imageCouverture;
                                 $premiereImage = $service->images->first();
@@ -167,6 +230,60 @@
                                 @endif
                             </div>
                         @endforeach
+                        
+                        @if($servicesRestantsDesktop->count() > 0)
+                            <!-- Menu déroulant pour les services restants (Desktop) -->
+                            <div class="bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 overflow-hidden">
+                                <button 
+                                    onclick="toggleServicesRestantsDesktop()"
+                                    class="w-full px-4 py-3 flex items-center justify-between text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                >
+                                    <span class="font-semibold text-sm">Voir {{ $servicesRestantsDesktop->count() }} autre(s)</span>
+                                    <svg id="services-restants-desktop-arrow" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="services-restants-desktop-list" class="hidden space-y-4 p-4 border-t border-slate-200 dark:border-slate-700">
+                                    @foreach($servicesRestantsDesktop as $service)
+                                        @php
+                                            $imageCouverture = $service->imageCouverture;
+                                            $premiereImage = $service->images->first();
+                                            $imageAffichee = $imageCouverture ? $imageCouverture : $premiereImage;
+                                        @endphp
+                                        <div 
+                                            class="service-card bg-slate-50 dark:bg-slate-700/50 rounded-xl border-2 border-slate-200 dark:border-slate-700 p-4 cursor-pointer hover:border-green-500 dark:hover:border-green-600 hover:shadow-lg transition-all"
+                                            onclick="selectService({{ $service->id }}, false)"
+                                            data-service-id="{{ $service->id }}"
+                                        >
+                                            @if($imageAffichee)
+                                                <div class="relative h-32 w-full rounded-lg overflow-hidden mb-3">
+                                                    <img 
+                                                        src="{{ asset('media/' . $imageAffichee->image_path) }}" 
+                                                        alt="{{ $service->nom }}"
+                                                        class="w-full h-full object-cover"
+                                                    >
+                                                </div>
+                                            @endif
+                                            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{{ $service->nom }}</h3>
+                                            <div class="flex items-center justify-between text-sm mb-2">
+                                                <span class="text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    {{ $service->duree_minutes }} min
+                                                </span>
+                                                <span class="font-bold text-green-600 dark:text-green-400">
+                                                    {{ number_format($service->prix, 0, ',', ' ') }} €
+                                                </span>
+                                            </div>
+                                            @if(!$loop->last)
+                                                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"></div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1012,6 +1129,25 @@
                 selectService(serviceId, window.innerWidth < 1024);
             }
         });
+
+        // Fonctions pour gérer les menus déroulants
+        function toggleServicesRestants() {
+            const list = document.getElementById('services-restants-list');
+            const arrow = document.getElementById('services-restants-arrow');
+            if (list && arrow) {
+                list.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+        }
+
+        function toggleServicesRestantsDesktop() {
+            const list = document.getElementById('services-restants-desktop-list');
+            const arrow = document.getElementById('services-restants-desktop-arrow');
+            if (list && arrow) {
+                list.classList.toggle('hidden');
+                arrow.classList.toggle('rotate-180');
+            }
+        }
         // Gestion des étoiles pour les avis services
         function setNoteService(note) {
             document.getElementById('note-input-service').value = note;

@@ -31,6 +31,34 @@
         </div>
     @endif
 
+    <!-- Configuration de l'ordre d'affichage -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 mb-6">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Ordre d'affichage des produits</h3>
+        <form action="{{ route('entreprise.dashboard.update-mode-ordre', $entreprise->slug) }}" method="POST" class="flex items-center gap-4">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="type" value="produits">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Mode de tri :</label>
+            <select name="mode_ordre" onchange="this.form.submit()" class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <option value="manuel" {{ ($entreprise->mode_ordre_produits ?? 'manuel') === 'manuel' ? 'selected' : '' }}>Manuel (ordre personnalisé)</option>
+                <option value="ventes" {{ ($entreprise->mode_ordre_produits ?? 'manuel') === 'ventes' ? 'selected' : '' }}>Par nombre de ventes</option>
+                <option value="statistiques" {{ ($entreprise->mode_ordre_produits ?? 'manuel') === 'statistiques' ? 'selected' : '' }}>Par statistiques (clics)</option>
+            </select>
+            @if(($entreprise->mode_ordre_produits ?? 'manuel') === 'manuel')
+                <button 
+                    type="button"
+                    onclick="enableReorderProduits()"
+                    class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium rounded-lg transition"
+                >
+                    Réorganiser manuellement
+                </button>
+            @endif
+        </form>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Les 9 premiers produits s'affichent directement, les autres dans un menu déroulant sur la page publique.
+        </p>
+    </div>
+
     <!-- Section Produits -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
         <div class="flex items-center justify-between mb-6">
