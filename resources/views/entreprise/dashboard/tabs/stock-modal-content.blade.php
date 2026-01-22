@@ -633,8 +633,8 @@
         fetch(url, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             },
         })
@@ -643,12 +643,17 @@
             if (data.success) {
                 // Retirer l'image de la liste locale
                 currentProduitImages = currentProduitImages.filter(img => img.id !== imageId);
-                updateImagesDisplayProduit();
                 
-                // Recharger la page après un court délai pour synchroniser
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
+                // Si l'image supprimée était la couverture, mettre à jour le statut des autres
+                // Le serveur définit automatiquement la première image restante comme couverture
+                if (currentProduitImages.length > 0) {
+                    // Mettre la première image comme couverture (le serveur l'a déjà fait)
+                    currentProduitImages.forEach((img, index) => {
+                        img.est_couverture = index === 0;
+                    });
+                }
+                
+                updateImagesDisplayProduit();
             } else {
                 alert('Erreur lors de la suppression de l\'image.');
             }
