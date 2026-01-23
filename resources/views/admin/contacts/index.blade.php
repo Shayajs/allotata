@@ -5,6 +5,10 @@
 @section('subheader', 'Gérez les messages envoyés via le formulaire de contact')
 
 @section('content')
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Messages de Contact</h1>
+    </div>
+
     <!-- Statistiques rapides -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
@@ -86,7 +90,7 @@
 
     <!-- Liste des contacts -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -100,24 +104,24 @@
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($contacts as $contact)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ !$contact->est_lu ? 'bg-orange-50/50 dark:bg-orange-900/10' : '' }}">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                 @if($contact->est_lu)
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Lu</span>
                                 @else
                                     <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 rounded">Non lu</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4" data-label="Expéditeur">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white {{ !$contact->est_lu ? 'font-bold' : '' }}">{{ $contact->nom }}</div>
                                 <div class="text-sm text-slate-600 dark:text-slate-400">{{ $contact->email }}</div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4" data-label="Sujet">
                                 <div class="text-sm text-slate-900 dark:text-white truncate max-w-xs {{ !$contact->est_lu ? 'font-semibold' : '' }}">{{ $contact->sujet }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Date">
                                 {{ $contact->created_at->format('d/m/Y H:i') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.contacts.show', $contact) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                         Voir

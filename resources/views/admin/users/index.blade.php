@@ -5,16 +5,16 @@
 @section('subheader', 'Gérez tous les utilisateurs de la plateforme')
 
 @section('content')
-<div class="mb-8 flex items-center justify-between">
+<div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
         <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Liste des utilisateurs</h1>
         <p class="text-slate-600 dark:text-slate-400 mt-1">Gérez tous les utilisateurs de la plateforme</p>
     </div>
-    <div class="flex gap-3">
-        <a href="{{ route('admin.users.deleted') }}" class="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition">
+    <div class="flex flex-wrap gap-3">
+        <a href="{{ route('admin.users.deleted') }}" class="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition border border-red-200 dark:border-red-900/30 rounded-lg">
             📦 Comptes supprimés
         </a>
-        <a href="{{ route('admin.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition">
+        <a href="{{ route('admin.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition border border-slate-200 dark:border-slate-700 rounded-lg">
             ← Retour au Dashboard
         </a>
     </div>

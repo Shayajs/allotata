@@ -340,8 +340,9 @@
         @endif
 
         <!-- Filtres et Actions -->
+        <!-- Filtres et Actions -->
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl px-6 border border-slate-200 dark:border-slate-700">
-            <form action="{{ route('admin.finances.index') }}" method="GET" class="flex flex-wrap items-center gap-4">
+            <form action="{{ route('admin.finances.index') }}" method="GET" class="flex flex-wrap items-center justify-center md:justify-start gap-4">
                 <input type="hidden" name="entreprise" value="{{ $selectedSlug }}">
                 
                 <select name="finance_month" class="bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2 text-sm focus:ring-green-500 focus:border-green-500 transition-all">
@@ -367,10 +368,10 @@
                 </button>
             </form>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center w-full md:w-auto gap-3">
                 <button 
                     onclick="document.getElementById('modal-add-record').classList.remove('hidden')"
-                    class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1"
+                    class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1"
                 >
                     + Ajouter une entrée/sortie
                 </button>
@@ -379,17 +380,17 @@
 
         <!-- Liste des transactions -->
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <h2 class="text-xl font-bold text-slate-900 dark:text-white">Détail des transactions</h2>
                 <span class="text-sm text-slate-500 dark:text-slate-400">{{ $finances->count() }} enregistrements</span>
             </div>
             
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto table-responsive-to-cards">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-100 dark:bg-slate-700">
                             <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                            <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Description / Catégorie</th>
+                            <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Description</th>
                             <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Type</th>
                             <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider text-right">Montant</th>
                             <th class="px-8 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider text-right">Actions</th>
@@ -398,14 +399,14 @@
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                         @forelse($finances->sortByDesc('date_record') as $record)
                             <tr class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                <td class="px-8 py-5 text-sm text-slate-700 dark:text-slate-300">
+                                <td class="px-8 py-5 text-sm text-slate-700 dark:text-slate-300" data-label="Date">
                                     {{ $record->date_record->translatedFormat('d F Y') }}
                                 </td>
-                                <td class="px-8 py-5">
+                                <td class="px-8 py-5" data-label="Description">
                                     <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ $record->description ?: 'Sans description' }}</div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400">{{ $record->category ?: 'Sans catégorie' }}</div>
                                 </td>
-                                <td class="px-8 py-5">
+                                <td class="px-8 py-5" data-label="Type">
                                     @if($record->type === 'income')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                                             Entrée
@@ -416,10 +417,10 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-8 py-5 text-right font-bold {{ $record->type === 'income' ? 'text-green-600' : 'text-red-600' }}">
+                                <td class="px-8 py-5 text-right font-bold {{ $record->type === 'income' ? 'text-green-600' : 'text-red-600' }}" data-label="Montant">
                                     {{ $record->type === 'income' ? '+' : '-' }} {{ number_format($record->amount, 2, ',', ' ') }} €
                                 </td>
-                                <td class="px-8 py-5 text-right flex items-center justify-end gap-1">
+                                <td class="px-8 py-5 text-right flex items-center justify-end gap-1" data-label="Actions">
                                     <button 
                                         type="button" 
                                         onclick="openEditModal({{ $record->id }}, '{{ $record->type }}', '{{ $record->date_record->format('Y-m-d') }}', {{ $record->amount }}, '{{ addslashes($record->category ?? '') }}', '{{ addslashes($record->description ?? '') }}')"
