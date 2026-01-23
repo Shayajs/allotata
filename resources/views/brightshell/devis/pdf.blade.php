@@ -17,7 +17,8 @@
     @endphp
     <style>
         @page {
-            margin: 20mm;
+            margin: 2.5cm;
+            padding: 11px;
         }
         
         * {
@@ -29,9 +30,10 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11px;
-            line-height: 1.5;
+            line-height: 1.6;
             color: {{ $couleurs['text'] }};
             background: white;
+            margin: 30px;
         }
         
         .container {
@@ -61,7 +63,7 @@
         }
         
         .company-name {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: {{ $couleurs['secondary'] }};
             margin-bottom: 5px;
@@ -73,7 +75,7 @@
         }
         
         .devis-title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: {{ $couleurs['primary'] }};
         }
