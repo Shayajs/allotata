@@ -267,6 +267,7 @@ class BrightShellController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|integer',
+            'date_devis' => 'nullable|date',
             'objet' => 'required|string|max:255',
             'lignes' => 'required|array|min:1',
             'notes' => 'nullable|string',
@@ -309,6 +310,7 @@ class BrightShellController extends Controller
         $devisId = DB::table('brightshell_devis')->insertGetId([
             'numero' => $numero,
             'client_id' => $validated['client_id'],
+            'date_devis' => $validated['date_devis'] ?? now()->format('Y-m-d'),
             'objet' => $validated['objet'],
             'lignes' => json_encode($validated['lignes']),
             'montant_ht' => round($montantHt, 2),
@@ -392,6 +394,7 @@ class BrightShellController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|integer',
+            'date_devis' => 'nullable|date',
             'objet' => 'required|string|max:255',
             'lignes' => 'required|array|min:1',
             'notes' => 'nullable|string',
@@ -426,6 +429,7 @@ class BrightShellController extends Controller
         
         DB::table('brightshell_devis')->where('id', $id)->update([
             'client_id' => $validated['client_id'],
+            'date_devis' => $validated['date_devis'] ?? null,
             'objet' => $validated['objet'],
             'lignes' => json_encode($validated['lignes']),
             'montant_ht' => round($montantHt, 2),
