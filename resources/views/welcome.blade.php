@@ -402,6 +402,7 @@
         @endauth
 
         @include('partials.footer')
+        @include('partials.pwa-install-banner')
         @include('partials.cookie-banner')
 
         <script>

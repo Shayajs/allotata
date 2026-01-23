@@ -479,6 +479,7 @@
         </script>
     @stack('scripts')
     @include('partials.footer')
+    @include('partials.pwa-install-banner')
     @include('partials.cookie-banner')
     </body>
 </html>

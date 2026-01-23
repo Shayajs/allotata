@@ -31,20 +31,38 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Stratégie de fetch : Network First, fallback on cache
+// Stratégie : Network First (Réseau en priorité, Cache en secours)
+// Cela permet d'avoir toujours la version la plus récente du site, mais de fonctionner hors-ligne si besoin.
 self.addEventListener('fetch', (event) => {
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match('/');
-            })
-        );
+    // On ignore les requêtes non-GET (POST, PUT, etc.) et les extensions chrome
+    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
         return;
     }
 
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
+        fetch(event.request)
+            .then((networkResponse) => {
+                // Si la réponse est valide, on la met en cache pour plus tard
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            })
+            .catch(() => {
+                // Si le réseau échoue (hors-ligne), on cherche dans le cache
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // Fallback optionnel : si on demande une page HTML et qu'elle n'est pas en cache,
+                    // on pourrait renvoyer la page d'accueil ou une page "offline" générique.
+                    if (event.request.headers.get('accept').includes('text/html')) {
+                        return caches.match('/');
+                    }
+                });
+            })
     );
 });
