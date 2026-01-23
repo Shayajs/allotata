@@ -36,14 +36,7 @@
             
             <div class="form-group">
                 <label class="form-label">Lignes de facture</label>
-                <div id="lignes-container">
-                    <div class="ligne-header">
-                        <span class="form-label text-xs">Description</span>
-                        <span class="form-label text-xs">Qté</span>
-                        <span class="form-label text-xs">Prix unit. €</span>
-                        <span></span>
-                    </div>
-                </div>
+                <div id="lignes-container"></div>
                 <button type="button" onclick="ajouterLigne()" class="btn btn-secondary btn-sm mt-2">+ Ajouter une ligne</button>
             </div>
             
@@ -161,29 +154,99 @@
 
 <style>
 #billing-grid { gap: 2rem; align-items: start; }
-.ligne-header, .ligne-item {
+
+.ligne-item {
+    background: var(--bs-bg-dark);
+    border: 1px solid var(--bs-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.ligne-item.expanded {
+    border-color: var(--bs-accent);
+}
+
+.ligne-main {
     display: grid;
-    grid-template-columns: 1fr 80px 120px 40px;
+    grid-template-columns: 1fr 80px 120px auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.ligne-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.ligne-details {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--bs-border);
+}
+
+.ligne-description textarea {
+    width: 100%;
+    min-height: 50px;
+    resize: vertical;
+}
+
+.sous-lignes-container {
+    margin-top: 0.75rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--bs-accent);
+}
+
+.sous-ligne-item {
+    display: grid;
+    grid-template-columns: 1fr 60px 80px 30px;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+    align-items: center;
 }
+
+.sous-ligne-item input {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.btn-expand {
+    background: transparent;
+    border: 1px solid var(--bs-border);
+    color: var(--bs-text-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.btn-expand:hover {
+    background: var(--bs-bg-hover);
+    color: var(--bs-accent);
+    border-color: var(--bs-accent);
+}
+
+.btn-expand.active {
+    background: rgba(91, 188, 228, 0.1);
+    color: var(--bs-accent);
+    border-color: var(--bs-accent);
+}
+
 .preview-card { position: sticky; top: 1rem; }
 
 @media (max-width: 768px) {
     #billing-grid { gap: 1rem; }
     .preview-card { position: static; margin-top: 1rem; }
-    .ligne-header { display: none; }
-    .ligne-item {
+    .ligne-main {
         grid-template-columns: 1fr 1fr;
-        padding: 1rem;
-        background: var(--bs-bg-dark);
-        border: 1px solid var(--bs-border);
-        border-radius: 8px;
     }
-    .ligne-item input[name*="description"] { grid-column: span 2; }
-    .ligne-item input[name*="quantite"] { grid-column: span 1; }
-    .ligne-item input[name*="prix_unitaire"] { grid-column: span 1; }
-    .ligne-item .btn-danger { grid-column: span 2; }
+    .ligne-main input[name*="description"] { grid-column: span 2; }
+    .ligne-actions { grid-column: span 2; justify-content: flex-end; }
+    .sous-ligne-item {
+        grid-template-columns: 1fr 1fr;
+    }
+    .sous-ligne-item input:first-child { grid-column: span 2; }
 }
 
 .radio-card {
@@ -205,41 +268,122 @@
 .radio-card input { display: none; }
 .radio-card span { font-weight: 600; font-size: 0.875rem; }
 .radio-card small { color: var(--bs-text-muted); font-size: 0.75rem; }
-#lignes-container .ligne-item:hover { background: #1f2937; }
-#lignes-container .ligne-item:hover input {
-    background: #374151;
-    color: white;
-    border-color: #4b5563;
-}
-#lignes-container .ligne-item:hover button.btn-danger { opacity: 1; }
-#lignes-container .ligne-item:hover button.btn-danger {
-    background: #ef4444;
-    color: white;
-}
 </style>
 
 @push('scripts')
 <script>
 let ligneIndex = 0;
 
-function ajouterLigne(description = '', quantite = 1, prixUnitaire = '') {
+function ajouterLigne(data = {}) {
     const container = document.getElementById('lignes-container');
     const div = document.createElement('div');
     div.className = 'ligne-item';
+    div.dataset.index = ligneIndex;
+    
+    const description = data.description || '';
+    const quantite = data.quantite || 1;
+    const prixUnitaire = data.prix_unitaire || '';
+    const details = data.details || '';
+    const sousLignes = data.sous_lignes || [];
+    const hasDetails = details || sousLignes.length > 0;
+    
     div.innerHTML = `
-        <input type="text" name="lignes[${ligneIndex}][description]" class="form-input" placeholder="Description" value="${description}" required oninput="updatePreview()">
-        <input type="number" name="lignes[${ligneIndex}][quantite]" class="form-input" value="${quantite}" min="0.01" step="0.01" required oninput="updatePreview()">
-        <input type="number" name="lignes[${ligneIndex}][prix_unitaire]" class="form-input" placeholder="0.00" value="${prixUnitaire}" min="0" step="0.01" required oninput="updatePreview()">
-        <button type="button" onclick="supprimerLigne(this)" class="btn btn-danger btn-sm">x</button>
+        <div class="ligne-main">
+            <input type="text" name="lignes[${ligneIndex}][description]" class="form-input" 
+                   placeholder="Description" value="${escapeHtml(description)}" required oninput="updatePreview()">
+            <input type="number" name="lignes[${ligneIndex}][quantite]" class="form-input ligne-qte" 
+                   value="${quantite}" min="0.01" step="0.01" required oninput="updatePreview()">
+            <input type="number" name="lignes[${ligneIndex}][prix_unitaire]" class="form-input ligne-prix" 
+                   placeholder="0.00" value="${prixUnitaire}" min="0" step="0.01" oninput="updatePreview()">
+            <div class="ligne-actions">
+                <button type="button" onclick="toggleDetails(this)" class="btn-expand ${hasDetails ? 'active' : ''}" title="Détails">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                </button>
+                <button type="button" onclick="supprimerLigne(this)" class="btn btn-danger btn-sm">×</button>
+            </div>
+        </div>
+        <div class="ligne-details" style="display: ${hasDetails ? 'block' : 'none'};">
+            <div class="ligne-description">
+                <textarea name="lignes[${ligneIndex}][details]" class="form-input" 
+                          placeholder="Description détaillée (optionnel)" 
+                          oninput="updatePreview()">${escapeHtml(details)}</textarea>
+            </div>
+            <div class="sous-lignes-container">
+                <p style="font-size: 0.7rem; color: var(--bs-text-muted); margin-bottom: 0.5rem;">Sous-lignes de détail</p>
+                <div class="sous-lignes-list" data-ligne="${ligneIndex}"></div>
+                <button type="button" onclick="ajouterSousLigne(${ligneIndex})" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+                    + Ajouter un détail
+                </button>
+            </div>
+        </div>
     `;
+    
     container.appendChild(div);
+    
+    // Ajouter les sous-lignes existantes
+    if (sousLignes.length > 0) {
+        sousLignes.forEach(sl => {
+            ajouterSousLigne(ligneIndex, sl);
+        });
+    }
+    
     ligneIndex++;
     updatePreview();
 }
 
-function supprimerLigne(btn) {
-    btn.parentElement.remove();
+function toggleDetails(btn) {
+    const ligneItem = btn.closest('.ligne-item');
+    const details = ligneItem.querySelector('.ligne-details');
+    const isVisible = details.style.display !== 'none';
+    
+    details.style.display = isVisible ? 'none' : 'block';
+    btn.classList.toggle('active', !isVisible);
+    ligneItem.classList.toggle('expanded', !isVisible);
+}
+
+function ajouterSousLigne(ligneIdx, data = {}) {
+    const container = document.querySelector(`.sous-lignes-list[data-ligne="${ligneIdx}"]`);
+    if (!container) return;
+    
+    const sousLigneIdx = container.children.length;
+    const div = document.createElement('div');
+    div.className = 'sous-ligne-item';
+    
+    const description = data.description || '';
+    const quantite = data.quantite || 1;
+    const prixUnitaire = data.prix_unitaire || '';
+    
+    div.innerHTML = `
+        <input type="text" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][description]" 
+               class="form-input" placeholder="Détail..." value="${escapeHtml(description)}" 
+               oninput="updatePreview()">
+        <input type="number" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][quantite]" 
+               class="form-input" value="${quantite}" min="0.01" step="0.01" 
+               oninput="updatePreview()">
+        <input type="number" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][prix_unitaire]" 
+               class="form-input" placeholder="0" value="${prixUnitaire}" min="0" step="0.01" 
+               oninput="updatePreview()">
+        <button type="button" onclick="supprimerSousLigne(this)" class="btn btn-danger btn-sm" style="padding: 0.2rem 0.4rem;">×</button>
+    `;
+    
+    container.appendChild(div);
     updatePreview();
+}
+
+function supprimerSousLigne(btn) {
+    btn.closest('.sous-ligne-item').remove();
+    updatePreview();
+}
+
+function supprimerLigne(btn) {
+    btn.closest('.ligne-item').remove();
+    updatePreview();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function updatePreview() {
@@ -273,18 +417,53 @@ function updatePreview() {
     
     lignes.forEach(ligne => {
         const desc = ligne.querySelector('input[name*="description"]').value;
-        const qte = parseFloat(ligne.querySelector('input[name*="quantite"]').value) || 0;
-        const pu = parseFloat(ligne.querySelector('input[name*="prix_unitaire"]').value) || 0;
-        const total = qte * pu;
+        const qte = parseFloat(ligne.querySelector('.ligne-qte').value) || 0;
+        const sousLignes = ligne.querySelectorAll('.sous-ligne-item');
+        
+        let pu = parseFloat(ligne.querySelector('.ligne-prix').value) || 0;
+        let total = 0;
+        
+        // Si sous-lignes, calculer le total à partir d'elles
+        if (sousLignes.length > 0) {
+            let sousTotal = 0;
+            sousLignes.forEach(sl => {
+                const slQte = parseFloat(sl.querySelector('input[name*="quantite"]').value) || 0;
+                const slPrix = parseFloat(sl.querySelector('input[name*="prix_unitaire"]').value) || 0;
+                sousTotal += slQte * slPrix;
+            });
+            pu = sousTotal;
+            total = sousTotal * qte;
+        } else {
+            total = qte * pu;
+        }
+        
         totalHT += total;
         
         if (desc) {
-            html += `<tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 0.5rem; color: #0a0e1a;">${desc}</td>
+            const hasSL = sousLignes.length > 0;
+            html += `<tr style="border-bottom: 1px solid #e5e7eb; ${hasSL ? 'background: #fafbfc;' : ''}">
+                <td style="padding: 0.5rem; color: #0a0e1a; ${hasSL ? 'font-weight: 600;' : ''}">${escapeHtml(desc)}</td>
                 <td style="padding: 0.5rem; text-align: right; color: #6b7280;">${qte}</td>
                 <td style="padding: 0.5rem; text-align: right; color: #6b7280;">${pu.toFixed(2)} €</td>
                 <td style="padding: 0.5rem; text-align: right; font-weight: 600;">${total.toFixed(2)} €</td>
             </tr>`;
+            
+            // Sous-lignes dans preview
+            if (hasSL) {
+                sousLignes.forEach(sl => {
+                    const slDesc = sl.querySelector('input[name*="description"]').value || '-';
+                    const slQte = parseFloat(sl.querySelector('input[name*="quantite"]').value) || 0;
+                    const slPrix = parseFloat(sl.querySelector('input[name*="prix_unitaire"]').value) || 0;
+                    const slTotal = slQte * slPrix;
+                    
+                    html += `<tr style="border-bottom: 1px dashed #e5e7eb; background: #f9fafb;">
+                        <td style="padding: 0.35rem 0.5rem 0.35rem 1.5rem; color: #6b7280; font-size: 0.65rem;">↳ ${escapeHtml(slDesc)}</td>
+                        <td style="padding: 0.35rem 0.5rem; text-align: right; color: #9ca3af; font-size: 0.65rem;">${slQte}</td>
+                        <td style="padding: 0.35rem 0.5rem; text-align: right; color: #9ca3af; font-size: 0.65rem;">${slPrix.toFixed(2)} €</td>
+                        <td style="padding: 0.35rem 0.5rem; text-align: right; color: #6b7280; font-size: 0.65rem;">${slTotal.toFixed(2)} €</td>
+                    </tr>`;
+                });
+            }
         }
     });
     
@@ -347,7 +526,13 @@ function updatePreview() {
 document.addEventListener('DOMContentLoaded', function() {
     @if(isset($facture) && $facture->lignes)
         @foreach($facture->lignes as $ligne)
-        ajouterLigne('{{ addslashes($ligne['description'] ?? '') }}', '{{ $ligne['quantite'] ?? 1 }}', '{{ $ligne['prix_unitaire'] ?? '' }}');
+        ajouterLigne({
+            description: '{{ addslashes($ligne['description'] ?? '') }}',
+            quantite: '{{ $ligne['quantite'] ?? 1 }}',
+            prix_unitaire: '{{ $ligne['prix_unitaire'] ?? '' }}',
+            details: '{{ addslashes($ligne['details'] ?? '') }}',
+            sous_lignes: {!! json_encode($ligne['sous_lignes'] ?? []) !!}
+        });
         @endforeach
     @else
         ajouterLigne();
