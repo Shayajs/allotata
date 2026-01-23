@@ -10,23 +10,31 @@
             @csrf
             @if(isset($facture)) @method('PUT') @endif
             
-            <div class="form-group">
-                <label class="form-label">Client *</label>
-                <select name="client_id" class="form-input" required id="client-select" onchange="updatePreview()">
-                    <option value="">Sélectionner un client</option>
-                    @foreach($clients as $client)
-                    <option value="{{ $client->id }}" 
-                            data-nom="{{ $client->nom }}" 
-                            data-prenom="{{ $client->prenom ?? '' }}"
-                            data-societe="{{ $client->societe ?? '' }}"
-                            data-adresse="{{ $client->adresse ?? '' }}"
-                            data-cp="{{ $client->code_postal ?? '' }}"
-                            data-ville="{{ $client->ville ?? '' }}"
-                            {{ old('client_id', $facture->client_id ?? '') == $client->id ? 'selected' : '' }}>
-                        {{ $client->nom }} {{ $client->prenom ?? '' }} {{ $client->societe ? "({$client->societe})" : '' }}
-                    </option>
-                    @endforeach
-                </select>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Client *</label>
+                    <select name="client_id" class="form-input" required id="client-select" onchange="updatePreview()">
+                        <option value="">Sélectionner un client</option>
+                        @foreach($clients as $client)
+                        <option value="{{ $client->id }}" 
+                                data-nom="{{ $client->nom }}" 
+                                data-prenom="{{ $client->prenom ?? '' }}"
+                                data-societe="{{ $client->societe ?? '' }}"
+                                data-adresse="{{ $client->adresse ?? '' }}"
+                                data-cp="{{ $client->code_postal ?? '' }}"
+                                data-ville="{{ $client->ville ?? '' }}"
+                                {{ old('client_id', $facture->client_id ?? '') == $client->id ? 'selected' : '' }}>
+                            {{ $client->nom }} {{ $client->prenom ?? '' }} {{ $client->societe ? "({$client->societe})" : '' }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date de facture</label>
+                    <input type="date" name="date_facture" id="date_facture" class="form-input" 
+                           value="{{ old('date_facture', $facture ? \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->format('Y-m-d') : date('Y-m-d')) }}" 
+                           onchange="updatePreview()">
+                </div>
             </div>
             
             <div class="form-group">
@@ -105,7 +113,7 @@
                     </div>
                     <div style="text-align: right;">
                         <h2 style="font-size: 1.5rem; font-weight: 700; color: #5bbce4;">FACTURE</h2>
-                        <p style="color: #6b7280; font-size: 0.75rem;">{{ now()->format('d/m/Y') }}</p>
+                        <p style="color: #6b7280; font-size: 0.75rem;"><span id="preview-date">{{ now()->format('d/m/Y') }}</span></p>
                     </div>
                 </div>
                 
@@ -409,6 +417,13 @@ function updatePreview() {
     const objet = document.getElementById('objet-input').value;
     document.getElementById('preview-objet').textContent = objet || '-';
     
+    // Date
+    const dateInput = document.getElementById('date_facture').value;
+    if (dateInput) {
+        const [year, month, day] = dateInput.split('-');
+        document.getElementById('preview-date').textContent = `${day}/${month}/${year}`;
+    }
+    
     // Lignes
     const lignesContainer = document.getElementById('preview-lignes');
     const lignes = document.querySelectorAll('#lignes-container .ligne-item');
@@ -527,10 +542,10 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(isset($facture) && $facture->lignes)
         @foreach($facture->lignes as $ligne)
         ajouterLigne({
-            description: '{{ addslashes($ligne['description'] ?? '') }}',
-            quantite: '{{ $ligne['quantite'] ?? 1 }}',
-            prix_unitaire: '{{ $ligne['prix_unitaire'] ?? '' }}',
-            details: '{{ addslashes($ligne['details'] ?? '') }}',
+            description: {!! json_encode($ligne['description'] ?? '') !!},
+            quantite: {!! json_encode($ligne['quantite'] ?? 1) !!},
+            prix_unitaire: {!! json_encode($ligne['prix_unitaire'] ?? '') !!},
+            details: {!! json_encode($ligne['details'] ?? '') !!},
             sous_lignes: {!! json_encode($ligne['sous_lignes'] ?? []) !!}
         });
         @endforeach

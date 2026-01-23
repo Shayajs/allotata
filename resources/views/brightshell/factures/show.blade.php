@@ -50,11 +50,11 @@
             <div style="text-align: right;">
                 <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">{{ str_starts_with($facture->numero, 'AVO') ? 'AVOIR' : 'FACTURE' }}</h1>
                 <p style="font-size: 1.25rem; font-weight: 600; color: #0a0e1a;">{{ $facture->numero }}</p>
-                <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($facture->created_at)->format('d/m/Y') }}</p>
+                <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->format('d/m/Y') }}</p>
                 @if($facture->paiement_echelonne)
                 <p style="color: #f59e0b; font-weight: 600; margin-top: 0.5rem;">📅 Paiement en {{ $facture->nombre_echeances }}x</p>
                 @else
-                <p style="color: #6b7280;">Échéance: {{ \Carbon\Carbon::parse($facture->created_at)->addDays($facture->echeance_jours)->format('d/m/Y') }}</p>
+                <p style="color: #6b7280;">Échéance: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->addDays($facture->echeance_jours)->format('d/m/Y') }}</p>
                 @endif
                 @if($facture->statut === 'payee')
                 <p style="color: #10b981; font-weight: 600; margin-top: 0.5rem;">✓ PAYÉE</p>

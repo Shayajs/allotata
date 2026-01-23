@@ -965,10 +965,10 @@ document.addEventListener('DOMContentLoaded', function() {
     @if($devis && $devis->lignes)
         @foreach($devis->lignes as $ligne)
         ajouterLigne({
-            description: '{{ addslashes($ligne['description'] ?? '') }}',
-            quantite: '{{ $ligne['quantite'] ?? 1 }}',
-            prix_unitaire: '{{ $ligne['prix_unitaire'] ?? '' }}',
-            details: '{{ addslashes($ligne['details'] ?? '') }}',
+            description: {!! json_encode($ligne['description'] ?? '') !!},
+            quantite: {!! json_encode($ligne['quantite'] ?? 1) !!},
+            prix_unitaire: {!! json_encode($ligne['prix_unitaire'] ?? '') !!},
+            details: {!! json_encode($ligne['details'] ?? '') !!},
             sous_lignes: {!! json_encode($ligne['sous_lignes'] ?? []) !!}
         });
         @endforeach
