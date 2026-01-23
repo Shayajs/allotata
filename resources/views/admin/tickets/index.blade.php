@@ -132,7 +132,7 @@
 
     <!-- Liste des tickets -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -149,15 +149,15 @@
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($tickets as $ticket)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4" data-label="Ticket">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $ticket->numero_ticket }}</div>
                                 <div class="text-sm text-slate-600 dark:text-slate-400 truncate max-w-xs">{{ $ticket->sujet }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Utilisateur">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $ticket->user->name }}</div>
                                 <div class="text-sm text-slate-600 dark:text-slate-400">{{ $ticket->user->email }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Catégorie">
                                 @php
                                     $categorieColors = [
                                         'technique' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
@@ -170,7 +170,7 @@
                                     {{ ucfirst($ticket->categorie) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Priorité">
                                 @php
                                     $prioriteColors = [
                                         'basse' => 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400',
@@ -183,7 +183,7 @@
                                     {{ ucfirst($ticket->priorite) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                 @php
                                     $statutColors = [
                                         'ouvert' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
@@ -202,17 +202,17 @@
                                     {{ $statutLabels[$ticket->statut] ?? $ticket->statut }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Assigné à">
                                 @if($ticket->assigneA)
                                     {{ $ticket->assigneA->name }}
                                 @else
                                     <span class="text-red-500">Non assigné</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Créé le">
                                 {{ $ticket->created_at->format('d/m/Y H:i') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <a href="{{ route('admin.tickets.show', $ticket) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                     Voir
                                 </a>
