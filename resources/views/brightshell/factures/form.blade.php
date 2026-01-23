@@ -169,6 +169,24 @@
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.ligne-item:hover {
+    background: var(--bs-bg-hover);
+    border-color: var(--bs-accent);
+}
+
+.ligne-item:hover .ligne-total, 
+.ligne-item:hover .form-label {
+    color: white;
+}
+
+.ligne-item:hover input,
+.ligne-item:hover select,
+.ligne-item:hover textarea {
+    background: var(--bs-bg-card);
+    color: white;
 }
 
 .ligne-item.expanded {

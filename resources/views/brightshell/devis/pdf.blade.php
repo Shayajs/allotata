@@ -17,7 +17,7 @@
     @endphp
     <style>
         @page {
-            margin: 10mm 15mm;
+            margin: 20mm;
         }
         
         * {
@@ -29,7 +29,7 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 11px;
-            line-height: 1.4;
+            line-height: 1.5;
             color: {{ $couleurs['text'] }};
             background: white;
         }
