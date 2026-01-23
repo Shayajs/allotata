@@ -270,7 +270,7 @@
                 <div class="devis-title">DEVIS</div>
                 <div class="devis-numero">{{ $devis->numero }}</div>
                 <div class="devis-meta">
-                    <p>Date: {{ \Carbon\Carbon::parse($devis->created_at)->format('d/m/Y') }}</p>
+                    <p>Date: {{ \Carbon\Carbon::parse($devis->date_devis ?? $devis->created_at)->format('d/m/Y') }}</p>
                     <p>Validité: {{ $devis->validite_jours }} jours</p>
                 </div>
             </div>

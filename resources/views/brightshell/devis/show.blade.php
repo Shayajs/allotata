@@ -37,7 +37,7 @@
         <div style="text-align: right;">
             <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">DEVIS</h1>
             <p style="font-size: 1.25rem; font-weight: 600; color: #0a0e1a;">{{ $devis->numero }}</p>
-            <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($devis->created_at)->format('d/m/Y') }}</p>
+            <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($devis->date_devis ?? $devis->created_at)->format('d/m/Y') }}</p>
             <p style="color: #6b7280;">Validité: {{ $devis->validite_jours }} jours</p>
             <p style="margin-top: 0.5rem;">
                 @php
