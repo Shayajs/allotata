@@ -12,6 +12,9 @@
     @csrf
     
     @foreach($settings as $group => $groupSettings)
+        @if(in_array($group, ['logos', 'subscription', 'commission']))
+            @continue
+        @endif
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 capitalize">
                 @switch($group)
@@ -130,7 +133,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <!-- Logo Mode Clair -->
         <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
             <div class="flex items-center gap-2 mb-4">
@@ -223,6 +226,44 @@
                 <input type="file" name="logo_transparent" id="logo_transparent" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/svg+xml" class="hidden" onchange="this.form.submit()">
                 <label for="logo_transparent" class="block w-full px-4 py-3 text-center text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg cursor-pointer transition">
                     {{ $logoTransparent ? 'Remplacer' : 'Uploader' }} le logo
+                </label>
+            </form>
+        </div>
+
+        <!-- Logo PWA -->
+        <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="font-semibold text-slate-900 dark:text-white">Logo PWA (App Mobile)</h3>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Utilisé pour l'icône de l'application sur mobile. Sera redimensionné automatiquement (192, 512, 1024).</p>
+            
+            @if($logoPwa)
+                <div class="mb-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <img src="{{ route('storage.serve', ['path' => $logoPwa]) }}" alt="Logo PWA" class="max-w-full h-20 object-contain mx-auto">
+                    <div class="mt-2 text-center text-xs text-slate-500">
+                        <span class="block">Générés :</span> 
+                        <a href="/icons/icon-192x192.png" target="_blank" class="underline hover:text-blue-500">192px</a>,
+                        <a href="/icons/icon-512x512.png" target="_blank" class="underline hover:text-blue-500">512px</a>,
+                        <a href="/icons/icon-1024x1024.png" target="_blank" class="underline hover:text-blue-500">1024px</a>
+                    </div>
+                </div>
+                <form action="{{ route('admin.settings.delete-logo', 'pwa') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce logo ?');" class="mb-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                        Supprimer
+                    </button>
+                </form>
+            @endif
+            
+            <form action="{{ route('admin.settings.upload-logo-pwa') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="logo_pwa" id="logo_pwa" accept="image/jpeg,image/png,image/jpg,image/webp" class="hidden" onchange="this.form.submit()">
+                <label for="logo_pwa" class="block w-full px-4 py-3 text-center text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg cursor-pointer transition">
+                    {{ $logoPwa ? 'Remplacer' : 'Uploader' }} le logo
                 </label>
             </form>
         </div>

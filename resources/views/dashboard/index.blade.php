@@ -8,7 +8,7 @@
         
         <!-- PWA Configuration -->
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#10b981">
+        <meta name="theme-color" content="#0f172a">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Allo Tata">
@@ -284,6 +284,21 @@
                             <span class="hidden xl:inline">Support</span>
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Support</span>
                         </button>
+
+                        <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
+
+                        <!-- Installer (Nouveau) -->
+                        <button 
+                            onclick="showTab('installer')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'installer' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="installer"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Installer</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Installer</span>
+                        </button>
                     </nav>
                 </aside>
 
@@ -298,6 +313,11 @@
                         <!-- Onglet Entreprises -->
                         <div id="tab-entreprises" class="tab-content {{ $activeTab !== 'entreprises' ? 'hidden' : '' }}">
                             @include('dashboard.tabs.entreprises')
+                        </div>
+                        
+                        <!-- Onglet Installer -->
+                        <div id="tab-installer" class="tab-content {{ $activeTab !== 'installer' ? 'hidden' : '' }}">
+                            @include('dashboard.tabs.installer')
                         </div>
 
                         <!-- Onglet Abonnements -->

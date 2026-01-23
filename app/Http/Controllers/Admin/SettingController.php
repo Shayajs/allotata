@@ -25,8 +25,9 @@ class SettingController extends Controller
         $logoLight = Setting::get('site_logo_light', null);
         $logoDark = Setting::get('site_logo_dark', null);
         $logoTransparent = Setting::get('site_logo_transparent', null);
+        $logoPwa = Setting::get('site_logo_pwa', null);
         
-        return view('admin.settings.index', compact('settings', 'logoLight', 'logoDark', 'logoTransparent'));
+        return view('admin.settings.index', compact('settings', 'logoLight', 'logoDark', 'logoTransparent', 'logoPwa'));
     }
 
     /**
@@ -89,6 +90,7 @@ class SettingController extends Controller
     /**
      * Uploader le logo sans fond (transparent)
      */
+
     public function uploadLogoTransparent(Request $request)
     {
         $validated = $request->validate([
@@ -96,6 +98,91 @@ class SettingController extends Controller
         ]);
 
         return $this->uploadLogo($request->file('logo_transparent'), 'site_logo_transparent', 'Logo sans fond');
+    }
+
+    /**
+     * Uploader le logo PWA et générer les icônes
+     */
+    public function uploadLogoPwa(Request $request)
+    {
+        $request->validate([
+            'logo_pwa' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // Jusqu'à 5MB pour une bonne qualité source
+        ]);
+
+        try {
+            $file = $request->file('logo_pwa');
+            $imageService = app(ImageService::class);
+            
+            // 1. Sauvegarder l'original comme "site_logo_pwa" via ImageService
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'logo_pwa.' . $extension;
+            $logoPath = $imageService->processAndStore($file, 'site_logos', $filename);
+            
+            // Mettre à jour le setting pour l'original
+            Setting::set('site_logo_pwa', $logoPath, 'string');
+            
+            // 2. Générer les icônes (192, 512, 1024) dans public/icons/
+            $sourcePath = Storage::disk('public')->path($logoPath);
+            $iconsDir = public_path('icons');
+            
+            if (!file_exists($iconsDir)) {
+                mkdir($iconsDir, 0755, true);
+            }
+            
+            $sizes = [192, 512, 1024];
+            
+            foreach ($sizes as $size) {
+                $this->generateIcon($sourcePath, $iconsDir . "/icon-{$size}x{$size}.png", $size);
+            }
+            
+            ActivityLog::log('update', "Mise à jour du Logo PWA et génération des icônes");
+            
+            return back()->with('success', "Le logo PWA a été mis à jour et les icônes ont été régénérées.");
+            
+        } catch (\Exception $e) {
+            \Log::error("Erreur lors de l'upload du logo PWA", [
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', "Erreur lors du traitement du logo PWA : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Génère une icône carrée redimensionnée
+     */
+    private function generateIcon($sourcePath, $destPath, $size)
+    {
+        $imageInfo = getimagesize($sourcePath);
+        if (!$imageInfo) return;
+        
+        $mime = $imageInfo['mime'];
+        $width = $imageInfo[0];
+        $height = $imageInfo[1];
+        
+        switch ($mime) {
+            case 'image/jpeg': $source = imagecreatefromjpeg($sourcePath); break;
+            case 'image/png': $source = imagecreatefrompng($sourcePath); break;
+            case 'image/gif': $source = imagecreatefromgif($sourcePath); break;
+            case 'image/webp': $source = imagecreatefromwebp($sourcePath); break;
+            default: return;
+        }
+        
+        $dest = imagecreatetruecolor($size, $size);
+        
+        // Gérer la transparence
+        imagealphablending($dest, false);
+        imagesavealpha($dest, true);
+        $transparent = imagecolorallocatealpha($dest, 255, 255, 255, 127);
+        imagefilledrectangle($dest, 0, 0, $size, $size, $transparent);
+        
+        // Redimensionner
+        imagecopyresampled($dest, $source, 0, 0, 0, 0, $size, $size, $width, $height);
+        
+        // Sauvegarder en PNG
+        imagepng($dest, $destPath, 9);
+        
+        imagedestroy($source);
+        imagedestroy($dest);
     }
 
     /**
@@ -147,7 +234,7 @@ class SettingController extends Controller
      */
     public function deleteLogo(Request $request, string $type)
     {
-        $allowedTypes = ['light', 'dark', 'transparent'];
+        $allowedTypes = ['light', 'dark', 'transparent', 'pwa'];
         
         if (!in_array($type, $allowedTypes)) {
             return back()->with('error', 'Type de logo invalide.');
