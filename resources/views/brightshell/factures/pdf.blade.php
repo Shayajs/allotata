@@ -203,8 +203,17 @@
             background: {{ $couleurs['background'] }};
             padding: 15px;
             border-radius: 5px;
-            font-size: 11px;
+            font-size: 10px;
             margin-top: 30px;
+        }
+
+        .penalites-mention {
+            margin-top: 10px;
+            font-size: 9px;
+            color: {{ $couleurs['muted'] }};
+            text-align: justify;
+            border-top: 1px dashed {{ $couleurs['border'] }};
+            padding-top: 5px;
         }
         
         .notes {
@@ -254,7 +263,7 @@
                 <div class="company-info">{{ $entreprise['telephone'] }}</div>
             </div>
             <div class="header-right">
-                <div class="facture-title">FACTURE</div>
+                <div class="facture-title">{{ str_starts_with($facture->numero, 'AVO') ? 'AVOIR' : 'FACTURE' }}</div>
                 <div class="facture-numero">{{ $facture->numero }}</div>
                 <div class="facture-meta">
                     <p>Date: {{ \Carbon\Carbon::parse($facture->created_at)->format('d/m/Y') }}</p>
@@ -353,7 +362,7 @@
             </p>
             
             @if(isset($echeances) && count($echeances) > 0)
-                <p style="margin-top: 10px; font-weight: 600; text-decoration: underline;">Échéancier de paiement :</p>
+                <p style="margin-top: 10px; font-weight: 600; text-decoration: underline;">Échéancier de paiement (Facilités de paiement) :</p>
                 <table style="margin-top: 5px; font-size: 10px;">
                     <thead>
                         <tr style="background: transparent; color: {{ $couleurs['text'] }}; border-bottom: 1px solid {{ $couleurs['border'] }};">
@@ -365,8 +374,8 @@
                     <tbody>
                         @foreach($echeances as $e)
                             <tr>
-                                <td style="padding: 5px; border-bottom: 1px solid {{ $couleurs['border'] }};">{{ $e->numero }} / {{ count($echeances) }}</td>
-                                <td style="padding: 5px; border-bottom: 1px solid {{ $couleurs['border'] }};">{{ \Carbon\Carbon::parse($e->date_echeance)->format('d/m/Y') }}</td>
+                                <td style="padding: 5px; border-bottom: 1px solid {{ $couleurs['border'] }}; text-align: left;">{{ $e->numero }} / {{ count($echeances) }}</td>
+                                <td style="padding: 5px; border-bottom: 1px solid {{ $couleurs['border'] }}; text-align: left;">{{ \Carbon\Carbon::parse($e->date_echeance)->format('d/m/Y') }}</td>
                                 <td style="padding: 5px; border-bottom: 1px solid {{ $couleurs['border'] }}; text-align: right; font-weight: 600;">{{ number_format($e->montant, 2, ',', ' ') }} €</td>
                             </tr>
                         @endforeach
@@ -381,6 +390,10 @@
                 Facture acquittée le {{ \Carbon\Carbon::parse($facture->date_paiement)->format('d/m/Y') }}
             </p>
             @endif
+
+            <div class="penalites-mention">
+                En cas de retard de paiement, une indemnité forfaitaire pour frais de recouvrement de 40 euros est due de plein droit (Art. L. 441-10 II du Code de commerce). Pénalités de retard : taux de refinancement de la BCE majoré de 10 points. Pas d'escompte pour paiement anticipé.
+            </div>
         </div>
         
         <!-- Notes -->

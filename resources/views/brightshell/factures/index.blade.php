@@ -32,6 +32,9 @@
                     <td data-label="Objet">{{ Str::limit($facture->objet, 40) }}</td>
                     <td data-label="Montant" class="font-bold">{{ number_format($facture->montant_total, 2, ',', ' ') }} €</td>
                     <td data-label="Statut">
+                        @if(str_starts_with($facture->numero, 'AVO'))
+                            <span class="badge" style="background: #8b5cf6; color: white;">Avoir</span>
+                        @endif
                         @switch($facture->statut)
                             @case('brouillon')
                                 <span class="badge badge-info">Brouillon</span>
