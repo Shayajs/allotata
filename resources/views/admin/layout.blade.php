@@ -25,6 +25,83 @@
         /* Force browser controls (scrollbars, dates, etc.) to match the theme */
         html.dark { color-scheme: dark; }
         html { color-scheme: light; }
+
+        /* Responsive Tables Cards for Admin */
+        @media (max-width: 1024px) {
+            .table-responsive-to-cards table {
+                border: none !important;
+                background: transparent !important;
+            }
+            .table-responsive-to-cards thead {
+                display: none !important;
+            }
+            .table-responsive-to-cards tbody, 
+            .table-responsive-to-cards td, 
+            .table-responsive-to-cards tr {
+                display: block !important;
+                width: 100% !important;
+            }
+            .table-responsive-to-cards tr {
+                border: 1px solid rgba(226, 232, 240, 0.8) !important;
+                margin-bottom: 1.5rem !important;
+                border-radius: 1rem !important;
+                overflow: hidden !important;
+                background: white !important;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+                padding: 0.5rem 0 !important;
+            }
+            .dark .table-responsive-to-cards tr {
+                background: #1e293b !important;
+                border-color: #334155 !important;
+            }
+            .table-responsive-to-cards td {
+                border: none !important;
+                border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+                position: relative !important;
+                padding-left: 50% !important;
+                padding-right: 1rem !important;
+                text-align: right !important;
+                min-height: 3.5rem !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                white-space: normal !important;
+            }
+            .dark .table-responsive-to-cards td {
+                border-bottom-color: rgba(51, 65, 85, 0.5) !important;
+            }
+            .table-responsive-to-cards td:last-child {
+                border-bottom: none !important;
+                background: rgba(248, 250, 252, 0.5) !important;
+                margin-top: 0.5rem !important;
+            }
+            .dark .table-responsive-to-cards td:last-child {
+                background: rgba(15, 23, 42, 0.2) !important;
+            }
+            .table-responsive-to-cards td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 700;
+                color: #64748b;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            .dark .table-responsive-to-cards td::before {
+                color: #94a3b8;
+            }
+            
+            /* Ajustements spécifiques pour les cellules avec avatars/flex */
+            .table-responsive-to-cards td > div {
+                justify-content: flex-end !important;
+                width: 100% !important;
+            }
+        }
     </style>
     @stack('styles')
 </head>

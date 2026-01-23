@@ -88,7 +88,7 @@
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -104,7 +104,7 @@
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($reservations as $reservation)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Client">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">
                                     <x-user-name :user="$reservation->user" />
                                     @if(!$reservation->user && $reservation->nom_client)
@@ -115,25 +115,25 @@
                                     {{ $reservation->user?->email ?? ($reservation->email_client ?? 'N/A') }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Entreprise">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $reservation->entreprise->nom }}</div>
                                 <div class="text-sm text-slate-500 dark:text-slate-400">{{ $reservation->entreprise->type_activite }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Date">
                                 <div class="text-sm text-slate-900 dark:text-white">{{ $reservation->date_reservation->format('d/m/Y') }}</div>
                                 <div class="text-sm text-slate-500 dark:text-slate-400">{{ $reservation->date_reservation->format('H:i') }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Prix">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ number_format($reservation->prix, 2, ',', ' ') }} €</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Paiement">
                                 @if($reservation->est_paye)
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Payé</span>
                                 @else
                                     <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">Non payé</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                 <span class="px-2 py-1 text-xs rounded
                                     @if($reservation->statut === 'confirmee') bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400
                                     @elseif($reservation->statut === 'annulee') bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400
@@ -143,7 +143,7 @@
                                     {{ ucfirst(str_replace('_', ' ', $reservation->statut)) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.reservations.show', $reservation) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                         Voir

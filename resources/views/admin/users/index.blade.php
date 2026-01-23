@@ -92,7 +92,7 @@
 </div>
 
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto table-responsive-to-cards">
         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
             <thead class="bg-slate-50 dark:bg-slate-700">
                 <tr>
@@ -110,19 +110,19 @@
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 @forelse($users as $user)
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                        <td class="px-6 py-4 whitespace-nowrap" data-user-id="{{ $user->id }}">
+                        <td class="px-6 py-4 whitespace-nowrap" data-user-id="{{ $user->id }}" data-label="Nom">
                             <div class="flex items-center gap-3">
                                 <x-avatar :user="$user" size="sm" />
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->name }}</div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                             <x-presence-badge :user="$user" size="md" />
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Email">
                             <div class="text-sm text-slate-600 dark:text-slate-400">{{ $user->email }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Email vérifié">
                             @if($user->hasVerifiedEmail())
                                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,7 +152,7 @@
                                 </div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Rôles">
                             <div class="flex flex-col gap-2">
                                 <div class="flex gap-2">
                                     @if($user->est_client)
@@ -186,16 +186,16 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Entreprises">
                             {{ $user->entreprises_count }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Réservations">
                             {{ $user->reservations_count }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Inscrit le">
                             {{ $user->created_at->format('d/m/Y') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                             <div class="flex items-center justify-end gap-3">
                                 @if(auth()->id() !== $user->id)
                                     <form action="{{ route('admin.users.impersonate', $user) }}" method="POST">
