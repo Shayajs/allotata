@@ -21,12 +21,38 @@
                     Installez l'application officielle Allo Tata sur votre appareil pour une expérience fluide, un accès rapide et des fonctionnalités hors-ligne. Compatible avec tous les appareils modernes.
                 </p>
                 
-                <button onclick="window.installPwa()" class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-green-500/25">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button 
+                    id="pwa-install-btn"
+                    onclick="window.installPwa()" 
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-orange-500 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg relative overflow-hidden group"
+                >
+                    <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+                    <svg id="pwa-install-icon" class="w-5 h-5 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                     </svg>
-                    <span>Installer maintenant</span>
+                    <span id="pwa-install-text">Installer maintenant</span>
                 </button>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                        if (isStandalone) {
+                            const btn = document.getElementById('pwa-install-btn');
+                            const text = document.getElementById('pwa-install-text');
+                            const icon = document.getElementById('pwa-install-icon');
+                            
+                            if (btn && text && icon) {
+                                text.textContent = "Déjà installé";
+                                btn.classList.remove('from-green-500', 'to-orange-500', 'hover:scale-105');
+                                btn.classList.add('bg-slate-700', 'cursor-default', 'opacity-90');
+                                btn.onclick = null;
+                                // Change icon to check
+                                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+                                icon.classList.remove('group-hover:rotate-12');
+                            }
+                        }
+                    });
+                </script>
                 
                 <p class="mt-4 text-xs text-slate-400">
                     <span class="block sm:inline">📱 Compatible iOS & Android</span>
