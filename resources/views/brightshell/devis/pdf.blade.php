@@ -160,6 +160,38 @@
             font-weight: 600;
         }
         
+        /* Ligne parente (avec sous-lignes) */
+        tr.ligne-parent td {
+            font-weight: 600;
+            background: {{ $couleurs['background'] }};
+            border-bottom: none;
+        }
+        
+        /* Sous-lignes */
+        tr.sous-ligne td {
+            padding: 6px 10px;
+            font-size: 11px;
+            color: {{ $couleurs['muted'] }};
+            border-bottom: 1px dashed {{ $couleurs['border'] }};
+        }
+        
+        tr.sous-ligne td:first-child {
+            padding-left: 25px;
+        }
+        
+        tr.sous-ligne:last-of-type td {
+            border-bottom: 1px solid {{ $couleurs['border'] }};
+        }
+        
+        /* Description détaillée */
+        .ligne-details-text {
+            font-size: 10px;
+            color: {{ $couleurs['muted'] }};
+            font-style: italic;
+            margin-top: 3px;
+            white-space: pre-line;
+        }
+        
         .totaux {
             text-align: right;
             margin-top: 20px;
@@ -277,12 +309,48 @@
             </thead>
             <tbody>
                 @foreach($devis->lignes as $ligne)
-                <tr>
-                    <td>{{ $ligne['description'] }}</td>
-                    <td>{{ $ligne['quantite'] }}</td>
-                    <td>{{ number_format($ligne['prix_unitaire'], 2, ',', ' ') }} €</td>
-                    <td class="ligne-total">{{ number_format($ligne['quantite'] * $ligne['prix_unitaire'], 2, ',', ' ') }} €</td>
-                </tr>
+                    @php
+                        $hasSousLignes = !empty($ligne['sous_lignes']) && count($ligne['sous_lignes']) > 0;
+                        $ligneTotal = 0;
+                        $prixUnitaire = $ligne['prix_unitaire'] ?? 0;
+                        
+                        if ($hasSousLignes) {
+                            $sousTotal = 0;
+                            foreach ($ligne['sous_lignes'] as $sl) {
+                                $sousTotal += ($sl['quantite'] ?? 0) * ($sl['prix_unitaire'] ?? 0);
+                            }
+                            $prixUnitaire = $sousTotal;
+                            $ligneTotal = $sousTotal * ($ligne['quantite'] ?? 1);
+                        } else {
+                            $ligneTotal = ($ligne['quantite'] ?? 0) * ($ligne['prix_unitaire'] ?? 0);
+                        }
+                    @endphp
+                    
+                    <tr class="{{ $hasSousLignes ? 'ligne-parent' : '' }}">
+                        <td>
+                            {{ $ligne['description'] }}
+                            @if(!empty($ligne['details']))
+                                <div class="ligne-details-text">{{ $ligne['details'] }}</div>
+                            @endif
+                        </td>
+                        <td>{{ $ligne['quantite'] }}</td>
+                        <td>{{ number_format($prixUnitaire, 2, ',', ' ') }} €</td>
+                        <td class="ligne-total">{{ number_format($ligneTotal, 2, ',', ' ') }} €</td>
+                    </tr>
+                    
+                    @if($hasSousLignes)
+                        @foreach($ligne['sous_lignes'] as $sousLigne)
+                            @php
+                                $slTotal = ($sousLigne['quantite'] ?? 0) * ($sousLigne['prix_unitaire'] ?? 0);
+                            @endphp
+                            <tr class="sous-ligne">
+                                <td>↳ {{ $sousLigne['description'] }}</td>
+                                <td>{{ $sousLigne['quantite'] }}</td>
+                                <td>{{ number_format($sousLigne['prix_unitaire'], 2, ',', ' ') }} €</td>
+                                <td>{{ number_format($slTotal, 2, ',', ' ') }} €</td>
+                            </tr>
+                        @endforeach
+                    @endif
                 @endforeach
             </tbody>
         </table>

@@ -17,31 +17,36 @@
     }
     
     .ligne-item {
+        background: var(--bs-bg-dark);
+        border: 1px solid var(--bs-border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .ligne-item.expanded {
+        border-color: var(--bs-accent);
+    }
+    
+    .ligne-main {
         display: grid;
-        grid-template-columns: 1fr 80px 100px 100px 40px;
+        grid-template-columns: 1fr 80px 100px 100px auto;
         gap: 0.5rem;
-        margin-bottom: 0.5rem;
         align-items: center;
     }
 
     @media (max-width: 768px) {
-        .ligne-item {
+        .ligne-main {
             grid-template-columns: 1fr 1fr;
-            padding: 1rem;
-            background: var(--bs-bg-dark);
-            border: 1px solid var(--bs-border);
-            border-radius: 8px;
         }
-        .ligne-item input.ligne-desc { grid-column: span 2; }
-        .ligne-item input.ligne-qte { grid-column: span 1; }
-        .ligne-item input.ligne-prix { grid-column: span 1; }
-        .ligne-item .ligne-total { grid-column: span 1; text-align: right; }
-        .ligne-item button { grid-column: span 1; }
+        .ligne-main input.ligne-desc { grid-column: span 2; }
+        .ligne-main .ligne-total { text-align: right; }
+        .ligne-main .ligne-actions { grid-column: span 2; display: flex; gap: 0.5rem; justify-content: flex-end; }
     }
     
     .ligne-header {
         display: grid;
-        grid-template-columns: 1fr 80px 100px 100px 40px;
+        grid-template-columns: 1fr 80px 100px 100px auto;
         gap: 0.5rem;
         margin-bottom: 0.5rem;
         padding-bottom: 0.5rem;
@@ -63,6 +68,101 @@
         font-weight: 600;
         color: var(--bs-accent);
         font-size: 0.875rem;
+        min-width: 80px;
+        text-align: right;
+    }
+    
+    .ligne-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    .ligne-details {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed var(--bs-border);
+    }
+    
+    .ligne-description {
+        margin-bottom: 0.75rem;
+    }
+    
+    .ligne-description textarea {
+        width: 100%;
+        min-height: 60px;
+        resize: vertical;
+    }
+    
+    /* Sous-lignes */
+    .sous-lignes-container {
+        margin-top: 0.75rem;
+        padding-left: 1rem;
+        border-left: 2px solid var(--bs-accent);
+    }
+    
+    .sous-ligne-item {
+        display: grid;
+        grid-template-columns: 1fr 60px 80px 80px 30px;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        align-items: center;
+    }
+    
+    @media (max-width: 768px) {
+        .sous-ligne-item {
+            grid-template-columns: 1fr 1fr;
+        }
+        .sous-ligne-item input:first-child { grid-column: span 2; }
+    }
+    
+    .sous-ligne-item input {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .sous-ligne-total {
+        font-size: 0.8rem;
+        color: var(--bs-text-muted);
+        text-align: right;
+    }
+    
+    .sous-ligne-header {
+        display: grid;
+        grid-template-columns: 1fr 60px 80px 80px 30px;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--bs-text-muted);
+        opacity: 0.7;
+    }
+    
+    @media (max-width: 768px) {
+        .sous-ligne-header { display: none; }
+    }
+    
+    .btn-expand {
+        background: transparent;
+        border: 1px solid var(--bs-border);
+        color: var(--bs-text-muted);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-expand:hover {
+        background: var(--bs-bg-hover);
+        color: var(--bs-accent);
+        border-color: var(--bs-accent);
+    }
+    
+    .btn-expand.active {
+        background: rgba(91, 188, 228, 0.1);
+        color: var(--bs-accent);
+        border-color: var(--bs-accent);
     }
     
     .totaux-section {
@@ -175,6 +275,29 @@
         text-align: right;
     }
     
+    .preview-table tr.sous-ligne td {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+        background: #f9fafb;
+    }
+    
+    .preview-table tr.sous-ligne td:first-child {
+        padding-left: 2rem;
+    }
+    
+    .preview-table tr.ligne-parent td {
+        font-weight: 600;
+        background: #fafbfc;
+    }
+    
+    .preview-table .ligne-description-cell {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-style: italic;
+        padding-top: 0.25rem;
+    }
+    
     .preview-totaux {
         text-align: right;
         margin-top: 1rem;
@@ -267,7 +390,7 @@
             @csrf
             @if($devis) @method('PUT') @endif
             
-            <div class="grid grid-2">
+            <div class="grid grid-3">
                 <div class="form-group">
                     <label class="form-label">Client *</label>
                     <select name="client_id" id="client_id" class="form-input" required onchange="updatePreview()">
@@ -286,6 +409,12 @@
                         </option>
                         @endforeach
                     </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date du devis</label>
+                    <input type="date" name="date_devis" id="date_devis" class="form-input" 
+                           value="{{ old('date_devis', $devis ? \Carbon\Carbon::parse($devis->date_devis ?? $devis->created_at)->format('Y-m-d') : date('Y-m-d')) }}" 
+                           onchange="updatePreview()">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Validité (jours)</label>
@@ -401,7 +530,7 @@
             <div style="text-align: right;">
                 <div class="preview-title">DEVIS</div>
                 <div class="preview-numero" id="preview-numero">DEV-{{ date('Y') }}-XXXX</div>
-                <p style="color: #6b7280; margin-top: 1rem;">Date: {{ date('d/m/Y') }}</p>
+                <p style="color: #6b7280; margin-top: 1rem;">Date: <span id="preview-date">{{ date('d/m/Y') }}</span></p>
                 <p style="color: #6b7280;">Validité: <span id="preview-validite">30</span> jours</p>
             </div>
         </div>
@@ -475,28 +604,115 @@ function formatMontant(value) {
     }).format(value) + ' €';
 }
 
-function ajouterLigne(description = '', quantite = 1, prixUnitaire = '') {
+function ajouterLigne(data = {}) {
     const container = document.getElementById('lignes-container');
     const div = document.createElement('div');
     div.className = 'ligne-item';
     div.dataset.index = ligneIndex;
     
+    const description = data.description || '';
+    const quantite = data.quantite || 1;
+    const prixUnitaire = data.prix_unitaire || '';
+    const details = data.details || '';
+    const sousLignes = data.sous_lignes || [];
+    const hasDetails = details || sousLignes.length > 0;
+    
     div.innerHTML = `
-        <input type="text" name="lignes[${ligneIndex}][description]" class="form-input ligne-desc" 
-               placeholder="Description de la prestation" value="${description}" required 
-               oninput="recalculerTotaux()">
-        <input type="number" name="lignes[${ligneIndex}][quantite]" class="form-input ligne-qte" 
-               value="${quantite}" min="0.01" step="0.01" required 
-               onchange="recalculerTotaux()" oninput="recalculerTotaux()">
-        <input type="number" name="lignes[${ligneIndex}][prix_unitaire]" class="form-input ligne-prix" 
-               placeholder="0.00" value="${prixUnitaire}" min="0" step="0.01" required 
-               onchange="recalculerTotaux()" oninput="recalculerTotaux()">
-        <span class="ligne-total">0,00 €</span>
-        <button type="button" onclick="supprimerLigne(this)" class="btn btn-danger btn-sm">×</button>
+        <div class="ligne-main">
+            <input type="text" name="lignes[${ligneIndex}][description]" class="form-input ligne-desc" 
+                   placeholder="Description de la prestation" value="${escapeHtml(description)}" required 
+                   oninput="recalculerTotaux()">
+            <input type="number" name="lignes[${ligneIndex}][quantite]" class="form-input ligne-qte" 
+                   value="${quantite}" min="0.01" step="0.01" required 
+                   onchange="recalculerTotaux()" oninput="recalculerTotaux()">
+            <input type="number" name="lignes[${ligneIndex}][prix_unitaire]" class="form-input ligne-prix" 
+                   placeholder="0.00" value="${prixUnitaire}" min="0" step="0.01" 
+                   onchange="recalculerTotaux()" oninput="recalculerTotaux()">
+            <span class="ligne-total">0,00 €</span>
+            <div class="ligne-actions">
+                <button type="button" onclick="toggleDetails(this)" class="btn-expand ${hasDetails ? 'active' : ''}" title="Ajouter des détails">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                </button>
+                <button type="button" onclick="supprimerLigne(this)" class="btn btn-danger btn-sm">×</button>
+            </div>
+        </div>
+        <div class="ligne-details" style="display: ${hasDetails ? 'block' : 'none'};">
+            <div class="ligne-description">
+                <textarea name="lignes[${ligneIndex}][details]" class="form-input" 
+                          placeholder="Description détaillée (optionnel)" 
+                          oninput="recalculerTotaux()">${escapeHtml(details)}</textarea>
+            </div>
+            <div class="sous-lignes-container">
+                <div class="sous-ligne-header">
+                    <span>Détail</span>
+                    <span>Qté</span>
+                    <span>Prix €</span>
+                    <span>Total</span>
+                    <span></span>
+                </div>
+                <div class="sous-lignes-list" data-ligne="${ligneIndex}"></div>
+                <button type="button" onclick="ajouterSousLigne(${ligneIndex})" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; font-size: 0.75rem;">
+                    + Ajouter un détail
+                </button>
+            </div>
+        </div>
     `;
     
     container.appendChild(div);
+    
+    // Ajouter les sous-lignes existantes
+    if (sousLignes.length > 0) {
+        sousLignes.forEach(sl => {
+            ajouterSousLigne(ligneIndex, sl);
+        });
+    }
+    
     ligneIndex++;
+    recalculerTotaux();
+}
+
+function toggleDetails(btn) {
+    const ligneItem = btn.closest('.ligne-item');
+    const details = ligneItem.querySelector('.ligne-details');
+    const isVisible = details.style.display !== 'none';
+    
+    details.style.display = isVisible ? 'none' : 'block';
+    btn.classList.toggle('active', !isVisible);
+    ligneItem.classList.toggle('expanded', !isVisible);
+}
+
+function ajouterSousLigne(ligneIdx, data = {}) {
+    const container = document.querySelector(`.sous-lignes-list[data-ligne="${ligneIdx}"]`);
+    if (!container) return;
+    
+    const sousLigneIdx = container.children.length;
+    const div = document.createElement('div');
+    div.className = 'sous-ligne-item';
+    
+    const description = data.description || '';
+    const quantite = data.quantite || 1;
+    const prixUnitaire = data.prix_unitaire || '';
+    
+    div.innerHTML = `
+        <input type="text" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][description]" 
+               class="form-input sl-desc" placeholder="Détail..." value="${escapeHtml(description)}" 
+               oninput="recalculerTotaux()">
+        <input type="number" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][quantite]" 
+               class="form-input sl-qte" value="${quantite}" min="0.01" step="0.01" 
+               onchange="recalculerTotaux()" oninput="recalculerTotaux()">
+        <input type="number" name="lignes[${ligneIdx}][sous_lignes][${sousLigneIdx}][prix_unitaire]" 
+               class="form-input sl-prix" placeholder="0" value="${prixUnitaire}" min="0" step="0.01" 
+               onchange="recalculerTotaux()" oninput="recalculerTotaux()">
+        <span class="sous-ligne-total">0 €</span>
+        <button type="button" onclick="supprimerSousLigne(this)" class="btn btn-danger btn-sm" style="padding: 0.2rem 0.4rem;">×</button>
+    `;
+    
+    container.appendChild(div);
+    recalculerTotaux();
+}
+
+function supprimerSousLigne(btn) {
+    btn.closest('.sous-ligne-item').remove();
     recalculerTotaux();
 }
 
@@ -546,11 +762,38 @@ function recalculerTotaux() {
     let totalHt = 0;
     
     lignes.forEach(ligne => {
-        const qte = parseFloat(ligne.querySelector('.ligne-qte').value) || 0;
-        const prix = parseFloat(ligne.querySelector('.ligne-prix').value) || 0;
-        const sousTotal = qte * prix;
-        ligne.querySelector('.ligne-total').textContent = formatMontant(sousTotal);
-        totalHt += sousTotal;
+        const sousLignes = ligne.querySelectorAll('.sous-ligne-item');
+        let ligneSousTotal = 0;
+        
+        // Calculer les sous-lignes
+        sousLignes.forEach(sl => {
+            const qte = parseFloat(sl.querySelector('.sl-qte').value) || 0;
+            const prix = parseFloat(sl.querySelector('.sl-prix').value) || 0;
+            const sousTotal = qte * prix;
+            sl.querySelector('.sous-ligne-total').textContent = formatMontant(sousTotal);
+            ligneSousTotal += sousTotal;
+        });
+        
+        // Si des sous-lignes existent, le prix principal = somme des sous-lignes
+        const prixInput = ligne.querySelector('.ligne-prix');
+        const qteInput = ligne.querySelector('.ligne-qte');
+        
+        let ligneTotal = 0;
+        if (sousLignes.length > 0) {
+            // Le prix unitaire devient la somme des sous-lignes (on laisse l'input modifiable)
+            // Mais on calcule le total à partir des sous-lignes
+            const qte = parseFloat(qteInput.value) || 1;
+            ligneTotal = ligneSousTotal * qte;
+            // Mettre à jour le prix unitaire implicite (optionnel, pour affichage)
+            // prixInput.value = ligneSousTotal.toFixed(2);
+        } else {
+            const qte = parseFloat(qteInput.value) || 0;
+            const prix = parseFloat(prixInput.value) || 0;
+            ligneTotal = qte * prix;
+        }
+        
+        ligne.querySelector('.ligne-total').textContent = formatMontant(ligneTotal);
+        totalHt += ligneTotal;
     });
     
     const mode = document.querySelector('input[name="mode_tva"]:checked').value;
@@ -565,7 +808,6 @@ function recalculerTotaux() {
         montantTva = totalHt * (tauxTva / 100);
         montantTotal = totalHt + montantTva;
     } else if (mode === 'ttc') {
-        // Les prix saisis sont TTC, on retrouve le HT
         const htFromTtc = totalHt / (1 + tauxTva / 100);
         montantTva = totalHt - htFromTtc;
         montantTotal = totalHt;
@@ -603,18 +845,59 @@ function updatePreviewLignes() {
     let html = '';
     lignes.forEach(ligne => {
         const desc = ligne.querySelector('.ligne-desc').value || '-';
+        const details = ligne.querySelector('textarea')?.value || '';
         const qte = parseFloat(ligne.querySelector('.ligne-qte').value) || 0;
-        const prix = parseFloat(ligne.querySelector('.ligne-prix').value) || 0;
-        const total = qte * prix;
+        const sousLignes = ligne.querySelectorAll('.sous-ligne-item');
         
+        let ligneTotal = 0;
+        let prix = parseFloat(ligne.querySelector('.ligne-prix').value) || 0;
+        
+        if (sousLignes.length > 0) {
+            // Calcul depuis sous-lignes
+            let sousTotal = 0;
+            sousLignes.forEach(sl => {
+                const slQte = parseFloat(sl.querySelector('.sl-qte').value) || 0;
+                const slPrix = parseFloat(sl.querySelector('.sl-prix').value) || 0;
+                sousTotal += slQte * slPrix;
+            });
+            prix = sousTotal;
+            ligneTotal = sousTotal * qte;
+        } else {
+            ligneTotal = qte * prix;
+        }
+        
+        // Ligne principale
+        const hasSousLignes = sousLignes.length > 0;
         html += `
-            <tr>
-                <td>${escapeHtml(desc)}</td>
+            <tr class="${hasSousLignes ? 'ligne-parent' : ''}">
+                <td>
+                    ${escapeHtml(desc)}
+                    ${details ? `<div class="ligne-description-cell">${escapeHtml(details)}</div>` : ''}
+                </td>
                 <td>${qte}</td>
                 <td>${formatMontant(prix)}</td>
-                <td style="font-weight: 600;">${formatMontant(total)}</td>
+                <td style="font-weight: 600;">${formatMontant(ligneTotal)}</td>
             </tr>
         `;
+        
+        // Sous-lignes
+        if (hasSousLignes) {
+            sousLignes.forEach(sl => {
+                const slDesc = sl.querySelector('.sl-desc').value || '-';
+                const slQte = parseFloat(sl.querySelector('.sl-qte').value) || 0;
+                const slPrix = parseFloat(sl.querySelector('.sl-prix').value) || 0;
+                const slTotal = slQte * slPrix;
+                
+                html += `
+                    <tr class="sous-ligne">
+                        <td>↳ ${escapeHtml(slDesc)}</td>
+                        <td>${slQte}</td>
+                        <td>${formatMontant(slPrix)}</td>
+                        <td>${formatMontant(slTotal)}</td>
+                    </tr>
+                `;
+            });
+        }
     });
     
     tbody.innerHTML = html;
@@ -653,6 +936,13 @@ function updatePreview() {
     const validite = document.getElementById('validite_jours').value || 30;
     document.getElementById('preview-validite').textContent = validite;
     
+    // Date
+    const dateInput = document.getElementById('date_devis').value;
+    if (dateInput) {
+        const [year, month, day] = dateInput.split('-');
+        document.getElementById('preview-date').textContent = `${day}/${month}/${year}`;
+    }
+    
     // Notes
     const notes = document.getElementById('notes').value;
     const notesSection = document.getElementById('preview-notes-section');
@@ -674,7 +964,13 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
     @if($devis && $devis->lignes)
         @foreach($devis->lignes as $ligne)
-        ajouterLigne('{{ addslashes($ligne['description'] ?? '') }}', '{{ $ligne['quantite'] ?? 1 }}', '{{ $ligne['prix_unitaire'] ?? '' }}');
+        ajouterLigne({
+            description: '{{ addslashes($ligne['description'] ?? '') }}',
+            quantite: '{{ $ligne['quantite'] ?? 1 }}',
+            prix_unitaire: '{{ $ligne['prix_unitaire'] ?? '' }}',
+            details: '{{ addslashes($ligne['details'] ?? '') }}',
+            sous_lignes: {!! json_encode($ligne['sous_lignes'] ?? []) !!}
+        });
         @endforeach
     @else
         ajouterLigne();
