@@ -52,7 +52,7 @@
 
 <!-- Liste des logs -->
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto table-responsive-to-cards">
         <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
             <thead class="bg-slate-50 dark:bg-slate-700">
                 <tr>
@@ -67,21 +67,21 @@
             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 @forelse($logs as $log)
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Date">
                             {{ $log->created_at->format('d/m/Y H:i:s') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Admin">
                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $log->admin?->name ?? 'Système' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Action">
                             <span class="px-2 py-1 text-xs rounded bg-{{ $log->action_color }}-100 dark:bg-{{ $log->action_color }}-900/30 text-{{ $log->action_color }}-800 dark:text-{{ $log->action_color }}-400">
                                 {{ $log->action_icon }} {{ ucfirst($log->action) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400" data-label="Description">
                             {{ Str::limit($log->description, 60) }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Modèle">
                             @if($log->model_type)
                                 <span class="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 rounded">{{ $log->model_name }}</span>
                                 @if($log->model_id)
@@ -91,7 +91,7 @@
                                 -
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400" data-label="IP">
                             {{ $log->ip_address ?? '-' }}
                         </td>
                     </tr>
