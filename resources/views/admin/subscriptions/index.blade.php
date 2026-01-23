@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
         <div>
             <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <svg class="w-8 h-8 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,9 +14,9 @@
                 Consultez et gérez tous les abonnements actifs (utilisateurs et entreprises).
             </p>
         </div>
-        <form action="{{ route('admin.subscriptions.sync') }}" method="POST" id="sync-form">
+        <form action="{{ route('admin.subscriptions.sync') }}" method="POST" id="sync-form" class="w-full sm:w-auto">
             @csrf
-            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition" id="sync-btn">
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition" id="sync-btn">
                 <svg class="w-5 h-5" id="sync-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
@@ -85,7 +85,7 @@
                 </svg>
                 Abonnements utilisateurs (Stripe)
             </h2>
-            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden table-responsive-to-cards">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">
                         <tr>
@@ -99,7 +99,7 @@
                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($userSubscriptions as $subscription)
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Utilisateur">
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
                                         {{ $subscription->user->name ?? 'N/A' }}
                                     </div>
@@ -107,7 +107,7 @@
                                         {{ $subscription->user->email ?? 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                     <span class="px-2 py-1 text-xs rounded-full 
                                         {{ $subscription->stripe_status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : '' }}
                                         {{ $subscription->stripe_status === 'trialing' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' : '' }}
@@ -120,7 +120,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Prix Stripe">
                                     @if($subscription->stripe_price === config('services.stripe.price_id'))
                                         <span class="text-sm text-slate-900 dark:text-white font-medium">15.00 €</span>
                                         <span class="text-xs text-slate-500">/mois</span>
@@ -128,10 +128,10 @@
                                         <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400" data-label="Date création">
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" data-label="Actions">
                                     <form action="{{ route('admin.subscriptions.user.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
                                         <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">
@@ -175,7 +175,7 @@
                 </svg>
                 Abonnements entreprises (Stripe)
             </h2>
-            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden table-responsive-to-cards">
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700">
                         <tr>
@@ -190,7 +190,7 @@
                     <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($entrepriseSubscriptions as $subscription)
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Entreprise">
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">
                                         {{ $subscription->entreprise->nom ?? 'N/A' }}
                                     </div>
@@ -198,7 +198,7 @@
                                         {{ $subscription->entreprise->email ?? 'N/A' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Type">
                                     <span class="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
                                         @if($subscription->type === 'site_web')
                                             Site Web Vitrine
@@ -209,7 +209,7 @@
                                         @endif
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                     <span class="px-2 py-1 text-xs rounded-full 
                                         {{ $subscription->stripe_status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : '' }}
                                         {{ $subscription->stripe_status === 'trialing' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' : '' }}
@@ -222,7 +222,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap" data-label="Prix Stripe">
                                     @if($subscription->stripe_price === config('services.stripe.price_id_site_web'))
                                         <span class="text-sm text-slate-900 dark:text-white font-medium">2.00 €</span>
                                         <span class="text-xs text-slate-500">/mois</span>
@@ -233,10 +233,10 @@
                                         <code class="text-xs text-slate-600 dark:text-slate-400">{{ $subscription->stripe_price ?? 'N/A' }}</code>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400" data-label="Date création">
                                     {{ $subscription->created_at->format('d/m/Y H:i') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" data-label="Actions">
                                     <form action="{{ route('admin.subscriptions.entreprise.sync', $subscription) }}" method="POST" class="inline-block">
                                         @csrf
                                         <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 text-xs font-medium mr-2" title="Vérifier l'état sur Stripe">

@@ -5,10 +5,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Dashboard - Allo Tata</title>
         @include('partials.favicon')
+        
+        <!-- PWA Configuration -->
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#10b981">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Allo Tata">
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
+        
+        <script>
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('SW registered:', registration);
+                        })
+                        .catch(err => {
+                            console.log('SW registration failed:', err);
+                        });
+                });
+            }
+        </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
         @include('partials.super-user-banner')
