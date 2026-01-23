@@ -17,7 +17,7 @@
     @endphp
     <style>
         @page {
-            margin: 20mm;
+            margin: 10mm 15mm;
         }
         
         * {
@@ -27,24 +27,23 @@
         }
         
         body {
-            font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
             color: {{ $couleurs['text'] }};
             background: white;
         }
         
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100%;
+            padding: 0;
         }
         
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 2px solid {{ $couleurs['border'] }};
         }
         
@@ -93,21 +92,21 @@
         }
         
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
         
         .section-title {
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: {{ $couleurs['muted'] }};
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         
         .client-box {
             background: {{ $couleurs['background'] }};
-            padding: 15px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 4px;
         }
         
         .client-name {

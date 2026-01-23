@@ -279,8 +279,15 @@ class BrightShellController extends Controller
         // Calcul du montant HT (somme des lignes)
         $montantHt = 0;
         foreach ($validated['lignes'] as $ligne) {
-            if (!empty($ligne['description']) && isset($ligne['quantite']) && isset($ligne['prix_unitaire'])) {
-                $montantHt += floatval($ligne['quantite']) * floatval($ligne['prix_unitaire']);
+            if (!empty($ligne['description']) && isset($ligne['quantite'])) {
+                $pu = floatval($ligne['prix_unitaire'] ?? 0);
+                if (!empty($ligne['sous_lignes'])) {
+                    $pu = 0;
+                    foreach ($ligne['sous_lignes'] as $sl) {
+                        $pu += floatval($sl['quantite'] ?? 0) * floatval($sl['prix_unitaire'] ?? 0);
+                    }
+                }
+                $montantHt += floatval($ligne['quantite']) * $pu;
             }
         }
         
@@ -359,10 +366,14 @@ class BrightShellController extends Controller
         $factureId = DB::table('brightshell_factures')->insertGetId([
             'numero' => $numero,
             'client_id' => $devis->client_id,
+            'date_facture' => now()->format('Y-m-d'),
             'devis_id' => $devis->id,
             'objet' => $devis->objet,
             'lignes' => $devis->lignes,
-            'montant_total' => $devis->montant_ht,
+            'montant_total' => $devis->montant_total ?? $devis->montant_ht,
+            'mode_tva' => $devis->mode_tva ?? 'non_assujetti',
+            'taux_tva' => $devis->taux_tva ?? 20,
+            'montant_tva' => $devis->montant_tva ?? 0,
             'notes' => $devis->notes,
             'echeance_jours' => 30,
             'statut' => 'brouillon',
@@ -406,8 +417,15 @@ class BrightShellController extends Controller
         // Calcul du montant HT
         $montantHt = 0;
         foreach ($validated['lignes'] as $ligne) {
-            if (!empty($ligne['description']) && isset($ligne['quantite']) && isset($ligne['prix_unitaire'])) {
-                $montantHt += floatval($ligne['quantite']) * floatval($ligne['prix_unitaire']);
+            if (!empty($ligne['description']) && isset($ligne['quantite'])) {
+                $pu = floatval($ligne['prix_unitaire'] ?? 0);
+                if (!empty($ligne['sous_lignes'])) {
+                    $pu = 0;
+                    foreach ($ligne['sous_lignes'] as $sl) {
+                        $pu += floatval($sl['quantite'] ?? 0) * floatval($sl['prix_unitaire'] ?? 0);
+                    }
+                }
+                $montantHt += floatval($ligne['quantite']) * $pu;
             }
         }
         
@@ -542,20 +560,46 @@ class BrightShellController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|integer',
+            'date_facture' => 'nullable|date',
             'objet' => 'required|string|max:255',
             'lignes' => 'required|array|min:1',
             'notes' => 'nullable|string',
             'echeance_jours' => 'nullable|integer|min:1',
+            'mode_tva' => 'required|in:non_assujetti,ht,ttc',
+            'taux_tva' => 'nullable|numeric|min:0|max:100',
         ]);
         
         // Calcul du montant
-        $montant = 0;
+        $montantHt = 0;
         foreach ($validated['lignes'] as $ligne) {
-            if (!empty($ligne['description']) && isset($ligne['quantite']) && isset($ligne['prix_unitaire'])) {
-                $montant += floatval($ligne['quantite']) * floatval($ligne['prix_unitaire']);
+            if (!empty($ligne['description']) && isset($ligne['quantite'])) {
+                $pu = floatval($ligne['prix_unitaire'] ?? 0);
+                // Si sous-lignes, le prix unitaire est la somme des sous-lignes
+                if (!empty($ligne['sous_lignes'])) {
+                    $pu = 0;
+                    foreach ($ligne['sous_lignes'] as $sl) {
+                        $pu += floatval($sl['quantite'] ?? 0) * floatval($sl['prix_unitaire'] ?? 0);
+                    }
+                }
+                $montantHt += floatval($ligne['quantite']) * $pu;
             }
         }
         
+        // Calcul TVA et Total selon le mode
+        $modeTva = $validated['mode_tva'];
+        $tauxTva = floatval($validated['taux_tva'] ?? 20);
+        $montantTva = 0;
+        $montantTotal = $montantHt;
+        
+        if ($modeTva === 'ht') {
+            $montantTva = $montantHt * ($tauxTva / 100);
+            $montantTotal = $montantHt + $montantTva;
+        } elseif ($modeTva === 'ttc') {
+            $montantTotal = $montantHt;
+            $htFromTtc = $montantHt / (1 + $tauxTva / 100);
+            $montantTva = $montantHt - $htFromTtc;
+        }
+
         // Génération numéro
         $lastNum = DB::table('brightshell_factures')->whereYear('created_at', date('Y'))->count() + 1;
         $numero = 'FAC-' . date('Y') . '-' . str_pad($lastNum, 4, '0', STR_PAD_LEFT);
@@ -563,9 +607,13 @@ class BrightShellController extends Controller
         DB::table('brightshell_factures')->insert([
             'numero' => $numero,
             'client_id' => $validated['client_id'],
+            'date_facture' => $validated['date_facture'] ?? now()->format('Y-m-d'),
             'objet' => $validated['objet'],
             'lignes' => json_encode($validated['lignes']),
-            'montant_total' => round($montant, 2),
+            'montant_total' => round($montantTotal, 2),
+            'mode_tva' => $modeTva,
+            'taux_tva' => $tauxTva,
+            'montant_tva' => round($montantTva, 2),
             'notes' => $validated['notes'] ?? null,
             'echeance_jours' => $validated['echeance_jours'] ?? 30,
             'statut' => 'brouillon',
