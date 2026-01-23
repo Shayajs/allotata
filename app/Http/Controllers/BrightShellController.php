@@ -1782,20 +1782,33 @@ class BrightShellController extends Controller
     
     public function legalStore(Request $request)
     {
+        // Emergency fix for missing columns if migration couldn't run
+        if (!\Schema::hasColumn('brightshell_legals', 'destinataire_prenom')) {
+            \Schema::table('brightshell_legals', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->string('destinataire_prenom')->nullable()->after('destinataire_nom');
+                $table->string('destinataire_titre')->nullable()->after('destinataire_prenom');
+                $table->text('pieces_jointes')->nullable()->after('contenu');
+            });
+        }
+
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'type' => 'required|string|in:attestation,courrier,autre',
             'client_id' => 'nullable|exists:brightshell_clients,id',
             'contenu' => 'required|string',
             'destinataire_nom' => 'nullable|string|max:255',
+            'destinataire_prenom' => 'nullable|string|max:255',
+            'destinataire_titre' => 'nullable|string|max:255',
             'destinataire_adresse' => 'nullable|string',
+            'pieces_jointes' => 'nullable|string',
             'date_document' => 'required|date',
             'lieu' => 'required|string|max:255',
         ]);
         
         if ($validated['client_id'] && empty($validated['destinataire_nom'])) {
             $client = DB::table('brightshell_clients')->find($validated['client_id']);
-            $validated['destinataire_nom'] = $client->societe ?: ($client->nom . ' ' . $client->prenom);
+            $validated['destinataire_nom'] = $client->societe ?: $client->nom;
+            $validated['destinataire_prenom'] = $client->societe ? null : $client->prenom;
             $validated['destinataire_adresse'] = $client->adresse . "\n" . $client->code_postal . ' ' . $client->ville;
         }
         
@@ -1804,7 +1817,39 @@ class BrightShellController extends Controller
         
         DB::table('brightshell_legals')->insert($validated);
         
-        return redirect()->route('brightshell.legals')->with('success', 'Document légal créé avec succès.');
+        return redirect()->route('brightshell.legals')->with('success', 'Document créé avec succès.');
+    }
+
+    public function legalEdit($id)
+    {
+        $document = DB::table('brightshell_legals')->find($id);
+        if (!$document) abort(404);
+        
+        $clients = DB::table('brightshell_clients')->orderBy('nom')->get();
+        return view('brightshell.legals.edit', compact('document', 'clients'));
+    }
+
+    public function legalUpdate(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'titre' => 'required|string|max:255',
+            'type' => 'required|string|in:attestation,courrier,autre',
+            'client_id' => 'nullable|exists:brightshell_clients,id',
+            'contenu' => 'required|string',
+            'destinataire_nom' => 'nullable|string|max:255',
+            'destinataire_prenom' => 'nullable|string|max:255',
+            'destinataire_titre' => 'nullable|string|max:255',
+            'destinataire_adresse' => 'nullable|string',
+            'pieces_jointes' => 'nullable|string',
+            'date_document' => 'required|date',
+            'lieu' => 'required|string|max:255',
+        ]);
+        
+        $validated['updated_at'] = now();
+        
+        DB::table('brightshell_legals')->where('id', $id)->update($validated);
+        
+        return redirect()->route('brightshell.legals')->with('success', 'Document mis à jour.');
     }
     
     public function legalShow($id)

@@ -107,6 +107,8 @@ Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.'
     Route::get('/legals/create', [BrightShellController::class, 'legalCreate'])->name('legals.create');
     Route::post('/legals', [BrightShellController::class, 'legalStore'])->name('legals.store');
     Route::get('/legals/{id}', [BrightShellController::class, 'legalShow'])->name('legals.show');
+    Route::get('/legals/{id}/edit', [BrightShellController::class, 'legalEdit'])->name('legals.edit');
+    Route::put('/legals/{id}', [BrightShellController::class, 'legalUpdate'])->name('legals.update');
     Route::get('/legals/{id}/pdf', [BrightShellController::class, 'legalPdf'])->name('legals.pdf');
     Route::delete('/legals/{id}', [BrightShellController::class, 'legalDelete'])->name('legals.delete');
 
