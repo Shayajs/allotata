@@ -1,9 +1,9 @@
 {{-- Onglet Accueil - Résumé global --}}
-<div>
+<div class="flex flex-col">
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Vue d'ensemble</h2>
 
     <!-- Statut des rôles -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 order-1">
         <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
@@ -58,7 +58,7 @@
 
     <!-- Statistiques globales (pour les gérants) -->
     @if($user->est_gerant && $stats)
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6 order-3 md:order-2">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
@@ -105,7 +105,7 @@
 
     <!-- Réservations en attente (pour les gérants) -->
     @if($user->est_gerant && $reservationsEnAttente->count() > 0)
-        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-600 rounded-xl p-6 mb-6">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-600 rounded-xl p-6 mb-6 order-4 md:order-3">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -145,7 +145,7 @@
 
     <!-- Accès rapide aux entreprises -->
     @if($entreprises->count() > 0)
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6 md:mb-0 order-2 md:order-4">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +181,7 @@
             </div>
         </div>
     @else
-        <div class="text-center py-12 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+        <div class="text-center py-12 bg-slate-50 dark:bg-slate-700/50 rounded-xl mb-6 md:mb-0 order-2 md:order-4">
             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
             </svg>
