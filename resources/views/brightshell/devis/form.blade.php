@@ -165,6 +165,28 @@
         border-color: var(--bs-accent);
     }
     
+    .ligne-item {
+        transition: all 0.2s ease;
+    }
+    
+    .ligne-item:hover {
+        background: var(--bs-bg-hover);
+        border-color: var(--bs-accent);
+    }
+    
+    .ligne-item:hover .ligne-total, 
+    .ligne-item:hover .ligne-header span,
+    .ligne-item:hover .form-label {
+        color: white;
+    }
+    
+    .ligne-item:hover input,
+    .ligne-item:hover select,
+    .ligne-item:hover textarea {
+        background: var(--bs-bg-card);
+        color: white;
+    }
+    
     .totaux-section {
         margin-top: 1.5rem;
         padding-top: 1rem;

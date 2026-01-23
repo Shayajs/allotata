@@ -3,160 +3,226 @@
 @section('title', 'Facture ' . $facture->numero)
 
 @section('actions')
-<a href="{{ route('brightshell.factures') }}" class="btn btn-secondary">← Retour</a>
-<a href="{{ route('brightshell.factures.pdf', $facture->id) }}" class="btn btn-primary" target="_blank">
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-    Télécharger PDF
-</a>
-@if($facture->statut !== 'payee')
-    @if(!$facture->paiement_echelonne)
-    <button type="button" onclick="document.getElementById('plan-paiement-card').style.display = 'block'; document.getElementById('plan-paiement-card').scrollIntoView({behavior: 'smooth'})" class="btn btn-info">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        Proposer paiement
-    </button>
+<div class="flex gap-2 flex-wrap">
+    <a href="{{ route('brightshell.factures') }}" class="btn btn-secondary">← Retour</a>
+    <a href="{{ route('brightshell.factures.pdf', $facture->id) }}" class="btn btn-primary" target="_blank">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span>PDF</span>
+    </a>
+    @if($facture->statut !== 'payee')
+        @if(!$facture->paiement_echelonne)
+        <button type="button" onclick="document.getElementById('plan-paiement-card').style.display = 'block'; document.getElementById('plan-paiement-card').scrollIntoView({behavior: 'smooth'})" class="btn btn-info">
+            📅 Proposer paiement
+        </button>
+        @endif
+        <form action="{{ route('brightshell.factures.paid', $facture->id) }}" method="POST" class="flex gap-2">
+            @csrf
+            <select name="mode_paiement" class="form-input" style="height: 38px; width: auto; min-width: 140px;">
+                <option value="Virement bancaire">Virement</option>
+                <option value="Chèque">Chèque</option>
+                <option value="Carte bleue">CB</option>
+            </select>
+            <button type="submit" class="btn btn-success">Payée</button>
+        </form>
     @endif
-    <form action="{{ route('brightshell.factures.paid', $facture->id) }}" method="POST" style="display: flex; gap: 0.5rem; align-items: center;">
+    <form action="{{ route('brightshell.factures.avoir', $facture->id) }}" method="POST" onsubmit="return confirm('Créer un avoir pour annuler cette facture ?')">
         @csrf
-        <select name="mode_paiement" class="form-input" style="height: 38px; width: 160px; padding: 4px 8px;">
-            <option value="Virement bancaire">Virement bancaire</option>
-            <option value="Chèque">Chèque</option>
-            <option value="Carte bleue">Carte bleue</option>
-        </select>
-        <button type="submit" class="btn btn-success">Marquer payée</button>
+        <button type="submit" class="btn btn-danger">Avoir</button>
     </form>
-@endif
-<form action="{{ route('brightshell.factures.avoir', $facture->id) }}" method="POST" onsubmit="return confirm('Créer un avoir pour annuler cette facture ? Cela générera un nouveau document avec des montants négatifs.')">
-    @csrf
-    <button type="submit" class="btn btn-danger">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15L12 19L8 15M12 19V5"/></svg>
-        Générer un avoir
-    </button>
-</form>
+</div>
 @endsection
 
+@push('styles')
+<style>
+    .facture-show-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .document-preview-card {
+        background: white;
+        color: #1a1a1a;
+        padding: 2.5rem;
+    }
+    
+    .document-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #e5e7eb;
+        gap: 2rem;
+    }
+    
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .document-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+        min-width: 600px;
+    }
+    
+    @media (max-width: 1024px) {
+        .facture-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .document-preview-card {
+            padding: 1.5rem;
+        }
+        
+        .document-header {
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: center;
+        }
+        
+        .document-header > div:last-child {
+            text-align: center !important;
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 1.5rem;
+        }
+        
+        .document-header img {
+            margin: 0 auto 1rem !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="grid grid-2" style="gap: 2rem; max-width: 1400px;">
-    <!-- Facture -->
-    <div class="card" style="background: white; color: #1a1a1a;">
-        <!-- En-tête -->
-        <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 2px solid #e5e7eb;">
-            <div>
-                <h2 style="font-size: 1.5rem; font-weight: 700; color: #0a0e1a; margin-bottom: 0.5rem;">{{ $entreprise['nom'] }}</h2>
-                <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['forme_juridique'] }}</p>
-                <p style="color: #6b7280; font-size: 0.875rem;">SIRET: {{ $entreprise['siret'] }}</p>
-                <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['email'] }}</p>
-                <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['telephone'] }}</p>
-            </div>
-            <div style="text-align: right;">
-                <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">{{ str_starts_with($facture->numero, 'AVO') ? 'AVOIR' : 'FACTURE' }}</h1>
-                <p style="font-size: 1.25rem; font-weight: 600; color: #0a0e1a;">{{ $facture->numero }}</p>
-                <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->format('d/m/Y') }}</p>
-                @if($facture->paiement_echelonne)
-                <p style="color: #f59e0b; font-weight: 600; margin-top: 0.5rem;">📅 Paiement en {{ $facture->nombre_echeances }}x</p>
-                @else
-                <p style="color: #6b7280;">Échéance: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->addDays($facture->echeance_jours)->format('d/m/Y') }}</p>
-                @endif
-                @if($facture->statut === 'payee')
-                <p style="color: #10b981; font-weight: 600; margin-top: 0.5rem;">✓ PAYÉE</p>
-                @endif
-            </div>
-        </div>
-        
-        <!-- Client -->
-        <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Client</p>
-            <p style="font-weight: 600; color: #0a0e1a;">{{ $facture->client_societe ?? $facture->client_nom . ' ' . $facture->client_prenom }}</p>
-            @if($facture->client_adresse)
-            <p style="color: #6b7280; font-size: 0.875rem;">{{ $facture->client_adresse }}</p>
-            <p style="color: #6b7280; font-size: 0.875rem;">{{ $facture->client_cp }} {{ $facture->client_ville }}</p>
-            @endif
-            @if($facture->client_siret)
-            <p style="color: #6b7280; font-size: 0.875rem;">SIRET: {{ $facture->client_siret }}</p>
-            @endif
-        </div>
-        
-        <!-- Objet -->
-        <div style="margin-bottom: 2rem;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Objet</p>
-            <p style="font-weight: 600; color: #0a0e1a;">{{ $facture->objet }}</p>
-        </div>
-        
-        <!-- Lignes -->
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
-            <thead>
-                <tr style="background: #0a0e1a; color: white;">
-                    <th style="padding: 0.75rem; text-align: left; font-size: 0.75rem; text-transform: uppercase;">Description</th>
-                    <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Qté</th>
-                    <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Prix unit.</th>
-                    <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($facture->lignes as $ligne)
-                    @php
-                        $hasSousLignes = !empty($ligne['sous_lignes']) && count($ligne['sous_lignes']) > 0;
-                        $ligneTotal = 0;
-                        $prixUnitaire = $ligne['prix_unitaire'] ?? 0;
-                        
-                        if ($hasSousLignes) {
-                            $sousTotal = 0;
-                            foreach ($ligne['sous_lignes'] as $sl) {
-                                $sousTotal += ($sl['quantite'] ?? 0) * ($sl['prix_unitaire'] ?? 0);
-                            }
-                            $prixUnitaire = $sousTotal;
-                            $ligneTotal = $sousTotal * ($ligne['quantite'] ?? 1);
-                        } else {
-                            $ligneTotal = ($ligne['quantite'] ?? 0) * ($ligne['prix_unitaire'] ?? 0);
-                        }
-                    @endphp
-                    
-                    <tr style="border-bottom: 1px solid #e5e7eb; {{ $hasSousLignes ? 'background: #fafbfc;' : '' }}">
-                        <td style="padding: 0.75rem; color: #0a0e1a; {{ $hasSousLignes ? 'font-weight: 600;' : '' }}">
-                            {{ $ligne['description'] }}
-                            @if(!empty($ligne['details']))
-                                <div style="font-size: 0.8rem; color: #6b7280; font-style: italic; margin-top: 0.25rem;">{{ $ligne['details'] }}</div>
-                            @endif
-                        </td>
-                        <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ $ligne['quantite'] }}</td>
-                        <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</td>
-                        <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">{{ number_format($ligneTotal, 2, ',', ' ') }} €</td>
-                    </tr>
-                    
-                    @if($hasSousLignes)
-                        @foreach($ligne['sous_lignes'] as $sousLigne)
-                            @php
-                                $slTotal = ($sousLigne['quantite'] ?? 0) * ($sousLigne['prix_unitaire'] ?? 0);
-                            @endphp
-                            <tr style="border-bottom: 1px dashed #e5e7eb; background: #f9fafb;">
-                                <td style="padding: 0.5rem 0.75rem 0.5rem 2rem; color: #6b7280; font-size: 0.85rem;">↳ {{ $sousLigne['description'] }}</td>
-                                <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ $sousLigne['quantite'] }}</td>
-                                <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ number_format($sousLigne['prix_unitaire'], 2, ',', ' ') }} €</td>
-                                <td style="padding: 0.5rem 0.75rem; text-align: right; color: #6b7280; font-size: 0.85rem;">{{ number_format($slTotal, 2, ',', ' ') }} €</td>
-                            </tr>
-                        @endforeach
+<div class="facture-show-wrapper">
+    <div class="grid grid-2 facture-grid" style="gap: 2rem;">
+        <!-- Facture -->
+        <div class="card document-preview-card">
+            <!-- En-tête -->
+            <div class="document-header">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #0a0e1a; margin-bottom: 0.5rem;">{{ $entreprise['nom'] }}</h2>
+                    <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['forme_juridique'] }}</p>
+                    <p style="color: #6b7280; font-size: 0.875rem;">SIRET: {{ $entreprise['siret'] }}</p>
+                    <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['email'] }}</p>
+                    <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['telephone'] }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">{{ str_starts_with($facture->numero, 'AVO') ? 'AVOIR' : 'FACTURE' }}</h1>
+                    <p style="font-size: 1.25rem; font-weight: 600; color: #0a0e1a;">{{ $facture->numero }}</p>
+                    <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->format('d/m/Y') }}</p>
+                    @if($facture->paiement_echelonne)
+                    <p style="color: #f59e0b; font-weight: 600; margin-top: 0.5rem;">📅 Paiement en {{ $facture->nombre_echeances }}x</p>
+                    @else
+                    <p style="color: #6b7280;">Échéance: {{ \Carbon\Carbon::parse($facture->date_facture ?? $facture->created_at)->addDays($facture->echeance_jours)->format('d/m/Y') }}</p>
                     @endif
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">Total HT = Total TTC</td>
-                    <td style="padding: 0.75rem; text-align: right; font-size: 1.25rem; font-weight: 700; color: #5bbce4;">{{ number_format($facture->montant_total, 2, ',', ' ') }} €</td>
-                </tr>
-                <tr>
-                    <td colspan="4" style="padding: 0.5rem; text-align: right; color: #6b7280; font-size: 0.875rem;">
-                        TVA non applicable, art. 293 B du CGI
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-        
-        @if($facture->notes)
-        <div style="background: #f9fafb; padding: 1rem; border-radius: 8px;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Notes</p>
-            <p style="color: #0a0e1a; white-space: pre-line;">{{ $facture->notes }}</p>
+                    @if($facture->statut === 'payee')
+                    <p style="color: #10b981; font-weight: 600; margin-top: 0.5rem;">✓ PAYÉE</p>
+                    @endif
+                </div>
+            </div>
+            
+            <!-- Client -->
+            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+                <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Client</p>
+                <p style="font-weight: 600; color: #0a0e1a;">{{ $facture->client_societe ?? $facture->client_nom . ' ' . $facture->client_prenom }}</p>
+                @if($facture->client_adresse)
+                <p style="color: #6b7280; font-size: 0.875rem;">{{ $facture->client_adresse }}</p>
+                <p style="color: #6b7280; font-size: 0.875rem;">{{ $facture->client_cp }} {{ $facture->client_ville }}</p>
+                @endif
+                @if($facture->client_siret)
+                <p style="color: #6b7280; font-size: 0.875rem;">SIRET: {{ $facture->client_siret }}</p>
+                @endif
+            </div>
+            
+            <!-- Objet -->
+            <div style="margin-bottom: 2rem;">
+                <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Objet</p>
+                <p style="font-weight: 600; color: #0a0e1a;">{{ $facture->objet }}</p>
+            </div>
+            
+            <!-- Lignes -->
+            <div class="table-responsive">
+                <table class="document-table">
+                    <thead>
+                        <tr style="background: #0a0e1a; color: white;">
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.75rem; text-transform: uppercase;">Description</th>
+                            <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Qté</th>
+                            <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Prix unit.</th>
+                            <th style="padding: 0.75rem; text-align: right; font-size: 0.75rem; text-transform: uppercase;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($facture->lignes as $ligne)
+                            @php
+                                $hasSousLignes = !empty($ligne['sous_lignes']) && count($ligne['sous_lignes']) > 0;
+                                $ligneTotal = 0;
+                                $prixUnitaire = $ligne['prix_unitaire'] ?? 0;
+                                
+                                if ($hasSousLignes) {
+                                    $sousTotal = 0;
+                                    foreach ($ligne['sous_lignes'] as $sl) {
+                                        $sousTotal += ($sl['quantite'] ?? 0) * ($sl['prix_unitaire'] ?? 0);
+                                    }
+                                    $prixUnitaire = $sousTotal;
+                                    $ligneTotal = $sousTotal * ($ligne['quantite'] ?? 1);
+                                } else {
+                                    $ligneTotal = ($ligne['quantite'] ?? 0) * ($ligne['prix_unitaire'] ?? 0);
+                                }
+                            @endphp
+                            
+                            <tr style="border-bottom: 1px solid #e5e7eb; {{ $hasSousLignes ? 'background: #fafbfc;' : '' }}">
+                                <td style="padding: 0.75rem; color: #0a0e1a; {{ $hasSousLignes ? 'font-weight: 600;' : '' }}">
+                                    {{ $ligne['description'] }}
+                                    @if(!empty($ligne['details']))
+                                        <div style="font-size: 0.8rem; color: #6b7280; font-style: italic; margin-top: 0.25rem;">{{ $ligne['details'] }}</div>
+                                    @endif
+                                </td>
+                                <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ $ligne['quantite'] }}</td>
+                                <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</td>
+                                <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">{{ number_format($ligneTotal, 2, ',', ' ') }} €</td>
+                            </tr>
+                            
+                            @if($hasSousLignes)
+                                @foreach($ligne['sous_lignes'] as $sousLigne)
+                                    @php
+                                        $slTotal = ($sousLigne['quantite'] ?? 0) * ($sousLigne['prix_unitaire'] ?? 0);
+                                    @endphp
+                                    <tr style="border-bottom: 1px dashed #e5e7eb; background: #f9fafb;">
+                                        <td style="padding: 0.5rem 0.75rem 0.5rem 2rem; color: #6b7280; font-size: 0.85rem;">↳ {{ $sousLigne['description'] }}</td>
+                                        <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ $sousLigne['quantite'] }}</td>
+                                        <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ number_format($sousLigne['prix_unitaire'], 2, ',', ' ') }} €</td>
+                                        <td style="padding: 0.5rem 0.75rem; text-align: right; color: #6b7280; font-size: 0.85rem;">{{ number_format($slTotal, 2, ',', ' ') }} €</td>
+                                    </tr>
+                                @endforeach
+                            @endif
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">Total HT = Total TTC</td>
+                            <td style="padding: 0.75rem; text-align: right; font-size: 1.25rem; font-weight: 700; color: #5bbce4;">{{ number_format($facture->montant_total, 2, ',', ' ') }} €</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 0.5rem; text-align: right; color: #6b7280; font-size: 0.875rem;">
+                                TVA non applicable, art. 293 B du CGI
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            @if($facture->notes)
+            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px;">
+                <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; margin-bottom: 0.5rem;">Notes</p>
+                <p style="color: #0a0e1a; white-space: pre-line;">{{ $facture->notes }}</p>
+            </div>
+            @endif
         </div>
-        @endif
-    </div>
     
     <!-- Panneau Paiement -->
     <div>
