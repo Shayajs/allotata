@@ -26,11 +26,16 @@
         }
         
         body {
-            font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 12px;
             line-height: 1.5;
             color: {{ $couleurs['text'] }};
             background: white;
+            margin: 30px;
+        }
+        
+        table, th, td, p, div {
+            font-family: 'DejaVu Sans', sans-serif;
         }
         
         .header {
