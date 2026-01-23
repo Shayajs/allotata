@@ -62,7 +62,7 @@
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -78,29 +78,29 @@
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($entreprises as $entreprise)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Nom">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $entreprise->nom }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Type">
                                 <div class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->type_activite }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Gérant">
                                 <div class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->user->name }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Ville">
                                 <div class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->ville ?? '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400" data-label="Réservations">
                                 {{ $entreprise->reservations_count }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                 @if($entreprise->est_verifiee)
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Vérifiée</span>
                                 @else
                                     <span class="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded">En attente</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.entreprises.show', $entreprise) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                         Voir

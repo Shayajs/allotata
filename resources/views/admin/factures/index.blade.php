@@ -84,76 +84,77 @@
 
     <!-- Liste des factures -->
     <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <thead class="bg-slate-50 dark:bg-slate-700">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Numéro</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Entreprise</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Client</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Montant TTC</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Statut</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                @forelse($factures as $facture)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->numero_facture }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-xs px-2 py-1 rounded-full
-                                @if($facture->type_facture === 'reservation') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
-                                @elseif($facture->type_facture === 'abonnement_manuel') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400
-                                @else bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400
-                                @endif">
-                                @if($facture->type_facture === 'reservation')
-                                    Réservation
-                                @elseif($facture->type_facture === 'abonnement_manuel')
-                                    Abonnement manuel
-                                @else
-                                    Abonnement entreprise
-                                @endif
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-slate-900 dark:text-white">
-                                {{ $facture->entreprise ? $facture->entreprise->nom : 'N/A' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-slate-900 dark:text-white">
-                                {{ $facture->user ? $facture->user->name : 'N/A' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-slate-600 dark:text-slate-400">
-                                {{ $facture->date_facture->format('d/m/Y') }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <span class="text-sm font-semibold text-slate-900 dark:text-white">
-                                {{ number_format($facture->montant_ttc, 2, ',', ' ') }} €
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-xs px-2 py-1 rounded-full
-                                @if($facture->statut === 'payee') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400
-                                @elseif($facture->statut === 'annulee') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400
-                                @elseif($facture->statut === 'brouillon') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400
-                                @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
-                                @endif">
-                                {{ ucfirst($facture->statut) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('admin.factures.show', $facture->id) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
-                                Voir
-                            </a>
-                        </td>
+        <div class="overflow-x-auto table-responsive-to-cards">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead class="bg-slate-50 dark:bg-slate-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Numéro</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Entreprise</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Client</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Montant TTC</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
                     </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                    @forelse($factures as $facture)
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Numéro">
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->numero_facture }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Type">
+                                <span class="text-xs px-2 py-1 rounded-full
+                                    @if($facture->type_facture === 'reservation') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
+                                    @elseif($facture->type_facture === 'abonnement_manuel') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400
+                                    @else bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400
+                                    @endif">
+                                    @if($facture->type_facture === 'reservation')
+                                        Réservation
+                                    @elseif($facture->type_facture === 'abonnement_manuel')
+                                        Abonnement manuel
+                                    @else
+                                        Abonnement entreprise
+                                    @endif
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Entreprise">
+                                <span class="text-sm text-slate-900 dark:text-white">
+                                    {{ $facture->entreprise ? $facture->entreprise->nom : 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Client">
+                                <span class="text-sm text-slate-900 dark:text-white">
+                                    {{ $facture->user ? $facture->user->name : 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Date">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">
+                                    {{ $facture->date_facture->format('d/m/Y') }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right" data-label="Montant TTC">
+                                <span class="text-sm font-semibold text-slate-900 dark:text-white">
+                                    {{ number_format($facture->montant_ttc, 2, ',', ' ') }} €
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
+                                <span class="text-xs px-2 py-1 rounded-full
+                                    @if($facture->statut === 'payee') bg-green-100 text-green-800 dark:bg-green-900/30 text-green-400
+                                    @elseif($facture->statut === 'annulee') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400
+                                    @elseif($facture->statut === 'brouillon') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400
+                                    @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
+                                    @endif">
+                                    {{ ucfirst($facture->statut) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
+                                <a href="{{ route('admin.factures.show', $facture->id) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
+                                    Voir
+                                </a>
+                            </td>
+                        </tr>
                 @empty
                     <tr>
                         <td colspan="8" class="px-6 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
