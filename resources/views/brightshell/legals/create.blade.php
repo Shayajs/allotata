@@ -140,12 +140,12 @@ const modeles = {
     attestation_stage: {
         titre: "Attestation de stage",
         type: "attestation",
-        contenu: `<p>Je soussigné(e) <strong>Lucas Espinar</strong>, certifie par la présente que :</p>\n\n<p style="text-align: center; font-weight: bold;">Madame/Monsieur [NOM_STAGIAIRE]</p>\n\n<p>A effectué un stage au sein de mon entreprise du [DATE_DEBUT] au [DATE_FIN]. Durant cette période, le stagiaire a participé activement aux missions de développement web et gestion de projet.</p>\n\n<p>Cette attestation est délivrée pour servir et valoir ce que de droit.</p>`
+        contenu: `<p>Je soussigné(e) <strong>Lucas Espinar</strong>, agissant en qualité d’entrepreneur individuel sous l'enseigne <strong>BrightShell</strong>, certifie par la présente que :</p>\n\n<p style="text-align: center; font-weight: bold;">Madame/Monsieur [NOM_STAGIAIRE]</p>\n\n<p>A effectué un stage au sein de mon entreprise du [DATE_DEBUT] au [DATE_FIN]. Durant cette période, le stagiaire a participé activement aux missions de développement web et gestion de projet.</p>\n\n<p>Cette attestation est délivrée pour servir et valoir ce que de droit.</p>`
     },
     justificatif_presence: {
         titre: "Justificatif de présence",
         type: "attestation",
-        contenu: `<p>Je soussigné(e) <strong>Lucas Espinar</strong>, gérant de <strong>BrightShell EI</strong>, atteste que :</p>\n\n<p style="text-align: center; font-weight: bold;">[NOM_PERSONNE]</p>\n\n<p>Était présent(e) dans nos locaux le [DATE] de [HEURE_DEBUT] à [HEURE_FIN] pour un professionnel concernant [SUJET].</p>`
+        contenu: `<p>Je soussigné(e) <strong>Lucas Espinar</strong>, agissant en qualité d’entrepreneur individuel sous l'enseigne <strong>BrightShell</strong>, atteste que :</p>\n\n<p style="text-align: center; font-weight: bold;">[NOM_PERSONNE]</p>\n\n<p>Était présent(e) dans nos locaux le [DATE] de [HEURE_DEBUT] à [HEURE_FIN] pour un professionnel concernant [SUJET].</p>`
     },
     courrier_libre: {
         titre: "Courrier Libre",

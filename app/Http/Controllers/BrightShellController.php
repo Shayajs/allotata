@@ -1782,6 +1782,15 @@ class BrightShellController extends Controller
     
     public function legalStore(Request $request)
     {
+        // Emergency fix for missing columns if migration couldn't run
+        if (!\Schema::hasColumn('brightshell_legals', 'destinataire_prenom')) {
+            \Schema::table('brightshell_legals', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->string('destinataire_prenom')->nullable()->after('destinataire_nom');
+                $table->string('destinataire_titre')->nullable()->after('destinataire_prenom');
+                $table->text('pieces_jointes')->nullable()->after('contenu');
+            });
+        }
+
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'type' => 'required|string|in:attestation,courrier,autre',

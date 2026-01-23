@@ -132,7 +132,7 @@
     </style>
 </head>
 <body>
-    <div style="border: 2px solid #5bbce4; padding: 40px; min-height: 980px; position: relative; background: #fff;">
+    <div style="padding: 40px; min-height: 980px; position: relative; background: #fff;">
         <div class="header">
             <div class="header-left">
                 @if(isset($logo) && $logo)
