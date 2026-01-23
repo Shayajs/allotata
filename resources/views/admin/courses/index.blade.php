@@ -5,10 +5,11 @@
 @section('subheader', 'Créez et organisez vos modules de cours')
 
 @section('content')
-    <div class="flex justify-end mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des Cours</h1>
         <button 
             onclick="document.getElementById('create-module-modal').classList.remove('hidden')"
-            class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+            class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
         >
             ➕ Nouveau Module
         </button>

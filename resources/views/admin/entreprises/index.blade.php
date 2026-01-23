@@ -5,6 +5,10 @@
 @section('subheader', 'Gérez et vérifiez les entreprises')
 
 @section('content')
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des Entreprises</h1>
+    </div>
+
     <!-- Barre de recherche et filtres -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
         <form method="GET" action="{{ route('admin.entreprises.index') }}" class="space-y-4">

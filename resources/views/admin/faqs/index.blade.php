@@ -5,8 +5,9 @@
 @section('subheader', 'Gérez les questions fréquemment posées')
 
 @section('content')
-    <div class="flex justify-end mb-6">
-        <a href="{{ route('admin.faqs.create') }}" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Liste des FAQs</h1>
+        <a href="{{ route('admin.faqs.create') }}" class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
             ➕ Nouvelle FAQ
         </a>
     </div>
@@ -56,7 +57,7 @@
 
     <!-- Liste des FAQs -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -70,16 +71,16 @@
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($faqs as $faq)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 {{ !$faq->est_actif ? 'opacity-50' : '' }}">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Ordre">
                                 <span class="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">
                                     {{ $faq->ordre }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4" data-label="Question">
                                 <div class="text-sm font-medium text-slate-900 dark:text-white">{{ Str::limit($faq->question, 80) }}</div>
                                 <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ Str::limit($faq->reponse, 100) }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Catégorie">
                                 @if($faq->categorie)
                                     <span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 rounded">
                                         {{ $faq->categorie }}
@@ -88,14 +89,14 @@
                                     <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
                                 @if($faq->est_actif)
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded">Active</span>
                                 @else
                                     <span class="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded">Inactive</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.faqs.edit', $faq) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                         Modifier

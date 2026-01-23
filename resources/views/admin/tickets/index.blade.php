@@ -5,6 +5,10 @@
 @section('subheader', 'Gérez les demandes de support des utilisateurs')
 
 @section('content')
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Tickets Support</h1>
+    </div>
+
     <!-- Statistiques rapides -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
