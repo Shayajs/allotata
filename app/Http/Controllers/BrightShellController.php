@@ -662,6 +662,42 @@ class BrightShellController extends Controller
         return redirect()->route('brightshell.factures')->with('success', 'Facture marquée comme payée.');
     }
     
+    /**
+     * Créer un avoir à partir d'une facture existante
+     */
+    public function factureCreateAvoir($id)
+    {
+        $oldFacture = DB::table('brightshell_factures')->find($id);
+        if (!$oldFacture) abort(404);
+        
+        // On récupère les lignes et on inverse les prix
+        $lignes = json_decode($oldFacture->lignes, true);
+        foreach ($lignes as &$ligne) {
+            $ligne['prix_unitaire'] = -abs($ligne['prix_unitaire']);
+        }
+        
+        // Génération numéro AVOIR
+        $lastNum = DB::table('brightshell_factures')
+            ->where('numero', 'LIKE', 'AVO-' . date('Y') . '-%')
+            ->count() + 1;
+        $numero = 'AVO-' . date('Y') . '-' . str_pad($lastNum, 4, '0', STR_PAD_LEFT);
+        
+        $newId = DB::table('brightshell_factures')->insertGetId([
+            'numero' => $numero,
+            'client_id' => $oldFacture->client_id,
+            'objet' => 'Avoir sur facture ' . $oldFacture->numero,
+            'lignes' => json_encode($lignes),
+            'montant_total' => -$oldFacture->montant_total,
+            'notes' => 'Avoir venant annuler tout ou partie de la facture ' . $oldFacture->numero,
+            'echeance_jours' => 0,
+            'statut' => 'payee', // Un avoir est considéré comme "soldé" immédiatement
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        
+        return redirect()->route('brightshell.factures.show', $newId)->with('success', 'Avoir créé avec succès.');
+    }
+    
     public function facturePdf($id)
     {
         $facture = DB::table('brightshell_factures')

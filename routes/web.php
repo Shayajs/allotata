@@ -55,6 +55,7 @@ Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.'
     Route::get('/factures/{id}', [BrightShellController::class, 'factureShow'])->name('factures.show');
     Route::get('/factures/{id}/pdf', [BrightShellController::class, 'facturePdf'])->name('factures.pdf');
     Route::post('/factures/{id}/paid', [BrightShellController::class, 'factureMarkPaid'])->name('factures.paid');
+    Route::post('/factures/{id}/avoir', [BrightShellController::class, 'factureCreateAvoir'])->name('factures.avoir');
     Route::post('/factures/{id}/echeances', [BrightShellController::class, 'factureCreateEcheances'])->name('factures.echeances.create');
     Route::post('/factures/{id}/echeances/{echeanceId}/paid', [BrightShellController::class, 'echeanceMarkPaid'])->name('factures.echeances.paid');
 

@@ -25,6 +25,13 @@
         <button type="submit" class="btn btn-success">Marquer payée</button>
     </form>
 @endif
+<form action="{{ route('brightshell.factures.avoir', $facture->id) }}" method="POST" onsubmit="return confirm('Créer un avoir pour annuler cette facture ? Cela générera un nouveau document avec des montants négatifs.')">
+    @csrf
+    <button type="submit" class="btn btn-danger">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15L12 19L8 15M12 19V5"/></svg>
+        Générer un avoir
+    </button>
+</form>
 @endsection
 
 @section('content')
@@ -41,7 +48,7 @@
                 <p style="color: #6b7280; font-size: 0.875rem;">{{ $entreprise['telephone'] }}</p>
             </div>
             <div style="text-align: right;">
-                <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">FACTURE</h1>
+                <h1 style="font-size: 2rem; font-weight: 700; color: #5bbce4;">{{ str_starts_with($facture->numero, 'AVO') ? 'AVOIR' : 'FACTURE' }}</h1>
                 <p style="font-size: 1.25rem; font-weight: 600; color: #0a0e1a;">{{ $facture->numero }}</p>
                 <p style="color: #6b7280; margin-top: 1rem;">Date: {{ \Carbon\Carbon::parse($facture->created_at)->format('d/m/Y') }}</p>
                 @if($facture->paiement_echelonne)
