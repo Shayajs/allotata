@@ -179,15 +179,15 @@
                         @endphp
                         
                         <tr style="border-bottom: 1px solid #e5e7eb; {{ $hasSousLignes ? 'background: #fafbfc;' : '' }}">
-                            <td style="padding: 0.75rem; color: #0a0e1a; {{ $hasSousLignes ? 'font-weight: 600;' : '' }}">
+                            <td data-label="Description" style="padding: 0.75rem; color: #0a0e1a; {{ $hasSousLignes ? 'font-weight: 600;' : '' }}">
                                 {{ $ligne['description'] }}
                                 @if(!empty($ligne['details']))
                                     <div style="font-size: 0.8rem; color: #6b7280; font-style: italic; margin-top: 0.25rem;">{{ $ligne['details'] }}</div>
                                 @endif
                             </td>
-                            <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ $ligne['quantite'] }}</td>
-                            <td style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</td>
-                            <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">{{ number_format($ligneTotal, 2, ',', ' ') }} €</td>
+                            <td data-label="Qté" style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ $ligne['quantite'] }}</td>
+                            <td data-label="Prix unit." style="padding: 0.75rem; text-align: right; color: #6b7280;">{{ number_format($prixUnitaire, 2, ',', ' ') }} €</td>
+                            <td data-label="Total" style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0a0e1a;">{{ number_format($ligneTotal, 2, ',', ' ') }} €</td>
                         </tr>
                         
                         @if($hasSousLignes)
@@ -196,10 +196,10 @@
                                     $slTotal = ($sousLigne['quantite'] ?? 0) * ($sousLigne['prix_unitaire'] ?? 0);
                                 @endphp
                                 <tr style="border-bottom: 1px dashed #e5e7eb; background: #f9fafb;">
-                                    <td style="padding: 0.5rem 0.75rem 0.5rem 2rem; color: #6b7280; font-size: 0.85rem;">↳ {{ $sousLigne['description'] }}</td>
-                                    <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ $sousLigne['quantite'] }}</td>
-                                    <td style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ number_format($sousLigne['prix_unitaire'], 2, ',', ' ') }} €</td>
-                                    <td style="padding: 0.5rem 0.75rem; text-align: right; color: #6b7280; font-size: 0.85rem;">{{ number_format($slTotal, 2, ',', ' ') }} €</td>
+                                    <td data-label="Description" style="padding: 0.5rem 0.75rem 0.5rem 2rem; color: #6b7280; font-size: 0.85rem;">↳ {{ $sousLigne['description'] }}</td>
+                                    <td data-label="Qté" style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ $sousLigne['quantite'] }}</td>
+                                    <td data-label="Prix unit." style="padding: 0.5rem 0.75rem; text-align: right; color: #9ca3af; font-size: 0.85rem;">{{ number_format($sousLigne['prix_unitaire'], 2, ',', ' ') }} €</td>
+                                    <td data-label="Total" style="padding: 0.5rem 0.75rem; text-align: right; color: #6b7280; font-size: 0.85rem;">{{ number_format($slTotal, 2, ',', ' ') }} €</td>
                                 </tr>
                             @endforeach
                         @endif
