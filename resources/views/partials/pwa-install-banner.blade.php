@@ -33,53 +33,66 @@
     </div>
 </div>
 
+</script>
 <script>
+    // Variable globale pour stocker l'événement d'installation
+    window.deferredPrompt = null;
+
     document.addEventListener('DOMContentLoaded', function() {
-        let deferredPrompt;
         const banner = document.getElementById('pwa-install-banner');
         
-        // Clé pour le stockage du refus (expire à la fin de la session ou changement de device)
+        // Clé pour le stockage du refus
         const PWA_DISMISSED_KEY = 'allo_tata_pwa_dismissed';
 
-        // Détection Mobile (sommaire mais efficace pour la plupart des cas)
+        // Détection Mobile/iOS
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         
-        // Détection si déjà en mode PWA app
+        // Fonction globale d'installation (appelable depuis n'importe où)
+        window.installPwa = async function() {
+            if (window.deferredPrompt) {
+                // Montrer l'invite native
+                window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                window.deferredPrompt = null;
+            } else if (isIOS) {
+                alert("Pour installer l'application sur iOS :\n1. Appuyez sur le bouton 'Partager' (carré avec flèche) du navigateur\n2. Sélectionnez 'Sur l'écran d'accueil'");
+            } else {
+                alert("Pour installer l'application :\nOuvrez le menu de votre navigateur (3 points) et sélectionnez 'Installer l'application' ou 'Ajouter à l'écran d'accueil'.");
+            }
+        };
+
+        // --- Logique de la bannière ---
+
+        // Détection si déjà en mode PWA standalone
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-        // Si ce n'est pas un mobile ou si c'est déjà installé, on ne fait rien
-        if (!isMobile || isStandalone) {
+        // Si déjà installé, on ne fait rien pour la bannière
+        if (isStandalone) {
             return;
         }
 
-        // Si l'utilisateur a déjà cliqué sur "Passer"
-        if (getCookie(PWA_DISMISSED_KEY)) {
-            return;
-        }
-
-        // Écouter l'événement beforeinstallprompt (essentiellement Android/Chrome)
+        // Écouter l'événement beforeinstallprompt (Android/Chrome)
         window.addEventListener('beforeinstallprompt', (e) => {
             // Empêcher Chrome d'afficher sa bannière native tout de suite
             e.preventDefault();
-            // Sauvegarder l'événement pour l'utiliser plus tard
-            deferredPrompt = e;
-            // Afficher notre bannière custom
-            showBanner();
+            // Sauvegarder l'événement globalement
+            window.deferredPrompt = e;
+
+            // Afficher notre bannière custom SI mobile et PAS refusé
+            if (isMobile && !getCookie(PWA_DISMISSED_KEY)) {
+                showBanner();
+            }
         });
 
-        // Pour iOS, comme il n'y a pas d'événement beforeinstallprompt, on peut décider d'afficher
-        // la bannière quand même si on détecte iOS, mais le bouton devra montrer des instructions manuelles
-        // (ex: "Appuyez sur Partager puis Sur l'écran d'accueil").
-        // Pour l'instant, faisons simple : on affiche si on n'a pas déjà refusé.
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
+        // Pour iOS (pas d'event), on affiche si mobile et pas refusé
+        if (isIOS && !getCookie(PWA_DISMISSED_KEY)) {
             showBanner();
         }
 
         function showBanner() {
             if (!banner) return;
-            // On attend un peu que les autres éléments (cookie banner) se chargent pour ne pas tout superposer
-            // Ou on vérifie si la cookie banner est visible ?
             const cookieBanner = document.getElementById('cookie-banner');
             const delay = cookieBanner && !cookieBanner.classList.contains('hidden') ? 1000 : 2000;
             
@@ -92,33 +105,30 @@
         }
 
         function hideBanner() {
+            if (!banner) return;
             banner.classList.add('translate-y-full');
             setTimeout(() => {
                 banner.classList.add('hidden');
             }, 300);
         }
 
-        // Clic sur "Installer"
-        document.getElementById('pwa-install').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                // Montrer l'invite native
-                deferredPrompt.prompt();
-                // Attendre le choix de l'utilisateur
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
-                deferredPrompt = null;
-            } else if (isIOS) {
-                // Fallback pour iOS : Afficher une modale d'instructions ou une alerte
-                alert("Pour installer l'application sur iOS :\n1. Appuyez sur le bouton 'Partager' (carré avec flèche)\n2. Sélectionnez 'Sur l'écran d'accueil'");
-            }
-            hideBanner();
-        });
+        // Clic sur "Installer" dans la bannière
+        const installBtn = document.getElementById('pwa-install');
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                window.installPwa();
+                hideBanner();
+            });
+        }
 
         // Clic sur "Passer"
-        document.getElementById('pwa-dismiss').addEventListener('click', function() {
-            setCookie(PWA_DISMISSED_KEY, 'true', 7); // Mémoriser pendant 7 jours
-            hideBanner();
-        });
+        const dismissBtn = document.getElementById('pwa-dismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function() {
+                setCookie(PWA_DISMISSED_KEY, 'true', 7); // Mémoriser pendant 7 jours
+                hideBanner();
+            });
+        }
 
         // Helpers Cookies
         function setCookie(name, value, days) {

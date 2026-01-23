@@ -748,6 +748,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/settings/logos/light', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoLight'])->name('settings.upload-logo-light');
     Route::post('/settings/logos/dark', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoDark'])->name('settings.upload-logo-dark');
     Route::post('/settings/logos/transparent', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoTransparent'])->name('settings.upload-logo-transparent');
+    Route::post('/settings/logos/pwa', [\App\Http\Controllers\Admin\SettingController::class, 'uploadLogoPwa'])->name('settings.upload-logo-pwa');
     Route::delete('/settings/logos/{type}', [\App\Http\Controllers\Admin\SettingController::class, 'deleteLogo'])->name('settings.delete-logo');
     
     // Annonces
