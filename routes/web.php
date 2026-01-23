@@ -25,7 +25,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // ==========================================
 Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.')->group(function () {
     // Dashboard
+    // Dashboard
     Route::get('/', [BrightShellController::class, 'index'])->name('index');
+    Route::get('/installer', [BrightShellController::class, 'installer'])->name('installer');
     
     // Clients
     Route::get('/clients', [BrightShellController::class, 'clients'])->name('clients');
@@ -286,6 +288,11 @@ Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.
 Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
 Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
 Route::post("/p/{slug}/commande-produit", [PublicController::class, 'storeCommandeProduit'])->name('public.commande-produit.store');
+
+// MANIFEST DYNAMIQUE PWA
+Route::get('/entreprise/{slug}/manifest.json', [\App\Http\Controllers\ManifestController::class, 'show'])->name('manifest.show');
+Route::get('/entreprise/{slug}/icon/{size}.png', [\App\Http\Controllers\ManifestController::class, 'icon'])->name('manifest.icon');
+Route::get('/brightshell/manifest.json', [\App\Http\Controllers\ManifestController::class, 'brightshell'])->name('manifest.brightshell');
 
 // Avis produits et services (public, mais nécessite authentification pour créer)
 Route::middleware('auth')->group(function () {

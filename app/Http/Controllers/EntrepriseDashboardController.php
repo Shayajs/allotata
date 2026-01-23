@@ -521,6 +521,10 @@ class EntrepriseDashboardController extends Controller
                     ->orderBy('nom')
                     ->get();
                 break;
+
+            case 'installer':
+                // Pas de données spécifiques nécessaires pour l'instant
+                break;
         }
 
         // Rendre la vue correspondante
@@ -531,6 +535,7 @@ class EntrepriseDashboardController extends Controller
             'commandes' => 'entreprise.dashboard.tabs.commandes',
             'reservations' => 'entreprise.dashboard.tabs.reservations',
             'agenda' => 'entreprise.dashboard.tabs.agenda',
+            'installer' => 'entreprise.dashboard.tabs.installer',
         ];
 
         if (isset($viewMap[$tab])) {

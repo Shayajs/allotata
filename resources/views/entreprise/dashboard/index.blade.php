@@ -15,11 +15,27 @@
         </script>
         <title>{{ $entreprise->nom }} - Dashboard - Allo Tata</title>
         @include('partials.favicon')
+        
+        <!-- PWA / Manifest Dynamique -->
+        <link rel="manifest" href="{{ route('manifest.show', $entreprise->slug) }}">
+        <meta name="theme-color" content="#0f172a">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="{{ $entreprise->nom }}">
+        <link rel="apple-touch-icon" href="{{ route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]) }}">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
         @include('partials.theme-script')
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js');
+                });
+            }
+        </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
         @include('partials.super-user-banner')
@@ -398,6 +414,19 @@
                             <span class="hidden xl:inline">Paramètres</span>
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Paramètres</span>
                         </button>
+
+                        <!-- Installer -->
+                        <button 
+                            onclick="showTab('installer')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'installer' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
+                            data-tab="installer"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Installer</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Installer</span>
+                        </button>
                     </nav>
                 </aside>
 
@@ -496,6 +525,11 @@
                         <!-- Onglet Paramètres -->
                         <div id="tab-parametres" class="tab-content {{ $activeTab !== 'parametres' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.parametres')
+                        </div>
+                        
+                        <!-- Onglet Installer -->
+                        <div id="tab-installer" class="tab-content {{ $activeTab !== 'installer' ? 'hidden' : '' }}">
+                            @include('entreprise.dashboard.tabs.installer')
                         </div>
                     </div>
                 </main>

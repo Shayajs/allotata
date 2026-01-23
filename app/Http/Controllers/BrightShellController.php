@@ -25,6 +25,11 @@ class BrightShellController extends Controller
             'site' => 'https://brightshell.fr',
         ];
     }
+
+    public function installer()
+    {
+        return view('brightshell.installer');
+    }
     
     /**
      * Récupère les couleurs PDF personnalisées
