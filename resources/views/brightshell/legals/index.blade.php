@@ -48,6 +48,9 @@
                         <a href="{{ route('brightshell.legals.pdf', $doc->id) }}" class="btn btn-secondary btn-sm" target="_blank" title="PDF">
                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         </a>
+                        <a href="{{ route('brightshell.legals.edit', $doc->id) }}" class="btn btn-secondary btn-sm" title="Modifier">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </a>
                         <form action="{{ route('brightshell.legals.delete', $doc->id) }}" method="POST" onsubmit="return confirm('Supprimer ce document ?');" style="display: inline;">
                             @csrf
                             @method('DELETE')

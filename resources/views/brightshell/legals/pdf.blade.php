@@ -156,7 +156,10 @@
                 </div>
                 
                 <div class="destinataire">
-                    <div class="destinataire-nom">{{ $document->destinataire_nom }}</div>
+                    <div style="margin-bottom: 2px;">À l’attention de {{ $document->destinataire_prenom }} {{ $document->destinataire_nom }}</div>
+                    @if($document->destinataire_titre)
+                        <div style="font-weight: bold; margin-bottom: 5px;">{{ $document->destinataire_titre }}</div>
+                    @endif
                     <div class="destinataire-adresse">{{ $document->destinataire_adresse }}</div>
                 </div>
             </div>
@@ -167,6 +170,13 @@
         <div class="content">
             {!! $document->contenu !!}
         </div>
+
+        @if($document->pieces_jointes)
+        <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 10px;">
+            <strong style="text-transform: uppercase; display: block; margin-bottom: 5px;">Pièces Jointes :</strong>
+            <div style="white-space: pre-line;">{{ $document->pieces_jointes }}</div>
+        </div>
+        @endif
         
         <div class="signature">
             <div class="signature-nom">{{ $entreprise['responsable'] }}</div>
