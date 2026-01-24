@@ -56,9 +56,12 @@ Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.'
     Route::post('/factures', [BrightShellController::class, 'factureStore'])->name('factures.store');
     Route::get('/factures/{id}', [BrightShellController::class, 'factureShow'])->name('factures.show');
     Route::get('/factures/{id}/pdf', [BrightShellController::class, 'facturePdf'])->name('factures.pdf');
+    Route::get('/factures/{id}/edit', [BrightShellController::class, 'factureEdit'])->name('factures.edit');
+    Route::put('/factures/{id}', [BrightShellController::class, 'factureUpdate'])->name('factures.update');
     Route::post('/factures/{id}/paid', [BrightShellController::class, 'factureMarkPaid'])->name('factures.paid');
     Route::post('/factures/{id}/avoir', [BrightShellController::class, 'factureCreateAvoir'])->name('factures.avoir');
     Route::post('/factures/{id}/echeances', [BrightShellController::class, 'factureCreateEcheances'])->name('factures.echeances.create');
+    Route::delete('/factures/{id}/echeances', [BrightShellController::class, 'factureDeleteEcheances'])->name('factures.echeances.delete');
     Route::post('/factures/{id}/echeances/{echeanceId}/paid', [BrightShellController::class, 'echeanceMarkPaid'])->name('factures.echeances.paid');
 
     
