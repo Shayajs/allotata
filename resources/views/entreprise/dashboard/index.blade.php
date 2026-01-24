@@ -555,9 +555,11 @@
                 if (tabContent) {
                     tabContent.classList.remove('hidden');
                     
-                    // Recharger le contenu via Ajax (surtout pour les stocks)
-                    // Liste des onglets qui peuvent être rechargés
-                    const reloadableTabs = ['stock', 'mes-services', 'services', 'commandes', 'reservations', 'agenda'];
+            // Recharger le contenu via Ajax (surtout pour les stocks)
+            // Liste des onglets qui peuvent être rechargés
+            // Exclure mes-services et services de reloadableTabs car la modal est incluse dans index.blade.php
+            // et recharger l'onglet briserait les événements JS de la modal s'ils étaient dans l'onglet
+            const reloadableTabs = ['stock', 'commandes', 'reservations', 'agenda'];
                     
                     if (reloadableTabs.includes(tabName)) {
                         // Cache pour éviter les rechargements trop fréquents (délai de 2 secondes)

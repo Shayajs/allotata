@@ -404,6 +404,17 @@
                                 </p>
                             </div>
 
+                            <!-- Options du service (si disponibles) -->
+                            <div id="service-options-preview" class="mb-8 hidden">
+                                <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+                                    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Options disponibles</h2>
+                                    <div id="service-options-list" class="space-y-4">
+                                        <!-- Rempli par JS -->
+                                    </div>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-4 italic">Vous pourrez sélectionner vos options précises lors de l'étape de réservation.</p>
+                                </div>
+                            </div>
+
 
                             <!-- Photos des clients (avis) -->
                             @php
@@ -596,6 +607,17 @@
                 'description' => $service->description ?? '',
                 'duree_minutes' => $service->duree_minutes,
                 'prix' => $service->prix,
+                'options' => $service->options->map(function($opt) {
+                    return [
+                        'nom' => $opt->nom,
+                        'obligatoire' => $opt->obligatoire,
+                        'choices' => $opt->choices->map(fn($c) => [
+                            'nom' => $c->nom, 
+                            'prix' => $c->prix_supplementaire, 
+                            'temps' => $c->temps_supplementaire
+                        ])
+                    ];
+                }),
                 'images' => $service->images->map(fn($img) => asset('media/' . $img->image_path))->toArray(),
                 'image_principale' => $imageAffichee ? asset('media/' . $imageAffichee->image_path) : null,
                 'avis' => $serviceAvis->map(function($avis) {
@@ -661,6 +683,38 @@
             document.getElementById('service-duree').textContent = service.duree_minutes + ' minutes';
             document.getElementById('service-prix').textContent = numberFormat(service.prix, 0, ',', ' ') + ' €';
             document.getElementById('service-description').textContent = service.description || 'Aucune description disponible.';
+
+            // Afficher les options si disponibles
+            const optionsPreview = document.getElementById('service-options-preview');
+            const optionsList = document.getElementById('service-options-list');
+            
+            if (optionsPreview && optionsList) {
+                if (service.options && service.options.length > 0) {
+                    optionsPreview.classList.remove('hidden');
+                    optionsList.innerHTML = service.options.map(opt => `
+                        <div class="border-b border-slate-200 dark:border-slate-700 last:border-0 pb-3 last:pb-0">
+                            <h3 class="font-semibold text-slate-800 dark:text-slate-200 mb-2 flex items-center justify-between">
+                                ${opt.nom}
+                                ${opt.obligatoire ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">Obligatoire</span>' : ''}
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                ${opt.choices.map(c => {
+                                    let details = [];
+                                    if (c.prix > 0) details.push(`+${numberFormat(c.prix, 0, ',', ' ')}€`);
+                                    if (c.temps > 0) details.push(`+${c.temps}min`);
+                                    const detailsStr = details.length > 0 ? `<span class="text-green-600 dark:text-green-400 font-medium text-xs ml-1">(${details.join(', ')})</span>` : '';
+                                    return `<div class="text-sm text-slate-600 dark:text-slate-400 flex items-center">
+                                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full mr-2"></span>
+                                        ${c.nom} ${detailsStr}
+                                    </div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    optionsPreview.classList.add('hidden');
+                }
+            }
 
             // Mettre à jour le carousel d'images
             updateServiceCarousel(service);
@@ -773,6 +827,29 @@
                     <span class="text-xl font-bold text-green-600 dark:text-green-400">${numberFormat(service.prix, 0, ',', ' ')} €</span>
                 </div>
                 <p class="text-slate-700 dark:text-slate-300 mb-6">${service.description || 'Aucune description disponible.'}</p>
+                <!-- Options du service (si disponibles) -->
+                ${service.options && service.options.length > 0 ? `
+                    <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Options disponibles</h3>
+                        <div class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                            ${service.options.map(opt => `
+                                <div>
+                                    <span class="font-medium">${opt.nom} :</span>
+                                    <span class="text-xs ml-1">
+                                        ${opt.choices.map(c => {
+                                            const parts = [c.nom];
+                                            if (c.prix > 0) parts.push(`+${numberFormat(c.prix, 0, ',', ' ')}€`);
+                                            if (c.temps > 0) parts.push(`+${c.temps}min`);
+                                            return parts.join(' ');
+                                        }).join(', ')}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-500 mt-2 italic">Vous pourrez choisir vos options lors de la réservation.</p>
+                    </div>
+                ` : ''}
+
                 <a href="${agendaBaseUrl}?service=${service.id}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all">
                     Réserver ce service
                 </a>
@@ -1112,14 +1189,16 @@
             return s.join(dec);
         }
 
-        // Gérer le hash dans l'URL au chargement
-        window.addEventListener('load', function() {
-            const hash = window.location.hash;
-            if (hash && hash.startsWith('#service-')) {
-                const serviceId = parseInt(hash.replace('#service-', ''));
-                selectService(serviceId, window.innerWidth < 1024);
-            }
-        });
+    window.addEventListener('load', function() {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#service-')) {
+            const serviceId = parseInt(hash.replace('#service-', ''));
+            selectService(serviceId, window.innerWidth < 1024);
+        } else if (servicesData.length > 0 && window.innerWidth >= 1024) {
+            // Sélectionner le premier service par défaut sur desktop si pas de hash
+            selectService(servicesData[0].id, false);
+        }
+    });
 
         // Gérer le hash lors du changement
         window.addEventListener('hashchange', function() {
