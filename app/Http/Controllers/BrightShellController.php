@@ -652,6 +652,79 @@ class BrightShellController extends Controller
         return view('brightshell.factures.show', compact('facture', 'entreprise', 'echeances'));
     }
     
+    public function factureEdit($id)
+    {
+        $facture = DB::table('brightshell_factures')->find($id);
+        if (!$facture) abort(404);
+        
+        $facture->lignes = json_decode($facture->lignes, true) ?? [];
+        $clients = DB::table('brightshell_clients')->orderBy('nom')->get();
+        
+        return view('brightshell.factures.form', compact('facture', 'clients'));
+    }
+    
+    public function factureUpdate(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|integer',
+            'date_facture' => 'nullable|date',
+            'objet' => 'required|string|max:255',
+            'lignes' => 'required|array|min:1',
+            'notes' => 'nullable|string',
+            'echeance_jours' => 'nullable|integer|min:1',
+            'mode_tva' => 'required|in:non_assujetti,ht,ttc',
+            'taux_tva' => 'nullable|numeric|min:0|max:100',
+        ]);
+        
+        // Calcul du montant
+        $montantHt = 0;
+        foreach ($validated['lignes'] as $ligne) {
+            if (!empty($ligne['description']) && isset($ligne['quantite'])) {
+                $pu = floatval($ligne['prix_unitaire'] ?? 0);
+                // Si sous-lignes, le prix unitaire est la somme des sous-lignes
+                if (!empty($ligne['sous_lignes'])) {
+                    $pu = 0;
+                    foreach ($ligne['sous_lignes'] as $sl) {
+                        $pu += floatval($sl['quantite'] ?? 0) * floatval($sl['prix_unitaire'] ?? 0);
+                    }
+                }
+                $montantHt += floatval($ligne['quantite']) * $pu;
+            }
+        }
+        
+        // Calcul TVA et Total selon le mode
+        $modeTva = $validated['mode_tva'];
+        $tauxTva = floatval($validated['taux_tva'] ?? 20);
+        $montantTva = 0;
+        $montantTotal = $montantHt;
+        
+        if ($modeTva === 'ht') {
+            $montantTva = $montantHt * ($tauxTva / 100);
+            $montantTotal = $montantHt + $montantTva;
+        } elseif ($modeTva === 'ttc') {
+            $montantTotal = $montantHt;
+            $htFromTtc = $montantHt / (1 + $tauxTva / 100);
+            $montantTva = $montantHt - $htFromTtc;
+            $montantHt = $htFromTtc;
+        }
+        
+        DB::table('brightshell_factures')->where('id', $id)->update([
+            'client_id' => $validated['client_id'],
+            'date_facture' => $validated['date_facture'] ?? null,
+            'objet' => $validated['objet'],
+            'lignes' => json_encode($validated['lignes']),
+            'montant_total' => round($montantTotal, 2),
+            'mode_tva' => $modeTva,
+            'taux_tva' => $tauxTva,
+            'montant_tva' => round($montantTva, 2),
+            'notes' => $validated['notes'] ?? null,
+            'echeance_jours' => $validated['echeance_jours'] ?? 30,
+            'updated_at' => now(),
+        ]);
+        
+        return redirect()->route('brightshell.factures.show', $id)->with('success', 'Facture mise à jour.');
+    }
+    
     public function factureMarkPaid(Request $request, $id)
     {
         $modePaiement = $request->input('mode_paiement', 'Virement bancaire');
@@ -890,6 +963,22 @@ class BrightShellController extends Controller
         return redirect()->route('brightshell.factures.show', $id)
             ->with('success', "Plan de paiement en {$nombreEcheances}x créé avec succès.");
     }
+
+    public function factureDeleteEcheances($id)
+    {
+        $facture = DB::table('brightshell_factures')->find($id);
+        if (!$facture) abort(404);
+        
+        DB::table('brightshell_echeances')->where('facture_id', $id)->delete();
+        
+        DB::table('brightshell_factures')->where('id', $id)->update([
+            'paiement_echelonne' => false,
+            'nombre_echeances' => null,
+            'updated_at' => now(),
+        ]);
+        
+        return redirect()->route('brightshell.factures.show', $id)->with('success', 'Plan de paiement supprimé.');
+    }
     
     /**
      * Marquer une échéance comme payée
@@ -904,10 +993,11 @@ class BrightShellController extends Controller
         if (!$echeance) abort(404);
         
         $modePaiement = $request->input('mode_paiement', 'virement');
+        $datePaiement = $request->input('date_paiement') ? $request->input('date_paiement') : now()->format('Y-m-d');
         
         DB::table('brightshell_echeances')->where('id', $echeanceId)->update([
             'est_payee' => true,
-            'date_paiement' => now()->format('Y-m-d'),
+            'date_paiement' => $datePaiement,
             'mode_paiement' => $modePaiement,
             'updated_at' => now(),
         ]);

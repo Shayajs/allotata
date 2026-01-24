@@ -5,6 +5,12 @@
 @section('actions')
 <div class="flex gap-2 flex-wrap">
     <a href="{{ route('brightshell.factures') }}" class="btn btn-secondary">← Retour</a>
+    @if($facture->statut !== 'payee')
+    <a href="{{ route('brightshell.factures.edit', $facture->id) }}" class="btn btn-secondary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        <span>Modifier</span>
+    </a>
+    @endif
     <a href="{{ route('brightshell.factures.pdf', $facture->id) }}" class="btn btn-primary" target="_blank">
         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         <span>PDF</span>
@@ -229,8 +235,15 @@
         @if($facture->paiement_echelonne && count($echeances) > 0)
         <!-- Échéances -->
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="card-title">Plan de paiement ({{ $facture->nombre_echeances }}x)</h3>
+                @if($facture->statut !== 'payee')
+                <form action="{{ route('brightshell.factures.echeances.delete', $facture->id) }}" method="POST" onsubmit="return confirm('Supprimer ce plan de paiement ?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 12px;">Supprimer</button>
+                </form>
+                @endif
             </div>
             
             @php
