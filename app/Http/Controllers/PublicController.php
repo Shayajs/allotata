@@ -155,7 +155,7 @@ class PublicController extends Controller
 
         $entreprise = Entreprise::where('slug', $slug)
             ->with(['typesServices' => function($query) {
-                $query->where('est_actif', true);
+                $query->where('est_actif', true)->with('options.choices');
             }])
             ->firstOrFail();
 
@@ -418,7 +418,7 @@ class PublicController extends Controller
         $entreprise = Entreprise::where('slug', $slug)
             ->with(['typesServices' => function($query) {
                 $query->where('est_actif', true)
-                      ->with(['images', 'imageCouverture', 'serviceAvis' => function($q) {
+                      ->with(['images', 'imageCouverture', 'options.choices', 'serviceAvis' => function($q) {
                           $q->with(['user:id,name', 'photos', 'reservation']);
                       }]);
             }])
@@ -805,6 +805,30 @@ class PublicController extends Controller
             'type_service' => $typeService->nom,
             'statut' => $statutInitial,
         ]);
+
+        // Gérer les options sélectionnées
+        if ($request->has('service_options')) {
+            $totalPrixSupplementaire = 0;
+            $totalTempsSupplementaire = 0;
+            $optionsLog = [];
+
+            foreach ($request->service_options as $optionId => $choiceId) {
+                $choice = \App\Models\ServiceOptionChoice::find($choiceId);
+                if ($choice) {
+                    $totalPrixSupplementaire += $choice->prix_supplementaire;
+                    $totalTempsSupplementaire += $choice->temps_supplementaire;
+                    $optionsLog[] = $choice->option->nom . ': ' . $choice->nom;
+                }
+            }
+
+            if (!empty($optionsLog)) {
+                $reservation->update([
+                    'prix' => $reservation->prix + $totalPrixSupplementaire,
+                    'duree_minutes' => $reservation->duree_minutes + $totalTempsSupplementaire,
+                    'notes' => ($reservation->notes ? $reservation->notes . "\n\n" : "") . "Options sélectionnées :\n- " . implode("\n- ", $optionsLog)
+                ]);
+            }
+        }
 
         // Marquer la visite comme ayant passé une commande (seulement si consentement)
         try {

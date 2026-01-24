@@ -26,7 +26,7 @@
 
                     <form action="{{ route('agenda.service.store', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="service-form">
                         @csrf
-                        <input type="hidden" name="type_service_id" id="type_service_id">
+                        <input type="hidden" name="type_service_id" id="type_service_id_unique_modal">
                         
                         <div class="space-y-5">
                             <div>
@@ -124,6 +124,39 @@
                                 >
                                 <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Service actif</span>
                             </label>
+
+                            <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <h4 class="text-lg font-bold text-slate-900 dark:text-white">Variantes / Options</h4>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="enable_options" class="sr-only peer" onchange="toggleOptions()">
+                                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div id="options-wrapper" class="hidden">
+                                    <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 mb-4">
+                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                            Ajoutez des variantes pour ce service (ex: longueur de cheveux, taille, etc.). Le client devra obligatoirement faire un choix.
+                                        </p>
+                                        
+                                        <!-- Champs cachés pour simuler un groupe unique -->
+                                        <input type="hidden" name="options[0][nom]" value="Options">
+                                        <input type="hidden" name="options[0][type]" value="choix_unique">
+                                        <input type="hidden" name="options[0][obligatoire]" value="1">
+                                        
+                                        <div id="choices-container-0" class="space-y-2">
+                                            <!-- Les choix seront insérés ici -->
+                                        </div>
+                                        
+                                        <button type="button" onclick="addChoice(0)" class="mt-3 text-sm px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full border-dashed">
+                                            + Ajouter une option
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex gap-3 mt-6">
                             <button type="button" onclick="document.getElementById('modal-service').classList.add('hidden')" class="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition">
@@ -202,6 +235,7 @@
 <script>
     let currentServiceId = null;
     let currentServiceImages = [];
+    let currentServiceOptions = [];
     let newImagesPreview = [];
     
     function editServiceFromButton(button) {
@@ -213,10 +247,10 @@
         const estActif = button.getAttribute('data-service-actif') === 'true';
         const typeStructure = button.getAttribute('data-service-type-structure') || 'ponctuel';
         const imagesBase64 = button.getAttribute('data-service-images') || '';
+        const optionsBase64 = button.getAttribute('data-service-options') || '';
         
         let images = [];
         try {
-            // Décoder le base64 puis parser le JSON
             if (imagesBase64) {
                 const imagesJson = atob(imagesBase64);
                 images = JSON.parse(imagesJson);
@@ -225,17 +259,33 @@
             console.error('Erreur parsing images:', e);
             images = [];
         }
+
+        let options = [];
+        try {
+            if (optionsBase64) {
+                const optionsJson = atob(optionsBase64);
+                options = JSON.parse(optionsJson);
+            }
+        } catch (e) {
+            console.error('Erreur parsing options:', e);
+            options = [];
+        }
         
-        editService(serviceId, nom, description, duree, prix, estActif, images, typeStructure);
+        editService(serviceId, nom, description, duree, prix, estActif, images, typeStructure, options);
     }
     
     function openServiceModal() {
         currentServiceId = null;
         currentServiceImages = [];
+        currentServiceOptions = [];
         newImagesPreview = [];
         
         document.getElementById('modal-service').classList.remove('hidden');
-        document.getElementById('type_service_id').value = '';
+        
+        // Réinitialiser l'ID du service
+        const idInput = document.getElementById('type_service_id_unique_modal');
+        if (idInput) idInput.value = '';
+        
         document.getElementById('service_nom').value = '';
         document.getElementById('service_description').value = '';
         document.getElementById('service_duree').value = '30';
@@ -244,6 +294,10 @@
         document.getElementById('service_actif').checked = true;
         document.getElementById('service_images').value = '';
         document.getElementById('modal-title').textContent = 'Ajouter un service';
+        
+        document.getElementById('choices-container-0').innerHTML = '';
+        document.getElementById('enable_options').checked = false;
+        toggleOptions();
         
         toggleStructureFields();
         
@@ -266,12 +320,17 @@
         }
     }
 
-    function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel') {
+    function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel', options = []) {
         currentServiceId = id;
         currentServiceImages = images || [];
+        currentServiceOptions = options || [];
         
         document.getElementById('modal-service').classList.remove('hidden');
-        document.getElementById('type_service_id').value = id;
+        
+        // Assigner l'ID au champ caché
+        const idInput = document.getElementById('type_service_id_unique_modal');
+        if (idInput) idInput.value = id;
+        
         document.getElementById('service_nom').value = nom;
         document.getElementById('service_description').value = description || '';
         document.getElementById('service_duree').value = duree;
@@ -285,7 +344,89 @@
         // Afficher la zone d'upload direct
         document.getElementById('upload-zone').classList.remove('hidden');
         
+        // Gérer les options simplifiées
+        const container = document.getElementById('choices-container-0');
+        container.innerHTML = '';
+        const enableOptionsCheckbox = document.getElementById('enable_options');
+        
+        if (options && options.length > 0) {
+            enableOptionsCheckbox.checked = true;
+            toggleOptions(true); // true = skipDefaultRow
+            
+            // On prend le premier groupe d'options (mode simplifié)
+            const firstGroup = options[0];
+            if (firstGroup && firstGroup.choices) {
+                firstGroup.choices.forEach(choice => {
+                    addChoice(0, choice);
+                });
+            }
+        } else {
+            enableOptionsCheckbox.checked = false;
+            toggleOptions();
+        }
+        
         updateImagesDisplay();
+    }
+
+    function toggleOptions(skipDefaultRow = false) {
+        const checkbox = document.getElementById('enable_options');
+        const wrapper = document.getElementById('options-wrapper');
+        const container = document.getElementById('choices-container-0');
+        
+        // Sélectionner tous les inputs et selects dans le wrapper pour les activer/désactiver
+        const inputs = wrapper.querySelectorAll('input, select');
+        
+        if (checkbox.checked) {
+            wrapper.classList.remove('hidden');
+            
+            // Réactiver les champs
+            inputs.forEach(input => input.disabled = false);
+            
+            // Si le conteneur est vide et qu'on ne demande pas de sauter l'ajout, ajouter une ligne par défaut
+            if (!skipDefaultRow && container.children.length === 0) {
+                addChoice(0);
+            }
+        } else {
+            wrapper.classList.add('hidden');
+            
+            // Désactiver les champs pour qu'ils ne soient pas envoyés (évite l'erreur de validation "required")
+            inputs.forEach(input => input.disabled = true);
+        }
+    }
+
+    function addChoice(optionIdx, choiceData = null) {
+        const container = document.getElementById(`choices-container-${optionIdx}`);
+        const choiceIdx = container.children.length;
+        
+        const nom = choiceData ? choiceData.nom : '';
+        const prix = choiceData ? choiceData.prix_supplementaire : 0;
+        const temps = choiceData ? choiceData.temps_supplementaire : 0;
+        
+        const choiceDiv = document.createElement('div');
+        choiceDiv.className = 'flex items-center gap-2 choice-item bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm transition-all hover:shadow-md';
+        
+        choiceDiv.innerHTML = `
+            <div class="flex-1">
+                <input type="text" name="options[${optionIdx}][choices][${choiceIdx}][nom]" value="${nom}" placeholder="Nom (ex: 15 tresses)" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+            </div>
+            <div class="w-32">
+                <div class="relative group">
+                    <input type="number" name="options[${optionIdx}][choices][${choiceIdx}][prix]" value="${prix}" step="0.01" placeholder="0" class="w-full pl-3 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold transition-colors group-focus-within:text-green-500 pointer-events-none">€</span>
+                </div>
+            </div>
+            <div class="w-40">
+                <div class="relative group">
+                    <input type="number" name="options[${optionIdx}][choices][${choiceIdx}][temps]" value="${temps}" placeholder="0" class="w-full pl-3 pr-20 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold transition-colors group-focus-within:text-green-500 text-xs pointer-events-none">minutes</span>
+                </div>
+            </div>
+            <button type="button" onclick="this.closest('.choice-item').remove()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Supprimer ce choix">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        `;
+        
+        container.appendChild(choiceDiv);
     }
     
     function updateImagesDisplay() {
@@ -608,6 +749,19 @@
         .catch(error => {
             console.error('Erreur:', error);
             alert('Erreur lors de la suppression de l\'image.');
+        });
+    }
+
+    // Protection contre double soumission
+    const serviceForm = document.getElementById('service-form');
+    if (serviceForm) {
+        serviceForm.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerText;
+                submitBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span> Enregistrement...';
+            }
         });
     }
 </script>

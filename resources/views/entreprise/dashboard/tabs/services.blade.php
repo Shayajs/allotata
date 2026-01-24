@@ -117,6 +117,7 @@
                                 data-service-type-structure="{{ $service->type_structure ?? 'ponctuel' }}"
                                 data-service-actif="{{ $service->est_actif ? 'true' : 'false' }}"
                                 data-service-images="{{ base64_encode(json_encode($service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
+                                data-service-options="{{ base64_encode(json_encode($service->options->map(fn($opt) => ['id' => $opt->id, 'nom' => $opt->nom, 'type' => $opt->type, 'obligatoire' => $opt->obligatoire, 'choices' => $opt->choices])->values())) }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                             >
                                 Modifier

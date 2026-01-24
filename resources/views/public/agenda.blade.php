@@ -78,10 +78,27 @@
                                     id="type_service_id_mobile"
                                     required
                                     class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    onchange="handleServiceChange(this)"
                                 >
                                     <option value="">Choisir un service</option>
                                     @foreach($entreprise->typesServices as $service)
-                                        <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}>
+                                        @php
+                                            $optionsData = $service->options->map(function($opt) {
+                                                return [
+                                                    'id' => $opt->id,
+                                                    'nom' => $opt->nom,
+                                                    'obligatoire' => $opt->obligatoire,
+                                                    'choices' => $opt->choices->map(fn($c) => ['id' => $c->id, 'nom' => $c->nom, 'prix' => $c->prix_supplementaire, 'temps' => $c->temps_supplementaire])
+                                                ];
+                                            });
+                                        @endphp
+                                        <option 
+                                            value="{{ $service->id }}" 
+                                            data-duree="{{ $service->duree_minutes }}" 
+                                            data-prix="{{ $service->prix }}"
+                                            data-options="{{ base64_encode(json_encode($optionsData)) }}"
+                                            {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}
+                                        >
                                             {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                         </option>
                                     @endforeach
@@ -89,6 +106,11 @@
                                 @error('type_service_id')
                                     <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
+                            </div>
+
+                            <!-- Conteneur dynamique pour les options du service (Mobile) -->
+                            <div id="service-options-container-mobile" class="space-y-4 hidden">
+                                <!-- Rempli par JS -->
                             </div>
 
                             <!-- Sélection de la personne (si multi-personnes) -->
@@ -414,10 +436,27 @@
                                         id="type_service_id"
                                         required
                                         class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        onchange="handleServiceChange(this)"
                                     >
                                         <option value="">Choisir un service</option>
                                         @foreach($entreprise->typesServices as $service)
-                                            <option value="{{ $service->id }}" data-duree="{{ $service->duree_minutes }}" data-prix="{{ $service->prix }}" {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}>
+                                            @php
+                                                $optionsData = $service->options->map(function($opt) {
+                                                    return [
+                                                        'id' => $opt->id,
+                                                        'nom' => $opt->nom,
+                                                        'obligatoire' => $opt->obligatoire,
+                                                        'choices' => $opt->choices->map(fn($c) => ['id' => $c->id, 'nom' => $c->nom, 'prix' => $c->prix_supplementaire, 'temps' => $c->temps_supplementaire])
+                                                    ];
+                                                });
+                                            @endphp
+                                            <option 
+                                                value="{{ $service->id }}" 
+                                                data-duree="{{ $service->duree_minutes }}" 
+                                                data-prix="{{ $service->prix }}"
+                                                data-options="{{ base64_encode(json_encode($optionsData)) }}"
+                                                {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}
+                                            >
                                                 {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
                                             </option>
                                         @endforeach
@@ -425,6 +464,11 @@
                                     @error('type_service_id')
                                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
+                                </div>
+
+                                <!-- Conteneur dynamique pour les options du service -->
+                                <div id="service-options-container" class="space-y-4 hidden">
+                                    <!-- Rempli par JS -->
                                 </div>
 
                                 <!-- Sélection de la personne (si multi-personnes) -->
@@ -585,6 +629,12 @@
     </div>
 
     <script>
+        // Définir la fonction globalement pour l'accès depuis le HTML
+        window.handleServiceChange = function(selectElement) {
+            // Cette fonction sera écrasée une fois le DOM chargé
+            console.log('DOM pas encore chargé');
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             // Données PHP
             const jours = @json($jours);
@@ -609,12 +659,143 @@
             const heureInput = document.getElementById('heure_reservation');
             const serviceSelect = document.getElementById('type_service_id');
             const recapContainer = document.getElementById('recap-container');
+            const serviceOptionsContainer = document.getElementById('service-options-container');
             
             // Éléments du formulaire mobile
             const dateInputMobile = document.getElementById('date_reservation_mobile');
             const heureInputMobile = document.getElementById('heure_reservation_mobile');
             const serviceSelectMobile = document.getElementById('type_service_id_mobile');
             const recapContainerMobile = document.getElementById('recap-container-mobile');
+            const serviceOptionsContainerMobile = document.getElementById('service-options-container-mobile');
+
+            // Fonction de gestion du changement de service
+            window.handleServiceChange = function(selectElement) {
+                const isMobile = selectElement.id.includes('mobile');
+                const container = isMobile ? serviceOptionsContainerMobile : serviceOptionsContainer;
+                const otherSelect = isMobile ? serviceSelect : serviceSelectMobile;
+                const otherContainer = isMobile ? serviceOptionsContainer : serviceOptionsContainerMobile;
+                
+                // Synchroniser l'autre selecteur
+                if (otherSelect && otherSelect.value !== selectElement.value) {
+                    otherSelect.value = selectElement.value;
+                    // Déclencher le changement sur l'autre selecteur aussi pour mettre à jour son UI
+                    // Mais attention à la boucle infinie, on va juste mettre à jour l'UI manuellement
+                    renderOptions(otherSelect, otherContainer);
+                }
+
+                renderOptions(selectElement, container);
+                updateRecap();
+            };
+
+            function renderOptions(selectElement, container) {
+                if (!container) return;
+                
+                container.innerHTML = '';
+                container.classList.add('hidden');
+
+                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                if (!selectedOption || !selectedOption.value) return;
+
+                const optionsDataRaw = selectedOption.dataset.options;
+                if (!optionsDataRaw) return;
+
+                try {
+                    const options = JSON.parse(atob(optionsDataRaw));
+                    
+                    if (options.length > 0) {
+                        container.classList.remove('hidden');
+                        
+                        options.forEach(option => {
+                            const optionGroup = document.createElement('div');
+                            optionGroup.className = 'bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600';
+                            
+                            const title = document.createElement('h4');
+                            title.className = 'font-medium text-slate-900 dark:text-white mb-3 flex items-center justify-between';
+                            title.innerHTML = `
+                                <span>${option.nom}</span>
+                                ${option.obligatoire ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Obligatoire</span>' : ''}
+                            `;
+                            optionGroup.appendChild(title);
+
+                            const choicesContainer = document.createElement('div');
+                            choicesContainer.className = 'space-y-2';
+
+                            option.choices.forEach(choice => {
+                                const choiceLabel = document.createElement('label');
+                                choiceLabel.className = 'flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 cursor-pointer hover:border-green-500 transition-colors';
+                                
+                                const leftPart = document.createElement('div');
+                                leftPart.className = 'flex items-center gap-3';
+                                
+                                const input = document.createElement('input');
+                                input.type = 'radio';
+                                input.name = `service_options[${option.id}]`;
+                                input.value = choice.id;
+                                input.className = 'w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300';
+                                if (option.obligatoire) {
+                                    input.required = true;
+                                }
+                                
+                                // Données pour le calcul
+                                input.dataset.prix = choice.prix || 0;
+                                input.dataset.temps = choice.temps || 0;
+                                input.dataset.nom = choice.nom; // Pour l'affichage
+                                input.dataset.optionNom = option.nom; // Pour l'affichage
+
+                                // Écouteur pour mettre à jour le récap
+                                input.addEventListener('change', () => {
+                                    // Synchroniser avec l'autre vue (mobile/desktop)
+                                    const isMobile = container.id.includes('mobile');
+                                    const targetContainerId = isMobile ? 'service-options-container' : 'service-options-container-mobile';
+                                    const targetContainer = document.getElementById(targetContainerId);
+                                    
+                                    if (targetContainer) {
+                                        const targetInput = targetContainer.querySelector(`input[name="${input.name}"][value="${input.value}"]`);
+                                        if (targetInput) {
+                                            targetInput.checked = true;
+                                        }
+                                    }
+                                    
+                                    updateRecap();
+                                });
+                                
+                                leftPart.appendChild(input);
+                                
+                                const nameSpan = document.createElement('span');
+                                nameSpan.className = 'text-sm text-slate-700 dark:text-slate-300';
+                                nameSpan.textContent = choice.nom;
+                                leftPart.appendChild(nameSpan);
+                                
+                                choiceLabel.appendChild(leftPart);
+                                
+                                const rightPart = document.createElement('div');
+                                rightPart.className = 'text-xs font-medium text-slate-500 dark:text-slate-400 flex flex-col items-end';
+                                
+                                if (choice.prix > 0) {
+                                    const prixSpan = document.createElement('span');
+                                    prixSpan.className = 'text-green-600 dark:text-green-400';
+                                    prixSpan.textContent = `+${parseFloat(choice.prix).toLocaleString('fr-FR')}€`;
+                                    rightPart.appendChild(prixSpan);
+                                }
+                                
+                                if (choice.temps > 0) {
+                                    const tempsSpan = document.createElement('span');
+                                    tempsSpan.textContent = `+${choice.temps} min`;
+                                    rightPart.appendChild(tempsSpan);
+                                }
+                                
+                                choiceLabel.appendChild(rightPart);
+                                choicesContainer.appendChild(choiceLabel);
+                            });
+
+                            optionGroup.appendChild(choicesContainer);
+                            container.appendChild(optionGroup);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Erreur lors du parsing des options", e);
+                }
+            }
             
             // Fonction pour synchroniser les champs entre mobile et desktop
             function syncFields() {
@@ -629,6 +810,11 @@
                 if (serviceSelect && serviceSelectMobile) {
                     serviceSelectMobile.value = serviceSelect.value;
                     serviceSelect.value = serviceSelectMobile.value;
+                    
+                    // Synchroniser aussi les options affichées
+                    if (serviceSelect.value) {
+                        window.handleServiceChange(serviceSelect);
+                    }
                 }
             }
             
@@ -889,36 +1075,51 @@
                 updateRecap();
             }
             
-            // Mettre à jour le récapitulatif
+            // Modifier updateRecap pour inclure les options
             function updateRecap() {
-                // Utiliser le formulaire mobile s'il existe, sinon le desktop
                 const currentServiceSelect = serviceSelectMobile || serviceSelect;
                 const currentDateInput = dateInputMobile || dateInput;
                 const currentHeureInput = heureInputMobile || heureInput;
                 
                 if (!currentServiceSelect || !currentDateInput || !currentHeureInput) return;
                 
-                const service = currentServiceSelect.options[currentServiceSelect.selectedIndex];
+                const option = currentServiceSelect.options[currentServiceSelect.selectedIndex];
                 const date = currentDateInput.value;
                 const heure = currentHeureInput.value;
                 
-                // Synchroniser les champs
-                syncFields();
-                
-                if (service.value && date && heure) {
+                if (option && option.value && date && heure) {
                     const dateObj = new Date(date);
                     const jourNom = joursComplets[dateObj.getDay()];
                     const jour = dateObj.getDate();
                     const moisNom = mois[dateObj.getMonth()];
                     
-                    const serviceText = `📋 ${service.text.split('•')[0].trim()}`;
+                    let basePrix = parseFloat(option.dataset.prix);
+                    let baseTemps = parseInt(option.dataset.duree);
+                    let optionsDetails = [];
+
+                    // Récupérer les options sélectionnées (depuis le formulaire actif)
+                    const isMobile = window.innerWidth < 1280;
+                    const containerId = isMobile ? 'service-options-container-mobile' : 'service-options-container';
+                    const container = document.getElementById(containerId);
+                    
+                    if (container) {
+                        const selectedRadios = container.querySelectorAll('input[type="radio"]:checked');
+                        selectedRadios.forEach(radio => {
+                            basePrix += parseFloat(radio.dataset.prix);
+                            baseTemps += parseInt(radio.dataset.temps);
+                            optionsDetails.push(radio.dataset.nom);
+                        });
+                    }
+
+                    const serviceText = `📋 ${option.text.split('•')[0].trim()}${optionsDetails.length ? ' (' + optionsDetails.join(', ') + ')' : ''}`;
                     const datetimeText = `📅 ${jourNom} ${jour} ${moisNom} à ${heure}`;
-                    const prixText = `💰 ${service.dataset.prix}€`;
+                    const durationText = `⏱️ Durée : ${baseTemps} minutes`;
+                    const prixText = `💰 Total : ${basePrix}€`;
                     
                     // Mettre à jour le récapitulatif desktop
                     if (recapContainer) {
                         recapContainer.classList.remove('hidden');
-                        document.getElementById('recap-service').textContent = serviceText;
+                        document.getElementById('recap-service').innerHTML = `${serviceText}<br><span class="text-xs opacity-75">${durationText}</span>`;
                         document.getElementById('recap-datetime').textContent = datetimeText;
                         document.getElementById('recap-prix').textContent = prixText;
                     }
@@ -926,7 +1127,7 @@
                     // Mettre à jour le récapitulatif mobile
                     if (recapContainerMobile) {
                         recapContainerMobile.classList.remove('hidden');
-                        document.getElementById('recap-service-mobile').textContent = serviceText;
+                        document.getElementById('recap-service-mobile').innerHTML = `${serviceText}<br><span class="text-xs opacity-75">${durationText}</span>`;
                         document.getElementById('recap-datetime-mobile').textContent = datetimeText;
                         document.getElementById('recap-prix-mobile').textContent = prixText;
                     }
@@ -957,13 +1158,13 @@
             });
             
             // Écouter les changements sur les deux formulaires
-            serviceSelect?.addEventListener('change', updateRecap);
+            // serviceSelect?.addEventListener('change', updateRecap); // Remplacé par onchange="handleServiceChange(this)" dans le HTML
             dateInput?.addEventListener('change', updateRecap);
             heureInput?.addEventListener('change', updateRecap);
             
-            if (serviceSelectMobile) {
-                serviceSelectMobile.addEventListener('change', updateRecap);
-            }
+            // if (serviceSelectMobile) {
+            //     serviceSelectMobile.addEventListener('change', updateRecap); // Remplacé par onchange="handleServiceChange(this)" dans le HTML
+            // }
             if (dateInputMobile) {
                 dateInputMobile.addEventListener('change', updateRecap);
             }
@@ -977,10 +1178,12 @@
                 // Attendre que le DOM soit complètement chargé
                 setTimeout(() => {
                     if (serviceSelect && serviceSelect.value === serviceParam) {
-                        serviceSelect.dispatchEvent(new Event('change'));
+                        // Utiliser la nouvelle fonction handleServiceChange
+                        window.handleServiceChange(serviceSelect);
                     }
                     if (serviceSelectMobile && serviceSelectMobile.value === serviceParam) {
-                        serviceSelectMobile.dispatchEvent(new Event('change'));
+                        // Utiliser la nouvelle fonction handleServiceChange
+                        window.handleServiceChange(serviceSelectMobile);
                     }
                 }, 100);
             }

@@ -143,4 +143,12 @@ class TypeService extends Model
     {
         return $this->type_structure === 'multi_rendez_vous';
     }
+
+    /**
+     * Relation : Un type de service peut avoir plusieurs options
+     */
+    public function options(): HasMany
+    {
+        return $this->hasMany(ServiceOption::class);
+    }
 }

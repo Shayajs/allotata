@@ -685,9 +685,19 @@
                             @endif
                             
                             <div class="p-4 sm:p-6">
-                                <h3 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                                    {{ $service->nom }}
-                                </h3>
+                                <div class="flex items-center justify-between mb-1 sm:mb-2">
+                                    <h3 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                                        {{ $service->nom }}
+                                    </h3>
+                                    @if($service->options->count() > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] sm:text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-800 shadow-sm" title="Des options sont disponibles pour ce service">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                            </svg>
+                                            Options
+                                        </span>
+                                    @endif
+                                </div>
                                 
                                 @if($service->description)
                                     <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
@@ -780,6 +790,7 @@
                                 </div>
                                 
                                 <div id="service-detail-description" class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mb-6 whitespace-pre-line"></div>
+                                <div id="service-detail-options" class="hidden mb-6"></div>
                                 
                                 <!-- Zone de négociation -->
                                 <div id="service-detail-negociation" class="hidden mb-6 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
@@ -866,6 +877,19 @@
                                 "{{ asset('media/' . $image->image_path) }}",
                                 @endforeach
                             ],
+                            options: {!! json_encode($service->options->map(function($opt) {
+                                return [
+                                    'nom' => $opt->nom,
+                                    'obligatoire' => $opt->obligatoire,
+                                    'choices' => $opt->choices->map(function($c) {
+                                        return [
+                                            'nom' => $c->nom,
+                                            'prix' => $c->prix_supplementaire,
+                                            'temps' => $c->temps_supplementaire
+                                        ];
+                                    })
+                                ];
+                            })) !!},
                         },
                         @endforeach
                     ];
@@ -941,6 +965,52 @@
                         
                         // Galerie
                         updateServiceDetailGallery();
+
+                        // Afficher les options
+                        const optionsContainer = document.getElementById('service-detail-options');
+                        if (optionsContainer) {
+                            if (service.options && service.options.length > 0) {
+                                optionsContainer.classList.remove('hidden');
+                                optionsContainer.innerHTML = `
+                                    <div class="mt-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
+                                        <h4 class="font-bold text-slate-900 dark:text-white mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                            </svg>
+                                            Options disponibles
+                                        </h4>
+                                        <div class="space-y-4">
+                                            ${service.options.map(opt => `
+                                                <div>
+                                                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                                                        ${opt.nom}
+                                                        ${opt.obligatoire ? '<span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">OBLIGATOIRE</span>' : ''}
+                                                    </p>
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        ${opt.choices.map(c => {
+                                                            let details = [];
+                                                            if (c.prix > 0) details.push(`+${c.prix}€`);
+                                                            if (c.temps > 0) details.push(`+${c.temps}min`);
+                                                            const detailsStr = details.length > 0 ? `<span class="text-green-600 dark:text-green-400 font-bold ml-1">(${details.join(', ')})</span>` : '';
+                                                            return `
+                                                                <div class="text-xs text-slate-600 dark:text-slate-400 flex items-center bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                                                                    <span class="w-1.5 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mr-2"></span>
+                                                                    ${c.nom} ${detailsStr}
+                                                                </div>
+                                                            `;
+                                                        }).join('')}
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-4 italic text-center">Vous sélectionnerez vos options lors de la réservation.</p>
+                                    </div>
+                                `;
+                            } else {
+                                optionsContainer.classList.add('hidden');
+                                optionsContainer.innerHTML = '';
+                            }
+                        }
                     }
 
                     function updateServiceDetailGallery() {

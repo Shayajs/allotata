@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use App\Models\HorairesOuverture;
 use App\Models\TypeService;
+use App\Models\ServiceOption;
 use App\Models\ServiceImage;
 use App\Services\ImageService;
 use App\Services\JoursFeriesService;
@@ -37,7 +38,7 @@ class AgendaController extends Controller
             ->get();
 
         $typesServices = $entreprise->typesServices()
-            ->with(['images', 'imageCouverture'])
+            ->with(['images', 'imageCouverture', 'options.choices'])
             ->orderBy('nom')
             ->get();
 
@@ -516,6 +517,14 @@ class AgendaController extends Controller
             'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous',
             'est_actif' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'options' => 'nullable|array',
+            'options.*.nom' => 'required|string|max:255',
+            'options.*.type' => 'required|in:choix_unique,choix_multiple',
+            'options.*.obligatoire' => 'nullable|boolean',
+            'options.*.choices' => 'required|array',
+            'options.*.choices.*.nom' => 'required|string|max:255',
+            'options.*.choices.*.prix' => 'nullable|numeric|min:0',
+            'options.*.choices.*.temps' => 'nullable|integer|min:0',
         ]);
 
         // Gérer le champ est_actif (checkbox : si présent = true, sinon = false)
@@ -524,16 +533,52 @@ class AgendaController extends Controller
         try {
             $imageService = app(ImageService::class);
             
+            DB::beginTransaction();
+
             if ($request->filled('type_service_id') && is_numeric($request->type_service_id)) {
                 $typeService = TypeService::where('id', $request->type_service_id)
                     ->where('entreprise_id', $entreprise->id)
                     ->firstOrFail();
-                $typeService->update($validated);
+                
+                // Mettre à jour les champs de base (exclure entreprise_id)
+                $dataToUpdate = $validated;
+                unset($dataToUpdate['entreprise_id']);
+                
+                $typeService->update($dataToUpdate);
                 $message = 'Le type de service a été mis à jour avec succès.';
             } else {
                 $validated['entreprise_id'] = $entreprise->id;
                 $typeService = TypeService::create($validated);
                 $message = 'Le type de service a été créé avec succès.';
+            }
+
+            // Gérer les options
+            // On supprime toujours les anciennes options pour les remplacer par les nouvelles (ou rien)
+            $typeService->options()->each(function($option) {
+                $option->choices()->delete();
+                $option->delete();
+            });
+
+            if ($request->has('options')) {
+                foreach ($request->options as $optIdx => $optionData) {
+                    $option = $typeService->options()->create([
+                        'nom' => $optionData['nom'],
+                        'type' => $optionData['type'],
+                        'obligatoire' => isset($optionData['obligatoire']) && $optionData['obligatoire'] == '1',
+                        'ordre' => $optIdx,
+                    ]);
+
+                    if (isset($optionData['choices'])) {
+                        foreach ($optionData['choices'] as $choiceIdx => $choiceData) {
+                            $option->choices()->create([
+                                'nom' => $choiceData['nom'],
+                                'prix_supplementaire' => $choiceData['prix'] ?? 0,
+                                'temps_supplementaire' => $choiceData['temps'] ?? 0,
+                                'ordre' => $choiceIdx,
+                            ]);
+                        }
+                    }
+                }
             }
 
             // Gérer l'upload des images
@@ -559,16 +604,19 @@ class AgendaController extends Controller
                 }
             }
 
+            DB::commit();
+
             return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
                 ->with('success', $message);
         } catch (\Exception $e) {
+            DB::rollBack();
             \Log::error('Erreur lors de l\'enregistrement du service', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
             return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
                 ->withInput()
-                ->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement du service. Veuillez réessayer.']);
+                ->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement du service : ' . $e->getMessage()]);
         }
     }
 

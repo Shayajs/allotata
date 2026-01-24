@@ -9,9 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('brightshell_legals', function (Blueprint $table) {
-            $table->string('destinataire_prenom')->nullable()->after('destinataire_nom');
-            $table->string('destinataire_titre')->nullable()->after('destinataire_prenom');
-            $table->text('pieces_jointes')->nullable()->after('contenu');
+            if (!Schema::hasColumn('brightshell_legals', 'destinataire_prenom')) {
+                $table->string('destinataire_prenom')->nullable()->after('destinataire_nom');
+            }
+            if (!Schema::hasColumn('brightshell_legals', 'destinataire_titre')) {
+                $table->string('destinataire_titre')->nullable()->after('destinataire_prenom');
+            }
+            if (!Schema::hasColumn('brightshell_legals', 'pieces_jointes')) {
+                $table->text('pieces_jointes')->nullable()->after('contenu');
+            }
         });
     }
 
