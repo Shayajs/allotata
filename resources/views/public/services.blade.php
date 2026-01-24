@@ -102,7 +102,17 @@
                                 </div>
                             @endif
                             <div class="p-4">
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{{ $service->nom }}</h3>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h3>
+                                    @if($service->options->count() > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold rounded-full border border-blue-200 dark:border-blue-800 shadow-sm">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                            </svg>
+                                            Options
+                                        </span>
+                                    @endif
+                                </div>
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-4 text-sm">
                                         <span class="text-slate-600 dark:text-slate-400">
@@ -154,7 +164,17 @@
                                             </div>
                                         @endif
                                         <div class="p-4">
-                                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{{ $service->nom }}</h3>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h3>
+                                                @if($service->options->count() > 0)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold rounded-full border border-blue-200 dark:border-blue-800 shadow-sm">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                                        </svg>
+                                                        Options
+                                                    </span>
+                                                @endif
+                                            </div>
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center gap-4 text-sm">
                                                     <span class="text-slate-600 dark:text-slate-400">
@@ -213,7 +233,17 @@
                                         >
                                     </div>
                                 @endif
-                                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{{ $service->nom }}</h3>
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-bold text-slate-900 dark:text-white line-clamp-2">{{ $service->nom }}</h3>
+                                    @if($service->options->count() > 0)
+                                        <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold rounded shadow-sm">
+                                            <svg class="w-2.5 h-2.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                            </svg>
+                                            +
+                                        </span>
+                                    @endif
+                                </div>
                                 <div class="flex items-center justify-between text-sm mb-2">
                                     <span class="text-slate-600 dark:text-slate-400 flex items-center gap-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,7 +294,17 @@
                                                     >
                                                 </div>
                                             @endif
-                                            <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{{ $service->nom }}</h3>
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h3 class="text-base font-bold text-slate-900 dark:text-white line-clamp-2">{{ $service->nom }}</h3>
+                                                @if($service->options->count() > 0)
+                                                    <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold rounded shadow-sm">
+                                                        <svg class="w-2.5 h-2.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                                        </svg>
+                                                        +
+                                                    </span>
+                                                @endif
+                                            </div>
                                             <div class="flex items-center justify-between text-sm mb-2">
                                                 <span class="text-slate-600 dark:text-slate-400 flex items-center gap-1">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
