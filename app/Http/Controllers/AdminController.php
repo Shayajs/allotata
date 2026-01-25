@@ -1336,45 +1336,13 @@ class AdminController extends Controller
         // Charger tous les membres (actifs et inactifs) pour l'admin
         $membres = $entreprise->tousMembres()->with('user')->get();
 
-        // Récupérer les prix dynamiques depuis Stripe (cache 1h)
-        $subscriptionPrices = \Illuminate\Support\Facades\Cache::remember('stripe_subscription_prices', 3600, function () {
-            try {
-                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-                
-                $prices = [];
-                $configs = [
-                    'site_web' => config('services.stripe.price_id_site_web'),
-                    'multi_personnes' => config('services.stripe.price_id_multi_personnes')
-                ];
-
-                foreach ($configs as $key => $id) {
-                    if ($id) {
-                        try {
-                            $p = \Stripe\Price::retrieve($id);
-                            $amount = $p->unit_amount / 100;
-                            // Formatage simple
-                            $prices[$key] = [
-                                'formatted' => number_format($amount, 2, '.', '') . '€'
-                            ];
-                        } catch (\Exception $e) {
-                            $prices[$key] = $key === 'site_web' 
-                                ? ['formatted' => '2.00€']
-                                : ['formatted' => '20.00€'];
-                        }
-                    } else {
-                        $prices[$key] = $key === 'site_web' 
-                            ? ['formatted' => '2.00€']
-                            : ['formatted' => '20.00€'];
-                    }
-                }
-                return $prices;
-            } catch (\Exception $e) {
-                return [
-                    'site_web' => ['formatted' => '2.00€'],
-                    'multi_personnes' => ['formatted' => '20.00€']
-                ];
-            }
-        });
+        // Prix depuis Tarifs + CustomPrice (par entreprise)
+        $siteWeb = \App\Models\Tarif::displayForEntreprise($entreprise, 'site_web');
+        $multiPersonnes = \App\Models\Tarif::displayForEntreprise($entreprise, 'multi_personnes');
+        $subscriptionPrices = [
+            'site_web' => ['formatted' => $siteWeb['formatted']],
+            'multi_personnes' => ['formatted' => $multiPersonnes['formatted']],
+        ];
 
         return view('admin.entreprises.options', [
             'entreprise' => $entreprise,

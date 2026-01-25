@@ -53,7 +53,7 @@ class EntrepriseSubscription extends Model
      */
     public function estActif(): bool
     {
-        // Si c'est un abonnement manuel
+        // Si c'est un abonnement manuel (admin ou autre)
         if ($this->est_manuel) {
             if ($this->actif_jusqu) {
                 return $this->actif_jusqu->isFuture() || $this->actif_jusqu->isToday();
@@ -61,16 +61,17 @@ class EntrepriseSubscription extends Model
             return false;
         }
 
-        // Si c'est un abonnement Stripe
+        // Abonnement géré par échéances (pas de Stripe subscription) : actif_jusqu suffit
+        if (!$this->stripe_id && $this->actif_jusqu) {
+            return $this->actif_jusqu->isFuture() || $this->actif_jusqu->isToday();
+        }
+
+        // Abonnement Stripe
         if ($this->stripe_id && $this->stripe_status) {
-            // Si l'abonnement est annulé mais en période de grâce, il est encore actif
             if ($this->stripe_status === 'active' && $this->ends_at && $this->ends_at->isFuture()) {
-                return true; // En période de grâce, toujours actif
+                return true;
             }
-            
-            // Vérifier le statut
             if ($this->stripe_status === 'active' || $this->stripe_status === 'trialing') {
-                // Si ends_at est défini et dans le passé, l'abonnement n'est plus actif
                 if ($this->ends_at && $this->ends_at->isPast()) {
                     return false;
                 }

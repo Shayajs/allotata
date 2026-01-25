@@ -91,6 +91,16 @@
                     @if(!$aSiteWebActif)
                         <div class="p-6 lg:p-8 border-t border-slate-100 dark:border-slate-700">
                             <h4 class="font-bold text-slate-900 dark:text-white mb-4 text-sm lg:text-base">Offrir un accès manuel</h4>
+                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="mb-4" onsubmit="return confirm('Proposer 30 jours d\'essai pour Site Web Vitrine ?')">
+                                @csrf
+                                <input type="hidden" name="type" value="site_web">
+                                <input type="hidden" name="date_fin" value="{{ now()->addDays(30)->format('Y-m-d') }}">
+                                <input type="hidden" name="notes" value="30 jours d'essai">
+                                <button type="submit" class="w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Proposer 30 jours d'essai
+                                </button>
+                            </form>
                             <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4" onsubmit="return confirm('Activer cette option pour cette entreprise ?')">
                                 @csrf
                                 <input type="hidden" name="type" value="site_web">
@@ -165,6 +175,16 @@
                     @if(!$aGestionMultiPersonnes)
                         <div class="p-6 lg:p-8 border-t border-slate-100 dark:border-slate-700">
                             <h4 class="font-bold text-slate-900 dark:text-white mb-4 text-sm lg:text-base">Offrir un accès manuel</h4>
+                            <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="mb-4" onsubmit="return confirm('Proposer 30 jours d\'essai pour Multi-Personnes ?')">
+                                @csrf
+                                <input type="hidden" name="type" value="multi_personnes">
+                                <input type="hidden" name="date_fin" value="{{ now()->addDays(30)->format('Y-m-d') }}">
+                                <input type="hidden" name="notes" value="30 jours d'essai">
+                                <button type="submit" class="w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Proposer 30 jours d'essai
+                                </button>
+                            </form>
                             <form action="{{ route('admin.entreprises.options.activer', $entreprise) }}" method="POST" class="space-y-4" onsubmit="return confirm('Activer l\'option Multi-Personnes pour cette entreprise ?')">
                                 @csrf
                                 <input type="hidden" name="type" value="multi_personnes">

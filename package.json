@@ -18,6 +18,7 @@
         "vite-plugin-pwa": "^1.2.0"
     },
     "dependencies": {
+        "@stripe/stripe-js": "^4.8.0",
         "laravel-echo": "^1.16.1",
         "pusher-js": "^8.4.0",
         "sortablejs": "^1.15.6",

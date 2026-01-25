@@ -111,6 +111,22 @@ Tous les événements Stripe sont loggés dans :
 tail -f storage/logs/laravel.log
 ```
 
+## Setup Intent, X jours gratuits et test
+
+### Principe
+- **Setup Intent** : enregistrer une carte **sans débiter**. Idéal pour les **X jours gratuits** (carte enregistrée à l’inscription, débit uniquement après l’essai).
+- **Si le Setup fonctionne, le débit API fonctionnera** : le paiement se fait côté serveur (PaymentIntent `off_session`), sans interaction utilisateur.
+
+### Flux recommandé
+1. **Enregistrer la carte** : checkout « Enregistrer ma carte » (Setup Intent + Elements) ou admin « Test Setup ».
+2. **Débiter plus tard** : CRON ou action manuelle → `PaymentIntent::create` avec `payment_method`, `off_session`, `confirm`.
+
+### Test admin (Tarifs)
+1. **Vérifier les clés** → **Test Setup** (enregistrer une carte test, ex. `4242 4242 4242 4242`) → **Test débit API** (0,50 € prélevés via API, sans redirection).
+2. « Paiement test Checkout » reste disponible (redirection Stripe classique).
+
+---
+
 ## Prochaines étapes recommandées
 
 1. **Exécuter la migration** :

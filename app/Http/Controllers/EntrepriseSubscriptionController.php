@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Echeance;
 use App\Models\Entreprise;
 use App\Models\EntrepriseSubscription;
+use App\Services\CalculMontantDuService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -91,51 +94,11 @@ class EntrepriseSubscriptionController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
-        // ===== Données pour l'onglet Abonnements (Prix dynamiques) =====
-        $subscriptionPrices = \Illuminate\Support\Facades\Cache::remember('stripe_subscription_prices', 3600, function () {
-            try {
-                \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-                
-                $prices = [];
-                $configs = [
-                    'site_web' => config('services.stripe.price_id_site_web'),
-                    'multi_personnes' => config('services.stripe.price_id_multi_personnes')
-                ];
-
-                foreach ($configs as $key => $id) {
-                    if ($id) {
-                        try {
-                            $p = \Stripe\Price::retrieve($id);
-                            $amount = $p->unit_amount / 100;
-                            $currencySymbol = strtoupper($p->currency) === 'EUR' ? '€' : strtoupper($p->currency);
-                            $prices[$key] = [
-                                'amount' => $amount,
-                                'currency' => strtoupper($p->currency),
-                                'formatted' => number_format($amount, 2, ',', ' ') . $currencySymbol,
-                                'period' => $p->recurring ? ($p->recurring->interval === 'month' ? '/mois' : '/' . $p->recurring->interval) : ''
-                            ];
-                        } catch (\Exception $e) {
-                            \Log::warning("Impossible de récupérer le prix Stripe pour $key: " . $e->getMessage());
-                            // Fallback aux valeurs par défaut
-                            $prices[$key] = $key === 'site_web' 
-                                ? ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois']
-                                : ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois'];
-                        }
-                    } else {
-                         $prices[$key] = $key === 'site_web' 
-                                ? ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois']
-                                : ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois'];
-                    }
-                }
-                return $prices;
-            } catch (\Exception $e) {
-                \Log::error('Erreur cache prix Stripe: ' . $e->getMessage());
-                return [
-                    'site_web' => ['amount' => 2.00, 'currency' => 'EUR', 'formatted' => '2.00€', 'period' => '/mois'],
-                    'multi_personnes' => ['amount' => 20.00, 'currency' => 'EUR', 'formatted' => '20.00€', 'period' => '/mois']
-                ];
-            }
-        });
+        // ===== Données pour l'onglet Abonnements (Prix depuis Tarifs + CustomPrice) =====
+        $subscriptionPrices = [
+            'site_web' => \App\Models\Tarif::displayForEntreprise($entreprise, 'site_web'),
+            'multi_personnes' => \App\Models\Tarif::displayForEntreprise($entreprise, 'multi_personnes'),
+        ];
 
         // Retourner la vue d'abonnement
         return view('entreprise.dashboard.tabs.abonnements', [
@@ -145,7 +108,8 @@ class EntrepriseSubscriptionController extends Controller
     }
 
     /**
-     * Créer une session de checkout Stripe pour un abonnement d'entreprise
+     * Créer une échéance pour l'option entreprise puis rediriger vers l'Espace Paiement.
+     * Plus de Cashier ni price IDs Stripe : Tarifs + paiement ponctuel.
      */
     public function checkout(Request $request, $slug)
     {
@@ -208,65 +172,57 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Type d\'abonnement invalide.']);
         }
 
-        // Vérifier si l'entreprise a déjà un abonnement actif de ce type
-        $abonnementExistant = $entreprise->abonnements()
-            ->where('type', $type)
-            ->first();
-
+        $abonnementExistant = $entreprise->abonnements()->where('type', $type)->first();
         if ($abonnementExistant && $abonnementExistant->estActif()) {
-            return back()->withErrors([
-                'error' => 'Cette entreprise a déjà un abonnement actif de ce type.'
-            ]);
+            return back()->withErrors(['error' => 'Cette entreprise a déjà un abonnement actif de ce type.']);
         }
 
-        // Vérifier s'il y a un prix personnalisé pour cette entreprise
-        $customPrice = \App\Models\CustomPrice::getForEntreprise($entreprise, $type);
-        
-        // Récupérer l'ID du prix Stripe (personnalisé ou par défaut)
-        $priceId = null;
-        $priceLabel = '';
-        if ($type === 'site_web') {
-            $priceLabel = 'Site Web Vitrine';
-            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id_site_web'); // 2€/mois
-        } elseif ($type === 'multi_personnes') {
-            $priceLabel = 'Gestion Multi-Personnes';
-            $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id_multi_personnes'); // 20€/mois
+        // Créer une échéance pour ce mois (Tarifs + CustomPrice), puis rediriger vers /checkout.
+        $owner = $entreprise->user;
+        $debut = Carbon::now()->startOfMonth();
+        $fin = Carbon::now()->endOfMonth();
+        $jour = $owner->jour_facturation ?? 1;
+
+        $tmp = new Echeance([
+            'user_id' => $owner->id,
+            'entreprise_id' => $entreprise->id,
+            'subscription_type' => $type,
+            'periode_debut' => $debut,
+            'periode_fin' => $fin,
+            'jour_facturation' => $jour,
+            'reduction_manuel' => 0,
+        ]);
+        $tmp->setRelation('user', $owner);
+        $calc = CalculMontantDuService::calculerPourEcheance($tmp);
+        if ($calc['montant_du'] <= 0) {
+            return back()->withErrors(['error' => 'Aucun montant à régler pour cette option.']);
         }
 
-        if (empty($priceId)) {
-            Log::error('Prix Stripe non configuré pour l\'abonnement d\'entreprise', [
-                'type' => $type,
+        Echeance::updateOrCreate(
+            [
+                'user_id' => $owner->id,
                 'entreprise_id' => $entreprise->id,
-            ]);
-            return back()->withErrors([
-                'error' => "Le prix Stripe pour \"{$priceLabel}\" n'est pas encore configuré. Veuillez contacter l'administrateur pour créer ce prix depuis la page de gestion des prix Stripe."
-            ]);
+                'subscription_type' => $type,
+                'periode_debut' => $debut,
+                'periode_fin' => $fin,
+            ],
+            [
+                'jour_facturation' => $jour,
+                'montant_du' => $calc['montant_du'],
+                'montant_final' => $calc['montant_final'],
+                'reduction_promo' => $calc['reduction_promo'],
+                'promo_code_id' => $calc['promo_code_id'],
+                'statut' => Echeance::STATUT_A_PAYER,
+                'metadata' => ['lignes' => $calc['lignes']],
+            ]
+        );
+
+        if ((int) $user->id === (int) $owner->id) {
+            return redirect()->route('checkout.index')
+                ->with('info', 'Réglez l\'échéance ci-dessous pour activer l\'option.');
         }
-
-        // Utiliser le compte Stripe du propriétaire de l'entreprise
-        // Créer l'abonnement via le user (propriétaire)
-        // Cashier créera automatiquement le compte Stripe si nécessaire
-        $subscriptionName = 'entreprise_' . $type . '_' . $entreprise->id;
-        
-        $metadata = [
-            'entreprise_id' => (string) $entreprise->id,
-            // On ne met PAS 'name' ni 'type' ici car Cashier les gère ou cela crée des conflits de fusion (array_merge_recursive)
-            // Seule l'entreprise_id est notre donnée custom critique.
-        ];
-
-        // IDENTIFICATION ROBUSTE : On met l'ID dans la description visible
-        $description = "Abonnement " . ($type == 'site_web' ? 'Site Web' : 'Multi-Perso') . " [ENTREPRISE_ID:{$entreprise->id}]";
-
-        return $user->newSubscription($subscriptionName, $priceId)
-            ->checkout([
-                'success_url' => route('entreprise.subscriptions.success', ['slug' => $entreprise->slug, 'type' => $type]) . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']),
-                'metadata' => ['entreprise_id' => (string) $entreprise->id], // Pour la session
-                'subscription_data' => [
-                    'description' => $description,
-                    'metadata' => ['entreprise_id' => (string) $entreprise->id] // On retente metadata simple ici, mais la description est notre filet de sécurité
-                ],
-            ]);
+        return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])
+            ->with('info', 'Échéance créée. Le propriétaire doit régler le paiement depuis l\'Espace Paiement.');
     }
 
     /**

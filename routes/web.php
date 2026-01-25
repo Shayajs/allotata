@@ -188,6 +188,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\SiteWebController;
 use App\Http\Controllers\EntrepriseSubscriptionController;
 use App\Http\Controllers\EntrepriseMembreController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MembreGestionController;
 use App\Http\Controllers\InvitationController;
 
@@ -558,7 +559,19 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/abonnement/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
         Route::get('/abonnement/facture/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         Route::get('/abonnement/invoice/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
-        
+
+    // Checkout (paiements ponctuels – échéances, Stripe Elements / Paiement invisible)
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/checkout/appliquer-promo', [CheckoutController::class, 'appliquerPromo'])->name('checkout.appliquer-promo');
+        Route::post('/checkout/retirer-promo', [CheckoutController::class, 'retirerPromo'])->name('checkout.retirer-promo');
+        Route::post('/checkout/setup-intent', [CheckoutController::class, 'createSetupIntent'])->name('checkout.setup-intent');
+        Route::post('/checkout/save-payment-method', [CheckoutController::class, 'savePaymentMethod'])->name('checkout.save-payment-method');
+        Route::post('/checkout/charge', [CheckoutController::class, 'charge'])->name('checkout.charge');
+        Route::post('/checkout/confirm-status', [CheckoutController::class, 'confirmStatus'])->name('checkout.confirm-status');
+        Route::post('/checkout/payer', [CheckoutController::class, 'creerSessionStripe'])->name('checkout.payer');
+        Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+        Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/{id}', [NotificationController::class, 'show'])->name('notifications.show');
@@ -793,10 +806,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/email-logs/verify-user/{user}', [\App\Http\Controllers\Admin\EmailLogController::class, 'verifyUserEmail'])->name('email-logs.verify-user');
     
     // Gestion des prix Stripe
-    Route::get('/stripe-prices', [AdminController::class, 'stripePrices'])->name('stripe-prices.index');
-    Route::post('/stripe-prices/create', [AdminController::class, 'createStripePrice'])->name('stripe-prices.create');
-    Route::post('/stripe-prices/{type}/update', [AdminController::class, 'updateStripePrice'])->name('stripe-prices.update');
-    Route::post('/stripe-prices/{type}/create-missing', [AdminController::class, 'createMissingPrice'])->name('stripe-prices.create-missing');
+    Route::get('/stripe-prices', [\App\Http\Controllers\Admin\TarifController::class, 'index'])->name('stripe-prices.index');
+    Route::post('/stripe-prices/verify-keys', [\App\Http\Controllers\Admin\TarifController::class, 'verifyStripeKeys'])->name('stripe-prices.verify-keys');
+    Route::post('/stripe-prices/test-payment', [\App\Http\Controllers\Admin\TarifController::class, 'testPayment'])->name('stripe-prices.test-payment');
+    Route::get('/stripe-prices/test-success', [\App\Http\Controllers\Admin\TarifController::class, 'testSuccess'])->name('stripe-prices.test-success');
+    Route::get('/stripe-prices/test-setup', [\App\Http\Controllers\Admin\TarifController::class, 'testSetupPage'])->name('stripe-prices.test-setup');
+    Route::get('/stripe-prices/test-setup-success', [\App\Http\Controllers\Admin\TarifController::class, 'testSetupSuccess'])->name('stripe-prices.test-setup-success');
+    Route::post('/stripe-prices/test-setup-intent', [\App\Http\Controllers\Admin\TarifController::class, 'createTestSetupIntent'])->name('stripe-prices.test-setup-intent');
+    Route::post('/stripe-prices/save-test-pm', [\App\Http\Controllers\Admin\TarifController::class, 'saveTestPaymentMethod'])->name('stripe-prices.save-test-pm');
+    Route::post('/stripe-prices/test-debit-api', [\App\Http\Controllers\Admin\TarifController::class, 'testDebitApi'])->name('stripe-prices.test-debit-api');
+    Route::post('/stripe-prices/{type}/update', [\App\Http\Controllers\Admin\TarifController::class, 'update'])->name('stripe-prices.update');
     
     // Gestion des prix personnalisés
     Route::get('/custom-prices', [AdminController::class, 'customPrices'])->name('custom-prices.index');
@@ -834,6 +853,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/subscriptions/user/{user}/purge/{id}', [\App\Http\Controllers\AdminController::class, 'purgeSubscription'])->name('subscriptions.user.purge');
     Route::post('/subscriptions/entreprise/{subscription}/sync', [\App\Http\Controllers\AdminController::class, 'syncEntrepriseSubscription'])->name('subscriptions.entreprise.sync');
     Route::post('/subscriptions/entreprise/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
+
+    // Paiements / Échéances (listing, états, réductions, gestes commerciaux)
+    Route::get('/echeances', [\App\Http\Controllers\Admin\EcheanceController::class, 'index'])->name('echeances.index');
+    Route::post('/echeances/{echeance}/reduction', [\App\Http\Controllers\Admin\EcheanceController::class, 'updateReduction'])->name('echeances.reduction');
+    Route::post('/echeances/{echeance}/arrete', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerArrete'])->name('echeances.arrete');
+    Route::post('/echeances/{echeance}/annule', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerAnnule'])->name('echeances.annule');
     
     // Gestion des essais gratuits
     Route::get('/essais-gratuits', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'index'])->name('essais-gratuits.index');
