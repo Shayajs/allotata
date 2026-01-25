@@ -554,6 +554,20 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     // API Messagerie
     Route::get('/api/messagerie/check-new', [MessagerieController::class, 'checkNewMessages'])->name('messagerie.api.check-new');
     
+    // Forum (authentifié)
+    Route::get('/forum/create', [\App\Http\Controllers\ForumController::class, 'create'])->name('forum.create');
+    Route::post('/forum', [\App\Http\Controllers\ForumController::class, 'store'])->name('forum.store');
+    Route::get('/forum/post/{post}/edit', [\App\Http\Controllers\ForumController::class, 'edit'])->name('forum.post.edit');
+    Route::put('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'update'])->name('forum.post.update');
+    Route::delete('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'destroy'])->name('forum.post.destroy');
+    Route::post('/forum/post/{post}/comment', [\App\Http\Controllers\ForumController::class, 'comment'])->name('forum.comment.store');
+    
+    // Feedback (authentifié)
+    Route::get('/feedback/create', [\App\Http\Controllers\FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/feedback/{feedback}/vote', [\App\Http\Controllers\FeedbackController::class, 'vote'])->name('feedback.vote');
+    Route::post('/feedback/{feedback}/comment', [\App\Http\Controllers\FeedbackController::class, 'comment'])->name('feedback.comment');
+    
     // Propositions de rendez-vous
     Route::post('/messagerie/{slug}/proposer-rdv', [MessagerieController::class, 'proposerRendezVousClient'])->name('messagerie.proposer-rdv-client');
     Route::post('/m/{slug}/messagerie/{conversationId}/proposer-rdv', [MessagerieController::class, 'proposerRendezVous'])->name('messagerie.proposer-rdv');
