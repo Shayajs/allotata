@@ -8,6 +8,7 @@ const stripePk = document.querySelector('meta[name="stripe-publishable-key"]')?.
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 const billingCountry = document.querySelector('meta[name="billing-country"]')?.getAttribute('content') || 'FR';
 const billingPostalCode = document.querySelector('meta[name="billing-postal-code"]')?.getAttribute('content') || '00000';
+const billingState = document.querySelector('meta[name="billing-state"]')?.getAttribute('content') ?? '';
 const form = document.getElementById('checkout-save-card-form');
 const container = document.getElementById('checkout-payment-element');
 
@@ -81,6 +82,7 @@ async function initSaveCard() {
                         billing_details: {
                             address: {
                                 country: billingCountry,
+                                state: billingState || '',
                                 postal_code: billingPostalCode,
                             },
                         },
