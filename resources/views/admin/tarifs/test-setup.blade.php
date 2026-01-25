@@ -16,15 +16,15 @@
         </p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Enregistrer une carte de test</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Utilisez une carte test Stripe (ex. <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">4242 4242 4242 4242</code>). Aucun débit.</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Utilisez une carte test Stripe (ex. <code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 rounded">4242 4242 4242 4242</code>). Aucun débit.</p>
 
         <form id="admin-test-setup-form">
-            <div id="admin-test-setup-element" class="min-h-[200px] mb-4"></div>
-            <p id="admin-test-setup-error" class="mb-4 text-sm text-red-600 dark:text-red-400" role="alert"></p>
+            <div id="admin-test-setup-element" class="min-h-[200px] mb-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 transition-colors"></div>
+            <p id="admin-test-setup-error" class="mb-4 text-sm text-red-600 dark:text-red-400 min-h-[1.25rem]" role="alert"></p>
             <div class="flex flex-wrap gap-3">
-                <button type="submit" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition">
+                <button type="submit" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm">
                     Enregistrer la carte (test)
                 </button>
                 <a href="{{ route('admin.stripe-prices.index') }}" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-medium rounded-xl transition">

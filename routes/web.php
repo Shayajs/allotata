@@ -557,6 +557,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/abonnement/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
         Route::post('/abonnement/purge/{id}', [SubscriptionController::class, 'purge'])->name('subscription.purge');
         Route::post('/abonnement/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
+        Route::post('/abonnement/echeance/{echeance}/annuler', [SubscriptionController::class, 'annulerEcheance'])->name('subscription.echeance.annuler');
         Route::get('/abonnement/facture/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         Route::get('/abonnement/invoice/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
 

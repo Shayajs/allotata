@@ -15,7 +15,37 @@
         </a>
     </div>
 @endif
-                            
+
+@php
+    $upcomingEcheances = $upcomingEcheances ?? collect();
+    $lastPayments = $lastPayments ?? collect();
+@endphp
+
+{{-- Cartes bleues --}}
+<div class="mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+        Carte(s) enregistrée(s)
+    </h3>
+    @if($user->stripe_payment_method_id)
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <p class="text-slate-700 dark:text-slate-300">
+                <span class="font-medium">{{ ucfirst($user->pm_type ?? 'carte') }}</span>
+                <span class="tabular-nums">•••• {{ $user->pm_last_four ?? '****' }}</span>
+            </p>
+            <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition text-sm">
+                Modifier la carte
+            </a>
+        </div>
+    @else
+        <p class="text-slate-600 dark:text-slate-400 mb-4">Aucune carte enregistrée. Ajoutez une carte pour régler vos échéances ou pour les prélèvements automatiques.</p>
+        <a href="{{ route('checkout.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Ajouter une carte
+        </a>
+    @endif
+</div>
+
 @php
     $hasActiveSubscription = $user->aAbonnementActif();
 @endphp
@@ -175,43 +205,6 @@
             @endif
         </div>
 
-        <!-- Historique des factures (uniquement pour Stripe) -->
-        @if($subscription && $subscription->valid() && isset($invoices) && $invoices->count() > 0)
-            <div class="mt-6">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">📄 Historique des factures</h3>
-                <div class="space-y-3">
-                    @foreach($invoices->take(10) as $invoice)
-                        <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                            <div>
-                                <p class="font-semibold text-slate-900 dark:text-white">
-                                    @if(isset($invoice->created))
-                                        Facture du {{ \Carbon\Carbon::createFromTimestamp($invoice->created)->format('d/m/Y') }}
-                                    @else
-                                        Facture
-                                    @endif
-                                </p>
-                                <p class="text-sm text-slate-600 dark:text-slate-400">
-                                    {{ number_format($invoice->amount_paid / 100, 2, ',', ' ') }} €
-                                    @if($invoice->status === 'paid')
-                                        <span class="ml-2 text-green-600 dark:text-green-400">✓ Payée</span>
-                                    @elseif($invoice->status === 'open')
-                                        <span class="ml-2 text-yellow-600 dark:text-yellow-400">En attente</span>
-                                    @else
-                                        <span class="ml-2 text-red-600 dark:text-red-400">Impayée</span>
-                                    @endif
-                                </p>
-                            </div>
-                            <div>
-                                <a href="{{ route('subscription.invoice.download', $invoice->id) }}" 
-                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
-                                    📥 Télécharger
-                                </a>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     @else
         <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 mb-6">
             <div class="mb-4">
@@ -235,6 +228,105 @@
         </div>
     @endif
 </div>
+
+{{-- Factures (Stripe) --}}
+@if(isset($invoices) && $invoices->isNotEmpty())
+    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Factures
+        </h3>
+        <div class="space-y-3">
+            @foreach($invoices->take(10) as $invoice)
+                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-white">
+                            @if(isset($invoice->created))
+                                Facture du {{ \Carbon\Carbon::createFromTimestamp($invoice->created)->format('d/m/Y') }}
+                            @else
+                                Facture
+                            @endif
+                        </p>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                            {{ number_format($invoice->amount_paid / 100, 2, ',', ' ') }} €
+                            @if($invoice->status === 'paid')
+                                <span class="ml-2 text-green-600 dark:text-green-400">✓ Payée</span>
+                            @elseif($invoice->status === 'open')
+                                <span class="ml-2 text-yellow-600 dark:text-yellow-400">En attente</span>
+                            @else
+                                <span class="ml-2 text-red-600 dark:text-red-400">Impayée</span>
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('subscription.invoice.download', $invoice->id) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">📥 Télécharger</a>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+{{-- Derniers paiements --}}
+@if($lastPayments->isNotEmpty())
+    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Derniers paiements
+        </h3>
+        <div class="space-y-3">
+            @foreach($lastPayments->take(10) as $p)
+                <div class="flex items-center justify-between py-3 border-b border-slate-200 dark:border-slate-700 last:border-0">
+                    <div>
+                        <p class="font-medium text-slate-900 dark:text-white">{{ $p->label }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $p->date ? \Carbon\Carbon::parse($p->date)->format('d/m/Y H:i') : '' }}</p>
+                    </div>
+                    <p class="font-semibold text-slate-900 dark:text-white tabular-nums">{{ number_format($p->amount, 2, ',', ' ') }} {{ strtoupper($p->currency ?? 'eur') }}</p>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
+
+{{-- Prochains paiements --}}
+@if($upcomingEcheances->isNotEmpty())
+    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            Prochains paiements
+        </h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Échéances à régler ou à annuler.</p>
+        <div class="space-y-4">
+            @foreach($upcomingEcheances as $e)
+                @php
+                    $montant = (float) ($e->montant_final ?? $e->montant_du ?? 0);
+                @endphp
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-white">{{ $e->libelle() }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            {{ $e->periode_debut->format('d/m/Y') }} → {{ $e->periode_fin->format('d/m/Y') }}
+                            @if($e->statut === \App\Models\Echeance::STATUT_EN_ATTENTE)
+                                <span class="ml-2 text-amber-600 dark:text-amber-400">(en attente)</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <p class="font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($montant, 2, ',', ' ') }} €</p>
+                        <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">Régler</a>
+                        <form action="{{ route('subscription.echeance.annuler', $e) }}" method="POST" class="inline" onsubmit="return confirm('Annuler cette échéance ? Vous ne serez pas débité pour cette période.');">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition text-sm">Annuler</button>
+                        </form>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+        <div class="mt-4">
+            <a href="{{ route('checkout.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                Voir toutes les échéances et payer →
+            </a>
+        </div>
+    </div>
+@endif
 
 <!-- Abonnements des entreprises -->
 @if($entreprises->count() > 0)

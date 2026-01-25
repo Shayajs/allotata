@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Echeance;
 use App\Models\Reservation;
+use App\Models\StripeTransaction;
 use App\Models\Notification;
 use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
@@ -149,18 +151,65 @@ class DashboardController extends Controller
         if ($subscription && $subscription->valid() && $user->stripe_id) {
             try {
                 $stripeSubscription = $subscription->asStripeSubscription();
-                
-                // Récupérer les factures Stripe
+            } catch (\Exception $e) {
+                // Ignorer
+            }
+        }
+        if ($user->stripe_id) {
+            try {
                 $stripeInvoices = \Stripe\Invoice::all([
                     'customer' => $user->stripe_id,
                     'limit' => 12,
                 ], ['api_key' => config('services.stripe.secret')]);
-                
                 $invoices = collect($stripeInvoices->data);
             } catch (\Exception $e) {
-                // En cas d'erreur, on continue sans les données Stripe
+                // Ignorer
             }
         }
+
+        // Derniers paiements et prochaines échéances (onglet abonnements)
+        $echeancesPayees = Echeance::where('user_id', $user->id)
+            ->where('statut', Echeance::STATUT_PAYE)
+            ->orderByDesc('paye_at')
+            ->limit(20)
+            ->get();
+        $echeanceIds = $echeancesPayees->pluck('id')->all();
+        $transactions = StripeTransaction::where('user_id', $user->id)
+            ->where('processed', true)
+            ->orderByDesc('processed_at')
+            ->limit(30)
+            ->get();
+        $lastPayments = collect();
+        foreach ($echeancesPayees as $e) {
+            $lastPayments->push((object) [
+                'type' => 'echeance',
+                'id' => $e->id,
+                'date' => $e->paye_at ?? $e->updated_at,
+                'amount' => (float) ($e->montant_final ?? $e->montant_du ?? 0),
+                'currency' => 'eur',
+                'label' => $e->libelle(),
+            ]);
+        }
+        foreach ($transactions as $t) {
+            $meta = $t->metadata ?? [];
+            $eid = (int) ($meta['echeance_id'] ?? 0);
+            if ($eid && in_array($eid, $echeanceIds, true)) {
+                continue;
+            }
+            $lastPayments->push((object) [
+                'type' => 'transaction',
+                'id' => $t->id,
+                'date' => $t->processed_at ?? $t->created_at,
+                'amount' => (float) $t->amount,
+                'currency' => $t->currency ?? 'eur',
+                'label' => $t->description ? "Paiement – {$t->description}" : 'Paiement',
+            ]);
+        }
+        $lastPayments = $lastPayments->sortByDesc(fn ($p) => $p->date)->take(15)->values();
+        $upcomingEcheances = Echeance::where('user_id', $user->id)
+            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+            ->orderBy('periode_fin')
+            ->get();
 
         // Variables pour l'onglet Sécurité
         $loginAttempts = LoginAttempt::where('user_id', $user->id)
@@ -208,6 +257,8 @@ class DashboardController extends Controller
             'subscription' => $subscription,
             'stripeSubscription' => $stripeSubscription,
             'invoices' => $invoices,
+            'lastPayments' => $lastPayments,
+            'upcomingEcheances' => $upcomingEcheances,
             // Variables pour l'onglet Sécurité
             'loginAttempts' => $loginAttempts,
             'securityLogs' => $securityLogs,
