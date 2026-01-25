@@ -728,9 +728,12 @@ class BrightShellController extends Controller
     public function factureMarkPaid(Request $request, $id)
     {
         $modePaiement = $request->input('mode_paiement', 'Virement bancaire');
+        $montantPaye = $request->input('montant_paye'); // Peut être nul
         
         $facture = DB::table('brightshell_factures')->find($id);
         if (!$facture) abort(404);
+
+        $montantTotal = $montantPaye ? floatval($montantPaye) : $facture->montant_total;
 
         // Si la facture est échelonnée, on solde les échéances
         if ($facture->paiement_echelonne) {
@@ -774,6 +777,7 @@ class BrightShellController extends Controller
             ->select('brightshell_factures.*', 'brightshell_clients.nom as client_nom', 'brightshell_clients.societe as client_societe')
             ->where('brightshell_factures.id', $id)
             ->first();
+            
         if ($facture && \Schema::hasTable('brightshell_recettes')) {
             DB::table('brightshell_recettes')->insert([
                 'date' => now(),
@@ -781,15 +785,26 @@ class BrightShellController extends Controller
                 'client_id' => $facture->client_id,
                 'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
                 'nature' => $facture->objet,
-                'montant' => $facture->montant_total,
+                'montant' => $montantTotal, // Utiliser le montant réellement payé
                 'mode_reglement' => $modePaiement,
                 'facture_id' => $id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            
+            // Mettre à jour la trésorerie si la table existe
+            if (\Schema::hasTable('brightshell_tresorerie')) {
+                $tresorerie = DB::table('brightshell_tresorerie')->first();
+                if ($tresorerie) {
+                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                        'solde_courant' => $tresorerie->solde_courant + $montantTotal,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
         }
         
-        return redirect()->route('brightshell.factures')->with('success', 'Facture marquée comme payée.');
+        return redirect()->route('brightshell.factures')->with('success', 'Facture marquée comme payée (' . number_format($montantTotal, 2) . ' €).');
     }
     
     /**
@@ -993,14 +1008,52 @@ class BrightShellController extends Controller
         if (!$echeance) abort(404);
         
         $modePaiement = $request->input('mode_paiement', 'virement');
+        $montantPaye = $request->input('montant_paye');
         $datePaiement = $request->input('date_paiement') ? $request->input('date_paiement') : now()->format('Y-m-d');
+        
+        // Si un montant spécifique est payé (différent du montant prévu)
+        $montantReel = $montantPaye ? floatval($montantPaye) : $echeance->montant;
         
         DB::table('brightshell_echeances')->where('id', $echeanceId)->update([
             'est_payee' => true,
+            'montant' => $montantReel, // Mettre à jour avec le montant réellement payé
             'date_paiement' => $datePaiement,
             'mode_paiement' => $modePaiement,
             'updated_at' => now(),
         ]);
+        
+        // Enregistrer la recette pour cette échéance spécifique
+        $facture = DB::table('brightshell_factures')
+            ->leftJoin('brightshell_clients', 'brightshell_factures.client_id', '=', 'brightshell_clients.id')
+            ->select('brightshell_factures.*', 'brightshell_clients.nom as client_nom', 'brightshell_clients.societe as client_societe')
+            ->where('brightshell_factures.id', $id)
+            ->first();
+            
+        if ($facture && \Schema::hasTable('brightshell_recettes')) {
+            DB::table('brightshell_recettes')->insert([
+                'date' => now(),
+                'reference' => $facture->numero . ' (' . $echeance->numero . ')',
+                'client_id' => $facture->client_id,
+                'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
+                'nature' => $facture->objet . ' (échéance ' . $echeance->numero . ')',
+                'montant' => $montantReel,
+                'mode_reglement' => $modePaiement,
+                'facture_id' => $id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            // Mettre à jour la trésorerie
+            if (\Schema::hasTable('brightshell_tresorerie')) {
+                $tresorerie = DB::table('brightshell_tresorerie')->first();
+                if ($tresorerie) {
+                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                        'solde_courant' => $tresorerie->solde_courant + $montantReel,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        }
         
         // Vérifier si toutes les échéances sont payées
         $echeancesRestantes = DB::table('brightshell_echeances')
@@ -1016,34 +1069,12 @@ class BrightShellController extends Controller
                 'updated_at' => now(),
             ]);
             
-            // Enregistrer dans le livre des recettes
-            $facture = DB::table('brightshell_factures')
-                ->leftJoin('brightshell_clients', 'brightshell_factures.client_id', '=', 'brightshell_clients.id')
-                ->select('brightshell_factures.*', 'brightshell_clients.nom as client_nom', 'brightshell_clients.societe as client_societe')
-                ->where('brightshell_factures.id', $id)
-                ->first();
-            
-            if ($facture && \Schema::hasTable('brightshell_recettes')) {
-                DB::table('brightshell_recettes')->insert([
-                    'date' => now(),
-                    'reference' => $facture->numero,
-                    'client_id' => $facture->client_id,
-                    'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
-                    'nature' => $facture->objet . ' (paiement échelonné)',
-                    'montant' => $facture->montant_total,
-                    'mode_reglement' => 'paiement échelonné',
-                    'facture_id' => $id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            
             return redirect()->route('brightshell.factures.show', $id)
                 ->with('success', 'Dernière échéance payée ! Facture complètement réglée.');
         }
         
         return redirect()->route('brightshell.factures.show', $id)
-            ->with('success', 'Échéance marquée comme payée.');
+            ->with('success', 'Échéance marquée comme payée (' . number_format($montantReel, 2) . ' €).');
     }
     
     /**

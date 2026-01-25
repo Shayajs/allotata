@@ -301,6 +301,7 @@
                             @if(!$echeance->est_payee)
                             <form action="{{ route('brightshell.factures.echeances.paid', [$facture->id, $echeance->id]) }}" method="POST" style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end;">
                                 @csrf
+                                <input type="number" name="montant_paye" class="form-input" style="padding: 2px 8px; font-size: 11px; width: 70px; height: 28px;" value="{{ $echeance->montant }}" step="0.01">
                                 <select name="mode_paiement" class="form-input" style="padding: 2px 8px; font-size: 11px; width: auto; height: 28px;">
                                     <option value="Virement bancaire" {{ ($facture->mode_paiement ?? '') === 'Virement bancaire' ? 'selected' : '' }}>Virement</option>
                                     <option value="Chèque" {{ ($facture->mode_paiement ?? '') === 'Chèque' ? 'selected' : '' }}>Chèque</option>
