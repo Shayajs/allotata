@@ -103,14 +103,126 @@ class CheckoutController extends Controller
             }
 
             return response()->json(['client_secret' => $si->client_secret]);
+        } catch (\Stripe\Exception\CardException $e) {
+            $errorCode = $e->getError()->code ?? null;
+            $declineCode = $e->getError()->decline_code ?? null;
+            Log::error('Checkout createSetupIntent: CardException', [
+                'user_id' => $user->id,
+                'error_code' => $errorCode,
+                'decline_code' => $declineCode,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'CardException',
+                    'error_code' => $errorCode,
+                    'decline_code' => $declineCode,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur carte lors de la création du SetupIntent: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Erreur avec votre carte. Vérifiez vos informations de paiement.',
+            ], 422);
+        } catch (\Stripe\Exception\RateLimitException $e) {
+            Log::error('Checkout createSetupIntent: RateLimitException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'RateLimitException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Trop de requêtes à l\'API Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Trop de requêtes. Veuillez patienter quelques instants avant de réessayer.',
+            ], 429);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::error('Checkout createSetupIntent: InvalidRequestException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'param' => $e->getError()->param ?? null,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Paramètres invalides pour SetupIntent: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Erreur de configuration. Contactez le support.',
+            ], 400);
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Checkout createSetupIntent: AuthenticationException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Erreur de configuration serveur. Contactez le support.',
+            ], 500);
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::error('Checkout createSetupIntent: ApiConnectionException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Problème de connexion. Réessayez dans quelques instants.',
+            ], 503);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Checkout createSetupIntent: ApiErrorException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'error' => 'Erreur temporaire. Réessayez plus tard.',
+            ], 500);
         } catch (\Throwable $e) {
             Log::error('Checkout createSetupIntent failed', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            PaymentAuditLog::log('setup_intent_fail', $user->id, [
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors de la création du SetupIntent: ' . $e->getMessage(),
+            ]);
             return response()->json([
-                'error' => 'Impossible de préparer le formulaire. ' . ($e->getMessage() ?: 'Réessayez.'),
+                'error' => 'Impossible de préparer le formulaire. Réessayez.',
             ], 500);
         }
     }
@@ -130,16 +242,128 @@ class CheckoutController extends Controller
         try {
             StripeCustomerService::attachPaymentMethod($customerId, $pmId);
             $display = StripeCustomerService::cardDisplayFromPaymentMethod($pmId);
-        } catch (\Throwable $e) {
-            Log::warning('Checkout save-payment-method failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        } catch (\Stripe\Exception\CardException $e) {
+            $errorCode = $e->getError()->code ?? null;
+            $declineCode = $e->getError()->decline_code ?? null;
+            Log::warning('Checkout save-payment-method: CardException', [
+                'user_id' => $user->id,
+                'error_code' => $errorCode,
+                'decline_code' => $declineCode,
+                'error' => $e->getMessage(),
+            ]);
             PaymentAuditLog::log('save_pm_fail', $user->id, [
                 'stripe_customer_id' => $customerId,
                 'stripe_payment_method_id' => $pmId,
-                'status' => 'error',
-                'context' => ['error' => $e->getMessage()],
-                'message' => 'Échec enregistrement carte: ' . $e->getMessage(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'CardException',
+                    'error_code' => $errorCode,
+                    'decline_code' => $declineCode,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Carte refusée lors de l\'enregistrement: ' . $e->getMessage(),
             ]);
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
+            $userMessage = self::mapStripeErrorToUserMessage($errorCode, $e->getMessage());
+            return response()->json(['success' => false, 'error' => $userMessage, 'error_code' => $errorCode], 422);
+        } catch (\Stripe\Exception\RateLimitException $e) {
+            Log::warning('Checkout save-payment-method: RateLimitException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'RateLimitException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Trop de requêtes à l\'API Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Trop de requêtes. Veuillez patienter quelques instants.'], 429);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::warning('Checkout save-payment-method: InvalidRequestException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'param' => $e->getError()->param ?? null,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Paramètres invalides: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Erreur de configuration. Contactez le support.'], 400);
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Checkout save-payment-method: AuthenticationException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Erreur de configuration serveur. Contactez le support.'], 500);
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::warning('Checkout save-payment-method: ApiConnectionException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Problème de connexion. Réessayez dans quelques instants.'], 503);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::warning('Checkout save-payment-method: ApiErrorException', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Erreur temporaire. Réessayez plus tard.'], 500);
+        } catch (\Throwable $e) {
+            Log::warning('Checkout save-payment-method failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors de l\'enregistrement: ' . $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'error' => 'Erreur lors de l\'enregistrement. Réessayez.'], 422);
         }
 
         $user->update([
@@ -195,11 +419,94 @@ class CheckoutController extends Controller
                     'invoice_settings' => ['default_payment_method' => ''],
                 ]);
             }
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::warning('Checkout remove-payment-method: InvalidRequestException', [
+                'user_id' => $user->id,
+                'stripe_payment_method_id' => $pmId,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('remove_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Paramètres invalides lors de la suppression: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Impossible de supprimer la carte. Contactez le support.');
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Checkout remove-payment-method: AuthenticationException', [
+                'user_id' => $user->id,
+                'stripe_payment_method_id' => $pmId,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('remove_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur de configuration serveur. Contactez le support.');
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::warning('Checkout remove-payment-method: ApiConnectionException', [
+                'user_id' => $user->id,
+                'stripe_payment_method_id' => $pmId,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('remove_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Problème de connexion. Réessayez dans quelques instants.');
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::warning('Checkout remove-payment-method: ApiErrorException', [
+                'user_id' => $user->id,
+                'stripe_payment_method_id' => $pmId,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('remove_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur temporaire. Réessayez plus tard.');
         } catch (\Throwable $e) {
             Log::warning('Checkout remove-payment-method Stripe error', [
                 'user_id' => $user->id,
                 'stripe_payment_method_id' => $pmId,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            PaymentAuditLog::log('remove_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors de la suppression: ' . $e->getMessage(),
             ]);
             return redirect()->route('checkout.index')
                 ->with('error', 'Impossible de supprimer la carte. Réessayez.');
@@ -442,16 +749,136 @@ class CheckoutController extends Controller
                 'error' => $msg,
                 'error_code' => $errorCode, // Envoyer aussi le code pour le frontend
             ], 422);
-        } catch (\Throwable $e) {
-            Log::error('Checkout charge failed', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
+        } catch (\Stripe\Exception\RateLimitException $e) {
+            Log::error('Checkout charge: RateLimitException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
             PaymentAuditLog::log('charge_fail', $user->id, [
                 'echeance_id' => $echeance->id,
                 'stripe_customer_id' => $customerId,
                 'amount' => $montantFinal,
                 'currency' => $currency,
-                'status' => 'exception',
-                'context' => ['error' => $e->getMessage()],
-                'message' => 'Exception charge: ' . $e->getMessage(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'RateLimitException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Trop de requêtes à l\'API Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Trop de requêtes. Veuillez patienter quelques instants avant de réessayer.',
+            ], 429);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::error('Checkout charge: InvalidRequestException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'param' => $e->getError()->param ?? null,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Paramètres invalides pour PaymentIntent: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur de configuration. Contactez le support.',
+            ], 400);
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Checkout charge: AuthenticationException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur de configuration serveur. Contactez le support.',
+            ], 500);
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::error('Checkout charge: ApiConnectionException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Problème de connexion. Réessayez dans quelques instants.',
+            ], 503);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Checkout charge: ApiErrorException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur temporaire. Réessayez plus tard.',
+            ], 500);
+        } catch (\Throwable $e) {
+            Log::error('Checkout charge failed', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors du charge: ' . $e->getMessage(),
             ]);
             return response()->json(['success' => false, 'error' => 'Impossible de lancer le paiement. Réessayez.'], 500);
         }
@@ -678,11 +1105,145 @@ class CheckoutController extends Controller
 
         try {
             $session = StripeSession::create($params);
+        } catch (\Stripe\Exception\CardException $e) {
+            $errorCode = $e->getError()->code ?? null;
+            $declineCode = $e->getError()->decline_code ?? null;
+            Log::error('Checkout creerSessionStripe: CardException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error_code' => $errorCode,
+                'decline_code' => $declineCode,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'CardException',
+                    'error_code' => $errorCode,
+                    'decline_code' => $declineCode,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur carte lors de la création de la session: ' . $e->getMessage(),
+            ]);
+            $userMessage = self::mapStripeErrorToUserMessage($errorCode, $e->getMessage());
+            return redirect()->route('checkout.index')->with('error', $userMessage);
+        } catch (\Stripe\Exception\RateLimitException $e) {
+            Log::error('Checkout creerSessionStripe: RateLimitException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'RateLimitException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Trop de requêtes à l\'API Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Trop de requêtes. Veuillez patienter quelques instants.');
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::error('Checkout creerSessionStripe: InvalidRequestException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'param' => $e->getError()->param ?? null,
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Paramètres invalides pour la session: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur de configuration. Contactez le support.');
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Checkout creerSessionStripe: AuthenticationException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur de configuration serveur. Contactez le support.');
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::error('Checkout creerSessionStripe: ApiConnectionException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Problème de connexion. Réessayez dans quelques instants.');
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Checkout creerSessionStripe: ApiErrorException', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur temporaire. Réessayez plus tard.');
         } catch (\Exception $e) {
             Log::error('Checkout Stripe session create failed', [
                 'user_id' => $user->id,
                 'echeance_id' => $echeance->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            PaymentAuditLog::log('session_create_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => \App\Models\Tarif::currency(),
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors de la création de la session: ' . $e->getMessage(),
             ]);
             return redirect()->route('checkout.index')
                 ->with('error', 'Impossible de créer la session de paiement. Réessayez plus tard.');
@@ -771,11 +1332,94 @@ class CheckoutController extends Controller
         
         try {
             $pi = PaymentIntent::retrieve($paymentIntentId);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::error('Payment authenticate: InvalidRequestException', [
+                'payment_intent_id' => $paymentIntentId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('authenticate_payment_fail', $user->id, [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeance->id ?? null,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'InvalidRequestException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'PaymentIntent introuvable ou invalide: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Paiement introuvable ou invalide.');
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('Payment authenticate: AuthenticationException', [
+                'payment_intent_id' => $paymentIntentId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('authenticate_payment_fail', $user->id, [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeance->id ?? null,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'AuthenticationException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème d\'authentification avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur de configuration serveur. Contactez le support.');
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::error('Payment authenticate: ApiConnectionException', [
+                'payment_intent_id' => $paymentIntentId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('authenticate_payment_fail', $user->id, [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeance->id ?? null,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiConnectionException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Problème réseau avec Stripe: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Problème de connexion. Réessayez dans quelques instants.');
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Payment authenticate: ApiErrorException', [
+                'payment_intent_id' => $paymentIntentId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('authenticate_payment_fail', $user->id, [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeance->id ?? null,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => 'ApiErrorException',
+                    'raw_error' => json_encode($e->getError()),
+                ],
+                'message' => 'Erreur API Stripe générique: ' . $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Erreur temporaire. Réessayez plus tard.');
         } catch (\Exception $e) {
             Log::error('Payment authenticate: impossible de récupérer le PaymentIntent', [
                 'payment_intent_id' => $paymentIntentId,
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            PaymentAuditLog::log('authenticate_payment_fail', $user->id, [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeance->id ?? null,
+                'status' => 'failed',
+                'context' => [
+                    'exception_type' => get_class($e),
+                    'raw_error' => $e->getMessage(),
+                ],
+                'message' => 'Exception inattendue lors de la récupération du PaymentIntent: ' . $e->getMessage(),
             ]);
             return redirect()->route('checkout.index')
                 ->with('error', 'Impossible de récupérer les informations de paiement.');
