@@ -1,0 +1,7 @@
+{
+    "title": "Pusher & Temps réel",
+    "emoji": "⚡",
+    "color": "#8b5cf6",
+    "description": "Pusher, Reverb, notifications en temps réel.",
+    "admin_only": ["DEBUG_PUSHER.md"]
+}

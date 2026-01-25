@@ -44,7 +44,9 @@
                     <li><a href="{{ route('legal.confidentialite') }}" class="hover:text-green-400 transition">Politique de Confidentialité</a></li>
                     <li><a href="{{ route('legal.cgu') }}" class="hover:text-green-400 transition">C.G.U.</a></li>
                     <li><a href="{{ route('legal.cgv') }}" class="hover:text-green-400 transition">C.G.V.</a></li>
-                    <li><a href="#" class="hover:text-green-400 transition">Documentation</a></li>
+                    <li><a href="{{ route('forum.index') }}" class="hover:text-green-400 transition">Forum</a></li>
+                    <li><a href="{{ route('feedback.index') }}" class="hover:text-green-400 transition">Feedback</a></li>
+                    <li><a href="{{ route('dev.index') }}" class="hover:text-green-400 transition">Documentation</a></li>
                     <li>
                         <button onclick="if(document.getElementById('contact-modal')) document.getElementById('contact-modal').classList.remove('hidden')" class="hover:text-green-400 transition text-left">
                             Contact

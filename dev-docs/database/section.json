@@ -1,0 +1,7 @@
+{
+    "title": "Base de données",
+    "emoji": "🗄️",
+    "color": "#0ea5e9",
+    "description": "Backups, migrations, Docker.",
+    "admin_only": ["DATABASE_BACKUP_GUIDE.md", "DOCKER_BACKUP_SETUP.md"]
+}

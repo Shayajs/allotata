@@ -1,0 +1,7 @@
+{
+    "title": "Opérations & Performances",
+    "emoji": "⚙️",
+    "color": "#64748b",
+    "description": "Performance, récupération d'urgence, stock.",
+    "admin_only": ["EMERGENCY_RECOVERY.md", "diagnostic-forbidden.md"]
+}

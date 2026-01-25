@@ -1,0 +1,7 @@
+{
+    "title": "Stripe & Paiements",
+    "emoji": "💳",
+    "color": "#635bff",
+    "description": "Configuration Stripe, webhooks, paiements, abonnements.",
+    "admin_only": []
+}
