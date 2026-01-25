@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Str;
 
 /**
@@ -52,7 +51,7 @@ class PaymentAuditLog extends Model
         array $extra = [],
         ?string $message = null
     ): self {
-        $req = app()->runningInConsole() ? null : Request::instance();
+        $req = app()->runningInConsole() ? null : request();
         $data = array_merge([
             'user_id' => $userId ?? $req?->user()?->id,
             'action' => $action,

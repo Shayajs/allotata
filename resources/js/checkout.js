@@ -17,8 +17,8 @@ function showToast(message, type = 'error') {
     const el = document.getElementById('checkout-toast');
     if (!el) return;
     el.textContent = message;
-    el.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4 px-4 py-3 rounded-xl shadow-lg border text-center font-medium ';
-    el.classList.add(type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-400');
+    el.className = 'fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 px-4 py-3 rounded-xl shadow-lg border text-center font-medium ' +
+        (type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-400');
     el.classList.remove('hidden');
     setTimeout(() => el.classList.add('hidden'), 5000);
 }
