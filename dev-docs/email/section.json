@@ -1,0 +1,7 @@
+{
+    "title": "Email & SMS",
+    "emoji": "📧",
+    "color": "#10b981",
+    "description": "Système email, templates, configuration SMTP, SMS.",
+    "admin_only": []
+}

@@ -1,0 +1,7 @@
+{
+    "title": "Déploiement & Cron",
+    "emoji": "🚀",
+    "color": "#f59e0b",
+    "description": "Cron, production, scripts.",
+    "admin_only": ["CRON_SETUP.md"]
+}

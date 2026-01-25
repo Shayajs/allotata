@@ -157,6 +157,13 @@ Route::middleware(['auth', 'admin'])->prefix('brightshell')->name('brightshell.'
 Route::get('/support/faq', function() {
     return view('support.faq');
 })->name('support.faq');
+
+// Documentation développeur (/dev)
+Route::get('/dev', [\App\Http\Controllers\DevDocsController::class, 'index'])->name('dev.index');
+Route::get('/dev/doc/{path}', [\App\Http\Controllers\DevDocsController::class, 'show'])
+    ->where('path', '.*')
+    ->name('dev.show');
+
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
 Route::get('/fonctionnalites', [\App\Http\Controllers\PageController::class, 'fonctionnalites'])->name('pages.fonctionnalites');
 
@@ -727,6 +734,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/api/media/{mediaFile}/thumbnail', [\App\Http\Controllers\Admin\MediaController::class, 'uploadThumbnail'])->name('media.thumbnail.upload');
     Route::delete('/api/media/{mediaFile}/thumbnail', [\App\Http\Controllers\Admin\MediaController::class, 'deleteThumbnail'])->name('media.thumbnail.delete');
     Route::delete('/api/media/{mediaFile}', [\App\Http\Controllers\Admin\MediaController::class, 'delete'])->name('media.delete');
+    
+    // Forum Admin
+    Route::get('/forum/nouveaute/create', [\App\Http\Controllers\ForumController::class, 'createNouveaute'])->name('forum.nouveaute.create');
+    Route::post('/forum/nouveaute', [\App\Http\Controllers\ForumController::class, 'storeNouveaute'])->name('forum.nouveaute.store');
+    
+    // Feedback Admin
+    Route::patch('/feedback/{feedback}/admin', [\App\Http\Controllers\FeedbackController::class, 'adminUpdate'])->name('feedback.admin.update');
     
     // Gestion des cours (mode édition)
     Route::get('/courses', [\App\Http\Controllers\Admin\CourseController::class, 'index'])->name('courses.index');
