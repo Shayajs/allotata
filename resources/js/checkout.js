@@ -6,6 +6,7 @@ import { loadStripe } from '@stripe/stripe-js';
 
 const stripePk = document.querySelector('meta[name="stripe-publishable-key"]')?.getAttribute('content');
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const billingCountry = document.querySelector('meta[name="billing-country"]')?.getAttribute('content') || 'FR';
 const form = document.getElementById('checkout-save-card-form');
 const container = document.getElementById('checkout-payment-element');
 
@@ -66,7 +67,14 @@ async function initSaveCard() {
         try {
             const { setupIntent, error } = await stripe.confirmSetup({
                 elements,
-                confirmParams: { return_url: window.location.origin + '/checkout' },
+                confirmParams: {
+                    return_url: window.location.origin + '/checkout',
+                    payment_method_data: {
+                        billing_details: {
+                            address: { country: billingCountry },
+                        },
+                    },
+                },
             });
             if (error) {
                 if (errEl) errEl.textContent = error.message || 'Erreur inconnue';
