@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Echeance;
 use App\Models\PaymentAuditLog;
 use App\Models\PromoCode;
+use App\Helpers\EmailHelper;
 use App\Services\CalculMontantDuService;
 use App\Services\PaymentVerificationService;
 use App\Services\StripeCustomerService;
@@ -323,6 +324,9 @@ class CheckoutController extends Controller
 
         Stripe::setApiKey(config('services.stripe.secret'));
 
+        // Clé d'idempotence pour éviter les doublons en cas de retry réseau
+        $idempotencyKey = 'charge_echeance_' . $echeance->id . '_' . time();
+
         try {
             $pi = PaymentIntent::create([
                 'amount' => $amountCents,
@@ -335,10 +339,84 @@ class CheckoutController extends Controller
                     'user_id' => (string) $user->id,
                     'echeance_id' => (string) $echeance->id,
                 ],
+            ], [
+                'idempotency_key' => $idempotencyKey,
             ]);
         } catch (\Stripe\Exception\CardException $e) {
+            $errorCode = $e->getError()->code ?? null;
+            $paymentIntent = $e->getError()->payment_intent ?? null;
+            
+            // Gestion du 3D Secure "soudain" (SCA) en mode off_session
+            // Si Stripe demande une authentification, on renvoie le client_secret au frontend
+            if ($errorCode === 'authentication_required' && $paymentIntent) {
+                $piId = is_object($paymentIntent) ? $paymentIntent->id : $paymentIntent;
+                $clientSecret = is_object($paymentIntent) ? ($paymentIntent->client_secret ?? null) : null;
+                
+                // Récupérer le PaymentIntent complet pour avoir le client_secret
+                if (!$clientSecret && $piId) {
+                    try {
+                        $piRetrieved = PaymentIntent::retrieve($piId);
+                        $clientSecret = $piRetrieved->client_secret ?? null;
+                    } catch (\Exception $retrieveEx) {
+                        Log::warning('Checkout charge: impossible de récupérer le PaymentIntent pour 3DS', [
+                            'user_id' => $user->id,
+                            'echeance_id' => $echeance->id,
+                            'payment_intent_id' => $piId,
+                            'error' => $retrieveEx->getMessage(),
+                        ]);
+                    }
+                }
+                
+                if ($clientSecret) {
+                    // Mettre l'échéance en attente
+                    $echeance->update([
+                        'statut' => Echeance::STATUT_EN_ATTENTE,
+                        'stripe_payment_intent_id' => $piId,
+                        'reduction_promo' => $calc['reduction_promo'],
+                        'montant_final' => $montantFinal,
+                        'promo_code_id' => $calc['promo_code_id'],
+                        'metadata' => array_merge($echeance->metadata ?? [], ['lignes' => $calc['lignes']]),
+                    ]);
+                    
+                    PaymentAuditLog::log('charge_3ds', $user->id, [
+                        'echeance_id' => $echeance->id,
+                        'stripe_customer_id' => $customerId,
+                        'stripe_payment_intent_id' => $piId,
+                        'stripe_payment_method_id' => $user->stripe_payment_method_id,
+                        'amount' => $montantFinal,
+                        'currency' => $currency,
+                        'status' => 'requires_action',
+                        'context' => ['code' => $errorCode, 'source' => 'off_session_authentication_required'],
+                        'message' => '3DS requis (SCA) en mode off_session – authentification nécessaire.',
+                    ]);
+                    
+                    // Envoyer un email automatique au client pour finaliser l'authentification
+                    try {
+                        EmailHelper::sendPaymentAuthenticationRequired($user, $echeance, $piId);
+                        Log::info('Email SCA Recovery envoyé', [
+                            'user_id' => $user->id,
+                            'echeance_id' => $echeance->id,
+                            'payment_intent_id' => $piId,
+                        ]);
+                    } catch (\Throwable $emailEx) {
+                        // Ne pas bloquer le flux si l'email échoue
+                        Log::warning('Échec envoi email SCA Recovery', [
+                            'user_id' => $user->id,
+                            'echeance_id' => $echeance->id,
+                            'error' => $emailEx->getMessage(),
+                        ]);
+                    }
+                    
+                    return response()->json([
+                        'requires_action' => true,
+                        'client_secret' => $clientSecret,
+                        'payment_intent_id' => $piId,
+                    ]);
+                }
+            }
+            
             $msg = $e->getMessage();
-            if (str_contains(strtolower($msg), 'insufficient') || $e->getError()->code === 'card_declined') {
+            if (str_contains(strtolower($msg), 'insufficient') || $errorCode === 'card_declined') {
                 $msg = 'Carte refusée (fonds insuffisants ou refus bancaire).';
             }
             Log::warning('Checkout charge card error', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
@@ -349,7 +427,7 @@ class CheckoutController extends Controller
                 'amount' => $montantFinal,
                 'currency' => $currency,
                 'status' => 'card_error',
-                'context' => ['code' => $e->getError()->code ?? null, 'raw' => $e->getMessage()],
+                'context' => ['code' => $errorCode, 'raw' => $e->getMessage()],
                 'message' => 'Carte refusée: ' . $msg,
             ]);
             return response()->json(['success' => false, 'error' => $msg], 422);
@@ -617,5 +695,61 @@ class CheckoutController extends Controller
     public function cancel()
     {
         return redirect()->route('checkout.index');
+    }
+
+    /**
+     * Page de finalisation de l'authentification 3DS (SCA Recovery)
+     * 
+     * Quand la banque exige une authentification 3DS en mode off_session,
+     * l'utilisateur reçoit un email avec un lien vers cette page.
+     * Cette page lance automatiquement la pop-up 3DS pour finaliser le paiement.
+     */
+    public function authenticatePayment(Request $request, string $paymentIntentId)
+    {
+        $user = Auth::user();
+        
+        // Vérifier que le PaymentIntent appartient à l'utilisateur
+        $echeance = Echeance::where('user_id', $user->id)
+            ->where('stripe_payment_intent_id', $paymentIntentId)
+            ->where('statut', Echeance::STATUT_EN_ATTENTE)
+            ->first();
+        
+        if (!$echeance) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Paiement introuvable ou déjà traité.');
+        }
+
+        Stripe::setApiKey(config('services.stripe.secret'));
+        
+        try {
+            $pi = PaymentIntent::retrieve($paymentIntentId);
+        } catch (\Exception $e) {
+            Log::error('Payment authenticate: impossible de récupérer le PaymentIntent', [
+                'payment_intent_id' => $paymentIntentId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Impossible de récupérer les informations de paiement.');
+        }
+
+        // Vérifier que le PaymentIntent nécessite toujours une action
+        if ($pi->status === 'succeeded') {
+            // Déjà payé, rediriger vers la confirmation
+            $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($paymentIntentId);
+            return redirect()->route('checkout.index')
+                ->with('success', 'Paiement déjà effectué. Merci !');
+        }
+
+        if ($pi->status !== 'requires_action') {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Ce paiement ne nécessite plus d\'authentification.');
+        }
+
+        return view('checkout.authenticate', [
+            'payment_intent_id' => $paymentIntentId,
+            'client_secret' => $pi->client_secret,
+            'echeance' => $echeance,
+        ]);
     }
 }

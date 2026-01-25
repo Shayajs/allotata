@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Entreprise;
 use App\Models\Message;
 use App\Models\Conversation;
+use App\Models\Echeance;
 
 class EmailHelper
 {
@@ -268,5 +269,27 @@ class EmailHelper
             'nom_client' => $user->name,
             'url_verification' => $verificationUrl,
         ]);
+    }
+
+    /**
+     * Envoyer un email de récupération SCA (3D Secure requis)
+     * 
+     * Quand la banque exige une authentification 3DS en mode off_session,
+     * on envoie un email au client avec un lien pour finaliser le paiement.
+     */
+    public static function sendPaymentAuthenticationRequired(User $user, Echeance $echeance, string $paymentIntentId): bool
+    {
+        $authenticateUrl = route('payment.authenticate', ['payment_intent_id' => $paymentIntentId]);
+        
+        $data = [
+            'nom_client' => $user->name,
+            'montant' => number_format($echeance->montant_final ?? $echeance->montant_du ?? 0, 2, ',', ' ') . ' €',
+            'libelle_echeance' => $echeance->libelle(),
+            'periode' => $echeance->periode_debut->format('d/m/Y') . ' - ' . $echeance->periode_fin->format('d/m/Y'),
+            'url_authenticate' => $authenticateUrl,
+            'url_checkout' => route('checkout.index'),
+        ];
+
+        return EmailTemplateService::send('payment_authentication_required', $user->email, $data);
     }
 }
