@@ -7,6 +7,11 @@
         <meta name="stripe-publishable-key" content="{{ config('services.stripe.key') }}">
         <meta name="billing-country" content="FR">
         <meta name="billing-postal-code" content="{{ $user->code_postal ?? '00000' }}">
+        @php
+            $cp = $user->code_postal ?? '';
+            $billingState = $cp ? (preg_match('/^97/', $cp) ? substr($cp, 0, 3) : substr($cp, 0, 2)) : '';
+        @endphp
+        <meta name="billing-state" content="{{ $billingState }}">
         <title>Espace Paiement – Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
