@@ -415,11 +415,17 @@ class CheckoutController extends Controller
                 }
             }
             
-            $msg = $e->getMessage();
-            if (str_contains(strtolower($msg), 'insufficient') || $errorCode === 'card_declined') {
-                $msg = 'Carte refusée (fonds insuffisants ou refus bancaire).';
-            }
-            Log::warning('Checkout charge card error', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
+            // Mapper les codes d'erreur Stripe vers des messages français clairs
+            // C'est crucial pour l'UX : le client doit comprendre que c'est SA banque qui refuse
+            $msg = self::mapStripeErrorToUserMessage($errorCode, $e->getMessage());
+            
+            Log::warning('Checkout charge card error', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'error_code' => $errorCode,
+                'error_message' => $e->getMessage(),
+            ]);
+            
             PaymentAuditLog::log('charge_fail', $user->id, [
                 'echeance_id' => $echeance->id,
                 'stripe_customer_id' => $customerId,
@@ -427,10 +433,15 @@ class CheckoutController extends Controller
                 'amount' => $montantFinal,
                 'currency' => $currency,
                 'status' => 'card_error',
-                'context' => ['code' => $errorCode, 'raw' => $e->getMessage()],
+                'context' => ['code' => $errorCode, 'raw' => $e->getMessage(), 'user_message' => $msg],
                 'message' => 'Carte refusée: ' . $msg,
             ]);
-            return response()->json(['success' => false, 'error' => $msg], 422);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $msg,
+                'error_code' => $errorCode, // Envoyer aussi le code pour le frontend
+            ], 422);
         } catch (\Throwable $e) {
             Log::error('Checkout charge failed', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
             PaymentAuditLog::log('charge_fail', $user->id, [
@@ -474,6 +485,22 @@ class CheckoutController extends Controller
         }
 
         if ($status === 'succeeded') {
+            // Protection contre la race condition : vérifier que l'échéance n'est pas déjà payée
+            // (peut arriver si le webhook a déjà traité le paiement)
+            $echeance->refresh();
+            if ($echeance->estPayee()) {
+                PaymentAuditLog::log('charge_ok', $user->id, [
+                    'echeance_id' => $echeance->id,
+                    'stripe_payment_intent_id' => $pi->id,
+                    'amount' => $montantFinal,
+                    'currency' => $currency,
+                    'status' => 'succeeded',
+                    'context' => ['already_paid' => true, 'source' => 'race_condition_prevented'],
+                    'message' => 'Paiement déjà enregistré (webhook a traité avant).',
+                ]);
+                return response()->json(['success' => true, 'already_paid' => true]);
+            }
+
             // Vérifier que le montant débité correspond au montant calculé
             $amountPaid = $pi->amount ? $pi->amount / 100 : 0;
             if (abs($amountPaid - $montantFinal) > 0.01) {
@@ -561,6 +588,20 @@ class CheckoutController extends Controller
                 'message' => 'Échéance introuvable pour PI après 3DS.',
             ]);
             return response()->json(['success' => false, 'error' => 'Échéance introuvable.'], 404);
+        }
+
+        // Protection contre la race condition : vérifier que l'échéance n'est pas déjà payée
+        // (peut arriver si le webhook a déjà traité le paiement pendant le 3DS)
+        $echeance->refresh();
+        if ($echeance->estPayee()) {
+            PaymentAuditLog::log('confirm_status_ok', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_payment_intent_id' => $piId,
+                'status' => 'already_paid',
+                'context' => ['source' => 'race_condition_prevented'],
+                'message' => 'Paiement déjà enregistré (webhook a traité avant).',
+            ]);
+            return response()->json(['success' => true, 'already_paid' => true]);
         }
 
         $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($piId);
@@ -671,6 +712,8 @@ class CheckoutController extends Controller
                 ->with('error', 'Session de paiement introuvable.');
         }
 
+        // Protection contre la race condition : PaymentVerificationService est idempotent
+        // et vérifie déjà si l'échéance est payée, mais on log quand même pour traçabilité
         $result = PaymentVerificationService::verifyAndMarkPaid($sessionId);
 
         if (!$result['ok']) {
@@ -688,8 +731,13 @@ class CheckoutController extends Controller
                 ->with('error', 'Accès refusé.');
         }
 
+        // Si déjà payé (race condition avec webhook), message spécial
+        $message = $result['already'] 
+            ? 'Paiement déjà enregistré (traité automatiquement).' 
+            : 'Paiement enregistré. Merci !';
+
         return redirect()->route('settings.index', ['tab' => 'subscription'])
-            ->with('success', $result['already'] ? 'Paiement déjà enregistré.' : 'Paiement enregistré. Merci !');
+            ->with('success', $message);
     }
 
     public function cancel()
@@ -751,5 +799,65 @@ class CheckoutController extends Controller
             'client_secret' => $pi->client_secret,
             'echeance' => $echeance,
         ]);
+    }
+
+    /**
+     * Mapper les codes d'erreur Stripe vers des messages français clairs pour l'utilisateur
+     * 
+     * C'est crucial pour l'UX : le client doit comprendre que c'est SA banque qui refuse,
+     * pas un bug du site. Cela évite la frustration et les appels support inutiles.
+     * 
+     * @param string|null $errorCode Code d'erreur Stripe
+     * @param string $rawMessage Message brut de Stripe
+     * @return string Message français clair pour l'utilisateur
+     */
+    private static function mapStripeErrorToUserMessage(?string $errorCode, string $rawMessage): string
+    {
+        // Messages spécifiques selon le code d'erreur
+        $errorMessages = [
+            'insufficient_funds' => 'Solde insuffisant sur cette carte. Vérifiez votre compte bancaire ou utilisez une autre carte.',
+            'card_declined' => 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.',
+            'expired_card' => 'Cette carte a expiré. Veuillez utiliser une autre carte ou mettre à jour vos informations de paiement.',
+            'incorrect_cvc' => 'Le code de sécurité (CVC) est incorrect. Vérifiez les 3 chiffres au dos de votre carte.',
+            'incorrect_number' => 'Le numéro de carte est incorrect. Vérifiez les 16 chiffres de votre carte.',
+            'processing_error' => 'Votre banque a rencontré une erreur lors du traitement. Réessayez dans quelques instants.',
+            'generic_decline' => 'Votre banque a refusé le paiement sans raison spécifique. Contactez votre banque ou utilisez une autre carte.',
+            'lost_card' => 'Cette carte a été signalée comme perdue. Utilisez une autre carte.',
+            'stolen_card' => 'Cette carte a été signalée comme volée. Utilisez une autre carte.',
+            'pickup_card' => 'Votre banque a demandé la récupération de cette carte. Contactez votre banque.',
+            'restricted_card' => 'Cette carte est restreinte. Contactez votre banque.',
+            'security_violation' => 'Votre banque a détecté une violation de sécurité. Contactez votre banque.',
+            'service_not_allowed' => 'Cette carte ne permet pas ce type de transaction. Contactez votre banque.',
+            'stop_payment_order' => 'Un ordre d\'arrêt de paiement a été émis pour cette carte. Contactez votre banque.',
+            'testmode_decline' => 'Cette carte de test a été refusée. Utilisez une carte de test valide.',
+            'withdrawal_count_limit_exceeded' => 'Vous avez atteint la limite de retraits autorisés. Contactez votre banque.',
+        ];
+
+        // Si on a un code spécifique, utiliser le message correspondant
+        if ($errorCode && isset($errorMessages[$errorCode])) {
+            return $errorMessages[$errorCode];
+        }
+
+        // Sinon, analyser le message brut pour détecter des mots-clés
+        $lowerMessage = strtolower($rawMessage);
+        
+        if (str_contains($lowerMessage, 'insufficient') || str_contains($lowerMessage, 'fond')) {
+            return 'Solde insuffisant sur cette carte. Vérifiez votre compte bancaire ou utilisez une autre carte.';
+        }
+        
+        if (str_contains($lowerMessage, 'declined') || str_contains($lowerMessage, 'refus')) {
+            return 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.';
+        }
+        
+        if (str_contains($lowerMessage, 'expired') || str_contains($lowerMessage, 'expir')) {
+            return 'Cette carte a expiré. Veuillez utiliser une autre carte ou mettre à jour vos informations de paiement.';
+        }
+        
+        if (str_contains($lowerMessage, 'cvc') || str_contains($lowerMessage, 'security code')) {
+            return 'Le code de sécurité (CVC) est incorrect. Vérifiez les 3 chiffres au dos de votre carte.';
+        }
+
+        // Message générique mais qui indique que c'est la banque
+        return 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.';
     }
 }
