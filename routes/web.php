@@ -341,6 +341,17 @@ Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(functio
 // Contact (public - depuis le footer)
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+// Forum (public)
+Route::get('/forum', [\App\Http\Controllers\ForumController::class, 'index'])->name('forum.index');
+Route::get('/forum/category/{category}', [\App\Http\Controllers\ForumController::class, 'show'])->name('forum.category');
+Route::get('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'showPost'])->name('forum.post.show');
+
+// Feedback (public)
+Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+Route::get('/feedback/dashboard', [\App\Http\Controllers\FeedbackController::class, 'dashboard'])->name('feedback.dashboard');
+Route::get('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');
+Route::get('/api/feedback/search-titres', [\App\Http\Controllers\FeedbackController::class, 'searchTitres'])->name('feedback.search-titres');
+
 // Tickets (public - depuis l'accueil et dashboards)
 Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
