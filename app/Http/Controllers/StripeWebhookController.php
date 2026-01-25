@@ -130,13 +130,55 @@ class StripeWebhookController extends CashierController
      * 
      * Cette méthode est appelée automatiquement par Cashier pour les événements
      * payment_intent.succeeded
+     * 
+     * Protection contre les "transactions zombies" : si Stripe a débité mais que
+     * le serveur a planté avant de mettre à jour l'échéance, le webhook rattrape.
      */
     protected function handlePaymentIntentSucceeded(array $payload)
     {
-        Log::info('Payment Intent réussi', [
-            'payment_intent_id' => $payload['data']['object']['id'] ?? null,
-            'amount' => $payload['data']['object']['amount'] ?? null,
+        $piId = $payload['data']['object']['id'] ?? null;
+        $amount = $payload['data']['object']['amount'] ?? null;
+        
+        Log::info('Payment Intent réussi (webhook)', [
+            'payment_intent_id' => $piId,
+            'amount' => $amount,
         ]);
+        
+        // Vérifier si c'est un paiement d'échéance (via metadata)
+        $metadata = $payload['data']['object']['metadata'] ?? [];
+        if (is_object($metadata)) {
+            $metadata = (array) $metadata;
+        }
+        
+        $echeanceId = (int) ($metadata['echeance_id'] ?? 0);
+        $userId = (int) ($metadata['user_id'] ?? 0);
+        
+        // Si c'est un paiement d'échéance, marquer l'échéance payée (idempotent)
+        if ($echeanceId && $userId && $piId) {
+            try {
+                $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($piId);
+                if ($result['ok']) {
+                    Log::info('Webhook payment_intent.succeeded : échéance marquée payée', [
+                        'payment_intent_id' => $piId,
+                        'echeance_id' => $echeanceId,
+                        'already' => $result['already'],
+                    ]);
+                } else {
+                    Log::warning('Webhook payment_intent.succeeded : échec de marquage échéance', [
+                        'payment_intent_id' => $piId,
+                        'echeance_id' => $echeanceId,
+                        'message' => $result['message'],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Webhook payment_intent.succeeded : exception lors du marquage', [
+                    'payment_intent_id' => $piId,
+                    'echeance_id' => $echeanceId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
         
         // Appeler le handler parent si la méthode existe
         if (method_exists(parent::class, 'handlePaymentIntentSucceeded')) {

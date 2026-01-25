@@ -572,6 +572,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/checkout/confirm-status', [CheckoutController::class, 'confirmStatus'])->name('checkout.confirm-status');
         Route::post('/checkout/payer', [CheckoutController::class, 'creerSessionStripe'])->name('checkout.payer');
         Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+        Route::get('/payment/authenticate/{payment_intent_id}', [CheckoutController::class, 'authenticatePayment'])->name('payment.authenticate');
         Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
         // Notifications
