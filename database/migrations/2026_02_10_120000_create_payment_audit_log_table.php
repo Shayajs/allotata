@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Vérifier si la table existe déjà (peut arriver si créée manuellement ou migration partielle)
+        if (Schema::hasTable('payment_audit_log')) {
+            return;
+        }
+
         Schema::create('payment_audit_log', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
