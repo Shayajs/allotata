@@ -13,6 +13,13 @@ function getQuery(name) {
     return new URLSearchParams(window.location.search).get(name);
 }
 
+function escapeHtml(s) {
+    if (s == null) return '';
+    const div = document.createElement('div');
+    div.textContent = String(s);
+    return div.innerHTML;
+}
+
 function showToast(message, type = 'error') {
     const el = document.getElementById('checkout-toast');
     if (!el) return;
@@ -84,10 +91,22 @@ async function initSaveCard() {
         }
     });
 
-    const r = await fetch(window.location.origin + '/checkout/setup-intent', { method: 'POST', headers: headers(), body: '{}' });
-    const data = await r.json();
+    let data = {};
+    try {
+        const r = await fetch(window.location.origin + '/checkout/setup-intent', { method: 'POST', headers: headers(), body: '{}' });
+        data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            const err = data.error || data.message || `Erreur ${r.status}`;
+            container.innerHTML = '<p class="text-red-600 dark:text-red-400 text-sm">Impossible de préparer le formulaire. ' + escapeHtml(err) + '</p>';
+            return;
+        }
+    } catch (e) {
+        container.innerHTML = '<p class="text-red-600 dark:text-red-400 text-sm">Impossible de joindre le serveur. Vérifiez votre connexion.</p>';
+        return;
+    }
     if (!data.client_secret) {
-        container.innerHTML = '<p class="text-red-600 dark:text-red-400 text-sm">Impossible de préparer le formulaire. Réessayez.</p>';
+        const err = data.error || data.message || 'Réessayez.';
+        container.innerHTML = '<p class="text-red-600 dark:text-red-400 text-sm">Impossible de préparer le formulaire. ' + escapeHtml(err) + '</p>';
         return;
     }
     clientSecret = data.client_secret;
