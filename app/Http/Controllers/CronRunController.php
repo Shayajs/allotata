@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  */
 class CronRunController extends Controller
 {
-    public function __invoke(Request $request)
+    public function run(Request $request)
     {
         $secret = env('CRON_SECRET', 'change-me-in-production');
         $provided = $request->get('token') ?? $request->header('X-Cron-Token');
