@@ -648,8 +648,79 @@ class BrightShellController extends Controller
                 ->orderBy('numero')
                 ->get();
         }
+
+        // Récupérer l'historique des paiements (recettes liées à cette facture)
+        $paiements = [];
+        if (\Schema::hasTable('brightshell_recettes')) {
+            $paiements = DB::table('brightshell_recettes')
+                ->where('facture_id', $id)
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
         
-        return view('brightshell.factures.show', compact('facture', 'entreprise', 'echeances'));
+        return view('brightshell.factures.show', compact('facture', 'entreprise', 'echeances', 'paiements'));
+    }
+
+    /**
+     * Ajouter un règlement manuel à une facture (rétroactif ou partiel)
+     */
+    public function factureAddPayment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'montant' => 'required|numeric|min:0.01',
+            'mode_paiement' => 'required|string',
+            'note' => 'nullable|string'
+        ]);
+
+        $facture = DB::table('brightshell_factures')->find($id);
+        if (!$facture) abort(404);
+
+        // Enregistrer le paiement dans les recettes
+        if (\Schema::hasTable('brightshell_recettes')) {
+            DB::table('brightshell_recettes')->insert([
+                'date' => $validated['date'],
+                'reference' => $facture->numero, // Ou un ref spécifique si besoin
+                'client_id' => $facture->client_id,
+                // On récupère le nom du client à la volée pour l'historique, ou on le joint
+                'client_nom' => DB::table('brightshell_clients')->where('id', $facture->client_id)->value('nom') ?? 'Client', 
+                // Petite correction: mieux vaut prendre le nom/société complet comme dans markPaid
+                'nature' => $facture->objet . ($validated['note'] ? ' (' . $validated['note'] . ')' : ''),
+                'montant' => $validated['montant'],
+                'mode_reglement' => $validated['mode_paiement'],
+                'facture_id' => $id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Mettre à jour la trésorerie
+            if (\Schema::hasTable('brightshell_tresorerie')) {
+                $tresorerie = DB::table('brightshell_tresorerie')->first();
+                if ($tresorerie) {
+                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                        'solde_courant' => $tresorerie->solde_courant + $validated['montant'],
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        }
+
+        // Vérifier si le total payé couvre la facture pour changer le statut
+        $totalPaye = DB::table('brightshell_recettes')->where('facture_id', $id)->sum('montant');
+        
+        if ($totalPaye >= $facture->montant_total && $facture->statut !== 'payee') {
+            DB::table('brightshell_factures')->where('id', $id)->update([
+                'statut' => 'payee',
+                'date_paiement' => $validated['date'], // Date du dernier paiement
+                'updated_at' => now(),
+            ]);
+            return redirect()->route('brightshell.factures.show', $id)
+                ->with('success', 'Paiement ajouté. La facture est maintenant soldée.');
+        }
+
+        return redirect()->route('brightshell.factures.show', $id)
+            ->with('success', 'Paiement ajouté à l\'historique.');
     }
     
     public function factureEdit($id)

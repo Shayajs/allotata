@@ -463,7 +463,7 @@
         toggleModeEchelonnage();
         </script>
         @else
-        <div class="card">
+        <div class="card mb-4">
             <div class="empty-state">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <p>Cette facture a été payée intégralement.</p>
@@ -474,6 +474,86 @@
         </div>
         @endif
         @endif
+
+        <!-- Historique des paiements & Ajout manuel -->
+        <div class="card mt-4">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Historique des règlements</h3>
+                @if($facture->statut !== 'payee')
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('form-add-payment').classList.toggle('d-none')">+ Ajouter un règlement</button>
+                @endif
+            </div>
+            
+            <div id="form-add-payment" class="d-none" style="padding: 1rem; background: var(--bs-bg-hover); border-bottom: 1px solid var(--bs-border);">
+                <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Ajouter un règlement (rétroactif ou partiel)</h4>
+                <form action="{{ route('brightshell.factures.add_payment', $facture->id) }}" method="POST">
+                    @csrf
+                    <div class="grid grid-2" style="gap: 1rem;">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="form-input" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Montant (€)</label>
+                            <input type="number" name="montant" class="form-input" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="grid grid-2 mt-2" style="gap: 1rem;">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Mode</label>
+                            <select name="mode_paiement" class="form-input">
+                                <option value="Virement bancaire">Virement bancaire</option>
+                                <option value="Chèque">Chèque</option>
+                                <option value="Carte bleue">Carte bleue</option>
+                                <option value="Espèces">Espèces</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Note (facultatif)</label>
+                            <input type="text" name="note" class="form-input" placeholder="Ex: Acompte, Solde...">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm mt-3">Enregistrer le règlement</button>
+                </form>
+            </div>
+
+            @if(isset($paiements) && count($paiements) > 0)
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Mode</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($paiements as $p)
+                        <tr>
+                            <td>{{ \Carbon\Carbon::parse($p->date)->format('d/m/Y') }}</td>
+                            <td class="font-bold text-success">+{{ number_format($p->montant, 2, ',', ' ') }} €</td>
+                            <td>{{ $p->mode_reglement }}</td>
+                            <td class="text-muted text-sm">{{ Str::after($p->nature, '(') ? Str::before(Str::after($p->nature, '('), ')') : '-' }}</td>
+                        </tr>
+                        @endforeach
+                        <tr style="background: #fafbfc; font-weight: bold; border-top: 2px solid #e5e7eb;">
+                            <td style="text-align: right;">Total réglé</td>
+                            <td class="text-success">{{ number_format($paiements->sum('montant'), 2, ',', ' ') }} €</td>
+                            <td colspan="2">
+                                <span class="text-muted text-xs font-normal">
+                                    sur {{ number_format($facture->montant_total, 2, ',', ' ') }} € 
+                                    ({{ number_format(($paiements->sum('montant') / $facture->montant_total) * 100, 0) }}%)
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <p class="text-muted text-center py-4">Aucun règlement enregistré pour cette facture.</p>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
