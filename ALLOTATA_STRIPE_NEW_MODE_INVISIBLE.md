@@ -40,10 +40,12 @@ Ce document décrit le fonctionnement du **service de paiement Stripe** dans son
 STRIPE_KEY=pk_test_...       # Clé publique (front)
 STRIPE_SECRET=sk_test_...    # Clé secrète (back)
 STRIPE_WEBHOOK_SECRET=whsec_...
+CRON_SECRET=...              # Token secret pour /cron-run (voir § 5.4)
 ```
 
 - `config('services.stripe.key')` et `config('services.stripe.secret')` alimentent Stripe PHP et le front.
 - Le **webhook** doit pointer vers votre handler (ex. `/stripe/webhook`) et envoyer au moins `payment_intent.succeeded` pour la réconciliation.
+- **CRON_SECRET** : valeur aléatoire sécurisée (ex. `openssl rand -hex 32`). Protège la route `/cron-run` qui lance les tâches planifiées. Ne pas utiliser `change-me-in-production`.
 
 ### 2.2 Base de données
 
@@ -58,7 +60,7 @@ Migrations à exécuter : `php artisan migrate` (dont `payment_audit_log`, `stri
 
 ## 3. Adresse de facturation et Payment Element
 
-### 3.1 `address: 'never'`
+### 3.1 `address: 'if_required'`
 
 On configure le Payment Element avec :
 
@@ -66,58 +68,18 @@ On configure le Payment Element avec :
 elements.create('payment', {
   fields: {
     billingDetails: {
-      address: 'never',
+      address: 'if_required',
     },
   },
 });
 ```
 
-- Aucun champ adresse (ville, code postal, etc.) n’est affiché dans l’iframe Stripe.
-- Évite les erreurs du type « code postal ne correspond pas » entre carte et formulaire.
+- Stripe affiche **dans son formulaire** les champs d’adresse requis pour le moyen de paiement (carte : typiquement **code postal**, parfois ville). Pas de formulaire custom côté app.
+- L’utilisateur saisit code postal et éventuellement ville **directement dans l’iframe Stripe**. Aucun `payment_method_data.billing_details` n’est envoyé à `confirmSetup` ; Stripe gère la collecte et l’envoi.
 
-### 3.2 Obligation de fournir l’adresse à `confirmSetup`
+### 3.2 Profil utilisateur (Paramètres → Compte)
 
-Dès que `address: 'never'` est utilisé, Stripe **exige** que l’adresse soit fournie **à la confirmation** :
-
-```js
-stripe.confirmSetup({
-  elements,
-  confirmParams: {
-    return_url: '...',
-    payment_method_data: {
-      billing_details: {
-        address: {
-          country: 'FR',
-          state: '...',      // Département dérivé du CP
-          city: '...',       // Ville
-          postal_code: '...',
-        },
-      },
-    },
-  },
-});
-```
-
-Si un seul de ces champs manque, Stripe renvoie une `IntegrationError` (ex. « did not pass `address.city` »).
-
-### 3.3 Source des données : profil utilisateur
-
-Les valeurs viennent du **profil** (Paramètres → Compte) :
-
-| Champ Stripe | Source |
-|--------------|--------|
-| `country` | Fixe `FR`. |
-| `city` | `user.ville` (sinon `"Non renseigné"`). |
-| `postal_code` | `user.code_postal` (sinon `"00000"`). |
-| `state` | Département dérivé du CP : 2 premiers chiffres, ou 3 si CP commence par `97` (DOM-TOM). |
-
-Meta tags dans `checkout/index.blade.php` :
-
-- `billing-country`, `billing-city`, `billing-postal-code`, `billing-state`
-
-Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_details.address` lors de `confirmSetup`.
-
-**Important** : l’utilisateur doit renseigner **ville** et **code postal** dans Paramètres → Compte pour que la facturation soit correcte. Un rappel est affiché sur la page checkout (« L'adresse de facturation utilise la **ville** et le **code postal** de votre profil » + lien Paramètres).
+**Ville** et **code postal** restent stockés dans le profil (Paramètres → Mon compte) pour l’affichage des adresses et la facturation hors Stripe. Ils ne sont **pas** utilisés pour le flux d’enregistrement de carte : la saisie se fait dans le Payment Element.
 
 ---
 
@@ -126,15 +88,15 @@ Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_de
 ### 4.1 Accès au checkout
 
 - **Espace Paiement** : lien dans la nav (desktop) et le burger (mobile) → `/checkout`.
-- Depuis l’onglet **Abonnement** (Paramètres / Dashboard) : « Payer maintenant », « Modifier la carte », « Ajouter une carte », « Régler », « Voir toutes les échéances et payer » → `/checkout`.
+- Depuis l’onglet **Abonnement** (Paramètres / Dashboard) : « Payer maintenant », « Modifier la carte » → `/checkout?change_card=1`, « Ajouter une carte », « Régler », « Voir toutes les échéances et payer » → `/checkout`.
 
 ### 4.2 Enregistrement d’une carte (SetupIntent)
 
-1. **Page** `/checkout`, section « Moyen de paiement ».
+1. **Page** `/checkout`, section « Moyen de paiement » (affichée si pas de carte **ou** si `?change_card=1`).
 2. **Chargement** : fetch `POST /checkout/setup-intent` → le serveur crée un **SetupIntent** (`usage: off_session`, `payment_method_types: ['card']`), renvoie `client_secret`.
-3. **Stripe Elements** : création du Payment Element avec ce `client_secret`, `address: 'never'`, et theme night/stripe selon le mode sombre/clair.
-4. **Clic « Enregistrer ma carte »** :
-   - `stripe.confirmSetup({ elements, confirmParams })` avec `payment_method_data.billing_details.address` (country, state, city, postal_code).
+3. **Stripe Elements** : création du Payment Element avec ce `client_secret`, `address: 'if_required'`, et theme night/stripe selon le mode sombre/clair. Stripe affiche les champs nécessaires (carte + code postal, etc.) dans son formulaire.
+4. **Clic « Enregistrer ma carte »** (ou « Remplacer la carte » en mode changement) :
+   - `stripe.confirmSetup({ elements, confirmParams: { return_url } })`. Aucun `payment_method_data.billing_details` : Stripe collecte l’adresse dans l’Element.
    - Si 3DS : redirect Stripe puis retour sur `/checkout?setup_intent_client_secret=...&redirect_status=succeeded`. Le JS appelle `retrieveSetupIntent`, récupère le `payment_method`, puis `POST /checkout/save-payment-method` avec `{ payment_method: 'pm_xxx' }`.
    - Sinon : pas de redirect ; même appel à `save-payment-method` après `confirmSetup`.
 5. **Côté serveur** (`savePaymentMethod`) :
@@ -142,7 +104,12 @@ Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_de
    - Met à jour `user.stripe_payment_method_id`, `pm_type`, `pm_last_four`.
    - Log audit `save_pm_ok` (ou `save_pm_fail` en cas d’erreur).
 
-### 4.3 Paiement d’une échéance (PaymentIntent)
+### 4.3 Changer ou supprimer la carte
+
+- **Changer la carte** : lien « Changer la carte » sur `/checkout` (ou « Modifier la carte » depuis Abonnement) → `/checkout?change_card=1`. Le formulaire d’enregistrement réapparaît ; l’utilisateur saisit une nouvelle carte. Après enregistrement, redirection vers `/checkout` sans paramètre. Boutons « Annuler » / « ← Annuler » pour revenir sans modifier.
+- **Supprimer la carte** : bouton « Supprimer la carte » sur `/checkout` → `POST /checkout/remove-payment-method` (avec confirmation). Le serveur détache le PaymentMethod chez Stripe, vide `invoice_settings.default_payment_method` si besoin, met à `null` `stripe_payment_method_id`, `pm_type`, `pm_last_four`, log `remove_pm_ok`, puis redirige vers `/checkout` avec « Carte supprimée. »
+
+### 4.4 Paiement d’une échéance (PaymentIntent)
 
 1. **Prérequis** : carte déjà enregistrée (`user.stripe_payment_method_id` présent).
 2. Sur `/checkout`, l’utilisateur clique **« Régler »** sur une échéance (ou « Régler cette échéance »).
@@ -157,7 +124,7 @@ Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_de
    - **`requires_action`** (3DS) : on met l’échéance en `en_attente`, on stocke `stripe_payment_intent_id`, on log `charge_3ds`. Réponse `{ requires_action: true, client_secret, payment_intent_id }`.
 6. **Si 3DS** : le front appelle `stripe.handleCardAction(client_secret)`. Après succès, `POST /checkout/confirm-status` avec `payment_intent_id`. Le serveur appelle à nouveau `markEcheancePaidFromPaymentIntent`, met à jour l’échéance, log `confirm_status_ok`.
 
-### 4.4 Codes promo
+### 4.5 Codes promo
 
 - **Application** : formulaire sur `/checkout` ou paramètre de requête. Le code est stocké en session (`checkout_promo_code`) et/ou envoyé dans `charge`.
 - **Calcul** : `CalculMontantDuService::calculerPourEcheance` utilise `PromoCode::validateCode` et applique la réduction. Le montant final peut être 0 (refusé en charge avec un message dédié).
@@ -182,6 +149,37 @@ Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_de
 
 - **`subscriptions:check-echeances`** : génère les échéances à venir (Premium, options entreprise) selon les dates de facturation. Planifié quotidiennement.
 - **`subscriptions:reconcile-echeances`** : réconcilie les échéances `en_attente`. **Note** : la commande actuelle cible celles avec `stripe_checkout_session_id`. Les échéances mises en attente par le flux **PaymentIntent** (3DS) n’ont que `stripe_payment_intent_id` ; une évolution pourrait étendre la réconciliation à ces cas (vérification du PI sur Stripe).
+- **`essais:check-expiration`** : vérifie les essais gratuits, envoie rappels et notifications d’expiration.
+
+### 5.4 Déclenchement HTTP : `/cron-run`
+
+Pour éviter d’utiliser `docker exec` ou un cron Laravel dans un conteneur, une **route HTTP** permet de lancer les trois commandes ci‑dessus.
+
+**Configuration**
+
+- `.env` : `CRON_SECRET=<token-secret-long>` (ex. généré avec `openssl rand -hex 32`).
+
+**Utilisation**
+
+| Usage | Méthode |
+|-------|---------|
+| **Manuel** | Ouvrir dans le navigateur : `https://votre-domaine.fr/cron-run?token=VOTRE_CRON_SECRET` |
+| **Cron externe** | `curl -s "https://votre-domaine.fr/cron-run?token=VOTRE_CRON_SECRET"` |
+| **Header** | `X-Cron-Token: VOTRE_CRON_SECRET` (GET ou POST) |
+
+**Comportement**
+
+- Vérification du token (query `token` ou header `X-Cron-Token`). Si invalide ou absent → 403. Si `CRON_SECRET` manquant ou égal à `change-me-in-production` → 500.
+- Exécution séquentielle de : `subscriptions:check-echeances`, `subscriptions:reconcile-echeances`, `essais:check-expiration`.
+- Réponse JSON : `success`, `message`, `results` (sortie de chaque commande), `at` (ISO 8601). En cas d’échec d’une commande → `success: false` et HTTP 500.
+
+**Exemple de crontab (hébergeur, sans Docker)**
+
+```cron
+0 6 * * * curl -s "https://allotata.fr/cron-run?token=VOTRE_CRON_SECRET"
+```
+
+Aucun `php artisan`, ni `docker exec` : un simple `curl` sur l’URL suffit.
 
 ---
 
@@ -215,7 +213,7 @@ Chaque action sensible est enregistrée : `user_id`, `action`, IDs Stripe (custo
 
 **Actions loguées** :
 
-- `setup_intent_created`, `save_pm_ok`, `save_pm_fail`
+- `setup_intent_created`, `save_pm_ok`, `save_pm_fail`, `remove_pm_ok`
 - `charge_ok`, `charge_fail`, `charge_3ds`
 - `confirm_status_ok`, `confirm_status_fail`
 
@@ -233,7 +231,8 @@ Consultation : **Admin → Paiements → « Journal d’audit paiements (verbose
 ### 8.1 Cartes enregistrées
 
 - Affichage `•••• XXXX` et type (Visa, etc.) à partir de `pm_last_four` et `pm_type`.
-- Liens « Modifier la carte » / « Ajouter une carte » → `/checkout`.
+- **Changer la carte** → `/checkout?change_card=1` (ou « Modifier la carte » depuis Abonnement). **Supprimer la carte** → `POST /checkout/remove-payment-method` (confirmations utilisateur).
+- « Ajouter une carte » → `/checkout` (formulaire affiché lorsqu’aucune carte n’est enregistrée).
 
 ### 8.2 Factures
 
@@ -278,11 +277,13 @@ Consultation : **Admin → Paiements → « Journal d’audit paiements (verbose
 | GET | `/checkout` | `CheckoutController@index` | Page Espace Paiement |
 | POST | `/checkout/setup-intent` | `createSetupIntent` | Créer un SetupIntent, retourner `client_secret` |
 | POST | `/checkout/save-payment-method` | `savePaymentMethod` | Attacher le PM au Customer, mettre à jour le user |
+| POST | `/checkout/remove-payment-method` | `removePaymentMethod` | Détacher le PM, vider user (stripe_payment_method_id, etc.) |
 | POST | `/checkout/charge` | `charge` | Créer un PaymentIntent, débiter (ou retourner 3DS) |
 | POST | `/checkout/confirm-status` | `confirmStatus` | Après 3DS : vérifier le PI et marquer l’échéance payée |
 | POST | `/checkout/appliquer-promo` | `appliquerPromo` | Appliquer un code promo (session) |
 | POST | `/checkout/retirer-promo` | `retirerPromo` | Retirer le code promo |
 | POST | `/abonnement/echeance/{echeance}/annuler` | `SubscriptionController@annulerEcheance` | Annuler une échéance à venir |
+| GET / POST | `/cron-run` | `CronRunController@run` | Lancer les tâches planifiées (échéances, réconciliation, essais). Protégé par `?token=CRON_SECRET` ou `X-Cron-Token`. |
 
 ---
 
@@ -298,28 +299,30 @@ Consultation : **Admin → Paiements → « Journal d’audit paiements (verbose
 | Échéances | `app/Models/Echeance.php` |
 | Audit | `app/Models/PaymentAuditLog.php`, `app/Http/Controllers/Admin/PaymentAuditLogController.php` |
 | Abonnement (onglet) | `resources/views/partials/settings/subscription-tab.blade.php`, `SettingsController`, `DashboardController` |
-| CRON | `app/Console/Commands/CheckEcheancesCommand.php`, `ReconcileEcheancesCommand.php` |
+| CRON | `app/Console/Commands/CheckEcheancesCommand.php`, `ReconcileEcheancesCommand.php`, `CheckEssaisExpiration.php` |
+| Cron HTTP | `app/Http/Controllers/CronRunController.php` (route `/cron-run`) |
 
 ---
 
 ## 12. Subtilités à garder en tête
 
-1. **Ville et code postal** : indispensables pour `confirmSetup` avec `address: 'never'`. Vérifier qu’ils sont renseignés en Paramètres → Compte ; sinon risque d’erreur ou de valeurs par défaut (« Non renseigné », « 00000 »).
-2. **State** : dérivé du code postal (département). CP `97xxx` → 3 caractères, sinon 2.
-3. **Réconciliation** : le CRON actuel ne réconcilie que les échéances avec `stripe_checkout_session_id`. Les échéances 3DS purement PaymentIntent n’ont que `stripe_payment_intent_id` ; une extension du CRON pourrait les traiter aussi.
-4. **Factures** : uniquement `paid` et `amount_paid > 0`. Les factures à 0 € ou « open » ne sont pas affichées.
-5. **Derniers paiements** : exclusion des montants ≤ 0 (échéances et transactions) pour éviter les lignes « 0,00 € ».
-6. **CSP / Google Pay** : le SetupIntent est créé avec `payment_method_types: ['card']` pour n’afficher que le formulaire carte. Cela évite le chargement de l’iframe `pay.google.com` (Google Pay) et les violations CSP « frame-ancestors » qui peuvent bloquer la saisie carte. Pas de Google Pay côté checkout.
-7. **Audit** : en cas d’absence ou d’erreur sur la table `payment_audit_log`, le log audit est ignoré (try/catch) pour ne pas bloquer `createSetupIntent` ni le flux de paiement.
+1. **Code postal** : avec `address: 'if_required'`, Stripe affiche le champ dans son formulaire. L’utilisateur le saisit directement ; il doit correspondre à celui enregistré auprès de la banque (sinon erreur « Votre numéro de carte et votre code postal ne correspondent pas »).
+2. **Réconciliation** : le CRON actuel ne réconcilie que les échéances avec `stripe_checkout_session_id`. Les échéances 3DS purement PaymentIntent n’ont que `stripe_payment_intent_id` ; une extension du CRON pourrait les traiter aussi.
+3. **Factures** : uniquement `paid` et `amount_paid > 0`. Les factures à 0 € ou « open » ne sont pas affichées.
+4. **Derniers paiements** : exclusion des montants ≤ 0 (échéances et transactions) pour éviter les lignes « 0,00 € ».
+5. **CSP / Google Pay** : le SetupIntent est créé avec `payment_method_types: ['card']` pour n’afficher que le formulaire carte. Cela évite le chargement de l’iframe `pay.google.com` (Google Pay) et les violations CSP « frame-ancestors » qui peuvent bloquer la saisie carte. Pas de Google Pay côté checkout.
+6. **Audit** : en cas d’absence ou d’erreur sur la table `payment_audit_log`, le log audit est ignoré (try/catch) pour ne pas bloquer `createSetupIntent` ni le flux de paiement.
 
 ---
 
 ## 13. Checklist déploiement
 
 - [ ] `.env` : `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET` corrects.
+- [ ] `.env` : `CRON_SECRET` défini (token long, ex. `openssl rand -hex 32`) pour `/cron-run`.
 - [ ] `php artisan migrate` (dont `payment_audit_log`, `stripe_transactions`, colonnes Stripe sur `users`).
 - [ ] Webhook Stripe configuré vers l’URL de production, avec `payment_intent.succeeded` (et `checkout.session.completed` si flux legacy utilisé).
-- [ ] CRON : `subscriptions:check-echeances` et `subscriptions:reconcile-echeances` planifiés (ex. daily).
+- [ ] **CRON** : soit `php artisan schedule:run` (Laravel Scheduler), soit **curl sur `/cron-run`** (recommandé en Docker) :  
+  `0 6 * * * curl -s "https://votre-domaine.fr/cron-run?token=VOTRE_CRON_SECRET"`. Aucun `docker exec` requis.
 - [ ] Vérifier que les utilisateurs peuvent renseigner **ville** et **code postal** dans Paramètres → Compte.
 - [ ] Rebuild des assets : `npm run build` (ou `sail npm run build`) pour `checkout.js` et les vues.
 
