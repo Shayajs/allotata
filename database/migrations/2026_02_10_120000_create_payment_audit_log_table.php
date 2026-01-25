@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('payment_audit_log', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            $table->string('action', 64)->index();
+            $table->string('action', 64);
             $table->string('stripe_customer_id')->nullable();
             $table->string('stripe_payment_intent_id')->nullable()->index();
             $table->string('stripe_setup_intent_id')->nullable();

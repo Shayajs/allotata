@@ -71,23 +71,39 @@ class CheckoutController extends Controller
     public function createSetupIntent(Request $request)
     {
         $user = Auth::user();
-        $customerId = StripeCustomerService::ensureCustomer($user);
 
-        Stripe::setApiKey(config('services.stripe.secret'));
-        $si = SetupIntent::create([
-            'customer' => $customerId,
-            'usage' => 'off_session',
-            'metadata' => ['user_id' => (string) $user->id],
-        ]);
+        try {
+            $customerId = StripeCustomerService::ensureCustomer($user);
 
-        PaymentAuditLog::log('setup_intent_created', $user->id, [
-            'stripe_customer_id' => $customerId,
-            'stripe_setup_intent_id' => $si->id,
-            'context' => ['metadata' => $si->metadata],
-            'message' => 'SetupIntent créé pour enregistrement carte (Elements).',
-        ]);
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $si = SetupIntent::create([
+                'customer' => $customerId,
+                'usage' => 'off_session',
+                'metadata' => ['user_id' => (string) $user->id],
+            ]);
 
-        return response()->json(['client_secret' => $si->client_secret]);
+            try {
+                PaymentAuditLog::log('setup_intent_created', $user->id, [
+                    'stripe_customer_id' => $customerId,
+                    'stripe_setup_intent_id' => $si->id,
+                    'context' => ['metadata' => $si->metadata],
+                    'message' => 'SetupIntent créé pour enregistrement carte (Elements).',
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('PaymentAuditLog setup_intent_created failed', ['error' => $e->getMessage()]);
+            }
+
+            return response()->json(['client_secret' => $si->client_secret]);
+        } catch (\Throwable $e) {
+            Log::error('Checkout createSetupIntent failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'error' => 'Impossible de préparer le formulaire. ' . ($e->getMessage() ?: 'Réessayez.'),
+            ], 500);
+        }
     }
 
     /**
