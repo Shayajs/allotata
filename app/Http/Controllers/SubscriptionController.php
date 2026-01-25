@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Echeance;
 use App\Models\Entreprise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -332,5 +333,21 @@ class SubscriptionController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', "Erreur lors du nettoyage : " . $e->getMessage());
         }
+    }
+
+    /**
+     * Annuler une échéance à venir (a_payer / en_attente). L'utilisateur ne sera pas débité.
+     */
+    public function annulerEcheance(Request $request, Echeance $echeance)
+    {
+        $user = Auth::user();
+        if ($echeance->user_id !== $user->id) {
+            abort(403, 'Cette échéance ne vous appartient pas.');
+        }
+        if (!in_array($echeance->statut, [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE], true)) {
+            return back()->with('error', 'Seules les échéances à venir peuvent être annulées.');
+        }
+        $echeance->update(['statut' => Echeance::STATUT_ANNULE]);
+        return back()->with('success', 'Échéance annulée. Vous ne serez pas débité pour cette période.');
     }
 }

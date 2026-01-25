@@ -35,7 +35,7 @@
     }
 
     if (!stripePk || !csrfToken || !form || !container) {
-        if (container) container.innerHTML = '<p class="text-red-600 text-sm">Configuration manquante.</p>';
+        if (container) container.innerHTML = '<p class="text-red-600 dark:text-red-400 text-sm">Configuration manquante.</p>';
         return;
     }
 
@@ -56,9 +56,19 @@
                 return;
             }
             var isDark = document.documentElement.classList.contains('dark');
-            var elements = stripe.elements({
-                appearance: { theme: isDark ? 'night' : 'stripe', variables: { borderRadius: '12px' } }
-            });
+            var appearance = {
+                theme: isDark ? 'night' : 'stripe',
+                variables: {
+                    borderRadius: '12px',
+                    colorPrimary: '#059669',
+                    colorBackground: isDark ? '#334155' : '#f8fafc',
+                    colorText: isDark ? '#f1f5f9' : '#1e293b',
+                    colorSecondaryText: isDark ? '#94a3b8' : '#64748b',
+                    colorBorder: isDark ? '#475569' : '#e2e8f0',
+                    colorDanger: isDark ? '#f87171' : '#dc2626'
+                }
+            };
+            var elements = stripe.elements({ appearance: appearance });
             var card = elements.create('card', { style: { base: { fontSize: '16px' } } });
             card.mount(container);
 
