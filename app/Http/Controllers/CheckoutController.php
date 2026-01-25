@@ -11,6 +11,7 @@ use App\Services\StripeCustomerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\Customer;
 use Stripe\PaymentIntent;
@@ -236,13 +237,44 @@ class CheckoutController extends Controller
         ]);
 
         $user = Auth::user();
-        $echeance = Echeance::where('user_id', $user->id)
-            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
-            ->findOrFail($request->input('echeance_id'));
+        
+        // Utiliser une transaction avec verrou pour éviter les doubles paiements
+        $echeance = \DB::transaction(function () use ($user, $request) {
+            return Echeance::where('user_id', $user->id)
+                ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+                ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
+                ->lockForUpdate()
+                ->findOrFail($request->input('echeance_id'));
+        });
+
+        // Vérifier que l'échéance n'est pas déjà payée (double vérification après verrou)
+        if ($echeance->estPayee()) {
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'status' => 'already_paid',
+                'message' => 'Tentative de paiement d\'une échéance déjà payée.',
+            ]);
+            return response()->json(['success' => false, 'error' => 'Cette échéance est déjà payée.'], 409);
+        }
 
         $codePromo = $request->input('code_promo') ?: $request->session()->get('checkout_promo_code');
+        
+        // Valider le code promo avant de calculer
+        if ($codePromo) {
+            $promo = PromoCode::validateCode($codePromo, $user);
+            if (!$promo) {
+                return response()->json(['success' => false, 'error' => 'Code promo invalide ou expiré.'], 422);
+            }
+            // Vérifier que le code promo n'a pas déjà été utilisé pour cette échéance
+            if ($echeance->promo_code_id && $echeance->promo_code_id === $promo->id && $echeance->estPayee()) {
+                return response()->json(['success' => false, 'error' => 'Ce code promo a déjà été utilisé pour cette échéance.'], 422);
+            }
+        }
+        
         $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
         $montantFinal = $calc['montant_final'];
+        
+        // Validation stricte du montant : doit être > 0 et <= montant_du
         if ($montantFinal <= 0) {
             PaymentAuditLog::log('charge_fail', $user->id, [
                 'echeance_id' => $echeance->id,
@@ -251,6 +283,24 @@ class CheckoutController extends Controller
                 'message' => 'Montant à régler nul.',
             ]);
             return response()->json(['success' => false, 'error' => 'Le montant à régler est nul.'], 422);
+        }
+        
+        // Vérifier que le montant final ne dépasse pas le montant dû
+        $montantDu = (float) ($echeance->montant_du ?? 0);
+        if ($montantFinal > $montantDu) {
+            Log::warning('Checkout charge: montant final supérieur au montant dû', [
+                'user_id' => $user->id,
+                'echeance_id' => $echeance->id,
+                'montant_final' => $montantFinal,
+                'montant_du' => $montantDu,
+            ]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'status' => 'amount_exceeds_du',
+                'message' => 'Montant final supérieur au montant dû.',
+            ]);
+            return response()->json(['success' => false, 'error' => 'Erreur de calcul du montant. Contactez le support.'], 422);
         }
 
         if (empty($user->stripe_payment_method_id)) {
@@ -346,6 +396,29 @@ class CheckoutController extends Controller
         }
 
         if ($status === 'succeeded') {
+            // Vérifier que le montant débité correspond au montant calculé
+            $amountPaid = $pi->amount ? $pi->amount / 100 : 0;
+            if (abs($amountPaid - $montantFinal) > 0.01) {
+                Log::error('Checkout charge: montant débité ne correspond pas', [
+                    'user_id' => $user->id,
+                    'echeance_id' => $echeance->id,
+                    'amount_paid' => $amountPaid,
+                    'expected_amount' => $montantFinal,
+                ]);
+                PaymentAuditLog::log('charge_fail', $user->id, [
+                    'echeance_id' => $echeance->id,
+                    'stripe_payment_intent_id' => $pi->id,
+                    'amount_paid' => $amountPaid,
+                    'expected_amount' => $montantFinal,
+                    'status' => 'amount_mismatch',
+                    'message' => 'Montant débité ne correspond pas au montant calculé.',
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Erreur de montant. Contactez le support.',
+                ], 500);
+            }
+
             $echeance->update([
                 'reduction_promo' => $calc['reduction_promo'],
                 'montant_final' => $montantFinal,

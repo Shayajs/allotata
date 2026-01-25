@@ -6,6 +6,7 @@ use App\Models\Echeance;
 use App\Models\EntrepriseSubscription;
 use App\Models\PromoCode;
 use App\Models\StripeTransaction;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\PaymentIntent;
@@ -93,6 +94,36 @@ class PaymentVerificationService
             ];
         }
 
+        // Vérifier que l'échéance n'est pas annulée ou arrêtée
+        if (in_array($echeance->statut, [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE], true)) {
+            return [
+                'ok' => false,
+                'echeance_id' => $echeanceId,
+                'already' => false,
+                'message' => 'Échéance annulée ou arrêtée, impossible de payer.',
+            ];
+        }
+
+        // Vérifier le montant débité correspond au montant attendu
+        $amountPaid = $session->amount_total ? $session->amount_total / 100 : 0;
+        $expectedAmount = (float) ($echeance->montant_final ?? $echeance->montant_du ?? 0);
+        
+        // Tolérance de 0.01€ pour les arrondis
+        if (abs($amountPaid - $expectedAmount) > 0.01) {
+            Log::warning('PaymentVerification: montant débité ne correspond pas', [
+                'session_id' => $sessionId,
+                'echeance_id' => $echeanceId,
+                'amount_paid' => $amountPaid,
+                'expected_amount' => $expectedAmount,
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => $echeanceId,
+                'already' => false,
+                'message' => 'Montant débité (' . number_format($amountPaid, 2) . '€) ne correspond pas au montant attendu (' . number_format($expectedAmount, 2) . '€).',
+            ];
+        }
+
         if ($echeance->estPayee()) {
             self::ensureStripeTransaction($session, $userId);
             self::ensureEntrepriseSubscriptionForEcheance($echeance);
@@ -107,12 +138,27 @@ class PaymentVerificationService
         $pi = $session->payment_intent;
         $piId = $pi ? (is_object($pi) ? ($pi->id ?? null) : $pi) : null;
 
-        $echeance->update([
-            'statut' => Echeance::STATUT_PAYE,
-            'stripe_checkout_session_id' => $session->id,
-            'stripe_payment_intent_id' => $piId,
-            'paye_at' => now(),
-        ]);
+        // Utiliser une transaction avec verrou pour éviter les doubles paiements
+        \DB::transaction(function () use ($echeance, $session, $piId) {
+            // Recharger l'échéance avec verrou pour éviter les race conditions
+            $echeanceLocked = Echeance::where('id', $echeance->id)
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$echeanceLocked || $echeanceLocked->estPayee()) {
+                return; // Déjà payée ou introuvable, sortir de la transaction
+            }
+
+            $echeanceLocked->update([
+                'statut' => Echeance::STATUT_PAYE,
+                'stripe_checkout_session_id' => $session->id,
+                'stripe_payment_intent_id' => $piId,
+                'paye_at' => now(),
+            ]);
+            
+            // Mettre à jour l'objet $echeance pour la suite
+            $echeance->refresh();
+        });
 
         if ($echeance->promo_code_id) {
             PromoCode::find($echeance->promo_code_id)?->use();
@@ -205,18 +251,63 @@ class PaymentVerificationService
             return ['ok' => false, 'echeance_id' => $echeanceId, 'already' => false, 'message' => 'Échéance introuvable.'];
         }
 
+        // Vérifier que l'échéance n'est pas annulée ou arrêtée
+        if (in_array($echeance->statut, [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE], true)) {
+            return [
+                'ok' => false,
+                'echeance_id' => $echeanceId,
+                'already' => false,
+                'message' => 'Échéance annulée ou arrêtée, impossible de payer.',
+            ];
+        }
+
+        // Vérifier le montant débité correspond au montant attendu
+        $amountPaid = $pi->amount ? $pi->amount / 100 : 0;
+        $expectedAmount = (float) ($echeance->montant_final ?? $echeance->montant_du ?? 0);
+        
+        // Tolérance de 0.01€ pour les arrondis
+        if (abs($amountPaid - $expectedAmount) > 0.01) {
+            Log::warning('PaymentVerification: montant débité ne correspond pas (PI)', [
+                'payment_intent_id' => $paymentIntentId,
+                'echeance_id' => $echeanceId,
+                'amount_paid' => $amountPaid,
+                'expected_amount' => $expectedAmount,
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => $echeanceId,
+                'already' => false,
+                'message' => 'Montant débité (' . number_format($amountPaid, 2) . '€) ne correspond pas au montant attendu (' . number_format($expectedAmount, 2) . '€).',
+            ];
+        }
+
         if ($echeance->estPayee()) {
             self::ensureStripeTransactionFromPaymentIntent($pi, $userId);
             self::ensureEntrepriseSubscriptionForEcheance($echeance);
             return ['ok' => true, 'echeance_id' => $echeanceId, 'already' => true, 'message' => 'Déjà enregistré.'];
         }
 
-        $echeance->update([
-            'statut' => Echeance::STATUT_PAYE,
-            'stripe_checkout_session_id' => null,
-            'stripe_payment_intent_id' => $pi->id,
-            'paye_at' => now(),
-        ]);
+        // Utiliser une transaction avec verrou pour éviter les doubles paiements
+        \DB::transaction(function () use ($echeance, $pi) {
+            // Recharger l'échéance avec verrou pour éviter les race conditions
+            $echeanceLocked = Echeance::where('id', $echeance->id)
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$echeanceLocked || $echeanceLocked->estPayee()) {
+                return; // Déjà payée ou introuvable, sortir de la transaction
+            }
+
+            $echeanceLocked->update([
+                'statut' => Echeance::STATUT_PAYE,
+                'stripe_checkout_session_id' => null,
+                'stripe_payment_intent_id' => $pi->id,
+                'paye_at' => now(),
+            ]);
+            
+            // Mettre à jour l'objet $echeance pour la suite
+            $echeance->refresh();
+        });
 
         if ($echeance->promo_code_id) {
             PromoCode::find($echeance->promo_code_id)?->use();

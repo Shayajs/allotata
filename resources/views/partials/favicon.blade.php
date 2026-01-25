@@ -3,16 +3,18 @@
     
     $logoLight = SiteHelper::getFavicon('light');
     $logoDark = SiteHelper::getFavicon('dark');
+    $faviconFallback = asset('favicon.ico');
 @endphp
 
 @if($logoLight && $logoDark)
-    <!-- Favicon avec support dynamique du thème -->
+    <!-- Favicon avec support dynamique du thème (utilise les logos light/dark) -->
     <link rel="icon" type="image/png" href="{{ $logoLight }}" id="site-favicon">
     
     <script>
         (function() {
             const faviconLight = '{{ $logoLight }}';
             const faviconDark = '{{ $logoDark }}';
+            const faviconFallback = '{{ $faviconFallback }}';
             
             // Fonction pour mettre à jour le favicon selon le thème
             function updateFavicon() {
@@ -72,7 +74,12 @@
         })();
     </script>
 @elseif($logoLight)
-    <link rel="icon" type="image/png" href="{{ $logoLight }}">
+    <!-- Favicon mode clair uniquement -->
+    <link rel="icon" type="image/png" href="{{ $logoLight }}" id="site-favicon">
 @elseif($logoDark)
-    <link rel="icon" type="image/png" href="{{ $logoDark }}">
+    <!-- Favicon mode sombre uniquement -->
+    <link rel="icon" type="image/png" href="{{ $logoDark }}" id="site-favicon">
+@else
+    <!-- Fallback vers le favicon statique si aucun logo n'est configuré -->
+    <link rel="icon" type="image/x-icon" href="{{ $faviconFallback }}">
 @endif
