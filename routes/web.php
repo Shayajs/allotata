@@ -341,6 +341,17 @@ Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(functio
 // Contact (public - depuis le footer)
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+// Forum (public)
+Route::get('/forum', [\App\Http\Controllers\ForumController::class, 'index'])->name('forum.index');
+Route::get('/forum/category/{category}', [\App\Http\Controllers\ForumController::class, 'show'])->name('forum.category');
+Route::get('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'showPost'])->name('forum.post.show');
+
+// Feedback (public)
+Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+Route::get('/feedback/dashboard', [\App\Http\Controllers\FeedbackController::class, 'dashboard'])->name('feedback.dashboard');
+Route::get('/feedback/{feedback}', [\App\Http\Controllers\FeedbackController::class, 'show'])->name('feedback.show');
+Route::get('/api/feedback/search-titres', [\App\Http\Controllers\FeedbackController::class, 'searchTitres'])->name('feedback.search-titres');
+
 // Tickets (public - depuis l'accueil et dashboards)
 Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
@@ -542,6 +553,20 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     
     // API Messagerie
     Route::get('/api/messagerie/check-new', [MessagerieController::class, 'checkNewMessages'])->name('messagerie.api.check-new');
+    
+    // Forum (authentifié)
+    Route::get('/forum/create', [\App\Http\Controllers\ForumController::class, 'create'])->name('forum.create');
+    Route::post('/forum', [\App\Http\Controllers\ForumController::class, 'store'])->name('forum.store');
+    Route::get('/forum/post/{post}/edit', [\App\Http\Controllers\ForumController::class, 'edit'])->name('forum.post.edit');
+    Route::put('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'update'])->name('forum.post.update');
+    Route::delete('/forum/post/{post}', [\App\Http\Controllers\ForumController::class, 'destroy'])->name('forum.post.destroy');
+    Route::post('/forum/post/{post}/comment', [\App\Http\Controllers\ForumController::class, 'comment'])->name('forum.comment.store');
+    
+    // Feedback (authentifié)
+    Route::get('/feedback/create', [\App\Http\Controllers\FeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/feedback/{feedback}/vote', [\App\Http\Controllers\FeedbackController::class, 'vote'])->name('feedback.vote');
+    Route::post('/feedback/{feedback}/comment', [\App\Http\Controllers\FeedbackController::class, 'comment'])->name('feedback.comment');
     
     // Propositions de rendez-vous
     Route::post('/messagerie/{slug}/proposer-rdv', [MessagerieController::class, 'proposerRendezVousClient'])->name('messagerie.proposer-rdv-client');
