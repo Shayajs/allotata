@@ -85,33 +85,6 @@
                     </div>
                     <div class="p-4 sm:p-6">
                         <form id="checkout-save-card-form">
-                            {{-- Adresse de facturation : code postal + ville (obligatoires pour Stripe) --}}
-                            <div class="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
-                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-2">Adresse de facturation</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                                    Code postal actuellement renseigné : <strong class="text-slate-700 dark:text-slate-300">{{ $user->code_postal ?: 'Non renseigné' }}</strong>
-                                    — Ville : <strong class="text-slate-700 dark:text-slate-300">{{ $user->ville ?: 'Non renseignée' }}</strong>
-                                </p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="checkout-code-postal" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Code postal <span class="text-red-500">*</span></label>
-                                        <input type="text" id="checkout-code-postal" name="code_postal" value="{{ old('code_postal', $user->code_postal) }}"
-                                            placeholder="Ex: 75001" maxlength="10"
-                                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label for="checkout-ville" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ville <span class="text-red-500">*</span></label>
-                                        <input type="text" id="checkout-ville" name="ville" value="{{ old('ville', $user->ville) }}"
-                                            placeholder="Ex: Paris" maxlength="255"
-                                            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    </div>
-                                </div>
-                                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                                    Stripe vérifie que le code postal correspond à celui enregistré auprès de votre banque. Erreur « Votre numéro de carte et votre code postal ne correspondent pas » → corrigez le code postal ci‑dessus.
-                                </p>
-                                <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="mt-2 inline-block text-xs text-green-600 dark:text-green-400 hover:underline">Paramètres → Mon compte</a> pour modifier ville et code postal.
-                            </div>
-
                             <div id="checkout-payment-element" class="min-h-[200px]"></div>
                             <p id="checkout-card-error" class="mt-2 text-sm text-red-600 dark:text-red-400" role="alert"></p>
                             <button type="submit" class="mt-4 w-full sm:w-auto min-h-[44px] px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition touch-manipulation">Enregistrer ma carte</button>
