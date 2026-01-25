@@ -55,10 +55,38 @@
                         <div class="flex gap-2" style="justify-content: flex-end;">
                             <a href="{{ route('brightshell.factures.show', $facture->id) }}" class="btn btn-secondary btn-sm">Voir</a>
                             @if($facture->statut !== 'payee')
-                            <form action="{{ route('brightshell.factures.paid', $facture->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm">Payée</button>
-                            </form>
+                            <button type="button" class="btn btn-success btn-sm" onclick="document.getElementById('pay-modal-{{ $facture->id }}').style.display='flex'">Payée</button>
+                            
+                            <!-- Modal Paiement -->
+                            <div id="pay-modal-{{ $facture->id }}" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                                <div class="modal-content" style="background: white; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <h3 style="margin-top: 0; margin-bottom: 1rem; color: #0a0e1a; font-size: 1.25rem; font-weight: 700;">Enregistrer le paiement</h3>
+                                    <p style="color: #6b7280; margin-bottom: 1.5rem;">Facture {{ $facture->numero }}</p>
+                                    
+                                    <form action="{{ route('brightshell.factures.paid', $facture->id) }}" method="POST">
+                                        @csrf
+                                        <div class="form-group" style="margin-bottom: 1rem;">
+                                            <label class="form-label" style="display: block; margin-bottom: 0.5rem; color: #0a0e1a; font-size: 0.875rem; font-weight: 600;">Montant payé (€)</label>
+                                            <input type="number" name="montant_paye" class="form-input" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px;" value="{{ $facture->montant_total }}" step="0.01" required>
+                                        </div>
+                                        
+                                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                                            <label class="form-label" style="display: block; margin-bottom: 0.5rem; color: #0a0e1a; font-size: 0.875rem; font-weight: 600;">Mode de paiement</label>
+                                            <select name="mode_paiement" class="form-input" style="width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px;">
+                                                <option value="Virement bancaire">Virement bancaire</option>
+                                                <option value="Chèque">Chèque</option>
+                                                <option value="Carte bleue">Carte bleue</option>
+                                                <option value="Espèces">Espèces</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('pay-modal-{{ $facture->id }}').style.display='none'">Annuler</button>
+                                            <button type="submit" class="btn btn-success">Confirmer</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                             @endif
                         </div>
                     </td>
