@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session as StripeSession;
+use Stripe\Customer;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\Stripe;
 use Stripe\SetupIntent;
 
@@ -34,11 +36,15 @@ class CheckoutController extends Controller
             $calculs[$e->id] = $calc;
         }
 
+        $hasPaymentMethod = !empty($user->stripe_payment_method_id);
+        $showCardForm = !$hasPaymentMethod || $request->boolean('change_card');
+
         return view('checkout.index', [
             'echeances' => $echeances,
             'calculs' => $calculs,
             'codePromo' => $codePromo,
-            'hasPaymentMethod' => !empty($user->stripe_payment_method_id),
+            'hasPaymentMethod' => $hasPaymentMethod,
+            'showCardForm' => $showCardForm,
             'user' => $user,
         ]);
     }
@@ -149,6 +155,72 @@ class CheckoutController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Supprimer la carte enregistrée (détacher le PaymentMethod, vider user).
+     */
+    public function removePaymentMethod(Request $request)
+    {
+        $user = Auth::user();
+        $pmId = $user->stripe_payment_method_id;
+        if (!$pmId) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Aucune carte enregistrée.');
+        }
+
+        $customerId = $user->stripe_id;
+        if (!$customerId) {
+            $user->update([
+                'stripe_payment_method_id' => null,
+                'pm_type' => null,
+                'pm_last_four' => null,
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('success', 'Carte supprimée.');
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $pm = PaymentMethod::retrieve($pmId);
+            if ($pm->customer === $customerId) {
+                $pm->detach();
+            }
+            $customer = Customer::retrieve($customerId);
+            $defaultPm = $customer->invoice_settings->default_payment_method ?? null;
+            if ($defaultPm === $pmId) {
+                Customer::update($customerId, [
+                    'invoice_settings' => ['default_payment_method' => ''],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Checkout remove-payment-method Stripe error', [
+                'user_id' => $user->id,
+                'stripe_payment_method_id' => $pmId,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->route('checkout.index')
+                ->with('error', 'Impossible de supprimer la carte. Réessayez.');
+        }
+
+        $user->update([
+            'stripe_payment_method_id' => null,
+            'pm_type' => null,
+            'pm_last_four' => null,
+        ]);
+
+        try {
+            PaymentAuditLog::log('remove_pm_ok', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'message' => 'Carte supprimée.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('PaymentAuditLog remove_pm_ok failed', ['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('checkout.index')
+            ->with('success', 'Carte supprimée.');
     }
 
     /**
