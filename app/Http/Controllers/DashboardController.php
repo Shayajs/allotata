@@ -183,11 +183,15 @@ class DashboardController extends Controller
             ->get();
         $lastPayments = collect();
         foreach ($echeancesPayees as $e) {
+            $amt = (float) ($e->montant_final ?? $e->montant_du ?? 0);
+            if ($amt <= 0) {
+                continue;
+            }
             $lastPayments->push((object) [
                 'type' => 'echeance',
                 'id' => $e->id,
                 'date' => $e->paye_at ?? $e->updated_at,
-                'amount' => (float) ($e->montant_final ?? $e->montant_du ?? 0),
+                'amount' => $amt,
                 'currency' => 'eur',
                 'label' => $e->libelle(),
             ]);
@@ -198,13 +202,17 @@ class DashboardController extends Controller
             if ($eid && in_array($eid, $echeanceIds, true)) {
                 continue;
             }
+            $amount = (float) ($t->amount ?? 0);
+            if ($amount <= 0) {
+                continue;
+            }
             $lastPayments->push((object) [
                 'type' => 'transaction',
                 'id' => $t->id,
                 'date' => $t->processed_at ?? $t->created_at,
-                'amount' => (float) $t->amount,
+                'amount' => $amount,
                 'currency' => $t->currency ?? 'eur',
-                'label' => $t->description ? "Paiement – {$t->description}" : 'Paiement',
+                'label' => $t->description ?: 'Paiement',
             ]);
         }
         $lastPayments = $lastPayments->sortByDesc(fn ($p) => $p->date)->take(15)->values();
