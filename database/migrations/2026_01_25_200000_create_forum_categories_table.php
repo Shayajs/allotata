@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('forum_categories');
         Schema::create('forum_categories', function (Blueprint $table) {
             $table->id();
             $table->string('nom');
