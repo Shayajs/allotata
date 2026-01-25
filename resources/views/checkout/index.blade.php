@@ -5,14 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="stripe-publishable-key" content="{{ config('services.stripe.key') }}">
-        <meta name="billing-country" content="FR">
-        <meta name="billing-postal-code" content="{{ $user->code_postal ?? '00000' }}">
-        <meta name="billing-city" content="{{ $user->ville ?? 'Non renseigné' }}">
-        @php
-            $cp = $user->code_postal ?? '';
-            $billingState = $cp ? (preg_match('/^97/', $cp) ? substr($cp, 0, 3) : substr($cp, 0, 2)) : '';
-        @endphp
-        <meta name="billing-state" content="{{ $billingState }}">
         <title>Espace Paiement – Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -90,10 +82,6 @@
                     <div class="px-4 sm:px-6 py-5 border-b border-slate-200 dark:border-slate-700">
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Moyen de paiement</h2>
                         <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Enregistrez une carte pour régler vos échéances. Aucun débit immédiat.</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-500 mt-2">
-                            L'adresse de facturation utilise la <strong>ville</strong> et le <strong>code postal</strong> de votre profil.
-                            <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Les modifier dans Paramètres → Compte</a>
-                        </p>
                     </div>
                     <div class="p-4 sm:p-6">
                         <form id="checkout-save-card-form">
