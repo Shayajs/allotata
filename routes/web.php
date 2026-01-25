@@ -760,9 +760,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/api/media/{mediaFile}/thumbnail', [\App\Http\Controllers\Admin\MediaController::class, 'deleteThumbnail'])->name('media.thumbnail.delete');
     Route::delete('/api/media/{mediaFile}', [\App\Http\Controllers\Admin\MediaController::class, 'delete'])->name('media.delete');
     
-    // Forum Admin
+    // Forum Admin - Nouveautés
     Route::get('/forum/nouveaute/create', [\App\Http\Controllers\ForumController::class, 'createNouveaute'])->name('forum.nouveaute.create');
     Route::post('/forum/nouveaute', [\App\Http\Controllers\ForumController::class, 'storeNouveaute'])->name('forum.nouveaute.store');
+    
+    // Gestion Forum Admin
+    Route::get('/forum', [\App\Http\Controllers\Admin\ForumController::class, 'index'])->name('forum.index');
+    Route::get('/forum/category/create', [\App\Http\Controllers\Admin\ForumController::class, 'createCategory'])->name('forum.category.create');
+    Route::post('/forum/category', [\App\Http\Controllers\Admin\ForumController::class, 'storeCategory'])->name('forum.category.store');
+    Route::get('/forum/category/{category}/edit', [\App\Http\Controllers\Admin\ForumController::class, 'editCategory'])->name('forum.category.edit');
+    Route::put('/forum/category/{category}', [\App\Http\Controllers\Admin\ForumController::class, 'updateCategory'])->name('forum.category.update');
+    Route::delete('/forum/category/{category}', [\App\Http\Controllers\Admin\ForumController::class, 'destroyCategory'])->name('forum.category.destroy');
+    Route::delete('/forum/post/{post}', [\App\Http\Controllers\Admin\ForumController::class, 'destroyPost'])->name('forum.post.destroy');
+    Route::post('/forum/post/{post}/toggle-pin', [\App\Http\Controllers\Admin\ForumController::class, 'togglePin'])->name('forum.post.toggle-pin');
     
     // Feedback Admin
     Route::patch('/feedback/{feedback}/admin', [\App\Http\Controllers\FeedbackController::class, 'adminUpdate'])->name('feedback.admin.update');

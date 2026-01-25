@@ -3,7 +3,7 @@
 @section('title', $post->titre)
 
 @section('content')
-<div class="max-w-4xl mx-auto">
+<div class="max-w-7xl 2xl:max-w-[1600px] mx-auto">
     <div class="mb-6">
         <a href="{{ route('forum.index') }}" class="text-green-600 dark:text-green-400 hover:underline flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

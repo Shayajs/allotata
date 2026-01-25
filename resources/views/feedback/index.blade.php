@@ -3,7 +3,7 @@
 @section('title', 'Feedback')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl 2xl:max-w-[1600px] mx-auto">
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
