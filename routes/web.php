@@ -857,6 +857,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Paiements / Échéances (listing, états, réductions, gestes commerciaux)
     Route::get('/echeances', [\App\Http\Controllers\Admin\EcheanceController::class, 'index'])->name('echeances.index');
+    Route::get('/payment-audit-log', [\App\Http\Controllers\Admin\PaymentAuditLogController::class, 'index'])->name('payment-audit-log.index');
     Route::post('/echeances/{echeance}/reduction', [\App\Http\Controllers\Admin\EcheanceController::class, 'updateReduction'])->name('echeances.reduction');
     Route::post('/echeances/{echeance}/arrete', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerArrete'])->name('echeances.arrete');
     Route::post('/echeances/{echeance}/annule', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerAnnule'])->name('echeances.annule');
