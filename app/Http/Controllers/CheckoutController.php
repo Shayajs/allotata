@@ -79,6 +79,7 @@ class CheckoutController extends Controller
             $si = SetupIntent::create([
                 'customer' => $customerId,
                 'usage' => 'off_session',
+                'payment_method_types' => ['card'],
                 'metadata' => ['user_id' => (string) $user->id],
             ]);
 

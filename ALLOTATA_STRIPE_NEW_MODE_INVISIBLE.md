@@ -131,7 +131,7 @@ Le JS (`checkout.js`) les lit et les envoie dans `payment_method_data.billing_de
 ### 4.2 Enregistrement d’une carte (SetupIntent)
 
 1. **Page** `/checkout`, section « Moyen de paiement ».
-2. **Chargement** : fetch `POST /checkout/setup-intent` → le serveur crée un **SetupIntent** (`usage: off_session`), renvoie `client_secret`.
+2. **Chargement** : fetch `POST /checkout/setup-intent` → le serveur crée un **SetupIntent** (`usage: off_session`, `payment_method_types: ['card']`), renvoie `client_secret`.
 3. **Stripe Elements** : création du Payment Element avec ce `client_secret`, `address: 'never'`, et theme night/stripe selon le mode sombre/clair.
 4. **Clic « Enregistrer ma carte »** :
    - `stripe.confirmSetup({ elements, confirmParams })` avec `payment_method_data.billing_details.address` (country, state, city, postal_code).
@@ -309,7 +309,7 @@ Consultation : **Admin → Paiements → « Journal d’audit paiements (verbose
 3. **Réconciliation** : le CRON actuel ne réconcilie que les échéances avec `stripe_checkout_session_id`. Les échéances 3DS purement PaymentIntent n’ont que `stripe_payment_intent_id` ; une extension du CRON pourrait les traiter aussi.
 4. **Factures** : uniquement `paid` et `amount_paid > 0`. Les factures à 0 € ou « open » ne sont pas affichées.
 5. **Derniers paiements** : exclusion des montants ≤ 0 (échéances et transactions) pour éviter les lignes « 0,00 € ».
-6. **CSP / Google Pay** : des messages « Framing pay.google.com » (report-only) peuvent apparaître dans la console si le Payment Element propose Google Pay. Ils n’empêchent pas le paiement ; on peut désactiver Google Pay dans le Dashboard Stripe si besoin.
+6. **CSP / Google Pay** : le SetupIntent est créé avec `payment_method_types: ['card']` pour n’afficher que le formulaire carte. Cela évite le chargement de l’iframe `pay.google.com` (Google Pay) et les violations CSP « frame-ancestors » qui peuvent bloquer la saisie carte. Pas de Google Pay côté checkout.
 7. **Audit** : en cas d’absence ou d’erreur sur la table `payment_audit_log`, le log audit est ignoré (try/catch) pour ne pas bloquer `createSetupIntent` ni le flux de paiement.
 
 ---
