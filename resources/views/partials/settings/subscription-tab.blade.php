@@ -6,11 +6,11 @@
         ->count();
 @endphp
 @if($echeancesAPayer > 0)
-    <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-wrap items-center justify-between gap-4">
+    <div class="mb-6 p-4 sm:p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">
         <p class="text-amber-800 dark:text-amber-400 font-medium">
             Vous avez {{ $echeancesAPayer }} échéance(s) à régler.
         </p>
-        <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+        <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center px-5 py-3 sm:py-2.5 min-h-[44px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition touch-manipulation">
             Payer maintenant →
         </a>
     </div>
@@ -22,25 +22,25 @@
 @endphp
 
 {{-- Cartes bleues --}}
-<div class="mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+<div class="mb-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
         Carte(s) enregistrée(s)
     </h3>
     @if($user->stripe_payment_method_id)
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">
             <p class="text-slate-700 dark:text-slate-300">
                 <span class="font-medium">{{ ucfirst($user->pm_type ?? 'carte') }}</span>
                 <span class="tabular-nums">•••• {{ $user->pm_last_four ?? '****' }}</span>
             </p>
-            <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition text-sm">
+            <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center min-h-[44px] px-5 py-3 sm:py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm touch-manipulation w-full sm:w-auto">
                 Modifier la carte
             </a>
         </div>
     @else
-        <p class="text-slate-600 dark:text-slate-400 mb-4">Aucune carte enregistrée. Ajoutez une carte pour régler vos échéances ou pour les prélèvements automatiques.</p>
-        <a href="{{ route('checkout.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        <p class="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base">Aucune carte enregistrée. Ajoutez une carte pour régler vos échéances ou pour les prélèvements automatiques.</p>
+        <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-3 w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm touch-manipulation">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
             Ajouter une carte
         </a>
     @endif
@@ -50,30 +50,30 @@
     $hasActiveSubscription = $user->aAbonnementActif();
 @endphp
 
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
     <div class="text-center mb-6">
-        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2">
             Abonnement Premium
         </h3>
-        <div class="flex items-baseline justify-center gap-2 mb-4">
+        <div class="flex items-baseline justify-center gap-2 mb-4 flex-wrap">
             @php
                 $defaultPrice = \App\Models\Tarif::displayForUser($user, 'default');
                 $currentPriceAmount = $defaultPrice['amount'] ?? 0;
             @endphp
             @if($currentPriceAmount > 0)
-                <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ $defaultPrice['formatted'] }}</span>
+                <span class="text-4xl sm:text-5xl font-bold text-green-600 dark:text-green-400">{{ $defaultPrice['formatted'] }}</span>
             @else
-                <span class="text-5xl font-bold text-green-600 dark:text-green-400">-</span>
+                <span class="text-4xl sm:text-5xl font-bold text-green-600 dark:text-green-400">-</span>
             @endif
-            <span class="text-xl text-slate-600 dark:text-slate-400">/mois</span>
+            <span class="text-lg sm:text-xl text-slate-600 dark:text-slate-400">/mois</span>
         </div>
-        <p class="text-slate-600 dark:text-slate-400">
+        <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
             Accès complet à toutes les fonctionnalités • Sans engagement • Annulation à tout moment
         </p>
     </div>
 
     @if($hasActiveSubscription)
-        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mb-6">
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 sm:p-6 mb-6">
             <div class="flex items-center gap-3 mb-4">
                 <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -160,14 +160,14 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <form action="{{ route('subscription.cancel') }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment annuler votre abonnement Premium ? Vous garderez vos accès jusqu\'au prochain renouvellement.');">
                                     @csrf
-                                    <button type="submit" class="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-semibold rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+                                    <button type="submit" class="w-full min-h-[44px] px-4 py-3 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 font-semibold rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all touch-manipulation">
                                         🛑 Annuler l'abonnement
                                     </button>
                                 </form>
 
                                 <form action="{{ route('subscription.manage') }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+                                    <button type="submit" class="w-full min-h-[44px] px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-all touch-manipulation">
                                         💳 Gérer le paiement
                                     </button>
                                 </form>
@@ -206,7 +206,7 @@
         </div>
 
     @else
-        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 mb-6">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 sm:p-6 mb-6">
             <div class="mb-4">
                 <p class="text-yellow-800 dark:text-yellow-400 font-semibold mb-2">
                     ⚠️ Vous n'avez pas d'abonnement actif
@@ -217,7 +217,7 @@
             </div>
             <form action="{{ route('subscription.checkout') }}" method="POST">
                 @csrf
-                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
                     @if($currentPriceAmount > 0)
                         Souscrire à l'abonnement ({{ $defaultPrice['formatted'] }}/mois)
                     @else
@@ -231,16 +231,16 @@
 
 {{-- Factures (Stripe) --}}
 @if(isset($invoices) && $invoices->isNotEmpty())
-    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+    <div class="mt-6 sm:mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Factures
         </h3>
         <div class="space-y-3">
             @foreach($invoices->take(10) as $invoice)
-                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                    <div>
-                        <p class="font-semibold text-slate-900 dark:text-white">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
+                    <div class="min-w-0">
+                        <p class="font-semibold text-slate-900 dark:text-white truncate">
                             @if(isset($invoice->created))
                                 Facture du {{ \Carbon\Carbon::createFromTimestamp($invoice->created)->format('d/m/Y') }}
                             @else
@@ -258,7 +258,7 @@
                             @endif
                         </p>
                     </div>
-                    <a href="{{ route('subscription.invoice.download', $invoice->id) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">📥 Télécharger</a>
+                    <a href="{{ route('subscription.invoice.download', $invoice->id) }}" class="inline-flex items-center justify-center min-h-[44px] flex-shrink-0 px-5 py-3 sm:py-2.5 w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm touch-manipulation">📥 Télécharger</a>
                 </div>
             @endforeach
         </div>
@@ -267,19 +267,19 @@
 
 {{-- Derniers paiements --}}
 @if($lastPayments->isNotEmpty())
-    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <div class="mt-6 sm:mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             Derniers paiements
         </h3>
         <div class="space-y-3">
             @foreach($lastPayments->take(10) as $p)
-                <div class="flex items-center justify-between py-3 border-b border-slate-200 dark:border-slate-700 last:border-0">
-                    <div>
-                        <p class="font-medium text-slate-900 dark:text-white">{{ $p->label }}</p>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-3 border-b border-slate-200 dark:border-slate-700 last:border-0">
+                    <div class="min-w-0">
+                        <p class="font-medium text-slate-900 dark:text-white truncate">{{ $p->label }}</p>
                         <p class="text-sm text-slate-500 dark:text-slate-400">{{ $p->date ? \Carbon\Carbon::parse($p->date)->format('d/m/Y H:i') : '' }}</p>
                     </div>
-                    <p class="font-semibold text-slate-900 dark:text-white tabular-nums">{{ number_format($p->amount, 2, ',', ' ') }} {{ strtoupper($p->currency ?? 'eur') }}</p>
+                    <p class="font-semibold text-slate-900 dark:text-white tabular-nums flex-shrink-0">{{ number_format($p->amount, 2, ',', ' ') }} {{ strtoupper($p->currency ?? 'eur') }}</p>
                 </div>
             @endforeach
         </div>
@@ -288,9 +288,9 @@
 
 {{-- Prochains paiements --}}
 @if($upcomingEcheances->isNotEmpty())
-    <div class="mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+    <div class="mt-6 sm:mt-8 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             Prochains paiements
         </h3>
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Échéances à régler ou à annuler.</p>
@@ -299,8 +299,8 @@
                 @php
                     $montant = (float) ($e->montant_final ?? $e->montant_du ?? 0);
                 @endphp
-                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
-                    <div>
+                <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600">
+                    <div class="min-w-0">
                         <p class="font-semibold text-slate-900 dark:text-white">{{ $e->libelle() }}</p>
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             {{ $e->periode_debut->format('d/m/Y') }} → {{ $e->periode_fin->format('d/m/Y') }}
@@ -309,19 +309,21 @@
                             @endif
                         </p>
                     </div>
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <p class="font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($montant, 2, ',', ' ') }} €</p>
-                        <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">Régler</a>
-                        <form action="{{ route('subscription.echeance.annuler', $e) }}" method="POST" class="inline" onsubmit="return confirm('Annuler cette échéance ? Vous ne serez pas débité pour cette période.');">
-                            @csrf
-                            <button type="submit" class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-lg transition text-sm">Annuler</button>
-                        </form>
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-3 flex-wrap">
+                        <p class="font-bold text-slate-900 dark:text-white tabular-nums text-lg sm:text-base">{{ number_format($montant, 2, ',', ' ') }} €</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center min-h-[44px] flex-1 sm:flex-none px-4 py-3 sm:py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm touch-manipulation">Régler</a>
+                            <form action="{{ route('subscription.echeance.annuler', $e) }}" method="POST" class="inline flex-1 sm:flex-none" onsubmit="return confirm('Annuler cette échéance ? Vous ne serez pas débité pour cette période.');">
+                                @csrf
+                                <button type="submit" class="w-full sm:w-auto min-h-[44px] px-4 py-3 sm:py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm touch-manipulation">Annuler</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             @endforeach
         </div>
         <div class="mt-4">
-            <a href="{{ route('checkout.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+            <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center gap-2 min-h-[44px] w-full sm:w-auto px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm touch-manipulation">
                 Voir toutes les échéances et payer →
             </a>
         </div>
@@ -330,8 +332,8 @@
 
 <!-- Abonnements des entreprises -->
 @if($entreprises->count() > 0)
-    <div class="mt-8 border-t border-slate-200 dark:border-slate-700 pt-8">
-        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">📦 Abonnements de vos entreprises</h3>
+    <div class="mt-6 sm:mt-8 border-t border-slate-200 dark:border-slate-700 pt-6 sm:pt-8">
+        <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-6">📦 Abonnements de vos entreprises</h3>
         
         <div class="space-y-4">
             @foreach($entreprises as $entreprise)
@@ -342,13 +344,13 @@
                     $aGestionMultiPersonnes = $entreprise->aGestionMultiPersonnes();
                 @endphp
                 
-                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h4 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $entreprise->nom }}</h4>
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                        <div class="min-w-0">
+                            <h4 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">{{ $entreprise->nom }}</h4>
                             <p class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->type_activite }}</p>
                         </div>
-                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm">
+                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements']) }}" class="inline-flex items-center justify-center min-h-[44px] flex-shrink-0 w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition text-sm touch-manipulation">
                             Voir détails
                         </a>
                     </div>

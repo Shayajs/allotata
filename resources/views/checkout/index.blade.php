@@ -16,17 +16,17 @@
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <a href="{{ route('dashboard') }}" class="text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">Allo Tata</a>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3">
                         <span class="hidden sm:inline text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Espace Paiement</span>
-                        <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">Abonnement</a>
-                        <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">Dashboard</a>
+                        <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="min-h-[44px] inline-flex items-center px-3 py-2.5 sm:py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation">Abonnement</a>
+                        <a href="{{ route('dashboard') }}" class="min-h-[44px] inline-flex items-center px-3 py-2.5 sm:py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation">Dashboard</a>
                     </div>
                 </div>
             </div>
         </nav>
 
         {{-- Toast JS (succès / erreur) --}}
-        <div id="checkout-toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4 px-4 py-3 rounded-xl shadow-lg border text-center font-medium" role="alert"></div>
+        <div id="checkout-toast" class="hidden fixed top-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:max-w-md z-50 px-4 py-3 rounded-xl shadow-lg border text-center font-medium" role="alert"></div>
 
         <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {{-- En-tête : positionnement "espace de gestion" --}}
@@ -79,15 +79,15 @@
 
             @if(!($hasPaymentMethod ?? false))
                 <section class="mb-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                    <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-700">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Moyen de paiement</h2>
+                    <div class="px-4 sm:px-6 py-5 border-b border-slate-200 dark:border-slate-700">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Moyen de paiement</h2>
                         <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Enregistrez une carte pour régler vos échéances. Aucun débit immédiat.</p>
                     </div>
-                    <div class="p-6">
+                    <div class="p-4 sm:p-6">
                         <form id="checkout-save-card-form">
                             <div id="checkout-payment-element" class="min-h-[200px]"></div>
                             <p id="checkout-card-error" class="mt-2 text-sm text-red-600 dark:text-red-400" role="alert"></p>
-                            <button type="submit" class="mt-4 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition">Enregistrer ma carte</button>
+                            <button type="submit" class="mt-4 w-full sm:w-auto min-h-[44px] px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition touch-manipulation">Enregistrer ma carte</button>
                         </form>
                     </div>
                 </section>
@@ -193,7 +193,7 @@
                                                 <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Total à régler</p>
                                                 <p class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($montantFinal, 2, ',', ' ') }} €</p>
                                             </div>
-                                            <button type="button" class="checkout-regler-btn inline-flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed" data-echeance-id="{{ $e->id }}" @if($codePromo) data-code-promo="{{ $codePromo }}" @endif>
+                                            <button type="button" class="checkout-regler-btn inline-flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full min-h-[44px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation" data-echeance-id="{{ $e->id }}" @if($codePromo) data-code-promo="{{ $codePromo }}" @endif>
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                                                 <span class="checkout-regler-label">Régler cette échéance</span>
                                             </button>
