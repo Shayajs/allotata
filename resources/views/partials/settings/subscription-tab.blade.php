@@ -1,4 +1,20 @@
 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">💳 Gestion de l'abonnement</h2>
+
+@php
+    $echeancesAPayer = \App\Models\Echeance::where('user_id', $user->id)
+        ->whereIn('statut', [\App\Models\Echeance::STATUT_A_PAYER, \App\Models\Echeance::STATUT_EN_ATTENTE])
+        ->count();
+@endphp
+@if($echeancesAPayer > 0)
+    <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex flex-wrap items-center justify-between gap-4">
+        <p class="text-amber-800 dark:text-amber-400 font-medium">
+            Vous avez {{ $echeancesAPayer }} échéance(s) à régler.
+        </p>
+        <a href="{{ route('checkout.index') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+            Payer maintenant →
+        </a>
+    </div>
+@endif
                             
 @php
     $hasActiveSubscription = $user->aAbonnementActif();
@@ -11,23 +27,11 @@
         </h3>
         <div class="flex items-baseline justify-center gap-2 mb-4">
             @php
-                // Récupérer le prix actuel depuis Stripe
-                $currentPriceAmount = null;
-                try {
-                    $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
-                    $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
-                    
-                    if ($priceId) {
-                        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-                        $price = \Stripe\Price::retrieve($priceId);
-                        $currentPriceAmount = $price->unit_amount / 100;
-                    }
-                } catch (\Exception $e) {
-                    // En cas d'erreur, on n'affiche rien
-                }
+                $defaultPrice = \App\Models\Tarif::displayForUser($user, 'default');
+                $currentPriceAmount = $defaultPrice['amount'] ?? 0;
             @endphp
-            @if($currentPriceAmount)
-                <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ number_format($currentPriceAmount, 2, ',', ' ') }}€</span>
+            @if($currentPriceAmount > 0)
+                <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ $defaultPrice['formatted'] }}</span>
             @else
                 <span class="text-5xl font-bold text-green-600 dark:text-green-400">-</span>
             @endif
@@ -218,27 +222,16 @@
                     Sans abonnement actif, vos entreprises ne seront pas visibles en ligne. Souscrivez maintenant pour accéder à toutes les fonctionnalités.
                 </p>
             </div>
-            @php
-                $priceId = config('services.stripe.price_id');
-            @endphp
-            @if(empty($priceId))
-                <div class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p class="text-red-800 dark:text-red-400 text-sm">
-                        ⚠️ <strong>Configuration incomplète :</strong> Le STRIPE_PRICE_ID n'est pas configuré. Veuillez contacter l'administrateur.
-                    </p>
-                </div>
-            @else
-                <form action="{{ route('subscription.checkout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                        @if($currentPriceAmount)
-                            Souscrire à l'abonnement ({{ number_format($currentPriceAmount, 2, ',', ' ') }}€/mois)
-                        @else
-                            Souscrire à l'abonnement
-                        @endif
-                    </button>
-                </form>
-            @endif
+            <form action="{{ route('subscription.checkout') }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                    @if($currentPriceAmount > 0)
+                        Souscrire à l'abonnement ({{ $defaultPrice['formatted'] }}/mois)
+                    @else
+                        Souscrire à l'abonnement
+                    @endif
+                </button>
+            </form>
         </div>
     @endif
 </div>
@@ -277,7 +270,8 @@
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Actif</span>
                                 @endif
                             </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">5€/mois</p>
+                            @php $siteWebPrice = \App\Models\Tarif::displayForEntreprise($entreprise, 'site_web'); @endphp
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">{{ $siteWebPrice['formatted'] }}/mois</p>
                             
                             @if($aSiteWebActif)
                                 @if($abonnementSiteWeb && !$abonnementSiteWeb->est_manuel)
@@ -328,7 +322,8 @@
                                     <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">Actif</span>
                                 @endif
                             </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">20€/mois</p>
+                            @php $multiPrice = \App\Models\Tarif::displayForEntreprise($entreprise, 'multi_personnes'); @endphp
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">{{ $multiPrice['formatted'] }}/mois</p>
                             
                             @if($aGestionMultiPersonnes)
                                 @if($abonnementMultiPersonnes && !$abonnementMultiPersonnes->est_manuel)

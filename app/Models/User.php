@@ -33,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'abonnement_manuel_notes',
         'abonnement_manuel_type_renouvellement',
         'abonnement_manuel_jour_renouvellement',
+        'jour_facturation',
         'abonnement_manuel_date_debut',
         'abonnement_manuel_montant',
         'notifications_erreurs_actives',
@@ -53,6 +54,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'google2fa_enabled',
         'google2fa_secret',
         'google2fa_recovery_codes',
+        'stripe_payment_method_id',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
     ];
 
     /**
@@ -110,6 +115,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function customPrices()
     {
         return $this->hasMany(CustomPrice::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs échéances
+     */
+    public function echeances()
+    {
+        return $this->hasMany(Echeance::class);
     }
 
     /**

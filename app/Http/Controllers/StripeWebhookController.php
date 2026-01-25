@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\StripeTransaction;
+use App\Services\PaymentVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Http\Controllers\WebhookController as CashierController;
@@ -11,26 +12,35 @@ class StripeWebhookController extends CashierController
 {
     /**
      * Gérer les webhooks Stripe
-     * 
+     *
      * Cette méthode intercepte tous les webhooks Stripe avant qu'ils ne soient traités
      * par Laravel Cashier, pour les logger et les stocker dans la base de données.
+     *
+     * Pour checkout.session.completed (paiement échéance) : 1er niveau de vérification.
+     * Si le webhook échoue, le retour success (vérif directe Stripe) ou le CRON de
+     * réconciliation rattraperont.
      */
     public function handleWebhook(Request $request)
     {
         $payload = $request->all();
         $eventType = $payload['type'] ?? 'unknown';
-        
+
         // Logger l'événement
         Log::info('Webhook Stripe reçu', [
             'event_type' => $eventType,
             'event_id' => $payload['id'] ?? null,
         ]);
-        
+
+        // 1. Checkout session complétée (paiement ponctuel échéance) : marquer échéance payée
+        if ($eventType === 'checkout.session.completed') {
+            $this->handleCheckoutSessionCompletedForEcheance($payload);
+        }
+
         // Stocker la transaction dans la base de données (ne bloque pas si ça échoue)
         $transaction = null;
         try {
             $transaction = StripeTransaction::createFromStripeEvent($payload);
-            
+
             if ($transaction) {
                 Log::info('Transaction Stripe enregistrée', [
                     'transaction_id' => $transaction->id,
@@ -39,7 +49,6 @@ class StripeWebhookController extends CashierController
                 ]);
             }
         } catch (\Exception $e) {
-            // Logger l'erreur mais ne pas bloquer le traitement du webhook
             Log::error('Erreur lors de l\'enregistrement de la transaction Stripe', [
                 'error' => $e->getMessage(),
                 'event_type' => $eventType,
@@ -47,29 +56,72 @@ class StripeWebhookController extends CashierController
                 'trace' => $e->getTraceAsString(),
             ]);
         }
-        
+
         // Appeler le handler parent de Cashier pour le traitement standard
         try {
             $response = parent::handleWebhook($request);
-            
-            // Marquer la transaction comme traitée si elle existe
+
             if (isset($transaction)) {
                 $transaction->markAsProcessed();
             }
-            
+
             return $response;
-            
         } catch (\Exception $e) {
-            // Logger l'erreur de traitement
             Log::error('Erreur lors du traitement du webhook Stripe par Cashier', [
                 'error' => $e->getMessage(),
                 'event_type' => $eventType,
                 'event_id' => $payload['id'] ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
-            
-            // Re-lancer l'exception pour que Stripe puisse réessayer
             throw $e;
+        }
+    }
+
+    /**
+     * Traiter checkout.session.completed pour nos paiements échéance (mode payment).
+     * Appelle PaymentVerificationService (fetch Stripe + marquage). Idempotent.
+     * N'interrompt pas le webhook en cas d'erreur : CRON / retour success rattraperont.
+     */
+    protected function handleCheckoutSessionCompletedForEcheance(array $payload): void
+    {
+        $data = $payload['data']['object'] ?? [];
+        $sessionId = $data['id'] ?? null;
+        if (!$sessionId || !str_starts_with((string) $sessionId, 'cs_')) {
+            return;
+        }
+        $mode = $data['mode'] ?? null;
+        $paymentStatus = $data['payment_status'] ?? null;
+        if ($mode !== 'payment' || $paymentStatus !== 'paid') {
+            return;
+        }
+        $metadata = $data['metadata'] ?? [];
+        if (is_object($metadata)) {
+            $metadata = (array) $metadata;
+        }
+        if (empty($metadata['echeance_id']) || empty($metadata['user_id'])) {
+            return;
+        }
+
+        try {
+            $result = PaymentVerificationService::verifyAndMarkPaid($sessionId);
+            if ($result['ok']) {
+                Log::info('Webhook checkout.session.completed : échéance marquée payée', [
+                    'session_id' => $sessionId,
+                    'echeance_id' => $result['echeance_id'],
+                    'already' => $result['already'],
+                ]);
+            } else {
+                Log::warning('Webhook checkout.session.completed : vérification échec', [
+                    'session_id' => $sessionId,
+                    'message' => $result['message'],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Webhook checkout.session.completed : exception', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 

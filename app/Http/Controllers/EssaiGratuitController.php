@@ -10,7 +10,11 @@ use Illuminate\Support\Facades\Auth;
 class EssaiGratuitController extends Controller
 {
     /**
-     * Démarre un essai gratuit pour l'utilisateur connecté (premium)
+     * Démarre un essai gratuit pour l'utilisateur connecté (premium).
+     *
+     * Pour "X jours gratuits avant débit" : exiger d'abord "Enregistrer ma carte" (Setup Intent
+     * sur /checkout), puis démarrer l'essai. Le débit se fera après l'essai via API (PaymentIntent
+     * off_session). Voir VERIFICATION_STRIPE.md § Setup Intent.
      */
     public function demarrerEssaiUtilisateur(Request $request)
     {
