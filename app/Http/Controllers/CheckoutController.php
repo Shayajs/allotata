@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Echeance;
+use App\Models\PaymentAuditLog;
 use App\Models\PromoCode;
 use App\Services\CalculMontantDuService;
 use App\Services\PaymentVerificationService;
@@ -79,6 +80,13 @@ class CheckoutController extends Controller
             'metadata' => ['user_id' => (string) $user->id],
         ]);
 
+        PaymentAuditLog::log('setup_intent_created', $user->id, [
+            'stripe_customer_id' => $customerId,
+            'stripe_setup_intent_id' => $si->id,
+            'context' => ['metadata' => $si->metadata],
+            'message' => 'SetupIntent créé pour enregistrement carte (Elements).',
+        ]);
+
         return response()->json(['client_secret' => $si->client_secret]);
     }
 
@@ -99,6 +107,13 @@ class CheckoutController extends Controller
             $display = StripeCustomerService::cardDisplayFromPaymentMethod($pmId);
         } catch (\Throwable $e) {
             Log::warning('Checkout save-payment-method failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            PaymentAuditLog::log('save_pm_fail', $user->id, [
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $pmId,
+                'status' => 'error',
+                'context' => ['error' => $e->getMessage()],
+                'message' => 'Échec enregistrement carte: ' . $e->getMessage(),
+            ]);
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
 
@@ -106,6 +121,14 @@ class CheckoutController extends Controller
             'stripe_payment_method_id' => $pmId,
             'pm_type' => $display['pm_type'],
             'pm_last_four' => $display['pm_last_four'],
+        ]);
+
+        PaymentAuditLog::log('save_pm_ok', $user->id, [
+            'stripe_customer_id' => $customerId,
+            'stripe_payment_method_id' => $pmId,
+            'status' => 'ok',
+            'context' => ['pm_type' => $display['pm_type'], 'pm_last_four' => $display['pm_last_four']],
+            'message' => 'Carte enregistrée •••• ' . ($display['pm_last_four'] ?? ''),
         ]);
 
         return response()->json(['success' => true]);
@@ -132,10 +155,23 @@ class CheckoutController extends Controller
         $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
         $montantFinal = $calc['montant_final'];
         if ($montantFinal <= 0) {
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => 0,
+                'status' => 'zero_amount',
+                'message' => 'Montant à régler nul.',
+            ]);
             return response()->json(['success' => false, 'error' => 'Le montant à régler est nul.'], 422);
         }
 
         if (empty($user->stripe_payment_method_id)) {
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montantFinal,
+                'currency' => 'eur',
+                'status' => 'no_pm',
+                'message' => 'Tentative de charge sans carte enregistrée.',
+            ]);
             return response()->json([
                 'success' => false,
                 'error' => 'Enregistrez d\'abord un moyen de paiement (carte) pour régler.',
@@ -167,9 +203,28 @@ class CheckoutController extends Controller
                 $msg = 'Carte refusée (fonds insuffisants ou refus bancaire).';
             }
             Log::warning('Checkout charge card error', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_method_id' => $user->stripe_payment_method_id,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'card_error',
+                'context' => ['code' => $e->getError()->code ?? null, 'raw' => $e->getMessage()],
+                'message' => 'Carte refusée: ' . $msg,
+            ]);
             return response()->json(['success' => false, 'error' => $msg], 422);
         } catch (\Throwable $e) {
             Log::error('Checkout charge failed', ['user_id' => $user->id, 'echeance_id' => $echeance->id, 'error' => $e->getMessage()]);
+            PaymentAuditLog::log('charge_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'exception',
+                'context' => ['error' => $e->getMessage()],
+                'message' => 'Exception charge: ' . $e->getMessage(),
+            ]);
             return response()->json(['success' => false, 'error' => 'Impossible de lancer le paiement. Réessayez.'], 500);
         }
 
@@ -183,6 +238,16 @@ class CheckoutController extends Controller
                 'montant_final' => $montantFinal,
                 'promo_code_id' => $calc['promo_code_id'],
                 'metadata' => array_merge($echeance->metadata ?? [], ['lignes' => $calc['lignes']]),
+            ]);
+            PaymentAuditLog::log('charge_3ds', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_intent_id' => $pi->id,
+                'stripe_payment_method_id' => $user->stripe_payment_method_id,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'requires_action',
+                'message' => '3DS requis – en attente confirmation.',
             ]);
             return response()->json([
                 'requires_action' => true,
@@ -200,11 +265,38 @@ class CheckoutController extends Controller
             ]);
             $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($pi->id);
             if (!$result['ok']) {
+                PaymentAuditLog::log('charge_fail', $user->id, [
+                    'echeance_id' => $echeance->id,
+                    'stripe_payment_intent_id' => $pi->id,
+                    'amount' => $montantFinal,
+                    'currency' => $currency,
+                    'status' => 'verify_failed',
+                    'context' => $result,
+                    'message' => 'Charge OK mais vérification échouée: ' . ($result['message'] ?? ''),
+                ]);
                 return response()->json(['success' => false, 'error' => $result['message'] ?? 'Erreur enregistrement.'], 500);
             }
+            PaymentAuditLog::log('charge_ok', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_customer_id' => $customerId,
+                'stripe_payment_intent_id' => $pi->id,
+                'stripe_payment_method_id' => $user->stripe_payment_method_id,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'succeeded',
+                'message' => 'Paiement réglé – ' . $echeance->libelle(),
+            ]);
             return response()->json(['success' => true]);
         }
 
+        PaymentAuditLog::log('charge_fail', $user->id, [
+            'echeance_id' => $echeance->id,
+            'stripe_payment_intent_id' => $pi->id,
+            'amount' => $montantFinal,
+            'currency' => $currency,
+            'status' => $status,
+            'message' => 'Statut inattendu: ' . $status,
+        ]);
         return response()->json([
             'success' => false,
             'error' => 'Paiement en attente (status: ' . $status . '). Réessayez ou contactez-nous.',
@@ -220,15 +312,35 @@ class CheckoutController extends Controller
         $request->validate(['payment_intent_id' => 'required|string|starts_with:pi_']);
 
         $user = Auth::user();
-        $echeance = Echeance::where('user_id', $user->id)->where('stripe_payment_intent_id', $request->input('payment_intent_id'))->first();
+        $piId = $request->input('payment_intent_id');
+        $echeance = Echeance::where('user_id', $user->id)->where('stripe_payment_intent_id', $piId)->first();
         if (!$echeance) {
+            PaymentAuditLog::log('confirm_status_fail', $user->id, [
+                'stripe_payment_intent_id' => $piId,
+                'status' => 'echeance_not_found',
+                'message' => 'Échéance introuvable pour PI après 3DS.',
+            ]);
             return response()->json(['success' => false, 'error' => 'Échéance introuvable.'], 404);
         }
 
-        $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($request->input('payment_intent_id'));
+        $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($piId);
         if (!$result['ok']) {
+            PaymentAuditLog::log('confirm_status_fail', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_payment_intent_id' => $piId,
+                'status' => 'verify_failed',
+                'context' => $result,
+                'message' => 'Confirm 3DS – vérification échouée: ' . ($result['message'] ?? ''),
+            ]);
             return response()->json(['success' => false, 'error' => $result['message'] ?? 'Paiement non confirmé.'], 422);
         }
+        PaymentAuditLog::log('confirm_status_ok', $user->id, [
+            'echeance_id' => $echeance->id,
+            'stripe_payment_intent_id' => $piId,
+            'amount' => $echeance->montant_final,
+            'status' => 'succeeded',
+            'message' => 'Paiement confirmé après 3DS – ' . $echeance->libelle(),
+        ]);
         return response()->json(['success' => true]);
     }
 

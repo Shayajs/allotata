@@ -41,7 +41,9 @@ class SettingsController extends Controller
                     'customer' => $user->stripe_id,
                     'limit' => 12,
                 ], ['api_key' => config('services.stripe.secret')]);
-                $invoices = collect($stripeInvoices->data);
+                $invoices = collect($stripeInvoices->data)
+                    ->filter(fn ($i) => ($i->status ?? '') === 'paid' && ($i->amount_paid ?? 0) > 0)
+                    ->values();
             } catch (\Exception $e) {
                 // En cas d'erreur, on continue sans les factures Stripe
             }
