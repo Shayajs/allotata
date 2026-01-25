@@ -12,6 +12,8 @@ class Feedback extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'feedbacks';
+
     protected $fillable = [
         'user_id',
         'titre',
