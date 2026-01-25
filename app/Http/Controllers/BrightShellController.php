@@ -853,6 +853,12 @@ class BrightShellController extends Controller
             
         // S'assurer que la table existe
         try {
+            if (!\Schema::hasTable('brightshell_recettes')) {
+                \Illuminate\Support\Facades\Log::error('Table brightshell_recettes n\'existe pas');
+                return redirect()->route('brightshell.factures')
+                    ->with('error', 'Erreur : La table des recettes n\'existe pas.');
+            }
+            
             if ($facture) {
                 DB::table('brightshell_recettes')->insert([
                     'date' => now(),
@@ -879,7 +885,11 @@ class BrightShellController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette factureMarkPaid: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette factureMarkPaid: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('brightshell.factures')
+                ->with('error', 'Erreur lors de l\'enregistrement de la recette : ' . $e->getMessage());
         }
         
         return redirect()->route('brightshell.factures')->with('success', 'Facture marquée comme payée (' . number_format($montantTotal, 2) . ' €).');
@@ -1111,6 +1121,12 @@ class BrightShellController extends Controller
         if ($facture) {
             // S'assurer que la table existe
             try {
+                if (!\Schema::hasTable('brightshell_recettes')) {
+                    \Illuminate\Support\Facades\Log::error('Table brightshell_recettes n\'existe pas');
+                    return redirect()->route('brightshell.factures.show', $id)
+                        ->with('error', 'Erreur : La table des recettes n\'existe pas.');
+                }
+                
                 DB::table('brightshell_recettes')->insert([
                     'date' => $datePaiement, // Utiliser la date du paiement de l'échéance
                     'reference' => $facture->numero . ' (' . $echeance->numero . ')',
@@ -1135,9 +1151,19 @@ class BrightShellController extends Controller
                     }
                 }
             } catch (\Exception $e) {
-                // Log l'erreur silencieusement ou gérer autrement si besoin
-                \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette échéance: ' . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette échéance: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return redirect()->route('brightshell.factures.show', $id)
+                    ->with('error', 'Erreur lors de l\'enregistrement de la recette : ' . $e->getMessage());
             }
+        } else {
+            \Illuminate\Support\Facades\Log::error('Facture introuvable pour échéance', [
+                'facture_id' => $id,
+                'echeance_id' => $echeanceId
+            ]);
+            return redirect()->route('brightshell.factures.show', $id)
+                ->with('error', 'Erreur : Facture introuvable.');
         }
         
         // Vérifier si toutes les échéances sont payées
