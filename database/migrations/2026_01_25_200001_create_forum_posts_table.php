@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Schema::dropIfExists('forum_posts');
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
         Schema::create('forum_posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('forum_category_id')->constrained('forum_categories')->onDelete('cascade');
