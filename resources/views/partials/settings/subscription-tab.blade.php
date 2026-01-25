@@ -33,7 +33,7 @@
                 <span class="font-medium">{{ ucfirst($user->pm_type ?? 'carte') }}</span>
                 <span class="tabular-nums">•••• {{ $user->pm_last_four ?? '****' }}</span>
             </p>
-            <a href="{{ route('checkout.index') }}" class="inline-flex items-center justify-center min-h-[44px] px-5 py-3 sm:py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm touch-manipulation w-full sm:w-auto">
+            <a href="{{ route('checkout.index', ['change_card' => 1]) }}" class="inline-flex items-center justify-center min-h-[44px] px-5 py-3 sm:py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm touch-manipulation w-full sm:w-auto">
                 Modifier la carte
             </a>
         </div>

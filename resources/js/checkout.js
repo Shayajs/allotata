@@ -67,6 +67,7 @@ async function initSaveCard() {
         e.preventDefault();
         if (!stripe || !elements || !clientSecret) return;
         const submitBtn = form.querySelector('button[type="submit"]');
+        const submitLabel = submitBtn?.textContent?.trim() || 'Enregistrer ma carte';
         const errEl = document.getElementById('checkout-card-error');
         if (errEl) errEl.textContent = '';
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Enregistrement…'; }
@@ -79,24 +80,24 @@ async function initSaveCard() {
             });
             if (error) {
                 if (errEl) errEl.textContent = error.message || 'Erreur inconnue';
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Enregistrer ma carte'; }
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }
                 return;
             }
             const pmId = setupIntent?.payment_method;
-            if (!pmId) { window.location.reload(); return; }
+            if (!pmId) { window.location.replace(window.location.origin + '/checkout'); return; }
             const saveRes = await fetch(window.location.origin + '/checkout/save-payment-method', {
                 method: 'POST', headers: headers(), body: JSON.stringify({ payment_method: pmId }),
             });
             const saveData = await saveRes.json();
             if (!saveData.success) {
                 if (errEl) errEl.textContent = saveData.error || 'Erreur lors de l\'enregistrement.';
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Enregistrer ma carte'; }
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }
                 return;
             }
-            window.location.reload();
+            window.location.replace(window.location.origin + '/checkout');
         } catch (err) {
             if (errEl) errEl.textContent = err.message || 'Erreur inconnue.';
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Enregistrer ma carte'; }
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }
         }
     });
 

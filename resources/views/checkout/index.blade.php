@@ -77,24 +77,53 @@
                 </div>
             @endif
 
-            @if(!($hasPaymentMethod ?? false))
+            @if($showCardForm ?? false)
                 <section class="mb-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div class="px-4 sm:px-6 py-5 border-b border-slate-200 dark:border-slate-700">
                         <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Moyen de paiement</h2>
-                        <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Enregistrez une carte pour régler vos échéances. Aucun débit immédiat.</p>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                            @if(($hasPaymentMethod ?? false) && request('change_card'))
+                                Remplacer la carte enregistrée. Aucun débit immédiat.
+                            @else
+                                Enregistrez une carte pour régler vos échéances. Aucun débit immédiat.
+                            @endif
+                        </p>
+                        @if(($hasPaymentMethod ?? false) && request('change_card'))
+                            <a href="{{ route('checkout.index') }}" class="mt-3 inline-block text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">← Annuler</a>
+                        @endif
                     </div>
                     <div class="p-4 sm:p-6">
                         <form id="checkout-save-card-form">
                             <div id="checkout-payment-element" class="min-h-[200px]"></div>
                             <p id="checkout-card-error" class="mt-2 text-sm text-red-600 dark:text-red-400" role="alert"></p>
-                            <button type="submit" class="mt-4 w-full sm:w-auto min-h-[44px] px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition touch-manipulation">Enregistrer ma carte</button>
+                            <div class="mt-4 flex flex-wrap items-center gap-3">
+                                <button type="submit" class="min-h-[44px] px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition touch-manipulation">
+                                    {{ ($hasPaymentMethod ?? false) && request('change_card') ? 'Remplacer la carte' : 'Enregistrer ma carte' }}
+                                </button>
+                                @if(($hasPaymentMethod ?? false) && request('change_card'))
+                                    <a href="{{ route('checkout.index') }}" class="min-h-[44px] inline-flex items-center px-5 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition">Annuler</a>
+                                @endif
+                            </div>
                         </form>
                     </div>
                 </section>
             @else
-                <div class="mb-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center gap-3">
-                    <span class="text-slate-600 dark:text-slate-400">Carte enregistrée</span>
-                    <span class="font-medium text-slate-900 dark:text-white">•••• {{ $user->pm_last_four ?? '****' }}</span>
+                <div class="mb-6 p-4 sm:p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-slate-600 dark:text-slate-400">Carte enregistrée</span>
+                        <span class="font-medium text-slate-900 dark:text-white">{{ ucfirst($user->pm_type ?? 'carte') }} •••• {{ $user->pm_last_four ?? '****' }}</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <a href="{{ route('checkout.index', ['change_card' => 1]) }}" class="min-h-[44px] inline-flex items-center justify-center px-5 py-2.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm touch-manipulation">
+                            Changer la carte
+                        </a>
+                        <form action="{{ route('checkout.remove-payment-method') }}" method="POST" class="inline" onsubmit="return confirm('Supprimer la carte enregistrée\u00a0?');">
+                            @csrf
+                            <button type="submit" class="min-h-[44px] px-5 py-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-semibold rounded-xl transition text-sm touch-manipulation border border-red-200 dark:border-red-800">
+                                Supprimer la carte
+                            </button>
+                        </form>
+                    </div>
                 </div>
             @endif
 

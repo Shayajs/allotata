@@ -567,6 +567,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/checkout/retirer-promo', [CheckoutController::class, 'retirerPromo'])->name('checkout.retirer-promo');
         Route::post('/checkout/setup-intent', [CheckoutController::class, 'createSetupIntent'])->name('checkout.setup-intent');
         Route::post('/checkout/save-payment-method', [CheckoutController::class, 'savePaymentMethod'])->name('checkout.save-payment-method');
+        Route::post('/checkout/remove-payment-method', [CheckoutController::class, 'removePaymentMethod'])->name('checkout.remove-payment-method');
         Route::post('/checkout/charge', [CheckoutController::class, 'charge'])->name('checkout.charge');
         Route::post('/checkout/confirm-status', [CheckoutController::class, 'confirmStatus'])->name('checkout.confirm-status');
         Route::post('/checkout/payer', [CheckoutController::class, 'creerSessionStripe'])->name('checkout.payer');
