@@ -890,8 +890,8 @@ Route::post('/autosave', [\App\Http\Controllers\Admin\DatabaseBackupController::
 
 // Route pour lancer les tâches cron (échéances, réconciliation, essais). Protégée par CRON_SECRET.
 // GET /cron-run?token=XXX — manuellement (lien) ou cron externe (curl/wget). Pas de docker exec.
-Route::get('/cron-run', [\App\Http\Controllers\CronRunController::class])->name('cron.run');
-Route::post('/cron-run', [\App\Http\Controllers\CronRunController::class]);
+Route::get('/cron-run', [\App\Http\Controllers\CronRunController::class, 'run'])->name('cron.run');
+Route::post('/cron-run', [\App\Http\Controllers\CronRunController::class, 'run']);
 
 // Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)
 Route::get('/run-error-notifications-migration', function () {
