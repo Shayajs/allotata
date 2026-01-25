@@ -48,6 +48,14 @@ class StripeWebhookController extends CashierController
                     'stripe_event_id' => $transaction->stripe_event_id,
                 ]);
             }
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Erreur Stripe lors de l\'enregistrement de la transaction', [
+                'error' => $e->getMessage(),
+                'event_type' => $eventType,
+                'event_id' => $payload['id'] ?? null,
+                'exception_type' => get_class($e),
+                'raw_error' => json_encode($e->getError()),
+            ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'enregistrement de la transaction Stripe', [
                 'error' => $e->getMessage(),
@@ -66,6 +74,16 @@ class StripeWebhookController extends CashierController
             }
 
             return $response;
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Erreur Stripe lors du traitement du webhook par Cashier', [
+                'error' => $e->getMessage(),
+                'event_type' => $eventType,
+                'event_id' => $payload['id'] ?? null,
+                'exception_type' => get_class($e),
+                'raw_error' => json_encode($e->getError()),
+            ]);
+            // Ne pas bloquer le webhook, Stripe réessayera
+            return $this->successMethod();
         } catch (\Exception $e) {
             Log::error('Erreur lors du traitement du webhook Stripe par Cashier', [
                 'error' => $e->getMessage(),
@@ -111,17 +129,75 @@ class StripeWebhookController extends CashierController
                     'already' => $result['already'],
                 ]);
             } else {
+                $userId = (int) ($metadata['user_id'] ?? 0);
+                $echeanceId = (int) ($metadata['echeance_id'] ?? 0);
                 Log::warning('Webhook checkout.session.completed : vérification échec', [
                     'session_id' => $sessionId,
                     'message' => $result['message'],
                 ]);
+                if ($userId) {
+                    try {
+                        \App\Models\PaymentAuditLog::log('webhook_verify_fail', $userId, [
+                            'echeance_id' => $echeanceId,
+                            'stripe_checkout_session_id' => $sessionId,
+                            'status' => 'failed',
+                            'context' => ['message' => $result['message']],
+                            'message' => 'Échec vérification webhook: ' . ($result['message'] ?? ''),
+                        ]);
+                    } catch (\Throwable $logEx) {
+                        Log::warning('PaymentAuditLog webhook_verify_fail failed', ['error' => $logEx->getMessage()]);
+                    }
+                }
+            }
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            $userId = (int) ($metadata['user_id'] ?? 0);
+            $echeanceId = (int) ($metadata['echeance_id'] ?? 0);
+            Log::error('Webhook checkout.session.completed : ApiErrorException', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+                'exception_type' => get_class($e),
+                'raw_error' => json_encode($e->getError()),
+            ]);
+            if ($userId) {
+                try {
+                    \App\Models\PaymentAuditLog::log('webhook_verify_fail', $userId, [
+                        'echeance_id' => $echeanceId,
+                        'stripe_checkout_session_id' => $sessionId,
+                        'status' => 'failed',
+                        'context' => [
+                            'exception_type' => get_class($e),
+                            'raw_error' => json_encode($e->getError()),
+                        ],
+                        'message' => 'Erreur API Stripe lors de la vérification webhook: ' . $e->getMessage(),
+                    ]);
+                } catch (\Throwable $logEx) {
+                    Log::warning('PaymentAuditLog webhook_verify_fail failed', ['error' => $logEx->getMessage()]);
+                }
             }
         } catch (\Throwable $e) {
+            $userId = (int) ($metadata['user_id'] ?? 0);
+            $echeanceId = (int) ($metadata['echeance_id'] ?? 0);
             Log::error('Webhook checkout.session.completed : exception', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            if ($userId) {
+                try {
+                    \App\Models\PaymentAuditLog::log('webhook_verify_fail', $userId, [
+                        'echeance_id' => $echeanceId,
+                        'stripe_checkout_session_id' => $sessionId,
+                        'status' => 'failed',
+                        'context' => [
+                            'exception_type' => get_class($e),
+                            'raw_error' => $e->getMessage(),
+                        ],
+                        'message' => 'Exception inattendue lors de la vérification webhook: ' . $e->getMessage(),
+                    ]);
+                } catch (\Throwable $logEx) {
+                    Log::warning('PaymentAuditLog webhook_verify_fail failed', ['error' => $logEx->getMessage()]);
+                }
+            }
         }
     }
 
@@ -169,6 +245,39 @@ class StripeWebhookController extends CashierController
                         'echeance_id' => $echeanceId,
                         'message' => $result['message'],
                     ]);
+                    try {
+                        \App\Models\PaymentAuditLog::log('webhook_pi_verify_fail', $userId, [
+                            'echeance_id' => $echeanceId,
+                            'stripe_payment_intent_id' => $piId,
+                            'status' => 'failed',
+                            'context' => ['message' => $result['message']],
+                            'message' => 'Échec vérification PaymentIntent webhook: ' . ($result['message'] ?? ''),
+                        ]);
+                    } catch (\Throwable $logEx) {
+                        Log::warning('PaymentAuditLog webhook_pi_verify_fail failed', ['error' => $logEx->getMessage()]);
+                    }
+                }
+            } catch (\Stripe\Exception\ApiErrorException $e) {
+                Log::error('Webhook payment_intent.succeeded : ApiErrorException lors du marquage', [
+                    'payment_intent_id' => $piId,
+                    'echeance_id' => $echeanceId,
+                    'error' => $e->getMessage(),
+                    'exception_type' => get_class($e),
+                    'raw_error' => json_encode($e->getError()),
+                ]);
+                try {
+                    \App\Models\PaymentAuditLog::log('webhook_pi_verify_fail', $userId, [
+                        'echeance_id' => $echeanceId,
+                        'stripe_payment_intent_id' => $piId,
+                        'status' => 'failed',
+                        'context' => [
+                            'exception_type' => get_class($e),
+                            'raw_error' => json_encode($e->getError()),
+                        ],
+                        'message' => 'Erreur API Stripe lors de la vérification PaymentIntent: ' . $e->getMessage(),
+                    ]);
+                } catch (\Throwable $logEx) {
+                    Log::warning('PaymentAuditLog webhook_pi_verify_fail failed', ['error' => $logEx->getMessage()]);
                 }
             } catch (\Throwable $e) {
                 Log::error('Webhook payment_intent.succeeded : exception lors du marquage', [
@@ -177,6 +286,20 @@ class StripeWebhookController extends CashierController
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
+                try {
+                    \App\Models\PaymentAuditLog::log('webhook_pi_verify_fail', $userId, [
+                        'echeance_id' => $echeanceId,
+                        'stripe_payment_intent_id' => $piId,
+                        'status' => 'failed',
+                        'context' => [
+                            'exception_type' => get_class($e),
+                            'raw_error' => $e->getMessage(),
+                        ],
+                        'message' => 'Exception inattendue lors de la vérification PaymentIntent: ' . $e->getMessage(),
+                    ]);
+                } catch (\Throwable $logEx) {
+                    Log::warning('PaymentAuditLog webhook_pi_verify_fail failed', ['error' => $logEx->getMessage()]);
+                }
             }
         }
         

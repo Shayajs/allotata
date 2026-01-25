@@ -34,10 +34,56 @@ class PaymentVerificationService
 
         try {
             $session = StripeSession::retrieve($sessionId, ['expand' => ['payment_intent']]);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::warning('PaymentVerification: InvalidRequestException lors de la récupération de la session', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => null,
+                'already' => false,
+                'message' => 'Session Stripe introuvable ou invalide.',
+            ];
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('PaymentVerification: AuthenticationException lors de la récupération de la session', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => null,
+                'already' => false,
+                'message' => 'Erreur d\'authentification avec Stripe.',
+            ];
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::warning('PaymentVerification: ApiConnectionException lors de la récupération de la session', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => null,
+                'already' => false,
+                'message' => 'Problème de connexion avec Stripe.',
+            ];
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::warning('PaymentVerification: ApiErrorException lors de la récupération de la session', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+            return [
+                'ok' => false,
+                'echeance_id' => null,
+                'already' => false,
+                'message' => 'Erreur API Stripe.',
+            ];
         } catch (\Exception $e) {
             Log::warning('PaymentVerification: Stripe session retrieve failed', [
                 'session_id' => $sessionId,
                 'error' => $e->getMessage(),
+                'exception_type' => get_class($e),
             ]);
             return [
                 'ok' => false,
@@ -221,8 +267,37 @@ class PaymentVerificationService
 
         try {
             $pi = PaymentIntent::retrieve($paymentIntentId);
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            Log::warning('PaymentVerification: InvalidRequestException lors de la récupération du PaymentIntent', [
+                'pi' => $paymentIntentId,
+                'error' => $e->getMessage(),
+                'param' => $e->getError()->param ?? null,
+            ]);
+            return ['ok' => false, 'echeance_id' => 0, 'already' => false, 'message' => 'PaymentIntent introuvable ou invalide.'];
+        } catch (\Stripe\Exception\AuthenticationException $e) {
+            Log::critical('PaymentVerification: AuthenticationException lors de la récupération du PaymentIntent', [
+                'pi' => $paymentIntentId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['ok' => false, 'echeance_id' => 0, 'already' => false, 'message' => 'Erreur d\'authentification avec Stripe.'];
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
+            Log::warning('PaymentVerification: ApiConnectionException lors de la récupération du PaymentIntent', [
+                'pi' => $paymentIntentId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['ok' => false, 'echeance_id' => 0, 'already' => false, 'message' => 'Problème de connexion avec Stripe.'];
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::warning('PaymentVerification: ApiErrorException lors de la récupération du PaymentIntent', [
+                'pi' => $paymentIntentId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['ok' => false, 'echeance_id' => 0, 'already' => false, 'message' => 'Erreur API Stripe.'];
         } catch (\Exception $e) {
-            Log::warning('PaymentVerification: PI retrieve failed', ['pi' => $paymentIntentId, 'error' => $e->getMessage()]);
+            Log::warning('PaymentVerification: PI retrieve failed', [
+                'pi' => $paymentIntentId,
+                'error' => $e->getMessage(),
+                'exception_type' => get_class($e),
+            ]);
             return ['ok' => false, 'echeance_id' => 0, 'already' => false, 'message' => 'PaymentIntent introuvable.'];
         }
 
