@@ -13,6 +13,13 @@ function getQuery(name) {
     return new URLSearchParams(window.location.search).get(name);
 }
 
+function stateFromPostalCode(postalCode) {
+    const cp = String(postalCode || '').trim();
+    if (!cp) return '';
+    if (cp.startsWith('97')) return cp.slice(0, 3);
+    return cp.slice(0, 2);
+}
+
 function escapeHtml(s) {
     if (s == null) return '';
     const div = document.createElement('div');
@@ -69,12 +76,31 @@ async function initSaveCard() {
         const submitBtn = form.querySelector('button[type="submit"]');
         const errEl = document.getElementById('checkout-card-error');
         if (errEl) errEl.textContent = '';
+        const postalInput = document.getElementById('checkout-code-postal');
+        const cityInput = document.getElementById('checkout-ville');
+        const postalCode = postalInput ? String(postalInput.value || '').trim() : '';
+        const city = cityInput ? String(cityInput.value || '').trim() : '';
+        if (!postalCode || !city) {
+            if (errEl) errEl.textContent = 'Veuillez renseigner le code postal et la ville.';
+            return;
+        }
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Enregistrement…'; }
         try {
+            const state = stateFromPostalCode(postalCode);
             const { setupIntent, error } = await stripe.confirmSetup({
                 elements,
                 confirmParams: {
                     return_url: window.location.origin + '/checkout',
+                    payment_method_data: {
+                        billing_details: {
+                            address: {
+                                country: 'FR',
+                                state: state || '00',
+                                city,
+                                postal_code: postalCode,
+                            },
+                        },
+                    },
                 },
             });
             if (error) {
@@ -144,7 +170,9 @@ async function initSaveCard() {
             clientSecret,
             appearance: { theme: isDark ? 'night' : 'stripe', variables: { borderRadius: '12px' } },
         });
-        const paymentElement = elements.create('payment');
+        const paymentElement = elements.create('payment', {
+            fields: { billingDetails: { address: 'never' } },
+        });
         container.innerHTML = '';
         paymentElement.mount(container);
     }
