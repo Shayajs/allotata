@@ -678,14 +678,13 @@ class BrightShellController extends Controller
         if (!$facture) abort(404);
 
         // Enregistrer le paiement dans les recettes
-        if (\Schema::hasTable('brightshell_recettes')) {
+        // S'assurer que la table existe
+        try {
             DB::table('brightshell_recettes')->insert([
                 'date' => $validated['date'],
-                'reference' => $facture->numero, // Ou un ref spécifique si besoin
+                'reference' => $facture->numero, 
                 'client_id' => $facture->client_id,
-                // On récupère le nom du client à la volée pour l'historique, ou on le joint
                 'client_nom' => DB::table('brightshell_clients')->where('id', $facture->client_id)->value('nom') ?? 'Client', 
-                // Petite correction: mieux vaut prendre le nom/société complet comme dans markPaid
                 'nature' => $facture->objet . ($validated['note'] ? ' (' . $validated['note'] . ')' : ''),
                 'montant' => $validated['montant'],
                 'mode_reglement' => $validated['mode_paiement'],
@@ -704,6 +703,9 @@ class BrightShellController extends Controller
                     ]);
                 }
             }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur ajout paiement manuel: ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de l\'enregistrement du paiement : ' . $e->getMessage());
         }
 
         // Vérifier si le total payé couvre la facture pour changer le statut
@@ -849,30 +851,35 @@ class BrightShellController extends Controller
             ->where('brightshell_factures.id', $id)
             ->first();
             
-        if ($facture && \Schema::hasTable('brightshell_recettes')) {
-            DB::table('brightshell_recettes')->insert([
-                'date' => now(),
-                'reference' => $facture->numero,
-                'client_id' => $facture->client_id,
-                'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
-                'nature' => $facture->objet,
-                'montant' => $montantTotal, // Utiliser le montant réellement payé
-                'mode_reglement' => $modePaiement,
-                'facture_id' => $id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            
-            // Mettre à jour la trésorerie si la table existe
-            if (\Schema::hasTable('brightshell_tresorerie')) {
-                $tresorerie = DB::table('brightshell_tresorerie')->first();
-                if ($tresorerie) {
-                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
-                        'solde_courant' => $tresorerie->solde_courant + $montantTotal,
-                        'updated_at' => now()
-                    ]);
+        // S'assurer que la table existe
+        try {
+            if ($facture) {
+                DB::table('brightshell_recettes')->insert([
+                    'date' => now(),
+                    'reference' => $facture->numero,
+                    'client_id' => $facture->client_id,
+                    'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
+                    'nature' => $facture->objet,
+                    'montant' => $montantTotal, // Utiliser le montant réellement payé
+                    'mode_reglement' => $modePaiement,
+                    'facture_id' => $id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                // Mettre à jour la trésorerie si la table existe
+                if (\Schema::hasTable('brightshell_tresorerie')) {
+                    $tresorerie = DB::table('brightshell_tresorerie')->first();
+                    if ($tresorerie) {
+                        DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                            'solde_courant' => $tresorerie->solde_courant + $montantTotal,
+                            'updated_at' => now()
+                        ]);
+                    }
                 }
             }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette factureMarkPaid: ' . $e->getMessage());
         }
         
         return redirect()->route('brightshell.factures')->with('success', 'Facture marquée comme payée (' . number_format($montantTotal, 2) . ' €).');
@@ -1100,29 +1107,36 @@ class BrightShellController extends Controller
             ->where('brightshell_factures.id', $id)
             ->first();
             
-        if ($facture && \Schema::hasTable('brightshell_recettes')) {
-            DB::table('brightshell_recettes')->insert([
-                'date' => now(),
-                'reference' => $facture->numero . ' (' . $echeance->numero . ')',
-                'client_id' => $facture->client_id,
-                'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
-                'nature' => $facture->objet . ' (échéance ' . $echeance->numero . ')',
-                'montant' => $montantReel,
-                'mode_reglement' => $modePaiement,
-                'facture_id' => $id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            
-            // Mettre à jour la trésorerie
-            if (\Schema::hasTable('brightshell_tresorerie')) {
-                $tresorerie = DB::table('brightshell_tresorerie')->first();
-                if ($tresorerie) {
-                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
-                        'solde_courant' => $tresorerie->solde_courant + $montantReel,
-                        'updated_at' => now()
-                    ]);
+        // Vérification et enregistrement explicite
+        if ($facture) {
+            // S'assurer que la table existe
+            try {
+                DB::table('brightshell_recettes')->insert([
+                    'date' => $datePaiement, // Utiliser la date du paiement de l'échéance
+                    'reference' => $facture->numero . ' (' . $echeance->numero . ')',
+                    'client_id' => $facture->client_id,
+                    'client_nom' => $facture->client_societe ?? $facture->client_nom ?? 'Client',
+                    'nature' => $facture->objet . ' (échéance ' . $echeance->numero . ')',
+                    'montant' => $montantReel,
+                    'mode_reglement' => $modePaiement,
+                    'facture_id' => $id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                // Mettre à jour la trésorerie
+                if (\Schema::hasTable('brightshell_tresorerie')) {
+                    $tresorerie = DB::table('brightshell_tresorerie')->first();
+                    if ($tresorerie) {
+                        DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                            'solde_courant' => $tresorerie->solde_courant + $montantReel,
+                            'updated_at' => now()
+                        ]);
+                    }
                 }
+            } catch (\Exception $e) {
+                // Log l'erreur silencieusement ou gérer autrement si besoin
+                \Illuminate\Support\Facades\Log::error('Erreur enregistrement recette échéance: ' . $e->getMessage());
             }
         }
         
@@ -1449,22 +1463,78 @@ class BrightShellController extends Controller
             'categorie' => 'nullable|string|max:64',
             'notes' => 'nullable|string',
         ]);
-        DB::table('brightshell_mouvements')->insert([
-            'type' => $v['type'],
-            'libelle' => $v['libelle'],
-            'montant' => round($v['montant'], 2),
-            'date' => $v['date'],
-            'categorie' => $v['categorie'] ?? null,
-            'notes' => $v['notes'] ?? null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        
+        try {
+            DB::table('brightshell_mouvements')->insert([
+                'type' => $v['type'],
+                'libelle' => $v['libelle'],
+                'montant' => round($v['montant'], 2),
+                'date' => $v['date'],
+                'categorie' => $v['categorie'] ?? null,
+                'notes' => $v['notes'] ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Mettre à jour la trésorerie
+            if (\Schema::hasTable('brightshell_tresorerie')) {
+                $tresorerie = DB::table('brightshell_tresorerie')->first();
+                if ($tresorerie) {
+                    $nouveauSolde = $tresorerie->solde_courant;
+                    if ($v['type'] === 'entree') {
+                        $nouveauSolde += $v['montant'];
+                    } else {
+                        $nouveauSolde -= $v['montant'];
+                    }
+                    
+                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                        'solde_courant' => $nouveauSolde,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur enregistrement mouvement: ' . $e->getMessage());
+            return back()->with('error', 'Erreur : ' . $e->getMessage());
+        }
+        
         return redirect()->route('brightshell.ressources')->with('success', 'Mouvement enregistré.');
     }
 
     public function ressourcesMouvementDelete($id)
     {
-        DB::table('brightshell_mouvements')->where('id', $id)->delete();
+        try {
+            // Récupérer le mouvement avant suppression pour inverser son effet sur la trésorerie
+            $mouvement = DB::table('brightshell_mouvements')->find($id);
+            
+            if ($mouvement) {
+                // Inverser l'effet sur la trésorerie
+                if (\Schema::hasTable('brightshell_tresorerie')) {
+                    $tresorerie = DB::table('brightshell_tresorerie')->first();
+                    if ($tresorerie) {
+                        $nouveauSolde = $tresorerie->solde_courant;
+                        // Inverser : si c'était une entrée, on soustrait ; si c'était une sortie, on ajoute
+                        if ($mouvement->type === 'entree') {
+                            $nouveauSolde -= $mouvement->montant;
+                        } else {
+                            $nouveauSolde += $mouvement->montant;
+                        }
+                        
+                        DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                            'solde_courant' => $nouveauSolde,
+                            'updated_at' => now()
+                        ]);
+                    }
+                }
+                
+                // Supprimer le mouvement
+                DB::table('brightshell_mouvements')->where('id', $id)->delete();
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur suppression mouvement: ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de la suppression : ' . $e->getMessage());
+        }
+        
         return redirect()->route('brightshell.ressources')->with('success', 'Mouvement supprimé.');
     }
 
@@ -2310,17 +2380,32 @@ class BrightShellController extends Controller
             'reference' => 'nullable|string|max:100',
         ]);
         
-        DB::table('brightshell_achats')->insert([
-            'date' => $validated['date'],
-            'description' => $validated['description'],
-            'montant' => $validated['montant'],
-            'fournisseur_id' => $validated['fournisseur_id'] ?? null,
-            'fournisseur' => $validated['fournisseur_nom'] ?? null,
-            'mode_paiement' => $validated['mode_paiement'] ?? 'cb',
-            'reference' => $validated['reference'] ?? null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            DB::table('brightshell_achats')->insert([
+                'date' => $validated['date'],
+                'description' => $validated['description'],
+                'montant' => $validated['montant'],
+                'fournisseur' => $validated['fournisseur_nom'] ?? null,
+                'categorie' => $validated['reference'] ? 'Ref: ' . $validated['reference'] : null, // Utilisation de categorie pour la ref
+                'notes' => $validated['mode_paiement'] ? 'Paiement: ' . $validated['mode_paiement'] : null, // Utilisation de notes pour le mode
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Mettre à jour la trésorerie
+            if (\Schema::hasTable('brightshell_tresorerie')) {
+                $tresorerie = DB::table('brightshell_tresorerie')->first();
+                if ($tresorerie) {
+                    DB::table('brightshell_tresorerie')->where('id', $tresorerie->id)->update([
+                        'solde_courant' => $tresorerie->solde_courant - $validated['montant'], // Soustraction pour un achat
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur enregistrement achat: ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
+        }
         
         return redirect()->route('brightshell.comptabilite')->with('success', 'Achat enregistré.');
     }
