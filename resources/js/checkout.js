@@ -30,6 +30,58 @@ function showToast(message, type = 'error') {
     setTimeout(() => el.classList.add('hidden'), 5000);
 }
 
+/**
+ * Mapper les codes d'erreur Stripe vers des messages français clairs
+ * C'est crucial pour l'UX : le client doit comprendre que c'est SA banque qui refuse
+ */
+function mapStripeErrorToUserMessage(errorCode, rawMessage) {
+    const errorMessages = {
+        'insufficient_funds': 'Solde insuffisant sur cette carte. Vérifiez votre compte bancaire ou utilisez une autre carte.',
+        'card_declined': 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.',
+        'expired_card': 'Cette carte a expiré. Veuillez utiliser une autre carte ou mettre à jour vos informations de paiement.',
+        'incorrect_cvc': 'Le code de sécurité (CVC) est incorrect. Vérifiez les 3 chiffres au dos de votre carte.',
+        'incorrect_number': 'Le numéro de carte est incorrect. Vérifiez les 16 chiffres de votre carte.',
+        'processing_error': 'Votre banque a rencontré une erreur lors du traitement. Réessayez dans quelques instants.',
+        'generic_decline': 'Votre banque a refusé le paiement sans raison spécifique. Contactez votre banque ou utilisez une autre carte.',
+        'lost_card': 'Cette carte a été signalée comme perdue. Utilisez une autre carte.',
+        'stolen_card': 'Cette carte a été signalée comme volée. Utilisez une autre carte.',
+        'pickup_card': 'Votre banque a demandé la récupération de cette carte. Contactez votre banque.',
+        'restricted_card': 'Cette carte est restreinte. Contactez votre banque.',
+        'security_violation': 'Votre banque a détecté une violation de sécurité. Contactez votre banque.',
+        'service_not_allowed': 'Cette carte ne permet pas ce type de transaction. Contactez votre banque.',
+        'stop_payment_order': 'Un ordre d\'arrêt de paiement a été émis pour cette carte. Contactez votre banque.',
+        'testmode_decline': 'Cette carte de test a été refusée. Utilisez une carte de test valide.',
+        'withdrawal_count_limit_exceeded': 'Vous avez atteint la limite de retraits autorisés. Contactez votre banque.',
+    };
+
+    // Si on a un code spécifique, utiliser le message correspondant
+    if (errorCode && errorMessages[errorCode]) {
+        return errorMessages[errorCode];
+    }
+
+    // Sinon, analyser le message brut pour détecter des mots-clés
+    const lowerMessage = (rawMessage || '').toLowerCase();
+    
+    if (lowerMessage.includes('insufficient') || lowerMessage.includes('fond')) {
+        return 'Solde insuffisant sur cette carte. Vérifiez votre compte bancaire ou utilisez une autre carte.';
+    }
+    
+    if (lowerMessage.includes('declined') || lowerMessage.includes('refus')) {
+        return 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.';
+    }
+    
+    if (lowerMessage.includes('expired') || lowerMessage.includes('expir')) {
+        return 'Cette carte a expiré. Veuillez utiliser une autre carte ou mettre à jour vos informations de paiement.';
+    }
+    
+    if (lowerMessage.includes('cvc') || lowerMessage.includes('security code')) {
+        return 'Le code de sécurité (CVC) est incorrect. Vérifiez les 3 chiffres au dos de votre carte.';
+    }
+
+    // Message générique mais qui indique que c'est la banque
+    return 'Votre banque a refusé le paiement. Contactez votre banque pour connaître la raison ou utilisez une autre carte.';
+}
+
 async function finishAfterRedirect() {
     const secret = getQuery('setup_intent_client_secret');
     const status = getQuery('redirect_status');
@@ -185,7 +237,12 @@ async function initRegler() {
                     return;
                 }
                 if (res.status === 422) {
-                    showToast(json.error || 'Erreur de paiement.');
+                    // Le serveur envoie déjà un message clair, mais on peut améliorer si on a un error_code
+                    let errorMessage = json.error || 'Erreur de paiement.';
+                    if (json.error_code) {
+                        errorMessage = mapStripeErrorToUserMessage(json.error_code, json.error || '');
+                    }
+                    showToast(errorMessage);
                     btn.disabled = false;
                     if (label) label.textContent = 'Régler cette échéance';
                     return;
@@ -206,7 +263,9 @@ async function initRegler() {
                     }
                     const { error } = await stripe.handleCardAction(json.client_secret);
                     if (error) {
-                        showToast(error.message || 'Authentification 3DS échouée.');
+                        // Mapper les erreurs Stripe vers des messages français clairs
+                        const userMessage = mapStripeErrorToUserMessage(error.code, error.message);
+                        showToast(userMessage);
                         btn.disabled = false;
                         if (label) label.textContent = 'Régler cette échéance';
                         return;

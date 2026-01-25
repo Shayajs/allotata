@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('feedback_comments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('feedback_id')->constrained()->onDelete('cascade');
+            $table->foreignId('feedback_id')->constrained('feedbacks')->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('contenu');
             $table->timestamps();

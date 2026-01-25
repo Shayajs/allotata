@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('forum_comments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('forum_post_id')->constrained()->onDelete('cascade');
+            $table->foreignId('forum_post_id')->constrained('forum_posts')->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('parent_id')->nullable()->constrained('forum_comments')->onDelete('cascade');
             $table->text('contenu');

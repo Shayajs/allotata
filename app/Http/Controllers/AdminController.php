@@ -1723,9 +1723,10 @@ class AdminController extends Controller
             }
 
             // Créer le nouveau prix
+            // Utiliser round() pour éviter les bugs de virgule flottante (ex: 19.99 * 100 = 1998.9999999)
             $price = Price::create([
                 'product' => $product->id,
-                'unit_amount' => (int)($validated['amount'] * 100), // Convertir en centimes
+                'unit_amount' => (int) round($validated['amount'] * 100, 0), // Convertir en centimes
                 'currency' => strtolower($validated['currency']),
                 'recurring' => [
                     'interval' => $validated['interval'],
