@@ -37,5 +37,6 @@
 @endsection
 
 @push('scripts')
-    @vite(['resources/js/admin-test-setup.js'])
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="{{ asset('js/admin-test-setup.js') }}"></script>
 @endpush
