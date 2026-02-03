@@ -35,6 +35,20 @@
                     <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
                 </div>
             @endif
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p class="text-red-800 dark:text-red-400">{{ session('error') }}</p>
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <ul class="list-disc list-inside text-red-800 dark:text-red-400 text-sm">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
                 <div class="flex items-start justify-between mb-6">
@@ -103,11 +117,19 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Service</h3>
                         <p class="text-slate-900 dark:text-white">{{ $reservation->type_service ?? 'Service' }}</p>
-                        <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->duree_minutes }} minutes</p>
+                        @if(!$reservation->date_butoire || !$reservation->typeService || !$reservation->typeService->estDateButoire())
+                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $reservation->duree_minutes }} minutes</p>
+                        @endif
                     </div>
                     <div>
-                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date et heure</h3>
-                        <p class="text-slate-900 dark:text-white">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</p>
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">@if($reservation->date_butoire && $reservation->typeService && $reservation->typeService->estDateButoire()) Date butoire @else Date et heure @endif</h3>
+                        <p class="text-slate-900 dark:text-white">
+                            @if($reservation->date_butoire && $reservation->typeService && $reservation->typeService->estDateButoire())
+                                {{ \Carbon\Carbon::parse($reservation->date_butoire)->format('d/m/Y') }}
+                            @else
+                                {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
+                            @endif
+                        </p>
                     </div>
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Prix</h3>
@@ -143,6 +165,53 @@
                     <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notes</h3>
                         <p class="text-slate-900 dark:text-white whitespace-pre-line">{{ $reservation->notes }}</p>
+                    </div>
+                @endif
+
+                <!-- Modifier la réservation (en attente uniquement) -->
+                @if($reservation->statut === 'en_attente')
+                    <div class="border-t border-slate-200 dark:border-slate-700 pt-6 mb-6">
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Modifier la réservation</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Vous pouvez modifier les informations ci-dessous tant que la réservation n'est pas acceptée.</p>
+                        <form action="{{ route('reservations.update', [$entreprise->slug, $reservation->id]) }}" method="POST" class="space-y-4">
+                            @csrf
+                            @method('PATCH')
+                            @php $isDateButoire = $reservation->typeService && $reservation->typeService->estDateButoire(); @endphp
+                            @if($isDateButoire)
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date butoire</label>
+                                    <input type="date" name="date_butoire" value="{{ $reservation->date_butoire ? \Carbon\Carbon::parse($reservation->date_butoire)->format('Y-m-d') : '' }}" min="{{ date('Y-m-d') }}" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                                        <input type="date" name="date_reservation" value="{{ $reservation->date_reservation->format('Y-m-d') }}" min="{{ date('Y-m-d') }}" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
+                                        <input type="time" name="heure_reservation" value="{{ $reservation->date_reservation->format('H:i') }}" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                    </div>
+                                </div>
+                            @endif
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Lieu</label>
+                                <input type="text" name="lieu" value="{{ old('lieu', $reservation->lieu) }}" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Optionnel">
+                            </div>
+                            @if($entreprise->prix_negociables ?? false)
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Prix (€)</label>
+                                    <input type="number" name="prix" value="{{ old('prix', $reservation->prix) }}" step="0.01" min="0" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                                </div>
+                            @endif
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Notes</label>
+                                <textarea name="notes" rows="3" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" placeholder="Optionnel">{{ old('notes', $reservation->notes) }}</textarea>
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                                Enregistrer les modifications
+                            </button>
+                        </form>
                     </div>
                 @endif
 

@@ -464,28 +464,38 @@
                     @csrf
                     @method('PATCH')
                     
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date *</label>
-                            <input 
-                                type="date" 
-                                name="date_reservation" 
-                                id="modify-date"
-                                required
-                                min="{{ date('Y-m-d') }}"
-                                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
+                    <div id="modify-date-heure-wrapper">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date *</label>
+                                <input 
+                                    type="date" 
+                                    name="date_reservation" 
+                                    id="modify-date"
+                                    min="{{ date('Y-m-d') }}"
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure *</label>
+                                <input 
+                                    type="time" 
+                                    name="heure_reservation" 
+                                    id="modify-heure"
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Heure *</label>
-                            <input 
-                                type="time" 
-                                name="heure_reservation" 
-                                id="modify-heure"
-                                required
-                                class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                        </div>
+                    </div>
+                    <div id="modify-date-butoire-wrapper" class="hidden">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date butoire *</label>
+                        <input 
+                            type="date" 
+                            name="date_butoire" 
+                            id="modify-date-butoire"
+                            min="{{ date('Y-m-d') }}"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
                     </div>
                     
                     <div>
@@ -530,12 +540,38 @@
         </div>
 
         <script>
-            function openModifyModal(reservationId, date, heure, lieu, notes) {
+            function openModifyModal(reservationId, date, heure, lieu, notes, isDateButoire) {
                 document.getElementById('modify-form').action = `/dashboard/reservation/${reservationId}/modify`;
-                document.getElementById('modify-date').value = date;
-                document.getElementById('modify-heure').value = heure;
+                document.getElementById('modify-date').value = date || '';
+                document.getElementById('modify-heure').value = heure || '09:00';
                 document.getElementById('modify-lieu').value = lieu || '';
                 document.getElementById('modify-notes').value = notes || '';
+                var dateHeureWrapper = document.getElementById('modify-date-heure-wrapper');
+                var dateButoireWrapper = document.getElementById('modify-date-butoire-wrapper');
+                var dateInput = document.getElementById('modify-date');
+                var heureInput = document.getElementById('modify-heure');
+                var dateButoireInput = document.getElementById('modify-date-butoire');
+                if (isDateButoire) {
+                    dateHeureWrapper.classList.add('hidden');
+                    dateButoireWrapper.classList.remove('hidden');
+                    dateInput.removeAttribute('required');
+                    heureInput.removeAttribute('required');
+                    dateInput.disabled = true;
+                    heureInput.disabled = true;
+                    dateButoireInput.disabled = false;
+                    dateButoireInput.setAttribute('required', 'required');
+                    dateButoireInput.value = date || '';
+                } else {
+                    dateHeureWrapper.classList.remove('hidden');
+                    dateButoireWrapper.classList.add('hidden');
+                    dateInput.setAttribute('required', 'required');
+                    heureInput.setAttribute('required', 'required');
+                    dateInput.disabled = false;
+                    heureInput.disabled = false;
+                    dateButoireInput.disabled = true;
+                    dateButoireInput.removeAttribute('required');
+                    dateButoireInput.value = '';
+                }
                 document.getElementById('modify-modal').classList.remove('hidden');
             }
 

@@ -704,27 +704,39 @@ class PublicController extends Controller
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
 
-        $validated = $request->validate([
+        // Vérifier que le type de service appartient à l'entreprise (avant validation conditionnelle)
+        $typeService = TypeService::where('id', $request->input('type_service_id'))
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_actif', true)
+            ->firstOrFail();
+
+        $isDateButoire = $typeService->estDateButoire();
+        $rules = [
             'type_service_id' => 'required|exists:types_services,id',
-            'date_reservation' => 'required|date|after:now',
-            'heure_reservation' => 'required|date_format:H:i',
             'membre_id' => 'nullable|exists:entreprise_membres,id',
             'lieu' => 'nullable|string|max:255',
             'telephone_client' => 'required|string|max:20',
             'telephone_cache' => 'boolean',
             'notes' => 'nullable|string',
-        ]);
+        ];
+        if ($isDateButoire) {
+            $rules['date_butoire'] = 'required|date|after_or_equal:today';
+        } else {
+            $rules['date_reservation'] = 'required|date|after:now';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+        }
+        $validated = $request->validate($rules);
 
-        // Vérifier que le type de service appartient à l'entreprise
-        $typeService = TypeService::where('id', $validated['type_service_id'])
-            ->where('entreprise_id', $entreprise->id)
-            ->where('est_actif', true)
-            ->firstOrFail();
-
-        // Combiner date et heure
-        $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
-        $debutReservation = \Carbon\Carbon::parse($dateTime);
-        $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
+        if ($isDateButoire) {
+            $dateButoire = $validated['date_butoire'];
+            $dateTime = $dateButoire . ' 00:00:00';
+            $debutReservation = \Carbon\Carbon::parse($dateTime);
+            $heureReservation = \Carbon\Carbon::parse('09:00'); // fictif pour sélection membre si besoin
+        } else {
+            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $debutReservation = \Carbon\Carbon::parse($dateTime);
+            $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
+        }
 
         // Vérifier si l'utilisateur est connecté
         $userId = Auth::id();
@@ -747,8 +759,8 @@ class PublicController extends Controller
             }
             
             $membreId = $membre->id;
-        } elseif ($entreprise->aGestionMultiPersonnes()) {
-            // Sélection automatique si multi-personnes et aucun membre spécifié
+        } elseif ($entreprise->aGestionMultiPersonnes() && !$isDateButoire) {
+            // Sélection automatique si multi-personnes et aucun membre spécifié (hors date butoire)
             $selectionService = app(\App\Services\MembreSelectionService::class);
             $membreSelectionne = $selectionService->selectionnerMembre(
                 $entreprise,
@@ -762,35 +774,31 @@ class PublicController extends Controller
             }
         }
 
-        // Vérifier si le créneau n'est pas déjà pris (y compris les réservations en attente)
-        $finReservation = $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes);
-        
-        $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
-            ->whereIn('statut', ['en_attente', 'confirmee']);
-        
-        // Si un membre est spécifié, vérifier seulement ses créneaux
-        if ($membreId) {
-            $queryReservations->where('membre_id', $membreId);
-        }
-        
-        $creneauDejaPris = $queryReservations->get()
-            ->filter(function($r) use ($debutReservation, $finReservation) {
-                $debutR = \Carbon\Carbon::parse($r->date_reservation);
-                $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
-                // Vérifier le chevauchement
-                return $debutReservation->lt($finR) && $finReservation->gt($debutR);
-            })
-            ->isNotEmpty();
-
-        if ($creneauDejaPris) {
-            return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
+        // Vérifier si le créneau n'est pas déjà pris (sauf pour date butoire : pas de blocage de créneau)
+        if (!$isDateButoire) {
+            $finReservation = $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes);
+            $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
+                ->whereIn('statut', ['en_attente', 'confirmee']);
+            if ($membreId) {
+                $queryReservations->where('membre_id', $membreId);
+            }
+            $creneauDejaPris = $queryReservations->get()
+                ->filter(function($r) use ($debutReservation, $finReservation) {
+                    $debutR = \Carbon\Carbon::parse($r->date_reservation);
+                    $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
+                    return $debutReservation->lt($finR) && $finReservation->gt($debutR);
+                })
+                ->isNotEmpty();
+            if ($creneauDejaPris) {
+                return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
+            }
         }
 
         // Déterminer le statut initial : confirmée si acceptation automatique activée, sinon en attente
         $statutInitial = $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente';
         
         // Créer la réservation
-        $reservation = Reservation::create([
+        $reservationData = [
             'user_id' => $userId,
             'entreprise_id' => $entreprise->id,
             'membre_id' => $membreId,
@@ -804,7 +812,11 @@ class PublicController extends Controller
             'duree_minutes' => $typeService->duree_minutes,
             'type_service' => $typeService->nom,
             'statut' => $statutInitial,
-        ]);
+        ];
+        if ($isDateButoire) {
+            $reservationData['date_butoire'] = $validated['date_butoire'];
+        }
+        $reservation = Reservation::create($reservationData);
 
         // Gérer les options sélectionnées
         if ($request->has('service_options')) {

@@ -96,10 +96,11 @@
                                             value="{{ $service->id }}" 
                                             data-duree="{{ $service->duree_minutes }}" 
                                             data-prix="{{ $service->prix }}"
+                                            data-type-structure="{{ $service->type_structure ?? 'ponctuel' }}"
                                             data-options="{{ base64_encode(json_encode($optionsData)) }}"
                                             {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}
                                         >
-                                            {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
+                                            {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ @if(($service->type_structure ?? '') === 'date_butoire') (date butoire) @else • {{ $service->duree_minutes }}min @endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -111,6 +112,15 @@
                             <!-- Conteneur dynamique pour les options du service (Mobile) -->
                             <div id="service-options-container-mobile" class="space-y-4 hidden">
                                 <!-- Rempli par JS -->
+                            </div>
+
+                            <!-- Date butoire (visible uniquement pour services à date butoire) -->
+                            <div id="date-butoire-wrapper-mobile" class="hidden">
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date butoire souhaitée</label>
+                                <input type="date" name="date_butoire" id="date_butoire_mobile" min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                @error('date_butoire')
+                                    <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <!-- Sélection de la personne (si multi-personnes) -->
@@ -140,34 +150,34 @@
                                 </div>
                             @endif
 
-                            <!-- Date et heure sélectionnées -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
-                                    <input 
-                                        type="date" 
-                                        name="date_reservation" 
-                                        id="date_reservation_mobile"
-                                        required
-                                        min="{{ date('Y-m-d') }}"
-                                        class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
-                                    >
-                                    @error('date_reservation')
-                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
-                                    <input 
-                                        type="time" 
-                                        name="heure_reservation" 
-                                        id="heure_reservation_mobile"
-                                        required
-                                        class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
-                                    >
-                                    @error('heure_reservation')
-                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
-                                    @enderror
+                            <!-- Date et heure sélectionnées (masqués pour service à date butoire) -->
+                            <div id="date-heure-wrapper-mobile">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                                        <input 
+                                            type="date" 
+                                            name="date_reservation" 
+                                            id="date_reservation_mobile"
+                                            min="{{ date('Y-m-d') }}"
+                                            class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        >
+                                        @error('date_reservation')
+                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
+                                        <input 
+                                            type="time" 
+                                            name="heure_reservation" 
+                                            id="heure_reservation_mobile"
+                                            class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        >
+                                        @error('heure_reservation')
+                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
 
@@ -454,10 +464,11 @@
                                                 value="{{ $service->id }}" 
                                                 data-duree="{{ $service->duree_minutes }}" 
                                                 data-prix="{{ $service->prix }}"
+                                                data-type-structure="{{ $service->type_structure ?? 'ponctuel' }}"
                                                 data-options="{{ base64_encode(json_encode($optionsData)) }}"
                                                 {{ request('service') == $service->id || request('service') == (string)$service->id ? 'selected' : '' }}
                                             >
-                                                {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ • {{ $service->duree_minutes }}min
+                                                {{ $service->nom }} • {{ number_format($service->prix, 0, ',', ' ') }}€ @if(($service->type_structure ?? '') === 'date_butoire') (date butoire) @else • {{ $service->duree_minutes }}min @endif
                                             </option>
                                         @endforeach
                                     </select>
@@ -469,6 +480,15 @@
                                 <!-- Conteneur dynamique pour les options du service -->
                                 <div id="service-options-container" class="space-y-4 hidden">
                                     <!-- Rempli par JS -->
+                                </div>
+
+                                <!-- Date butoire (visible uniquement pour services à date butoire) -->
+                                <div id="date-butoire-wrapper" class="hidden">
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date butoire souhaitée</label>
+                                    <input type="date" name="date_butoire" id="date_butoire" min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                    @error('date_butoire')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <!-- Sélection de la personne (si multi-personnes) -->
@@ -498,34 +518,34 @@
                                     </div>
                                 @endif
 
-                                <!-- Date et heure sélectionnées -->
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
-                                        <input 
-                                            type="date" 
-                                            name="date_reservation" 
-                                            id="date_reservation"
-                                            required
-                                            min="{{ date('Y-m-d') }}"
-                                            class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
-                                        >
-                                        @error('date_reservation')
-                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
-                                        <input 
-                                            type="time" 
-                                            name="heure_reservation" 
-                                            id="heure_reservation"
-                                            required
-                                            class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
-                                        >
-                                        @error('heure_reservation')
-                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
-                                        @enderror
+                                <!-- Date et heure sélectionnées (masqués pour service à date butoire) -->
+                                <div id="date-heure-wrapper">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                                            <input 
+                                                type="date" 
+                                                name="date_reservation" 
+                                                id="date_reservation"
+                                                min="{{ date('Y-m-d') }}"
+                                                class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                            >
+                                            @error('date_reservation')
+                                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Heure</label>
+                                            <input 
+                                                type="time" 
+                                                name="heure_reservation" 
+                                                id="heure_reservation"
+                                                class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                            >
+                                            @error('heure_reservation')
+                                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                            @enderror
+                                        </div>
                                     </div>
                                 </div>
 
@@ -668,6 +688,36 @@
             const recapContainerMobile = document.getElementById('recap-container-mobile');
             const serviceOptionsContainerMobile = document.getElementById('service-options-container-mobile');
 
+            // Afficher/masquer date butoire vs date+heure selon le type de service
+            function toggleDateButoireFields(selectElement) {
+                const isMobile = selectElement && selectElement.id.includes('mobile');
+                const select = selectElement || serviceSelect;
+                const opt = select && select.options[select.selectedIndex];
+                const isDateButoire = opt && (opt.dataset.typeStructure || 'ponctuel') === 'date_butoire';
+
+                const dateButoireWrapper = document.getElementById(isMobile ? 'date-butoire-wrapper-mobile' : 'date-butoire-wrapper');
+                const dateHeureWrapper = document.getElementById(isMobile ? 'date-heure-wrapper-mobile' : 'date-heure-wrapper');
+                const dateButoireInput = document.getElementById(isMobile ? 'date_butoire_mobile' : 'date_butoire');
+                const dateInput = document.getElementById(isMobile ? 'date_reservation_mobile' : 'date_reservation');
+                const heureInput = document.getElementById(isMobile ? 'heure_reservation_mobile' : 'heure_reservation');
+
+                if (!dateButoireWrapper || !dateHeureWrapper) return;
+
+                if (isDateButoire) {
+                    dateButoireWrapper.classList.remove('hidden');
+                    dateHeureWrapper.classList.add('hidden');
+                    if (dateButoireInput) { dateButoireInput.required = true; dateButoireInput.removeAttribute('disabled'); }
+                    if (dateInput) { dateInput.required = false; dateInput.setAttribute('disabled', 'disabled'); }
+                    if (heureInput) { heureInput.required = false; heureInput.setAttribute('disabled', 'disabled'); }
+                } else {
+                    dateButoireWrapper.classList.add('hidden');
+                    dateHeureWrapper.classList.remove('hidden');
+                    if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.setAttribute('disabled', 'disabled'); dateButoireInput.value = ''; }
+                    if (dateInput) { dateInput.required = true; dateInput.removeAttribute('disabled'); }
+                    if (heureInput) { heureInput.required = true; heureInput.removeAttribute('disabled'); }
+                }
+            }
+
             // Fonction de gestion du changement de service
             window.handleServiceChange = function(selectElement) {
                 const isMobile = selectElement.id.includes('mobile');
@@ -678,14 +728,17 @@
                 // Synchroniser l'autre selecteur
                 if (otherSelect && otherSelect.value !== selectElement.value) {
                     otherSelect.value = selectElement.value;
-                    // Déclencher le changement sur l'autre selecteur aussi pour mettre à jour son UI
-                    // Mais attention à la boucle infinie, on va juste mettre à jour l'UI manuellement
                     renderOptions(otherSelect, otherContainer);
                 }
 
                 renderOptions(selectElement, container);
+                toggleDateButoireFields(selectElement);
                 updateRecap();
             };
+
+            // État initial : afficher date butoire ou date+heure selon le service sélectionné
+            if (serviceSelect && serviceSelect.value) toggleDateButoireFields(serviceSelect);
+            if (serviceSelectMobile && serviceSelectMobile.value) toggleDateButoireFields(serviceSelectMobile);
 
             function renderOptions(selectElement, container) {
                 if (!container) return;

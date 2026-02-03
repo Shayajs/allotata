@@ -459,6 +459,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/m/{slug}/reservations/manuelle', [ReservationController::class, 'storeManuelle'])->name('reservations.store-manuelle');
     // Route {id} en dernier
     Route::get('/m/{slug}/reservations/{id}', [ReservationController::class, 'show'])->name('reservations.show');
+    Route::patch('/m/{slug}/reservations/{id}', [ReservationController::class, 'update'])->name('reservations.update');
     Route::post('/m/{slug}/reservations/{id}/start-conversation', [ReservationController::class, 'startConversation'])->name('reservations.start-conversation');
     Route::post('/m/{slug}/reservations/{id}/accept', [ReservationController::class, 'accept'])->name('reservations.accept');
     Route::post('/m/{slug}/reservations/{id}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');

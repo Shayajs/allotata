@@ -145,6 +145,14 @@ class TypeService extends Model
     }
 
     /**
+     * Vérifie si le service est à date butoire (jour demandé, pas de créneau)
+     */
+    public function estDateButoire(): bool
+    {
+        return $this->type_structure === 'date_butoire';
+    }
+
+    /**
      * Relation : Un type de service peut avoir plusieurs options
      */
     public function options(): HasMany

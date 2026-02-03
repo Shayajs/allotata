@@ -85,9 +85,19 @@ class AgendaController extends Controller
             ->with(['user', 'typeService', 'membre.user'])
             ->get()
             ->map(function($reservation) {
-                $debut = \Carbon\Carbon::parse($reservation->date_reservation);
-                $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
-                
+                $isDateButoire = $reservation->typeService && $reservation->typeService->estDateButoire();
+                $dateButoire = $reservation->date_butoire;
+
+                if ($isDateButoire && $dateButoire) {
+                    $debut = \Carbon\Carbon::parse($dateButoire)->startOfDay();
+                    $fin = $debut->copy()->endOfDay();
+                    $allDay = true;
+                } else {
+                    $debut = \Carbon\Carbon::parse($reservation->date_reservation);
+                    $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
+                    $allDay = false;
+                }
+
                 // Couleur selon le statut
                 $color = '#9ca3af'; // Gris par défaut
                 if ($reservation->statut === 'confirmee') {
@@ -99,37 +109,45 @@ class AgendaController extends Controller
                 } elseif ($reservation->statut === 'terminee') {
                     $color = '#6b7280'; // Gris foncé
                 }
-                
+
                 // Titre avec membre si assigné
                 $clientName = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
-                $title = ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
+                $title = ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) .
                          ' - ' . $clientName;
+                if ($isDateButoire) {
+                    $title .= ' (date butoire)';
+                }
                 if ($reservation->membre && $reservation->membre->user) {
                     $title .= ' [' . $reservation->membre->user->name . ']';
                 }
-                
-                return [
+
+                $extendedProps = [
+                    'hash' => $reservation->hash ?? null,
+                    'statut' => $reservation->statut,
+                    'client' => $clientName,
+                    'client_email' => $reservation->emailClientComplet ?? 'N/A',
+                    'prix' => $reservation->prix,
+                    'duree' => $reservation->duree_minutes,
+                    'lieu' => $reservation->lieu,
+                    'est_paye' => $reservation->est_paye,
+                    'telephone' => $reservation->telephone_client ?? $reservation->telephone_client_non_inscrit ?? null,
+                    'notes' => $reservation->notes,
+                    'type_service' => $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'N/A'),
+                    'membre' => $reservation->membre && $reservation->membre->user ? $reservation->membre->user->name : null,
+                    'creee_manuellement' => $reservation->creee_manuellement ?? false,
+                    'date_butoire' => $isDateButoire,
+                    'date_butoire_value' => $dateButoire ? \Carbon\Carbon::parse($dateButoire)->format('Y-m-d') : null,
+                ];
+
+                return array_filter([
                     'id' => $reservation->id,
                     'title' => $title,
                     'start' => $debut->toIso8601String(),
                     'end' => $fin->toIso8601String(),
+                    'allDay' => $allDay,
                     'color' => $color,
-                    'extendedProps' => [
-                        'hash' => $reservation->hash ?? null,
-                        'statut' => $reservation->statut,
-                        'client' => $clientName,
-                        'client_email' => $reservation->emailClientComplet ?? 'N/A',
-                        'prix' => $reservation->prix,
-                        'duree' => $reservation->duree_minutes,
-                        'lieu' => $reservation->lieu,
-                        'est_paye' => $reservation->est_paye,
-                        'telephone' => $reservation->telephone_client ?? $reservation->telephone_client_non_inscrit ?? null,
-                        'notes' => $reservation->notes,
-                        'type_service' => $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'N/A'),
-                        'membre' => $reservation->membre && $reservation->membre->user ? $reservation->membre->user->name : null,
-                        'creee_manuellement' => $reservation->creee_manuellement ?? false,
-                    ],
-                ];
+                    'extendedProps' => $extendedProps,
+                ]);
             });
 
         return response()->json($reservations);
@@ -514,7 +532,7 @@ class AgendaController extends Controller
             'description' => 'nullable|string',
             'duree_minutes' => 'required|integer|min:1',
             'prix' => 'required|numeric|min:0',
-            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous',
+            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire',
             'est_actif' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'options' => 'nullable|array',

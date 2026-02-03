@@ -7,17 +7,17 @@
 
     <!-- Conteneur Flex pour centrage -->
     <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-screen items-center justify-center p-4 text-center">
-            <!-- Contenu de la modal -->
-            <div class="modal-content relative w-full max-w-5xl transform overflow-hidden rounded-2xl text-left transition-all mx-auto" onclick="event.stopPropagation()">
+        <div class="flex min-h-screen items-center justify-center p-3 sm:p-4 text-center">
+            <!-- Contenu de la modal : scroll sur mobile -->
+            <div class="modal-content relative w-full max-w-5xl max-h-[90vh] overflow-y-auto transform rounded-2xl text-left transition-all mx-auto bg-white dark:bg-slate-800" onclick="event.stopPropagation()">
             <div class="grid grid-cols-1 lg:grid-cols-2">
-                <!-- Colonne gauche : Formulaire -->
-                <div class="p-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-2xl font-bold text-slate-900 dark:text-white" id="modal-title">
+                <!-- Colonne gauche : Formulaire (ordre 1 sur mobile, après les images en lg on garde l'ordre logique) -->
+                <div class="p-4 sm:p-6 lg:p-8 order-1">
+                    <div class="flex items-center justify-between mb-4 sm:mb-6">
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white" id="modal-title">
                             Ajouter un service
                         </h3>
-                        <button type="button" onclick="document.getElementById('modal-service').classList.add('hidden')" class="text-slate-400 hover:text-slate-500">
+                        <button type="button" onclick="document.getElementById('modal-service').classList.add('hidden')" class="p-2 -m-2 text-slate-400 hover:text-slate-500 touch-manipulation" aria-label="Fermer">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -36,7 +36,7 @@
                                     name="nom" 
                                     id="service_nom"
                                     required
-                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     placeholder="Ex: Coupe homme"
                                 >
                             </div>
@@ -46,7 +46,7 @@
                                     name="description" 
                                     id="service_description"
                                     rows="3"
-                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors resize-none"
+                                    class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors resize-none"
                                 ></textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
@@ -59,7 +59,7 @@
                                         required
                                         min="1"
                                         value="30"
-                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
                                 </div>
                                 <div>
@@ -72,7 +72,7 @@
                                         min="0"
                                         step="0.01"
                                         value="25"
-                                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                        class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
                                 </div>
                             </div>
@@ -83,17 +83,19 @@
                                     name="type_structure" 
                                     id="service_type_structure"
                                     required
-                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                    class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     onchange="toggleStructureFields()"
                                 >
                                     <option value="ponctuel">Ponctuel (quelques heures dans une journée)</option>
                                     <option value="multi_jours">Multi-jours (s'étend sur plusieurs jours)</option>
                                     <option value="multi_rendez_vous">Multi-rendez-vous (plusieurs rendez-vous liés)</option>
+                                    <option value="date_butoire">À date butoire (jour demandé, pas de créneau)</option>
                                 </select>
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     <span id="structure-help-ponctuel" class="structure-help">Service classique qui prend du temps dans une journée (ex: coiffure, massage)</span>
                                     <span id="structure-help-multi_jours" class="structure-help hidden">Service qui s'étend sur plusieurs jours (ex: photographie de mariage, tournage)</span>
                                     <span id="structure-help-multi_rendez_vous" class="structure-help hidden">Service avec plusieurs rendez-vous pour la même commande (ex: création de site web, suivi personnalisé)</span>
+                                    <span id="structure-help-date_butoire" class="structure-help hidden">Le client choisit une date butoire ; l'entreprise gère la préparation et peut proposer une autre date si besoin.</span>
                                 </p>
                             </div>
                             
@@ -108,7 +110,7 @@
                                     id="service_images"
                                     multiple
                                     accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                                    class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400 transition-colors"
+                                    class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400 transition-colors"
                                 >
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Sélectionnez une ou plusieurs images à ajouter</p>
                             </div>
@@ -158,19 +160,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex gap-3 mt-6">
-                            <button type="button" onclick="document.getElementById('modal-service').classList.add('hidden')" class="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition">
+                        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                            <button type="button" onclick="document.getElementById('modal-service').classList.add('hidden')" class="w-full sm:flex-1 px-4 py-2.5 sm:py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl transition touch-manipulation">
                                 Annuler
                             </button>
-                            <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
+                            <button type="submit" class="w-full sm:flex-1 px-4 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl touch-manipulation">
                                 Enregistrer
                             </button>
                         </div>
                     </form>
                 </div>
                 
-                <!-- Colonne droite : Gestion des images -->
-                <div class="lg:col-span-1 border-l border-slate-200 dark:border-slate-700 p-8 overflow-y-auto max-h-[80vh]">
+                <!-- Colonne droite : Gestion des images (après formulaire sur mobile) -->
+                <div class="lg:col-span-1 order-2 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8 overflow-y-auto lg:max-h-[80vh]">
                     <div class="sticky top-0 bg-white dark:bg-slate-800 pb-4 mb-4 border-b border-slate-200 dark:border-slate-700 z-10">
                         <h4 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Images du service</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Cliquez sur une image pour la définir comme couverture</p>

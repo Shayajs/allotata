@@ -20,6 +20,7 @@ class Reservation extends Model
         'membre_id',
         'date_reservation',
         'date_fin',
+        'date_butoire',
         'lieu',
         'telephone_client',
         'telephone_cache',
@@ -43,6 +44,7 @@ class Reservation extends Model
         return [
             'date_reservation' => 'datetime',
             'date_fin' => 'datetime',
+            'date_butoire' => 'date',
             'date_paiement' => 'datetime',
             'prix' => 'decimal:2',
             'est_paye' => 'boolean',
@@ -147,6 +149,14 @@ class Reservation extends Model
     public function estPonctuel(): bool
     {
         return !$this->typeService || $this->typeService->type_structure === 'ponctuel';
+    }
+
+    /**
+     * Vérifie si la réservation est à date butoire (jour demandé, pas de créneau)
+     */
+    public function estDateButoire(): bool
+    {
+        return $this->typeService && $this->typeService->type_structure === 'date_butoire';
     }
 
     /**

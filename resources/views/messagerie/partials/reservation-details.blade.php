@@ -27,6 +27,14 @@
                 @endif
             </div>
 
+            @if($reservation->date_butoire && $reservation->typeService && $reservation->typeService->estDateButoire())
+                <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Date butoire</p>
+                    <p class="font-bold text-slate-900 dark:text-white">
+                        {{ \Carbon\Carbon::parse($reservation->date_butoire)->format('d/m/Y') }}
+                    </p>
+                </div>
+            @else
             <div class="grid grid-cols-2 gap-3">
                 <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                     <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Date</p>
@@ -41,14 +49,17 @@
                     </p>
                 </div>
             </div>
+            @endif
 
             <div class="grid grid-cols-2 gap-3">
+                @if(!$reservation->date_butoire || !$reservation->typeService || !$reservation->typeService->estDateButoire())
                 <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                     <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Durée</p>
                     <p class="font-bold text-slate-900 dark:text-white">
                         {{ $reservation->duree_minutes ?? 30 }} min
                     </p>
                 </div>
+                @endif
                 <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                     <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Prix</p>
                     <p class="font-bold text-green-600 dark:text-green-400">
@@ -107,7 +118,30 @@
             </div>
         @endif
 
-        <!-- Actions de modification -->
+        <!-- Modifier la réservation (en attente : lien direct vers édition) -->
+        @if($reservation->statut === 'en_attente')
+            <div class="space-y-3 mb-4">
+                @if($isGerant)
+                    <a href="{{ route('reservations.show', [$entreprise->slug, $reservation->id]) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-xl transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Modifier la réservation
+                    </a>
+                @else
+                    <a href="{{ route('dashboard') }}#reservations" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-xl transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Modifier la réservation
+                    </a>
+                @endif
+            </div>
+        @else
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Réservation acceptée. Pour toute modification, contactez directement l'entreprise.</p>
+        @endif
+
+        <!-- Proposition de modification (chat) -->
         @if($reservation->statut === 'en_attente' && $canModify)
             <div class="space-y-3">
                 @if($hasActiveProposition)
@@ -118,7 +152,7 @@
                     </div>
                 @endif
                 <button 
-                    onclick="openModifyPropositionModal({{ $reservation->id }}, '{{ $reservation->date_reservation->format('Y-m-d') }}', '{{ $reservation->date_reservation->format('H:i') }}', {{ $reservation->duree_minutes ?? 30 }}, {{ number_format($reservation->prix, 2, '.', '') }}, {!! json_encode($reservation->lieu ?? '') !!}, {!! json_encode($reservation->notes ?? '') !!}, {{ $isGerant ? 'true' : 'false' }}, {{ $reservation->type_service_id ?? 'null' }})"
+                    onclick="openModifyPropositionModal({{ $reservation->id }}, '{{ ($reservation->date_butoire ? \Carbon\Carbon::parse($reservation->date_butoire)->format('Y-m-d') : $reservation->date_reservation->format('Y-m-d')) }}', '{{ $reservation->date_butoire ? '09:00' : $reservation->date_reservation->format('H:i') }}', {{ $reservation->duree_minutes ?? 30 }}, {{ number_format($reservation->prix, 2, '.', '') }}, {!! json_encode($reservation->lieu ?? '') !!}, {!! json_encode($reservation->notes ?? '') !!}, {{ $isGerant ? 'true' : 'false' }}, {{ $reservation->type_service_id ?? 'null' }})"
                     class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
