@@ -95,9 +95,10 @@ class ReservationController extends Controller
     public function show($slug, $id)
     {
         $user = Auth::user();
-        $entreprise = Entreprise::where('slug', $slug)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
@@ -329,6 +330,78 @@ class ReservationController extends Controller
 
         return redirect()->route('reservations.show', [$slug, $id])
             ->with('success', 'Les notes ont été ajoutées avec succès.');
+    }
+
+    /**
+     * Modifier une réservation (côté entreprise) — uniquement si statut en_attente
+     */
+    public function update(Request $request, $slug, $id)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $reservation = Reservation::where('id', $id)
+            ->where('entreprise_id', $entreprise->id)
+            ->with('typeService')
+            ->firstOrFail();
+
+        if ($reservation->statut !== 'en_attente') {
+            return redirect()->route('reservations.show', [$slug, $id])
+                ->with('error', 'Seules les réservations en attente peuvent être modifiées. Une fois acceptée, contactez le client pour toute modification.');
+        }
+
+        $isDateButoire = $reservation->typeService && $reservation->typeService->estDateButoire();
+        $rules = [
+            'lieu' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ];
+        if ($isDateButoire) {
+            $rules['date_butoire'] = 'required|date|after_or_equal:today';
+        } else {
+            $rules['date_reservation'] = 'required|date|after:now';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+        }
+        if ($entreprise->prix_negociables ?? false) {
+            $rules['prix'] = 'required|numeric|min:0';
+        }
+        $validated = $request->validate($rules);
+
+        if ($isDateButoire) {
+            $reservation->update([
+                'date_butoire' => $validated['date_butoire'],
+                'date_reservation' => $validated['date_butoire'] . ' 00:00:00',
+                'lieu' => $validated['lieu'] ?? null,
+                'notes' => $validated['notes'] ?? $reservation->notes,
+            ]);
+        } else {
+            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $reservation->update([
+                'date_reservation' => $dateTime,
+                'lieu' => $validated['lieu'] ?? null,
+                'notes' => $validated['notes'] ?? $reservation->notes,
+            ]);
+        }
+        if (isset($validated['prix'])) {
+            $reservation->update(['prix' => $validated['prix']]);
+        }
+
+        if ($reservation->user_id) {
+            Notification::creer(
+                $reservation->user_id,
+                'reservation',
+                'Réservation modifiée',
+                "L'entreprise {$entreprise->nom} a modifié les informations de votre réservation.",
+                route('dashboard'),
+                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+            );
+        }
+
+        return redirect()->route('reservations.show', [$slug, $id])
+            ->with('success', 'La réservation a été mise à jour.');
     }
 
     /**

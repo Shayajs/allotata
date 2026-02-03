@@ -743,13 +743,14 @@
                 dayColumn.innerHTML = `<div class="h-full min-h-[120px] flex items-center justify-center rounded-xl bg-green-50 dark:bg-green-900/10 border-2 border-dashed border-green-200 dark:border-green-800"><span class="text-xs text-green-500 font-medium">Libre</span></div>`;
             } else {
                 dayReservations.forEach(res => {
-                    const time = new Date(res.start).toTimeString().substring(0, 5);
+                    const isDateButoire = res.extendedProps?.date_butoire === true;
+                    const timeLabel = isDateButoire ? 'Date butoire' : new Date(res.start).toTimeString().substring(0, 5);
                     const colorClass = statutColors[res.extendedProps?.statut] || statutColors['en_attente'];
                     
                     const resEl = document.createElement('button');
                     resEl.type = 'button';
                     resEl.className = `w-full p-2 text-left rounded-lg border-l-4 ${colorClass} hover:shadow-md transition-all cursor-pointer`;
-                    resEl.innerHTML = `<div class="text-xs font-bold">${time}</div><div class="text-xs truncate">${res.title}</div>`;
+                    resEl.innerHTML = `<div class="text-xs font-bold">${timeLabel}</div><div class="text-xs truncate">${res.title}</div>`;
                     resEl.onclick = () => showReservationDetails(res);
                     dayColumn.appendChild(resEl);
                 });
@@ -762,10 +763,17 @@
     function showReservationDetails(res) {
         const props = res.extendedProps || {};
         const startTime = new Date(res.start);
-        // Utiliser le hash complet pour les liens web (emails, etc.)
-        // L'alias court est uniquement pour les SMS
-        const reservationHash = res.extendedProps?.hash || res.hash;
+        const isDateButoire = props.date_butoire === true;
+        const reservationHash = props.hash || res.hash;
         const reservationUrl = reservationHash ? `/r/${reservationHash}` : `/r/${res.id}`;
+        
+        const dateHeureHtml = isDateButoire
+            ? `<div><span class="text-xs text-slate-500 uppercase">Date butoire</span><p class="font-semibold text-slate-900 dark:text-white">${props.date_butoire_value ? new Date(props.date_butoire_value + 'T12:00:00').toLocaleDateString('fr-FR') : startTime.toLocaleDateString('fr-FR')}</p></div>`
+            : `<div class="grid grid-cols-2 gap-4">
+                    <div><span class="text-xs text-slate-500 uppercase">Date</span><p class="font-semibold text-slate-900 dark:text-white">${startTime.toLocaleDateString('fr-FR')}</p></div>
+                    <div><span class="text-xs text-slate-500 uppercase">Heure</span><p class="font-semibold text-slate-900 dark:text-white">${startTime.toTimeString().substring(0, 5)}</p></div>
+                </div>`;
+        const dureeHtml = isDateButoire ? '' : `<div><span class="text-xs text-slate-500 uppercase">Durée</span><p class="font-semibold text-slate-900 dark:text-white">${props.duree || '-'} min</p></div>`;
         
         document.getElementById('reservation-details').innerHTML = `
             <div class="p-4 rounded-xl ${statutColors[props.statut] || 'bg-slate-100 dark:bg-slate-700'}">
@@ -773,12 +781,9 @@
             </div>
             <div class="space-y-3">
                 <div><span class="text-xs text-slate-500 uppercase">Service</span><p class="font-semibold text-slate-900 dark:text-white">${props.type_service || res.title}</p></div>
+                ${dateHeureHtml}
                 <div class="grid grid-cols-2 gap-4">
-                    <div><span class="text-xs text-slate-500 uppercase">Date</span><p class="font-semibold text-slate-900 dark:text-white">${startTime.toLocaleDateString('fr-FR')}</p></div>
-                    <div><span class="text-xs text-slate-500 uppercase">Heure</span><p class="font-semibold text-slate-900 dark:text-white">${startTime.toTimeString().substring(0, 5)}</p></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><span class="text-xs text-slate-500 uppercase">Durée</span><p class="font-semibold text-slate-900 dark:text-white">${props.duree || '-'} min</p></div>
+                    ${dureeHtml}
                     <div><span class="text-xs text-slate-500 uppercase">Prix</span><p class="font-semibold text-green-600">${props.prix || '-'} €</p></div>
                 </div>
                 <div><span class="text-xs text-slate-500 uppercase">Client</span><p class="font-semibold text-slate-900 dark:text-white">${props.client || '-'}</p><p class="text-sm text-slate-600">${props.client_email || ''}</p>                ${props.telephone ? `<p class="text-sm text-slate-600 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> ${props.telephone}</p>` : ''}</div>

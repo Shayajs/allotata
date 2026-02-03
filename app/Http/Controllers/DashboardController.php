@@ -336,36 +336,53 @@ class DashboardController extends Controller
 
         // Vérifier que la réservation peut être modifiée (seulement en attente)
         if ($reservation->statut !== 'en_attente') {
-            return back()->withErrors(['error' => 'Seules les réservations en attente peuvent être modifiées.']);
+            return back()->withErrors(['error' => 'Seules les réservations en attente peuvent être modifiées. Une fois acceptée, contactez l\'entreprise pour toute modification.']);
         }
 
-        $validated = $request->validate([
-            'date_reservation' => ['required', 'date', 'after:now'],
-            'heure_reservation' => ['required', 'date_format:H:i'],
-            'lieu' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $reservation->load('typeService');
+        $isDateButoire = $reservation->typeService && $reservation->typeService->estDateButoire();
 
-        // Combiner date et heure
-        $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
-        $dateReservation = \Carbon\Carbon::parse($dateTime);
+        if ($isDateButoire) {
+            $validated = $request->validate([
+                'date_butoire' => ['required', 'date', 'after_or_equal:today'],
+                'lieu' => ['nullable', 'string', 'max:255'],
+                'notes' => ['nullable', 'string'],
+            ]);
+            $dateButoire = $validated['date_butoire'];
+            $dateReservation = \Carbon\Carbon::parse($dateButoire . ' 00:00:00');
+            $ancienneDate = $reservation->date_butoire ? \Carbon\Carbon::parse($reservation->date_butoire)->format('d/m/Y') : $reservation->date_reservation->format('d/m/Y');
+        } else {
+            $validated = $request->validate([
+                'date_reservation' => ['required', 'date', 'after:now'],
+                'heure_reservation' => ['required', 'date_format:H:i'],
+                'lieu' => ['nullable', 'string', 'max:255'],
+                'notes' => ['nullable', 'string'],
+            ]);
+            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $dateReservation = \Carbon\Carbon::parse($dateTime);
+            $ancienneDate = $reservation->date_reservation->format('d/m/Y à H:i');
+        }
 
-        // Sauvegarder les anciennes valeurs pour la notification
-        $ancienneDate = $reservation->date_reservation->format('d/m/Y à H:i');
         $ancienLieu = $reservation->lieu;
         $anciennesNotes = $reservation->notes;
 
-        // Mettre à jour la réservation
-        $reservation->update([
-            'date_reservation' => $dateReservation,
+        $updateData = [
             'lieu' => $validated['lieu'] ?? null,
             'notes' => $validated['notes'] ?? null,
-        ]);
+        ];
+        if ($isDateButoire) {
+            $updateData['date_butoire'] = $validated['date_butoire'];
+            $updateData['date_reservation'] = $dateReservation;
+        } else {
+            $updateData['date_reservation'] = $dateReservation;
+        }
+        $reservation->update($updateData);
 
         // Construire le message de notification
         $changements = [];
-        if ($ancienneDate !== $dateReservation->format('d/m/Y à H:i')) {
-            $changements[] = "Date/heure : {$ancienneDate} → {$dateReservation->format('d/m/Y à H:i')}";
+        $newDateLabel = $isDateButoire ? $dateReservation->format('d/m/Y') : $dateReservation->format('d/m/Y à H:i');
+        if ($ancienneDate !== $newDateLabel) {
+            $changements[] = $isDateButoire ? "Date butoire : {$ancienneDate} → {$newDateLabel}" : "Date/heure : {$ancienneDate} → {$newDateLabel}";
         }
         if ($ancienLieu !== ($validated['lieu'] ?? null)) {
             $changements[] = "Lieu modifié";

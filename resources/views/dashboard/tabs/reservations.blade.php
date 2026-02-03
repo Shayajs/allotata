@@ -194,8 +194,13 @@
                             @if(in_array($reservation->statut, ['en_attente', 'confirmee']) && !request('passees'))
                                 <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2">
                                     @if($reservation->statut === 'en_attente')
+                                        @php
+                                            $isDateButoireRes = $reservation->typeService && $reservation->typeService->estDateButoire();
+                                            $modifyDate = $isDateButoireRes && $reservation->date_butoire ? \Carbon\Carbon::parse($reservation->date_butoire)->format('Y-m-d') : $reservation->date_reservation->format('Y-m-d');
+                                            $modifyHeure = $isDateButoireRes ? '09:00' : $reservation->date_reservation->format('H:i');
+                                        @endphp
                                         <button 
-                                            onclick="openModifyModal({{ $reservation->id }}, '{{ $reservation->date_reservation->format('Y-m-d') }}', '{{ $reservation->date_reservation->format('H:i') }}', '{{ addslashes($reservation->lieu ?? '') }}', '{{ addslashes($reservation->notes ?? '') }}')"
+                                            onclick="openModifyModal({{ $reservation->id }}, '{{ $modifyDate }}', '{{ $modifyHeure }}', {{ json_encode($reservation->lieu ?? '') }}, {{ json_encode($reservation->notes ?? '') }}, {{ $isDateButoireRes ? 'true' : 'false' }})"
                                             class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
                                         >
                                             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
