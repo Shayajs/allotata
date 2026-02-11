@@ -53,7 +53,8 @@ class CalculMontantDuService
             }
             if ($scopeType === Echeance::TYPE_SITE_WEB) {
                 $sub = $entreprise->abonnements()->where('type', 'site_web')->first();
-                if ($isNewSubscription || ($sub && $sub->estActif())) {
+                // Inclure le tarif si : checkout initial, OU abonnement pas encore créé, OU abonnement actif
+                if ($isNewSubscription || !$sub || ($sub && $sub->estActif())) {
                     $tarif = self::tarifPourEntreprise($entreprise, 'site_web');
                     $lignes[] = [
                         'label' => 'Site Web – ' . $entreprise->nom,
@@ -67,7 +68,8 @@ class CalculMontantDuService
                 }
             } elseif ($scopeType === Echeance::TYPE_MULTI_PERSONNES) {
                 $sub = $entreprise->abonnements()->where('type', 'multi_personnes')->first();
-                if ($isNewSubscription || ($sub && $sub->estActif())) {
+                // Inclure le tarif si : checkout initial, OU abonnement pas encore créé, OU abonnement actif
+                if ($isNewSubscription || !$sub || ($sub && $sub->estActif())) {
                     $tarif = self::tarifPourEntreprise($entreprise, 'multi_personnes');
                     $lignes[] = [
                         'label' => 'Multi-Personnes – ' . $entreprise->nom,

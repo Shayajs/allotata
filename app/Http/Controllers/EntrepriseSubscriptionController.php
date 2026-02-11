@@ -179,8 +179,8 @@ class EntrepriseSubscriptionController extends Controller
 
         // Créer une échéance pour ce mois (Tarifs + CustomPrice), puis rediriger vers /checkout.
         $owner = $entreprise->user;
-        $debut = Carbon::now()->startOfMonth();
-        $fin = Carbon::now()->endOfMonth();
+        $debut = Carbon::now()->startOfMonth()->startOfDay();
+        $fin = Carbon::now()->endOfMonth()->startOfDay();
         $jour = $owner->jour_facturation ?? 1;
 
         $tmp = new Echeance([

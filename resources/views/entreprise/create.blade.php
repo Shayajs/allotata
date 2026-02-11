@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Créer une entreprise - Allo Tata</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -35,6 +36,8 @@
         </nav>
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {{-- Wrapper du formulaire (sera animé en sortie) --}}
+            <div id="create-form-wrapper" class="transition-all duration-500 ease-in-out">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                     Créer votre entreprise
@@ -44,13 +47,16 @@
                 </p>
             </div>
 
+            {{-- Erreurs AJAX (conteneur dynamique) --}}
+            <div id="ajax-errors" class="hidden mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"></div>
+
             @if(session('success'))
                 <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
                 </div>
             @endif
 
-            <form action="{{ route('entreprise.store') }}" method="POST" enctype="multipart/form-data" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
+            <form id="create-form" action="{{ route('entreprise.store') }}" method="POST" enctype="multipart/form-data" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
                 @csrf
 
                 <!-- Section Identité -->
@@ -466,6 +472,91 @@
                     </a>
                 </div>
             </form>
+            </div>{{-- /create-form-wrapper --}}
+
+            {{-- ============================================================ --}}
+            {{-- Panneau upsell abonnement (caché, apparaît après création)   --}}
+            {{-- ============================================================ --}}
+            @php
+                $defaultPrice = \App\Models\Tarif::displayForUser(Auth::user(), 'default');
+            @endphp
+            <div id="upsell-panel" class="hidden opacity-0 translate-y-4 transition-all duration-500 ease-in-out">
+                {{-- Succès --}}
+                <div class="mb-8 text-center">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-5">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                        Entreprise cr&eacute;&eacute;e avec succ&egrave;s !
+                    </h1>
+                    <p id="upsell-entreprise-name" class="text-lg text-slate-600 dark:text-slate-400"></p>
+                </div>
+
+                {{-- Carte abonnement --}}
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+                    <div class="bg-gradient-to-r from-green-600 to-green-500 px-6 py-5">
+                        <h2 class="text-xl font-bold text-white">Activez votre abonnement Premium</h2>
+                        <p class="text-green-100 text-sm mt-1">Pour que vos entreprises soient visibles publiquement</p>
+                    </div>
+                    <div class="p-6 sm:p-8">
+                        <div class="flex items-baseline justify-center gap-2 mb-6">
+                            @if($defaultPrice['amount'] > 0)
+                                <span class="text-5xl font-bold text-green-600 dark:text-green-400">{{ $defaultPrice['formatted'] }}</span>
+                            @else
+                                <span class="text-5xl font-bold text-green-600 dark:text-green-400">&ndash;</span>
+                            @endif
+                            <span class="text-xl text-slate-500 dark:text-slate-400">/mois</span>
+                        </div>
+
+                        <ul class="space-y-3 mb-8 max-w-md mx-auto">
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="text-slate-700 dark:text-slate-300">Vos entreprises visibles sur la plateforme</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="text-slate-700 dark:text-slate-300">R&eacute;servations en ligne pour vos clients</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="text-slate-700 dark:text-slate-300">Gestion compl&egrave;te de votre activit&eacute;</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span class="text-slate-700 dark:text-slate-300">Sans engagement &ndash; annulation &agrave; tout moment</span>
+                            </li>
+                        </ul>
+
+                        {{-- Bouton souscrire --}}
+                        <form action="{{ route('subscription.checkout') }}" method="POST" class="mb-4">
+                            @csrf
+                            <button type="submit" class="w-full min-h-[52px] px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.01] touch-manipulation">
+                                @if($defaultPrice['amount'] > 0)
+                                    Souscrire maintenant ({{ $defaultPrice['formatted'] }}/mois)
+                                @else
+                                    Souscrire maintenant
+                                @endif
+                            </button>
+                        </form>
+
+                        {{-- Bouton "Plus tard" --}}
+                        <a id="upsell-skip-btn" href="{{ route('dashboard') }}" class="block w-full text-center min-h-[44px] px-6 py-3 border-2 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all touch-manipulation">
+                            Plus tard, configurer mon entreprise
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Avertissement --}}
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-center">
+                    <p class="text-sm text-amber-800 dark:text-amber-400">
+                        Sans abonnement actif, vos entreprises ne seront pas visibles publiquement.
+                        Vous pouvez souscrire &agrave; tout moment depuis
+                        <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="underline font-medium hover:text-amber-900 dark:hover:text-amber-300">la section abonnement</a>.
+                    </p>
+                </div>
+            </div>{{-- /upsell-panel --}}
         </div>
 
         <script>
@@ -485,6 +576,166 @@
                     document.getElementById('logo-preview').classList.add('hidden');
                 }
             });
+
+            // ============================================================
+            // AJAX submit + transition animée vers upsell abonnement
+            // ============================================================
+            (function() {
+                const form = document.getElementById('create-form');
+                const formWrapper = document.getElementById('create-form-wrapper');
+                const upsellPanel = document.getElementById('upsell-panel');
+                const ajaxErrors = document.getElementById('ajax-errors');
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                if (!form || !formWrapper || !upsellPanel) return;
+
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    // Trouver le bouton submit
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const originalText = submitBtn ? submitBtn.textContent.trim() : '';
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<svg class="animate-spin inline-block w-5 h-5 mr-2 -mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Cr\u00e9ation en cours\u2026';
+                    }
+
+                    // Nettoyer les erreurs précédentes
+                    clearErrors();
+
+                    try {
+                        const formData = new FormData(form);
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: formData,
+                        });
+
+                        const data = await res.json().catch(() => null);
+
+                        if (res.status === 422 && data && data.errors) {
+                            // Erreurs de validation : les afficher
+                            showValidationErrors(data.errors);
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = originalText;
+                            }
+                            return;
+                        }
+
+                        if (!res.ok || !data || !data.success) {
+                            const msg = data?.message || data?.error || 'Une erreur est survenue. Veuillez r\u00e9essayer.';
+                            showGlobalError(msg);
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = originalText;
+                            }
+                            return;
+                        }
+
+                        // Succès !
+                        if (!data.show_subscription) {
+                            // Déjà abonné → redirect direct
+                            window.location.href = data.redirect || '{{ route("dashboard") }}';
+                            return;
+                        }
+
+                        // Mettre à jour le panneau upsell avec les données
+                        const nameEl = document.getElementById('upsell-entreprise-name');
+                        if (nameEl && data.entreprise_nom) {
+                            nameEl.textContent = '\u00ab\u00a0' + data.entreprise_nom + '\u00a0\u00bb est pr\u00eate\u00a0!';
+                        }
+
+                        // Mettre à jour le lien "Plus tard" vers le dashboard de l'entreprise
+                        const skipBtn = document.getElementById('upsell-skip-btn');
+                        if (skipBtn && data.redirect) {
+                            skipBtn.href = data.redirect;
+                        }
+
+                        // Animation : sortie du formulaire
+                        formWrapper.classList.add('opacity-0', '-translate-y-4');
+
+                        setTimeout(function() {
+                            formWrapper.classList.add('hidden');
+
+                            // Animation : entrée du panneau upsell
+                            upsellPanel.classList.remove('hidden');
+                            // Force reflow pour que la transition se déclenche
+                            void upsellPanel.offsetHeight;
+                            upsellPanel.classList.remove('opacity-0', 'translate-y-4');
+                            upsellPanel.classList.add('opacity-100', 'translate-y-0');
+
+                            // Scroll vers le haut
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 500);
+
+                    } catch (err) {
+                        showGlobalError('Erreur r\u00e9seau. V\u00e9rifiez votre connexion et r\u00e9essayez.');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                        }
+                    }
+                });
+
+                /**
+                 * Afficher les erreurs de validation sous chaque champ + en bloc global
+                 */
+                function showValidationErrors(errors) {
+                    // Supprimer les anciennes erreurs dynamiques
+                    form.querySelectorAll('.js-field-error').forEach(el => el.remove());
+
+                    const messages = [];
+
+                    for (const [field, fieldErrors] of Object.entries(errors)) {
+                        const errorTexts = Array.isArray(fieldErrors) ? fieldErrors : [fieldErrors];
+                        messages.push(...errorTexts);
+
+                        // Trouver le champ par name
+                        const input = form.querySelector('[name="' + field + '"]');
+                        if (input) {
+                            // Ajouter le style erreur
+                            input.classList.add('border-red-500', 'dark:border-red-500');
+
+                            // Ajouter le message sous le champ
+                            const errorP = document.createElement('p');
+                            errorP.className = 'js-field-error mt-1 text-sm text-red-600 dark:text-red-400';
+                            errorP.textContent = errorTexts[0];
+                            input.closest('div')?.appendChild(errorP);
+                        }
+                    }
+
+                    // Afficher le bloc global
+                    if (messages.length > 0) {
+                        showGlobalError(messages.join('<br>'));
+                        // Scroller vers le haut pour voir les erreurs
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+
+                /**
+                 * Afficher une erreur globale
+                 */
+                function showGlobalError(html) {
+                    ajaxErrors.innerHTML = '<p class="text-red-800 dark:text-red-400 font-medium">' + html + '</p>';
+                    ajaxErrors.classList.remove('hidden');
+                }
+
+                /**
+                 * Supprimer toutes les erreurs
+                 */
+                function clearErrors() {
+                    ajaxErrors.innerHTML = '';
+                    ajaxErrors.classList.add('hidden');
+                    form.querySelectorAll('.js-field-error').forEach(el => el.remove());
+                    form.querySelectorAll('.border-red-500').forEach(el => {
+                        el.classList.remove('border-red-500', 'dark:border-red-500');
+                    });
+                }
+            })();
         </script>
     </body>
 </html>

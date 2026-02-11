@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
+use App\Models\Tarif;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,6 +100,25 @@ class EntrepriseController extends Controller
         $user = Auth::user();
         if (!$user->est_gerant) {
             $user->update(['est_gerant' => true]);
+        }
+
+        // Réponse AJAX : proposer l'abonnement si l'utilisateur n'en a pas
+        if ($request->expectsJson() || $request->wantsJson()) {
+            $showSubscription = !$user->aAbonnementActif();
+            $data = [
+                'success' => true,
+                'entreprise_slug' => $entreprise->slug,
+                'entreprise_nom' => $entreprise->nom,
+                'redirect' => route('entreprise.dashboard', ['slug' => $entreprise->slug]),
+                'show_subscription' => $showSubscription,
+            ];
+
+            if ($showSubscription) {
+                $price = Tarif::displayForUser($user, 'default');
+                $data['price'] = $price;
+            }
+
+            return response()->json($data);
         }
 
         return redirect()->route('dashboard')
