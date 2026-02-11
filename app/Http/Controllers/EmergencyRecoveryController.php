@@ -75,10 +75,13 @@ class EmergencyRecoveryController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'is_admin' => true,
                 'est_client' => true,
                 'email_verified_at' => now(), // Auto-vérifier pour l'urgence
             ]);
+
+            // is_admin hors du $fillable : assignation explicite
+            $user->is_admin = true;
+            $user->save();
 
             // Logger l'action critique
             Log::critical("EMERGENCY RECOVERY: Nouveau compte admin créé", [
@@ -126,7 +129,8 @@ class EmergencyRecoveryController extends Controller
                     ->with('info', "{$user->name} est déjà administrateur.");
             }
 
-            $user->update(['is_admin' => true]);
+            $user->is_admin = true;
+            $user->save();
 
             // Logger l'action critique
             Log::critical("EMERGENCY RECOVERY: Utilisateur promu admin", [

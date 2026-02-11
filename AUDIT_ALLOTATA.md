@@ -642,11 +642,11 @@ Le module Brightshell utilise 716 lignes de CSS custom avec variables CSS au lie
 ## RÉSUMÉ DES PRIORITÉS
 
 ### 🔴 Actions immédiates (avant toute mise en production)
-1. Supprimer/sécuriser TempAdminController
-2. Supprimer les routes de debug
-3. Retirer `is_admin` du `$fillable` de User
-4. Réduire le session lifetime
-5. Ajouter rate limiting sur les APIs publiques
+1. ~~Supprimer/sécuriser TempAdminController~~ ✅ FAIT — Middleware `NoAdminExists` + routes dangereuses supprimées
+2. ~~Supprimer les routes de debug~~ ✅ FAIT — Conditionnées à `APP_ENV=local`
+3. ~~Retirer `is_admin` du `$fillable` de User~~ ✅ FAIT — `is_admin`, `google2fa_secret`, `stripe_id` retirés + adaptations
+4. Réduire le session lifetime — REPORTÉ (décision du fondateur)
+5. Ajouter rate limiting sur les APIs publiques — À FAIRE
 
 ### 🟠 Court terme (1-2 semaines)
 6. Créer `routes/api.php` et séparer les routes
@@ -668,6 +668,11 @@ Le module Brightshell utilise 716 lignes de CSS custom avec variables CSS au lie
 18. App mobile (ou PWA optimisée)
 19. API publique documentée
 20. Système de push notifications
+
+### ✅ Anti-doublon réservation — FAIT
+- `ReservationSlotService` créé avec vérification SQL + `lockForUpdate()` + `DB::transaction()`
+- Intégré dans les 3 contrôleurs : `PublicController`, `SiteWebController`, `ReservationController`
+- La faille critique de `SiteWebController` (aucune vérification) est corrigée
 
 ---
 
@@ -743,6 +748,33 @@ if (app()->environment('local')) {
 - **Option B — Reverb (gratuit, self-hosted)** : Migrer vers Reverb + Echo. Pas de coût mensuel Pusher, mais nécessite un serveur WebSocket à maintenir.
 
 Pour un solo dev : **Option A (Pusher)** est probablement plus raisonnable. Moins de maintenance.
+
+### Réponse 6 — Questions 11, 12, 21, 26, 40
+
+**Q11 — Réservation sans compte** :
+> "Non, j'aimerais le rajouter et inciter à se connecter pour garder une trace."
+
+L'infrastructure est déjà prête (`user_id` est nullable, champs `nom_client`/`email_client` existent). Il reste à adapter le `PublicController` pour ne plus bloquer les non-connectés, et ajouter un formulaire guest dans les vues.
+
+**Q12 — Paiement client final** :
+> "Uniquement pour les abonnements gérants. Je ne sais pas comment reverser l'argent."
+
+La solution serait Stripe Connect (mode plateforme) : le client paie, Stripe reverse au gérant, Allotata prend une commission. C'est un chantier majeur mais c'est le modèle Doctolib/Planity. À planifier en v2.
+
+**Q21 — Parcours client** :
+> "Page d'accueil → choix → envoi sur l'agenda. Ou listing des résa. Ou par message."
+
+Trois parcours confirmés. Le parcours messagerie est le plus risqué (pas de vérification anti-doublon côté conversation).
+
+**Q26 — Anti-doublon** :
+> "Aucun mécanisme."
+
+✅ CORRIGÉ — `ReservationSlotService` créé avec `lockForUpdate()` + `DB::transaction()`. Intégré dans les 3 points d'entrée. La faille critique de `SiteWebController` (aucune vérification) est également corrigée.
+
+**Q40 — RGPD** :
+> "Pas encore."
+
+À planifier : export des données utilisateur (droit d'accès), suppression sur demande (droit à l'oubli), consentement cookies, politique de confidentialité. Obligation légale pour tout service opérant en UE.
 
 ---
 

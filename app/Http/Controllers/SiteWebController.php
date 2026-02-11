@@ -87,6 +87,28 @@ class SiteWebController extends Controller
         $pages = $entreprise->siteWebPagesActives;
         $tabSlug = $request->query('tab');
 
+        // ── Migration paresseuse V1 → V2 ──
+        // Si des pages système existent mais que le contenu V1 (blocs JSON) n'a pas encore
+        // été migré dans une page "Accueil", le faire automatiquement une seule fois.
+        if ($pages->count() > 0 && !$pages->firstWhere('type', 'custom')) {
+            $v1Blocks = $entreprise->getSiteWebBlocks();
+            if (!empty($v1Blocks)) {
+                $minOrdre = $pages->min('ordre') ?? 0;
+                SiteWebPage::create([
+                    'entreprise_id' => $entreprise->id,
+                    'nom'           => 'Accueil',
+                    'slug'          => 'accueil',
+                    'type'          => 'custom',
+                    'blocs'         => $v1Blocks,
+                    'ordre'         => $minOrdre - 1,
+                    'est_actif'     => true,
+                    'icone'         => 'home',
+                ]);
+                // Rafraîchir la collection
+                $pages = $entreprise->siteWebPagesActives()->get();
+            }
+        }
+
         // Si l'entreprise a des pages en BDD, les utiliser
         if ($pages->count() > 0) {
             $currentPage = $tabSlug
@@ -280,8 +302,8 @@ class SiteWebController extends Controller
             }
         }
 
-        // Créer la réservation
-        $reservation = Reservation::create([
+        // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
+        $reservationData = [
             'user_id'                     => $userId,
             'entreprise_id'               => $entreprise->id,
             'type_service_id'             => $typeService->id,
@@ -300,7 +322,20 @@ class SiteWebController extends Controller
             'duree_minutes'               => $dureeTotal,
             'statut'                      => $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente',
             'hash'                        => Str::random(64),
-        ]);
+        ];
+
+        $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
+            $entreprise->id,
+            $membreId,
+            $debutReservation,
+            $dureeTotal,
+            fn () => Reservation::create($reservationData),
+            $isDateButoire
+        );
+
+        if (!$reservation) {
+            return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
+        }
 
         $redirectUrl = route('site-web.show', ['slug' => $slug]) . '?tab=reservation';
 

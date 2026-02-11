@@ -610,7 +610,14 @@ class AdminController extends Controller
             'is_admin' => ['boolean'],
         ]);
 
-        $user->update($validated);
+        // is_admin hors du $fillable : assignation explicite
+        if (array_key_exists('is_admin', $validated)) {
+            $user->is_admin = $validated['is_admin'];
+            unset($validated['is_admin']);
+        }
+
+        $user->fill($validated);
+        $user->save();
 
         return back()->with('success', 'Utilisateur mis à jour avec succès.');
     }
