@@ -28,10 +28,17 @@
                 <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date et heure</td>
                 <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right; font-size: 14px;">{{ $reservation->date_reservation->format('d/m/Y à H:i') }}</td>
             </tr>
+            @if($reservation->typeService && $reservation->typeService->estDateButoire())
+            <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Délai</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right; font-size: 14px;">{{ $reservation->typeService->duree_formatee }}</td>
+            </tr>
+            @else
             <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Durée</td>
                 <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right; font-size: 14px;">{{ $reservation->duree_minutes }} minutes</td>
             </tr>
+            @endif
             <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Prix</td>
                 <td style="padding: 8px 0; color: #22c55e; font-weight: 700; text-align: right; font-size: 16px;">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>

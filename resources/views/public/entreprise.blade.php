@@ -716,7 +716,7 @@
                                             <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
-                                            {{ $service->duree_minutes }} min
+                                            {{ $service->duree_formatee }}
                                         </span>
                                     </div>
                                     <div class="text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -729,6 +729,30 @@
                         </div>
                     @endforeach
                 </div>
+
+                @if($entreprise->prestation_libre_active && $entreprise->tarif_horaire)
+                    <div class="mt-6 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl bg-green-50/50 dark:bg-green-900/10 p-4 sm:p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 dark:text-white">Prestation sur demande</h3>
+                                    @if($entreprise->prestation_libre_description)
+                                        <p class="text-sm text-slate-600 dark:text-slate-400">{{ $entreprise->prestation_libre_description }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xl font-bold text-green-600 dark:text-green-400">{{ number_format($entreprise->tarif_horaire, 0, ',', ' ') }} €/h</span>
+                                <a href="{{ route('messagerie.show', $entreprise->slug) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition shadow-md">
+                                    Contacter
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Modal détaillé pour un service -->
                 <div id="service-detail-modal" class="hidden fixed inset-0 bg-black/80 z-50 overflow-y-auto" onclick="closeServiceDetailModal(event)">

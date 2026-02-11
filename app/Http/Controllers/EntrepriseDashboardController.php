@@ -801,6 +801,39 @@ class EntrepriseDashboardController extends Controller
     }
 
     /**
+     * Mettre à jour les paramètres de prestation libre
+     */
+    public function updatePrestationLibre(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $isActive = $request->has('prestation_libre_active') && $request->prestation_libre_active == '1';
+
+        if ($isActive) {
+            $request->validate([
+                'tarif_horaire' => 'required|numeric|min:0',
+                'prestation_libre_description' => 'nullable|string|max:255',
+            ]);
+        }
+
+        $entreprise->update([
+            'prestation_libre_active' => $isActive,
+            'tarif_horaire' => $isActive ? $request->tarif_horaire : $entreprise->tarif_horaire,
+            'prestation_libre_description' => $isActive ? $request->prestation_libre_description : $entreprise->prestation_libre_description,
+        ]);
+
+        $message = $isActive ? 'Prestation libre activée (' . number_format($request->tarif_horaire, 0, ',', ' ') . ' €/h).' : 'Prestation libre désactivée.';
+
+        return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+            ->with('success', $message);
+    }
+
+    /**
      * Mettre à jour l'ordre manuel (drag & drop)
      */
     public function updateOrdreManuel(Request $request, $slug)

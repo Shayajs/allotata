@@ -138,7 +138,11 @@
                                         <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
                                             <strong>{{ $reservation->type_service ?? 'Service' }}</strong> - 
                                             {{ $reservation->date_reservation->format('d/m/Y à H:i') }}
-                                            ({{ $reservation->duree_minutes }} min)
+                                            @if($reservation->typeService && $reservation->typeService->estDateButoire())
+                                                ({{ $reservation->typeService->duree_formatee }})
+                                            @else
+                                                ({{ $reservation->duree_minutes }} min)
+                                            @endif
                                         </p>
                                         @if($aGestionMultiPersonnes && $reservation->membre)
                                             <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">

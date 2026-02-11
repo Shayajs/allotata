@@ -181,7 +181,7 @@
                                 <div class="flex-1">
                                     <h4 class="font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h4>
                                     <p class="text-sm text-slate-600 dark:text-slate-400">
-                                        {{ number_format($service->prix, 2, ',', ' ') }} € • {{ $service->duree_minutes }} min
+                                        {{ number_format($service->prix, 2, ',', ' ') }} € • {{ $service->duree_formatee }}
                                     </p>
                                 </div>
                             </div>
@@ -747,7 +747,7 @@
                                                     <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                     </svg>
-                                                    {{ $prestation->duree_minutes }} min
+                                                    {{ $prestation->duree_formatee }}
                                                 </span>
                                                 <span class="font-bold text-green-600 dark:text-green-400 text-sm">
                                                     {{ number_format($prestation->prix, 2, ',', ' ') }} €

@@ -27,7 +27,7 @@
                     >
                         @foreach($prestations as $prestation)
                             <option value="{{ $prestation->id }}" data-prix="{{ $prestation->prix }}" data-duree="{{ $prestation->duree_minutes }}" {{ $reservation->type_service_id == $prestation->id ? 'selected' : '' }}>
-                                {{ $prestation->nom }} • {{ number_format($prestation->prix, 0, ',', ' ') }}€ • {{ $prestation->duree_minutes }}min
+                                {{ $prestation->nom }} • {{ number_format($prestation->prix, 0, ',', ' ') }}€ • {{ $prestation->duree_formatee }}
                             </option>
                         @endforeach
                     </select>
