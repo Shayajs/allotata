@@ -822,6 +822,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     Route::post('/courses/upload-image', [\App\Http\Controllers\Admin\CourseController::class, 'uploadImage'])->name('courses.upload-image');
     
+    // Remplissage IA (Bulk Fill)
+    Route::post('/courses/bulk-fill/validate', [\App\Http\Controllers\Admin\CourseController::class, 'bulkFillValidate'])->name('courses.bulk-fill.validate');
+    Route::post('/courses/bulk-fill', [\App\Http\Controllers\Admin\CourseController::class, 'bulkFill'])->name('courses.bulk-fill');
+    
     // Recherche globale
     Route::get('/search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');
     

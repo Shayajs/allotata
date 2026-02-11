@@ -8,6 +8,7 @@ use App\Models\CourseLesson;
 use App\Models\QuizQuestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class CourseController extends Controller
 {
@@ -681,6 +682,453 @@ class CourseController extends Controller
             'path' => $path,
             'url' => Storage::disk('public')->url($path),
         ]);
+    }
+
+    // =====================================================================
+    // REMPLISSAGE IA (BULK FILL)
+    // =====================================================================
+
+    /**
+     * Types de blocs supportés par le système
+     */
+    private const SUPPORTED_BLOCK_TYPES = [
+        'text', 'heading', 'image', 'video', 'iframe', 'gallery',
+        'columns', 'divider', 'code', 'callout', 'steps',
+        'checklist', 'exercise', 'quiz_block', 'embed',
+    ];
+
+    /**
+     * Valider le JSON du remplissage IA (dry-run)
+     */
+    public function bulkFillValidate(Request $request)
+    {
+        $request->validate([
+            'json_data' => 'required|string',
+            'mode' => 'required|in:global,module,lesson',
+            'target_id' => 'nullable|integer',
+        ]);
+
+        $data = json_decode($request->input('json_data'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'success' => false,
+                'error' => 'JSON invalide : ' . json_last_error_msg(),
+                'errors' => [],
+                'summary' => null,
+            ]);
+        }
+
+        $mode = $request->input('mode');
+        $errors = [];
+        $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0, 'blocks' => 0];
+
+        switch ($mode) {
+            case 'global':
+                $this->validateGlobalData($data, $errors, $summary);
+                break;
+            case 'module':
+                $targetId = $request->input('target_id');
+                if (!$targetId || !CourseModule::find($targetId)) {
+                    $errors[] = 'Module cible introuvable (ID: ' . $targetId . ')';
+                } else {
+                    $this->validateModuleData($data, $errors, $summary);
+                }
+                break;
+            case 'lesson':
+                $targetId = $request->input('target_id');
+                if (!$targetId || !CourseLesson::find($targetId)) {
+                    $errors[] = 'Leçon cible introuvable (ID: ' . $targetId . ')';
+                } else {
+                    $this->validateLessonData($data, $errors, $summary);
+                }
+                break;
+        }
+
+        return response()->json([
+            'success' => empty($errors),
+            'errors' => $errors,
+            'summary' => $summary,
+        ]);
+    }
+
+    /**
+     * Exécuter le remplissage IA
+     */
+    public function bulkFill(Request $request)
+    {
+        $request->validate([
+            'json_data' => 'required|string',
+            'mode' => 'required|in:global,module,lesson',
+            'target_id' => 'nullable|integer',
+        ]);
+
+        $data = json_decode($request->input('json_data'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'success' => false,
+                'error' => 'JSON invalide : ' . json_last_error_msg(),
+            ], 422);
+        }
+
+        $mode = $request->input('mode');
+        $targetId = $request->input('target_id');
+
+        // Pré-validation
+        $errors = [];
+        $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0, 'blocks' => 0];
+        
+        switch ($mode) {
+            case 'global':
+                $this->validateGlobalData($data, $errors, $summary);
+                break;
+            case 'module':
+                if (!$targetId || !CourseModule::find($targetId)) {
+                    return response()->json(['success' => false, 'error' => 'Module cible introuvable.'], 422);
+                }
+                $this->validateModuleData($data, $errors, $summary);
+                break;
+            case 'lesson':
+                if (!$targetId || !CourseLesson::find($targetId)) {
+                    return response()->json(['success' => false, 'error' => 'Leçon cible introuvable.'], 422);
+                }
+                $this->validateLessonData($data, $errors, $summary);
+                break;
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreurs de validation détectées.',
+                'errors' => $errors,
+            ], 422);
+        }
+
+        // Insertion dans une transaction
+        try {
+            $result = DB::transaction(function () use ($data, $mode, $targetId) {
+                $created = ['modules' => 0, 'lessons' => 0, 'questions' => 0, 'blocks' => 0];
+
+                switch ($mode) {
+                    case 'global':
+                        $this->insertGlobalData($data, $created);
+                        break;
+                    case 'module':
+                        $module = CourseModule::findOrFail($targetId);
+                        $this->insertModuleData($data, $module, $created);
+                        break;
+                    case 'lesson':
+                        $lesson = CourseLesson::findOrFail($targetId);
+                        $this->insertLessonData($data, $lesson, $created);
+                        break;
+                }
+
+                return $created;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Remplissage terminé avec succès !',
+                'created' => $result,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors du remplissage IA', [
+                'mode' => $mode,
+                'target_id' => $targetId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors de l\'insertion : ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ----- Méthodes de validation -----
+
+    private function validateGlobalData(array $data, array &$errors, array &$summary): void
+    {
+        if (!isset($data['modules']) || !is_array($data['modules'])) {
+            $errors[] = 'Clé "modules" manquante ou invalide. Le JSON doit contenir un tableau "modules".';
+            return;
+        }
+
+        foreach ($data['modules'] as $mi => $module) {
+            $prefix = "Module #" . ($mi + 1);
+            
+            if (empty($module['titre'])) {
+                $errors[] = "{$prefix} : champ \"titre\" requis.";
+            }
+
+            $summary['modules']++;
+
+            if (isset($module['lessons']) && is_array($module['lessons'])) {
+                foreach ($module['lessons'] as $li => $lesson) {
+                    $this->validateLessonEntry($lesson, $li, "{$prefix} > Leçon #" . ($li + 1), $errors, $summary);
+                }
+            }
+        }
+    }
+
+    private function validateModuleData(array $data, array &$errors, array &$summary): void
+    {
+        if (!isset($data['lessons']) || !is_array($data['lessons'])) {
+            $errors[] = 'Clé "lessons" manquante ou invalide. Le JSON doit contenir un tableau "lessons".';
+            return;
+        }
+
+        foreach ($data['lessons'] as $li => $lesson) {
+            $this->validateLessonEntry($lesson, $li, "Leçon #" . ($li + 1), $errors, $summary);
+        }
+    }
+
+    private function validateLessonData(array $data, array &$errors, array &$summary): void
+    {
+        if (!isset($data['blocks']) || !is_array($data['blocks'])) {
+            $errors[] = 'Clé "blocks" manquante ou invalide. Le JSON doit contenir un tableau "blocks".';
+            return;
+        }
+
+        foreach ($data['blocks'] as $bi => $block) {
+            $this->validateBlockEntry($block, $bi, "Bloc #" . ($bi + 1), $errors);
+            $summary['blocks']++;
+        }
+    }
+
+    private function validateLessonEntry(array $lesson, int $index, string $prefix, array &$errors, array &$summary): void
+    {
+        if (empty($lesson['titre'])) {
+            $errors[] = "{$prefix} : champ \"titre\" requis.";
+        }
+
+        $type = $lesson['type'] ?? 'course';
+        if (!in_array($type, ['course', 'quiz'])) {
+            $errors[] = "{$prefix} : type \"{$type}\" invalide (course ou quiz).";
+        }
+
+        $summary['lessons']++;
+
+        // Valider les blocs
+        if (isset($lesson['blocks']) && is_array($lesson['blocks'])) {
+            foreach ($lesson['blocks'] as $bi => $block) {
+                $this->validateBlockEntry($block, $bi, "{$prefix} > Bloc #" . ($bi + 1), $errors);
+                $summary['blocks']++;
+            }
+        }
+
+        // Valider les questions quiz
+        if ($type === 'quiz' && isset($lesson['questions']) && is_array($lesson['questions'])) {
+            foreach ($lesson['questions'] as $qi => $question) {
+                $qPrefix = "{$prefix} > Question #" . ($qi + 1);
+                
+                if (empty($question['question'])) {
+                    $errors[] = "{$qPrefix} : champ \"question\" requis.";
+                }
+
+                $qType = $question['type'] ?? 'multiple_choice';
+                if (!in_array($qType, ['multiple_choice', 'true_false', 'text'])) {
+                    $errors[] = "{$qPrefix} : type \"{$qType}\" invalide (multiple_choice, true_false ou text).";
+                }
+
+                if ($qType === 'multiple_choice') {
+                    if (empty($question['options']) || !is_array($question['options']) || count($question['options']) < 2) {
+                        $errors[] = "{$qPrefix} : au moins 2 options requises pour un QCM.";
+                    }
+                    if (!empty($question['options']) && !empty($question['bonne_reponse'])) {
+                        if (!in_array($question['bonne_reponse'], $question['options'])) {
+                            $errors[] = "{$qPrefix} : la bonne réponse \"{$question['bonne_reponse']}\" n'est pas dans les options.";
+                        }
+                    }
+                }
+
+                if (empty($question['bonne_reponse']) && $question['bonne_reponse'] !== '0' && $question['bonne_reponse'] !== false) {
+                    $errors[] = "{$qPrefix} : champ \"bonne_reponse\" requis.";
+                }
+
+                $summary['questions']++;
+            }
+        }
+    }
+
+    private function validateBlockEntry(array $block, int $index, string $prefix, array &$errors): void
+    {
+        if (empty($block['type'])) {
+            $errors[] = "{$prefix} : champ \"type\" requis.";
+            return;
+        }
+
+        if (!in_array($block['type'], self::SUPPORTED_BLOCK_TYPES)) {
+            $errors[] = "{$prefix} : type de bloc \"{$block['type']}\" non reconnu. Types supportés : " . implode(', ', self::SUPPORTED_BLOCK_TYPES);
+        }
+
+        if (!isset($block['content']) || !is_array($block['content'])) {
+            $errors[] = "{$prefix} : champ \"content\" requis (objet).";
+        }
+
+        // Validations spécifiques par type
+        $content = $block['content'] ?? [];
+        switch ($block['type'] ?? '') {
+            case 'text':
+                if (empty($content['html'])) {
+                    $errors[] = "{$prefix} (text) : champ \"content.html\" requis.";
+                }
+                break;
+            case 'heading':
+                if (empty($content['text'])) {
+                    $errors[] = "{$prefix} (heading) : champ \"content.text\" requis.";
+                }
+                break;
+            case 'code':
+                if (!isset($content['code'])) {
+                    $errors[] = "{$prefix} (code) : champ \"content.code\" requis.";
+                }
+                break;
+            case 'callout':
+                if (empty($content['html'])) {
+                    $errors[] = "{$prefix} (callout) : champ \"content.html\" requis.";
+                }
+                break;
+            case 'steps':
+                if (!isset($content['steps']) || !is_array($content['steps'])) {
+                    $errors[] = "{$prefix} (steps) : champ \"content.steps\" requis (tableau).";
+                }
+                break;
+            case 'checklist':
+                if (!isset($content['items']) || !is_array($content['items'])) {
+                    $errors[] = "{$prefix} (checklist) : champ \"content.items\" requis (tableau).";
+                }
+                break;
+        }
+    }
+
+    // ----- Méthodes d'insertion -----
+
+    private function insertGlobalData(array $data, array &$created): void
+    {
+        $maxOrdre = CourseModule::max('ordre') ?? -1;
+
+        foreach ($data['modules'] as $mi => $moduleData) {
+            $maxOrdre++;
+
+            $module = CourseModule::create([
+                'titre' => $moduleData['titre'],
+                'description' => $moduleData['description'] ?? null,
+                'ordre' => $moduleData['ordre'] ?? $maxOrdre,
+                'est_actif' => $moduleData['est_actif'] ?? true,
+            ]);
+
+            $created['modules']++;
+
+            if (isset($moduleData['lessons']) && is_array($moduleData['lessons'])) {
+                $this->insertModuleData($moduleData, $module, $created);
+            }
+        }
+    }
+
+    private function insertModuleData(array $data, CourseModule $module, array &$created): void
+    {
+        $lessons = $data['lessons'] ?? [];
+        $maxOrdre = $module->lessons()->max('ordre') ?? -1;
+
+        foreach ($lessons as $li => $lessonData) {
+            $maxOrdre++;
+            $type = $lessonData['type'] ?? 'course';
+
+            // Préparer les blocs avec des IDs uniques
+            $blocks = [];
+            if (isset($lessonData['blocks']) && is_array($lessonData['blocks'])) {
+                foreach ($lessonData['blocks'] as $block) {
+                    $blocks[] = [
+                        'id' => 'block-' . uniqid(),
+                        'type' => $block['type'],
+                        'content' => $block['content'] ?? [],
+                        'settings' => $block['settings'] ?? [],
+                    ];
+                    $created['blocks']++;
+                }
+            }
+
+            // Si pas de blocs fournis, utiliser les blocs par défaut
+            if (empty($blocks)) {
+                $blocks = CourseLesson::getDefaultBlocks();
+            }
+
+            $lesson = CourseLesson::create([
+                'module_id' => $module->id,
+                'titre' => $lessonData['titre'],
+                'description' => $lessonData['description'] ?? null,
+                'contenu_blocks_json' => $blocks,
+                'type' => $type,
+                'ordre' => $lessonData['ordre'] ?? $maxOrdre,
+                'points_quiz' => $lessonData['points_quiz'] ?? 0,
+                'est_actif' => $lessonData['est_actif'] ?? true,
+                'is_draft' => true,
+            ]);
+
+            // Générer le HTML depuis les blocs
+            try {
+                $html = $lesson->generateHtmlFromBlocks();
+                $lesson->update(['contenu_rich_html' => $html]);
+            } catch (\Exception $e) {
+                \Log::warning('Bulk fill: impossible de générer le HTML pour la leçon ' . $lesson->id, [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            $created['lessons']++;
+
+            // Insérer les questions de quiz
+            if ($type === 'quiz' && isset($lessonData['questions']) && is_array($lessonData['questions'])) {
+                $qOrdre = 0;
+                foreach ($lessonData['questions'] as $questionData) {
+                    QuizQuestion::create([
+                        'lesson_id' => $lesson->id,
+                        'question' => $questionData['question'],
+                        'type' => $questionData['type'] ?? 'multiple_choice',
+                        'options_json' => $questionData['options'] ?? [],
+                        'bonne_reponse' => (string) $questionData['bonne_reponse'],
+                        'points' => $questionData['points'] ?? 1,
+                        'ordre' => $questionData['ordre'] ?? $qOrdre,
+                    ]);
+                    $qOrdre++;
+                    $created['questions']++;
+                }
+            }
+        }
+    }
+
+    private function insertLessonData(array $data, CourseLesson $lesson, array &$created): void
+    {
+        $blocks = [];
+        foreach ($data['blocks'] as $block) {
+            $blocks[] = [
+                'id' => 'block-' . uniqid(),
+                'type' => $block['type'],
+                'content' => $block['content'] ?? [],
+                'settings' => $block['settings'] ?? [],
+            ];
+            $created['blocks']++;
+        }
+
+        $lesson->update([
+            'contenu_blocks_json' => $blocks,
+            'is_draft' => true,
+        ]);
+
+        // Générer le HTML depuis les blocs
+        try {
+            $lesson->refresh();
+            $html = $lesson->generateHtmlFromBlocks();
+            $lesson->update(['contenu_rich_html' => $html]);
+        } catch (\Exception $e) {
+            \Log::warning('Bulk fill: impossible de générer le HTML pour la leçon ' . $lesson->id, [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
 

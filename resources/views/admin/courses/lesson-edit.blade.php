@@ -140,6 +140,17 @@
                 <span>Sauvegardé</span>
             </div>
             
+            {{-- Bouton Remplissage IA --}}
+            <button 
+                onclick="openBulkFillModal()"
+                class="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-lg transition"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span class="hidden md:inline">Remplissage IA</span>
+            </button>
+            
             {{-- Bouton aperçu --}}
             <a href="{{ route('courses.lesson', ['module' => $lesson->module, 'lesson' => $lesson]) }}" 
                target="_blank"
@@ -546,5 +557,16 @@
             </div>
         </div>
     </div>
+
+    {{-- Modale Remplissage IA --}}
+    @include('admin.courses._bulk-fill-modal', [
+        'bulkFillMode' => 'lesson',
+        'bulkFillTargetId' => $lesson->id,
+        'bulkFillContext' => [
+            'lesson_titre' => $lesson->titre,
+            'lesson_description' => $lesson->description,
+            'module_titre' => $lesson->module->titre ?? '',
+        ],
+    ])
 </body>
 </html>
