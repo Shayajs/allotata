@@ -24,7 +24,7 @@
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         @include('partials.super-user-banner')
         <!-- Navigation Desktop -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 {{ session('original_admin_id') ? 'mt-[52px]' : '' }}">
+        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 {{ session('original_admin_id') ? 'mt-[60px]' : '' }}">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-4">
