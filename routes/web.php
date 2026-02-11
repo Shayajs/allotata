@@ -905,6 +905,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Gestion des webhooks Stripe
     Route::get('/stripe-webhooks', [AdminController::class, 'stripeWebhooks'])->name('stripe-webhooks.index');
     Route::get('/stripe-webhooks/{transaction}/details', [AdminController::class, 'stripeWebhookDetails'])->name('stripe-webhooks.details');
+
+    // Tests Stripe inline
+    Route::get('/stripe-tests', [\App\Http\Controllers\AdminStripeTestController::class, 'index'])->name('stripe-tests.index');
+    Route::post('/stripe-tests/run', [\App\Http\Controllers\AdminStripeTestController::class, 'run'])->name('stripe-tests.run');
+    Route::post('/stripe-tests/cleanup', [\App\Http\Controllers\AdminStripeTestController::class, 'cleanup'])->name('stripe-tests.cleanup');
     
     // Gestion des abonnements
     Route::get('/subscriptions', [\App\Http\Controllers\AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
