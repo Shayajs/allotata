@@ -17,12 +17,8 @@ export default defineConfig({
                 'resources/js/tracking-visite.js',
                 'resources/js/admin-kanban.js',
                 'resources/js/admin-notes.js',
-<<<<<<< HEAD
-                'resources/js/admin-internal-messaging.js'
-=======
                 'resources/js/admin-internal-messaging.js',
                 'resources/js/checkout.js'
->>>>>>> origin/main
             ],
             refresh: true,
         }),

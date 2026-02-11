@@ -1,0 +1,138 @@
+2026-02-10 20:39:02,720:DEBUG:certbot._internal.main:certbot version: 5.3.0
+2026-02-10 20:39:02,721:DEBUG:certbot._internal.main:Location of certbot entry point: /opt/certbot/bin/certbot
+2026-02-10 20:39:02,721:DEBUG:certbot._internal.main:Arguments: ['--config', '/etc/letsencrypt.ini', '--work-dir', '/tmp/letsencrypt-lib', '--logs-dir', '/data/logs', '--cert-name', 'npm-11', '--agree-tos', '--authenticator', 'webroot', '-m', 'espinar.lucas0@gmail.com', '--preferred-challenges', 'http', '--domains', 'allotata.fr']
+2026-02-10 20:39:02,721:DEBUG:certbot._internal.main:Discovered plugins: PluginsRegistry(PluginEntryPoint#manual,PluginEntryPoint#null,PluginEntryPoint#standalone,PluginEntryPoint#webroot)
+2026-02-10 20:39:02,732:DEBUG:certbot._internal.log:Root logging level set at 30
+2026-02-10 20:39:02,733:DEBUG:certbot._internal.plugins.selection:Requested authenticator webroot and installer None
+2026-02-10 20:39:02,733:DEBUG:certbot._internal.plugins.selection:Single candidate plugin: * webroot
+Description: Saves the necessary validation files to a .well-known/acme-challenge/ directory within the nominated webroot path. A separate HTTP server must be running and serving files from the webroot path. HTTP challenge only (wildcards not supported).
+Interfaces: Authenticator, Plugin
+Entry point: EntryPoint(name='webroot', value='certbot._internal.plugins.webroot:Authenticator', group='certbot.plugins')
+Initialized: <certbot._internal.plugins.webroot.Authenticator object at 0x788f318493d0>
+Prep: True
+2026-02-10 20:39:02,733:DEBUG:certbot._internal.plugins.selection:Selected authenticator <certbot._internal.plugins.webroot.Authenticator object at 0x788f318493d0> and installer None
+2026-02-10 20:39:02,734:INFO:certbot._internal.plugins.selection:Plugins selected: Authenticator webroot, Installer None
+2026-02-10 20:39:02,779:DEBUG:certbot._internal.main:Picked account: <Account(RegistrationResource(body=Registration(key=None, contact=(), agreement=None, status=None, terms_of_service_agreed=None, only_return_existing=None, external_account_binding=None), uri='https://acme-v02.api.letsencrypt.org/acme/acct/3050490506', new_authzr_uri=None, terms_of_service=None), 3084fe3a0a510084dedf6ce5b8e8d7b3, Meta(creation_dt=datetime.datetime(2026, 2, 10, 19, 56, 6, tzinfo=datetime.timezone.utc), creation_host='b42cf0a2b097', register_to_eff=None))>
+2026-02-10 20:39:02,779:DEBUG:acme.client:Sending GET request to https://acme-v02.api.letsencrypt.org/directory.
+2026-02-10 20:39:02,781:DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): acme-v02.api.letsencrypt.org:443
+2026-02-10 20:39:03,155:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "GET /directory HTTP/1.1" 200 1033
+2026-02-10 20:39:03,156:DEBUG:acme.client:Received response:
+HTTP 200
+Server: nginx
+Date: Tue, 10 Feb 2026 20:39:03 GMT
+Content-Type: application/json
+Content-Length: 1033
+Connection: keep-alive
+Cache-Control: public, max-age=0, no-cache
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=604800
+
+{
+  "kYTEcG5q1_k": "https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417",
+  "keyChange": "https://acme-v02.api.letsencrypt.org/acme/key-change",
+  "meta": {
+    "caaIdentities": [
+      "letsencrypt.org"
+    ],
+    "profiles": {
+      "classic": "https://letsencrypt.org/docs/profiles#classic",
+      "shortlived": "https://letsencrypt.org/docs/profiles#shortlived",
+      "tlsclient": "https://letsencrypt.org/docs/profiles#tlsclient",
+      "tlsserver": "https://letsencrypt.org/docs/profiles#tlsserver"
+    },
+    "termsOfService": "https://letsencrypt.org/documents/LE-SA-v1.6-August-18-2025.pdf",
+    "website": "https://letsencrypt.org"
+  },
+  "newAccount": "https://acme-v02.api.letsencrypt.org/acme/new-acct",
+  "newNonce": "https://acme-v02.api.letsencrypt.org/acme/new-nonce",
+  "newOrder": "https://acme-v02.api.letsencrypt.org/acme/new-order",
+  "renewalInfo": "https://acme-v02.api.letsencrypt.org/acme/renewal-info",
+  "revokeCert": "https://acme-v02.api.letsencrypt.org/acme/revoke-cert"
+}
+2026-02-10 20:39:03,157:DEBUG:certbot._internal.display.obj:Notifying user: Requesting a certificate for allotata.fr
+2026-02-10 20:39:03,163:DEBUG:acme.client:Requesting fresh nonce
+2026-02-10 20:39:03,163:DEBUG:acme.client:Sending HEAD request to https://acme-v02.api.letsencrypt.org/acme/new-nonce.
+2026-02-10 20:39:03,288:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "HEAD /acme/new-nonce HTTP/1.1" 200 0
+2026-02-10 20:39:03,289:DEBUG:acme.client:Received response:
+HTTP 200
+Server: nginx
+Date: Tue, 10 Feb 2026 20:39:03 GMT
+Connection: keep-alive
+Cache-Control: public, max-age=0, no-cache
+Link: <https://acme-v02.api.letsencrypt.org/directory>;rel="index"
+Replay-Nonce: QkEzerAfYTltNgoBiYrZPzNBvRJKlIDPtYGoWZB6EOBd0ZzWSmg
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=604800
+
+
+2026-02-10 20:39:03,290:DEBUG:acme.client:Storing nonce: QkEzerAfYTltNgoBiYrZPzNBvRJKlIDPtYGoWZB6EOBd0ZzWSmg
+2026-02-10 20:39:03,290:DEBUG:acme.client:JWS payload:
+b'{\n  "identifiers": [\n    {\n      "type": "dns",\n      "value": "allotata.fr"\n    }\n  ]\n}'
+2026-02-10 20:39:03,299:DEBUG:acme.client:Sending POST request to https://acme-v02.api.letsencrypt.org/acme/new-order:
+{
+  "protected": "eyJhbGciOiAiUlMyNTYiLCAia2lkIjogImh0dHBzOi8vYWNtZS12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL2FjY3QvMzA1MDQ5MDUwNiIsICJub25jZSI6ICJRa0V6ZXJBZllUbHROZ29CaVlyWlB6TkJ2UkpLbElEUHRZR29XWkI2RU9CZDBaeldTbWciLCAidXJsIjogImh0dHBzOi8vYWNtZS12MDIuYXBpLmxldHNlbmNyeXB0Lm9yZy9hY21lL25ldy1vcmRlciJ9",
+  "signature": "kV7Mslrnw1J6pfKA6fuQDwYaWbhN00cUO6Eejgeltp9_xDrs0FOGDuJnQMmrvILLQN_VbFgFmPspZV4U1gnyYajTFnRlSl07TJFgUoXqqF650FaMu73bLOgHXqsGCr7JfvWKapOHpxGaTjfplc575qYl3F3rp_301C0nviAZZSGkBDmySFF-wSEj0N4S20mzemFpIhn1T4Jo3bo1qc2G6QRvyjYaEak1gz1p0ZbHVmtrFfLQjFnp4JVE7Q456sm87n8FjnepGuIGBIWzPc-6RCJnROzbJyQy1MOYQVUbErIPCiVY0uUKANC8CKlU8QbUf_oiwZj8IugejFc79RqTkA",
+  "payload": "ewogICJpZGVudGlmaWVycyI6IFsKICAgIHsKICAgICAgInR5cGUiOiAiZG5zIiwKICAgICAgInZhbHVlIjogImFsbG90YXRhLmZyIgogICAgfQogIF0KfQ"
+}
+2026-02-10 20:39:03,431:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "POST /acme/new-order HTTP/1.1" 429 294
+2026-02-10 20:39:03,432:DEBUG:acme.client:Received response:
+HTTP 429
+Server: nginx
+Date: Tue, 10 Feb 2026 20:39:03 GMT
+Content-Type: application/problem+json
+Content-Length: 294
+Connection: keep-alive
+Boulder-Requester: 3050490506
+Cache-Control: public, max-age=0, no-cache
+Link: <https://acme-v02.api.letsencrypt.org/directory>;rel="index", <https://letsencrypt.org/docs/rate-limits>;rel="help"
+Replay-Nonce: QkEzerAfXFlPhJIqMyYOCR4oJ4MD4HX-ZEPcO5gdb9uFgPVZZeY
+Retry-After: 313
+
+{
+  "type": "urn:ietf:params:acme:error:rateLimited",
+  "detail": "too many failed authorizations (5) for \"allotata.fr\" in the last 1h0m0s, retry after 2026-02-10 20:44:16 UTC: see https://letsencrypt.org/docs/rate-limits/#authorization-failures-per-identifier-per-account",
+  "status": 429
+}
+2026-02-10 20:39:03,432:DEBUG:certbot._internal.log:Exiting abnormally:
+Traceback (most recent call last):
+  File "/opt/certbot/bin/certbot", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/main.py", line 18, in main
+    return internal_main.main(cli_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/main.py", line 1886, in main
+    return config.func(config, plugins)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/main.py", line 1598, in certonly
+    lineage = _get_and_save_cert(le_client, config, sans, certname, lineage)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/main.py", line 143, in _get_and_save_cert
+    lineage = le_client.obtain_and_enroll_certificate(sans, certname)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/client.py", line 533, in obtain_and_enroll_certificate
+    cert, chain, key, _ = self.obtain_certificate(sans)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/client.py", line 434, in obtain_certificate
+    orderr = self._get_order_and_authorizations(csr.data, self.config.allow_subset_of_names)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/certbot/_internal/client.py", line 494, in _get_order_and_authorizations
+    orderr = self.acme.new_order(csr_pem, profile=profile)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/acme/client.py", line 135, in new_order
+    response = self._post(self.directory['newOrder'], order)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/acme/client.py", line 461, in _post
+    return self.net.post(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/acme/client.py", line 812, in post
+    return self._post_once(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/acme/client.py", line 827, in _post_once
+    response = self._check_response(response, content_type=content_type)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/certbot/lib/python3.11/site-packages/acme/client.py", line 699, in _check_response
+    raise messages.Error.from_json(jobj)
+acme.messages.Error: urn:ietf:params:acme:error:rateLimited :: There were too many requests of a given type :: too many failed authorizations (5) for "allotata.fr" in the last 1h0m0s, retry after 2026-02-10 20:44:16 UTC: see https://letsencrypt.org/docs/rate-limits/#authorization-failures-per-identifier-per-account
+2026-02-10 20:39:03,438:ERROR:certbot._internal.log:An unexpected error occurred:
+2026-02-10 20:39:03,438:ERROR:certbot._internal.log:too many failed authorizations (5) for "allotata.fr" in the last 1h0m0s, retry after 2026-02-10 20:44:16 UTC: see https://letsencrypt.org/docs/rate-limits/#authorization-failures-per-identifier-per-account

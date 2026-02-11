@@ -1,0 +1,459 @@
+<div>
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Outils administratifs</h2>
+    <p class="text-slate-600 dark:text-slate-400 mb-8">Des outils pratiques pour gérer votre micro-entreprise au quotidien.</p>
+
+    <?php
+        $reservations = \App\Models\Reservation::where('entreprise_id', $entreprise->id)
+            ->where('est_paye', true)
+            ->get();
+        
+        $caMoisActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isCurrentMonth())->sum('prix');
+        $caMoisPrecedent = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->isLastMonth())->sum('prix');
+        $caTrimestreActuel = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->quarter === now()->quarter && $r->date_reservation->year === now()->year)->sum('prix');
+        $caAnneeActuelle = $reservations->filter(fn($r) => $r->date_reservation && $r->date_reservation->year === now()->year)->sum('prix');
+    ?>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Pilotage des recettes (NOUVEAU) -->
+        <div class="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl border border-indigo-500 shadow-xl p-8 text-white relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                <svg class="w-32 h-32 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            
+            <div class="relative z-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider mb-4">
+                            Nouveau
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2">Pilotage de vos recettes</h2>
+                        <p class="text-indigo-100 text-lg max-w-xl">
+                            Gérez vos entrées et sorties d'argent en temps réel. Calculez vos charges URSSAF et impôts automatiquement pour ne plus avoir de surprises.
+                        </p>
+                    </div>
+                    <div>
+                        <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'finances'])); ?>" class="inline-flex items-center gap-2 px-8 py-4 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1 border border-white/20 dark:border-slate-700">
+                            <span>Accéder à ma comptabilité</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Revenus du mois</p>
+                        <p class="text-2xl font-bold"><?php echo e(number_format($caMoisActuel ?? 0, 2, ',', ' ')); ?> €</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Charges estimées</p>
+                        <?php
+                            /**
+                             * Calcul des charges estimées (URSSAF + Impôts)
+                             */
+                            $charges = app(\App\Http\Controllers\EntrepriseFinanceController::class)->calculateEstimatedCharges($entreprise, $caMoisActuel ?? 0);
+                        ?>
+                        <p class="text-2xl font-bold"><?php echo e(number_format($charges['total'], 2, ',', ' ')); ?> €</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                        <p class="text-indigo-200 text-sm uppercase font-semibold">Reste à vivre (Net)</p>
+                        <p class="text-2xl font-bold"><?php echo e(number_format(($caMoisActuel ?? 0) - $charges['total'], 2, ',', ' ')); ?> €</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calculateur URSSAF -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Calculateur URSSAF</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Estimez vos cotisations</p>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Chiffre d'affaires (période)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="ca-urssaf"
+                        placeholder="Ex: 1500"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        oninput="calculateUrssaf()"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Type d'activité
+                    </label>
+                    <select 
+                        id="type-activite-urssaf"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        onchange="calculateUrssaf()"
+                    >
+                        <option value="service">Prestation de services (BIC) - 21.2%</option>
+                        <option value="liberal">Profession libérale (BNC) - 21.1%</option>
+                        <option value="vente">Vente de marchandises - 12.3%</option>
+                    </select>
+                </div>
+                <div id="result-urssaf" class="hidden p-4 bg-white dark:bg-slate-800 rounded-xl">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Cotisations</p>
+                            <p class="text-xl font-bold text-blue-600 dark:text-blue-400" id="cotisations-urssaf">0 €</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase">Net après cotisations</p>
+                            <p class="text-xl font-bold text-green-600 dark:text-green-400" id="net-urssaf">0 €</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rappels de déclaration -->
+        <div class="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-2xl border border-orange-200 dark:border-orange-800 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Rappels déclarations</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Ne ratez plus vos échéances</p>
+                </div>
+            </div>
+            
+            <?php
+                $now = now();
+                $currentMonth = $now->month;
+                $currentYear = $now->year;
+                
+                // Calcul des prochaines échéances (exemple mensuel)
+                $prochainMois = $now->copy()->addMonth()->startOfMonth();
+                $finDeclarationMensuelle = $prochainMois->copy()->endOfMonth();
+                
+                // Trimestre en cours
+                $trimestre = ceil($currentMonth / 3);
+                $finTrimestre = \Carbon\Carbon::create($currentYear, $trimestre * 3, 1)->endOfMonth();
+            ?>
+            
+            <div class="space-y-3">
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-slate-900 dark:text-white">Déclaration mensuelle</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">CA de <?php echo e($now->translatedFormat('F Y')); ?></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-orange-600 dark:text-orange-400 font-medium">
+                                Avant le <?php echo e($finDeclarationMensuelle->format('d/m/Y')); ?>
+
+                            </p>
+                            <p class="text-xs text-slate-500"><?php echo e($finDeclarationMensuelle->diffForHumans()); ?></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl border-l-4 border-amber-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-slate-900 dark:text-white">Déclaration trimestrielle</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">T<?php echo e($trimestre); ?> <?php echo e($currentYear); ?></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                                Avant le <?php echo e($finTrimestre->copy()->addMonth()->endOfMonth()->format('d/m/Y')); ?>
+
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="https://www.autoentrepreneur.urssaf.fr" target="_blank" class="block w-full px-4 py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold rounded-lg transition-all text-center">
+                    Accéder à l'URSSAF →
+                </a>
+            </div>
+        </div>
+
+        <!-- Générateur de devis -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Générateur de devis</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Créez des devis professionnels</p>
+                </div>
+            </div>
+            
+            <form id="form-devis" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nom du client</label>
+                        <input type="text" id="devis-client" placeholder="Nom du client" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                        <input type="date" id="devis-date" value="<?php echo e(date('Y-m-d')); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description de la prestation</label>
+                    <textarea id="devis-description" rows="2" placeholder="Ex: Tressage africain complet..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Montant (€)</label>
+                        <input type="number" id="devis-montant" placeholder="150" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Validité (jours)</label>
+                        <input type="number" id="devis-validite" value="30" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                </div>
+                
+                <button type="button" onclick="generateDevis()" class="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                    📄 Générer le devis (PDF)
+                </button>
+            </form>
+        </div>
+
+        <!-- Export comptable -->
+        <div class="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Export comptable</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Téléchargez vos données</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Période début</label>
+                        <input type="date" id="export-debut" value="<?php echo e(now()->startOfYear()->format('Y-m-d')); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Période fin</label>
+                        <input type="date" id="export-fin" value="<?php echo e(now()->format('Y-m-d')); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="<?php echo e(route('factures.comptabilite', $entreprise->slug)); ?>" class="px-4 py-3 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-300 font-medium rounded-lg transition text-center text-sm">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        Voir comptabilité
+                    </a>
+                    <button type="button" onclick="exportCSV()" class="px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold rounded-lg transition-all text-sm">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Résumé CA -->
+        <div class="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 lg:col-span-2">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-slate-700 dark:bg-slate-600 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Résumé du chiffre d'affaires</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Pour vos déclarations URSSAF</p>
+                </div>
+            </div>
+            
+        <!-- Liens utiles -->        <div class="bg-gradient-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 rounded-2xl border border-cyan-200 dark:border-cyan-800 p-6 lg:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500 flex items-center justify-center text-white text-2xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Liens utiles</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">Ressources pour les micro-entrepreneurs</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <a href="https://www.autoentrepreneur.urssaf.fr" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">URSSAF</p>
+                    <p class="text-xs text-slate-500">Déclarations</p>
+                </a>
+                <a href="https://www.impots.gouv.fr" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">Impôts</p>
+                    <p class="text-xs text-slate-500">Déclaration IR</p>
+                </a>
+                <a href="https://www.infogreffe.fr" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
+                    <div class="text-2xl mb-2">📑</div>
+                    <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">Infogreffe</p>
+                    <p class="text-xs text-slate-500">Formalités</p>
+                </a>
+                <a href="https://www.service-public.fr/professionnels-entreprises" target="_blank" class="p-4 bg-white dark:bg-slate-800 rounded-xl hover:shadow-md transition text-center group">
+                    <svg class="w-8 h-8 mx-auto mb-2 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-sm font-medium text-slate-900 dark:text-white group-hover:text-cyan-600">Service Public</p>
+                    <p class="text-xs text-slate-500">Infos entreprises</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    // Calculateur URSSAF
+    function calculateUrssaf() {
+        const ca = parseFloat(document.getElementById('ca-urssaf').value) || 0;
+        const type = document.getElementById('type-activite-urssaf').value;
+        
+        let taux = 0.212; // Service BIC par défaut
+        if (type === 'liberal') taux = 0.211;
+        if (type === 'vente') taux = 0.123;
+        
+        const cotisations = ca * taux;
+        const net = ca - cotisations;
+        
+        document.getElementById('cotisations-urssaf').textContent = cotisations.toFixed(2).replace('.', ',') + ' €';
+        document.getElementById('net-urssaf').textContent = net.toFixed(2).replace('.', ',') + ' €';
+        document.getElementById('result-urssaf').classList.remove('hidden');
+    }
+
+    // Générateur de devis (simple impression)
+    function generateDevis() {
+        const client = document.getElementById('devis-client').value || 'Client';
+        const date = document.getElementById('devis-date').value;
+        const description = document.getElementById('devis-description').value || 'Prestation';
+        const montant = document.getElementById('devis-montant').value || '0';
+        const validite = document.getElementById('devis-validite').value || '30';
+        
+        const entrepriseNom = "<?php echo e($entreprise->nom); ?>";
+        const entrepriseEmail = "<?php echo e($entreprise->email); ?>";
+        const entrepriseTel = "<?php echo e($entreprise->telephone ?? ''); ?>";
+        const entrepriseVille = "<?php echo e($entreprise->ville ?? ''); ?>";
+        
+        const dateValidite = new Date(date);
+        dateValidite.setDate(dateValidite.getDate() + parseInt(validite));
+        
+        const devisHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Devis - ${entrepriseNom}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                    .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+                    .entreprise { font-size: 24px; font-weight: bold; color: #22c55e; }
+                    .devis-title { text-align: center; font-size: 28px; margin: 30px 0; color: #1e293b; }
+                    .info-box { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                    .table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+                    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+                    .table th { background: #f1f5f9; }
+                    .total { font-size: 24px; text-align: right; font-weight: bold; color: #22c55e; }
+                    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+                    .mention { background: #fef3c7; padding: 10px; border-radius: 4px; font-size: 12px; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div class="entreprise">${entrepriseNom}</div>
+                        <p>${entrepriseEmail}<br>${entrepriseTel}<br>${entrepriseVille}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p><strong>Devis N°</strong> ${Date.now().toString().slice(-6)}</p>
+                        <p><strong>Date :</strong> ${new Date(date).toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Valide jusqu'au :</strong> ${dateValidite.toLocaleDateString('fr-FR')}</p>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <strong>Client :</strong> ${client}
+                </div>
+                
+                <h1 class="devis-title">DEVIS</h1>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="text-align: right;">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${description}</td>
+                            <td style="text-align: right;">${parseFloat(montant).toFixed(2)} €</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="total">
+                    Total : ${parseFloat(montant).toFixed(2)} €
+                </div>
+                
+                <div class="mention">
+                    TVA non applicable, article 293 B du CGI (micro-entreprise)
+                </div>
+                
+                <div class="footer">
+                    <p>Ce devis est valable ${validite} jours à compter de sa date d'émission.</p>
+                    <p>Pour accepter ce devis, merci de le retourner signé avec la mention "Bon pour accord".</p>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(devisHtml);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    // Export CSV
+    function exportCSV() {
+        const debut = document.getElementById('export-debut').value;
+        const fin = document.getElementById('export-fin').value;
+        window.location.href = `<?php echo e(route('factures.comptabilite', $entreprise->slug)); ?>?date_debut=${debut}&date_fin=${fin}&export=csv`;
+    }
+</script>
+<?php /**PATH /var/www/html/resources/views/entreprise/dashboard/tabs/outils.blade.php ENDPATH**/ ?>

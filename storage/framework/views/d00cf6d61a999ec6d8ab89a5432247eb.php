@@ -1,0 +1,556 @@
+<?php
+    // Déterminer le type de navigation et les liens selon le contexte
+    $navType = $navType ?? 'dashboard'; // dashboard, entreprise, admin, public
+    $currentRoute = request()->route()->getName();
+    $user = auth()->user();
+    $uniqueId = $id ?? ('mobile_nav_' . uniqid());
+    $hideButton = $hideButton ?? false;
+?>
+
+<!-- Menu Burger pour Web Mobile -->
+<?php if(!$hideButton): ?>
+<div class="mobile-nav-burger" style="z-index: 100 !important;">
+    <!-- Bouton burger -->
+    <button 
+        id="<?php echo e($uniqueId); ?>_button"
+        class="burger-button"
+        aria-label="Ouvrir le menu"
+        aria-expanded="false"
+        onclick="toggleBurgerMenu('<?php echo e($uniqueId); ?>')"
+    >
+        <svg class="burger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+</div>
+<?php endif; ?>
+
+<!-- Overlay -->
+<div id="<?php echo e($uniqueId); ?>_overlay" class="burger-overlay" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')"></div>
+
+<!-- Drawer -->
+<div id="<?php echo e($uniqueId); ?>_drawer" class="burger-drawer">
+    <div class="burger-drawer-content">
+        <!-- Header du drawer -->
+        <div class="pb-4 mb-4 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-2">
+                <?php
+                    use App\Helpers\SiteHelper;
+                    $logoUrl = SiteHelper::getLogo('transparent');
+                ?>
+                <?php if($logoUrl): ?>
+                    <img src="<?php echo e($logoUrl); ?>" alt="Allo Tata" class="h-6 w-auto">
+                <?php else: ?>
+                    <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                        Allo Tata
+                    </span>
+                <?php endif; ?>
+                <button onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <?php if($user): ?>
+                <p class="text-sm text-slate-600 dark:text-slate-400"><?php echo e($user->name); ?></p>
+                <?php if($user->email): ?>
+                    <p class="text-xs text-slate-500 dark:text-slate-500"><?php echo e($user->email); ?></p>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- Liens de navigation selon le contexte -->
+        <?php if($navType === 'dashboard' && $user): ?>
+            <a href="<?php echo e(route('dashboard')); ?>" class="<?php echo e($currentRoute === 'dashboard' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <?php if($user->est_gerant): ?>
+                <a href="<?php echo e(route('entreprise.create')); ?>" class="<?php echo e($currentRoute === 'entreprise.create' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Créer une entreprise
+                </a>
+            <?php endif; ?>
+            <?php if($user->is_admin): ?>
+                <a href="<?php echo e(route('admin.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    Administration
+                </a>
+            <?php endif; ?>
+            <a href="<?php echo e(route('notifications.index')); ?>" class="<?php echo e($currentRoute === 'notifications.index' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                Notifications
+                <?php if(isset($user->nombre_notifications_non_lues) && $user->nombre_notifications_non_lues > 0): ?>
+                    <span class="ml-auto px-2 py-0.5 text-xs bg-red-500 text-white rounded-full"><?php echo e($user->nombre_notifications_non_lues); ?></span>
+                <?php endif; ?>
+            </a>
+            <a href="<?php echo e(route('messagerie.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'messagerie.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                Messagerie
+            </a>
+            <a href="<?php echo e(route('tickets.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'tickets.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Support
+            </a>
+            <a href="<?php echo e(route('checkout.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'checkout.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                Espace Paiement
+            </a>
+            <a href="<?php echo e(route('settings.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'settings.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Paramètres
+            </a>
+            <a href="<?php echo e(route('dashboard', ['tab' => 'installer'])); ?>" class="<?php echo e(request('tab') === 'installer' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Installer
+            </a>
+            <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+                <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit" class="w-full text-left px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        <?php elseif($navType === 'admin' && $user && $user->is_admin): ?>
+            <a href="<?php echo e(route('admin.index')); ?>" class="<?php echo e($currentRoute === 'admin.index' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Dashboard Admin
+            </a>
+            
+            <!-- Kanban -->
+            <a href="<?php echo e(route('admin.kanban.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.kanban.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                </svg>
+                Kanban
+            </a>
+            
+            <!-- Notes -->
+            <a href="<?php echo e(route('admin.notes.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.notes.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Notes
+            </a>
+            
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Gestion</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.users.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.users.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                Utilisateurs
+            </a>
+            <a href="<?php echo e(route('admin.entreprises.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.entreprises.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Entreprises
+            </a>
+            <a href="<?php echo e(route('admin.reservations.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.reservations.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Réservations
+            </a>
+
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Communication</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.tickets.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.tickets.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                </svg>
+                Tickets Support
+            </a>
+            <a href="<?php echo e(route('admin.contacts.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.contacts.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Contacts
+            </a>
+            <a href="<?php echo e(route('admin.email-templates.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.email-templates.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+                Emails & Templates
+            </a>
+            
+            <!-- Messagerie interne -->
+            <a href="<?php echo e(route('admin.messagerie-interne.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.messagerie-interne.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                Messagerie interne
+            </a>
+            
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Contenu</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.faqs.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.faqs.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                FAQs
+            </a>
+            <a href="<?php echo e(route('admin.announcements.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.announcements.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                </svg>
+                Annonces
+            </a>
+            <a href="<?php echo e(route('admin.courses.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.courses.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                Cours
+            </a>
+            <a href="<?php echo e(route('admin.media.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.media.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Médiathèque
+            </a>
+
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Finances</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.finances.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.finances.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Finances Entreprises
+            </a>
+            <a href="<?php echo e(route('admin.factures.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.factures.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Factures
+            </a>
+            <a href="<?php echo e(route('admin.statistiques.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.statistiques.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Statistiques
+            </a>
+
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Abonnements</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.subscriptions.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.subscriptions.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+                Abonnements
+            </a>
+            <a href="<?php echo e(route('admin.echeances.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.echeances.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Paiements
+            </a>
+            <a href="<?php echo e(route('admin.essais-gratuits.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.essais-gratuits.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+                Essais gratuits
+            </a>
+            <a href="<?php echo e(route('admin.promo-codes.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.promo-codes.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                Codes promo
+            </a>
+            <a href="<?php echo e(route('admin.stripe-prices.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.stripe-prices.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Tarifs
+            </a>
+            <a href="<?php echo e(route('admin.custom-prices.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.custom-prices.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                </svg>
+                Prix personnalisés
+            </a>
+            <a href="<?php echo e(route('admin.stripe-webhooks.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.stripe-webhooks.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                </svg>
+                Webhooks Stripe
+            </a>
+
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Outils</p>
+            </div>
+            <a href="<?php echo e(route('brightshell.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'brightshell.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')" style="color: #4a6fa5;">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #4a6fa5;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                </svg>
+                BrightShell ERP
+            </a>
+
+            
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Système</p>
+            </div>
+            
+            <a href="<?php echo e(route('admin.errors.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.errors.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                Erreurs
+            </a>
+            <a href="<?php echo e(route('admin.activity-logs.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.activity-logs.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                Logs d'activité
+            </a>
+            <a href="<?php echo e(route('admin.email-logs.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.email-logs.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                Logs Emails
+            </a>
+            <a href="<?php echo e(route('admin.sms-logs.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.sms-logs.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                Logs SMS
+            </a>
+            <a href="<?php echo e(route('admin.exports.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.exports.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Exports
+            </a>
+            <a href="<?php echo e(route('admin.settings.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.settings.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Paramètres
+            </a>
+            <a href="<?php echo e(route('admin.database.index')); ?>" class="<?php echo e(str_starts_with($currentRoute, 'admin.database.') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                </svg>
+                Base de données
+            </a>
+            
+            <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+                <a href="<?php echo e(route('dashboard')); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Retour Site
+                </a>
+                <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit" class="w-full text-left px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        <?php elseif($navType === 'entreprise' && isset($entreprise) && $user): ?>
+            <a href="<?php echo e(route('dashboard')); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Mon compte
+            </a>
+            <a href="<?php echo e(route('public.entreprise', $entreprise->slug)); ?>" target="_blank" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                Page publique
+            </a>
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Navigation entreprise</p>
+            </div>
+            <?php if(isset($activeTab)): ?>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'accueil'])); ?>" class="<?php echo e($activeTab === 'accueil' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Accueil
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'agenda'])); ?>" class="<?php echo e($activeTab === 'agenda' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Agenda
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'mes-services'])); ?>" class="<?php echo e(($activeTab === 'services' || $activeTab === 'mes-services') ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Services
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'stock'])); ?>" class="<?php echo e($activeTab === 'stock' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                    Stock
+                </a>
+                <?php if(isset($aGestionMultiPersonnes) && $aGestionMultiPersonnes): ?>
+                    <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'equipe'])); ?>" class="<?php echo e($activeTab === 'equipe' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        Équipe
+                    </a>
+                <?php endif; ?>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'reservations'])); ?>" class="<?php echo e($activeTab === 'reservations' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    Réservations
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'factures'])); ?>" class="<?php echo e($activeTab === 'factures' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Factures
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'finances'])); ?>" class="<?php echo e($activeTab === 'finances' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Recettes
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'outils'])); ?>" class="<?php echo e($activeTab === 'outils' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    Outils
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie'])); ?>" class="<?php echo e($activeTab === 'messagerie' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    Messagerie
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'fidelisation'])); ?>" class="<?php echo e($activeTab === 'fidelisation' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                    </svg>
+                    Fidélisation
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])); ?>" class="<?php echo e($activeTab === 'abonnements' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                    Abonnements
+                </a>
+                <a href="<?php echo e(route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])); ?>" class="<?php echo e($activeTab === 'parametres' ? 'active' : ''); ?>" onclick="closeBurgerMenu('<?php echo e($uniqueId); ?>')">
+                    <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Paramètres
+                </a>
+            <?php endif; ?>
+            <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+                <form method="POST" action="<?php echo e(route('logout')); ?>" class="inline">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit" class="w-full text-left px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+
+<script>
+if (typeof toggleBurgerMenu === 'undefined') {
+    window.toggleBurgerMenu = function(id) {
+        const drawer = document.getElementById(id + '_drawer');
+        const overlay = document.getElementById(id + '_overlay');
+        const button = document.getElementById(id + '_button');
+        
+        if (!drawer || !overlay) return;
+
+        const isOpen = drawer.classList.contains('open');
+        
+        if (isOpen) {
+            closeBurgerMenu(id);
+        } else {
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+            if (button) button.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+}
+
+if (typeof closeBurgerMenu === 'undefined') {
+    window.closeBurgerMenu = function(id) {
+        const drawer = document.getElementById(id + '_drawer');
+        const overlay = document.getElementById(id + '_overlay');
+        const button = document.getElementById(id + '_button');
+        
+        if (!drawer || !overlay) return;
+
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        if (button) button.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+}
+
+// Fermer le menu au clic sur Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const openedDrawers = document.querySelectorAll('.burger-drawer.open');
+        openedDrawers.forEach(drawer => {
+            const id = drawer.id.replace('_drawer', '');
+            closeBurgerMenu(id);
+        });
+    }
+});
+</script><?php /**PATH /var/www/html/resources/views/components/mobile-nav.blade.php ENDPATH**/ ?>
