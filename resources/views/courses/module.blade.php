@@ -6,8 +6,8 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-900">
 
     {{-- Header : breadcrumb + bouton retour --}}
-    <div class="pt-20 sm:pt-24 pb-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <div class="max-w-5xl mx-auto">
+    <div class="pt-20 sm:pt-24 pb-4 px-4 sm:px-6 lg:px-8 2xl:px-12 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             {{-- Breadcrumb --}}
             <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-4">
                 <a href="{{ route('courses.index') }}" class="hover:text-green-600 dark:hover:text-green-400 transition">
@@ -30,8 +30,8 @@
     </div>
 
     {{-- Section Hero : titre, description, progression --}}
-    <section class="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
-        <div class="max-w-5xl mx-auto">
+    <section class="px-4 sm:px-6 lg:px-8 2xl:px-12 py-6 sm:py-8 md:py-10">
+        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             <div class="flex flex-col md:flex-row md:items-start gap-6">
                 {{-- Texte --}}
                 <div class="flex-1 min-w-0">
@@ -98,8 +98,8 @@
 
     {{-- Vidéo de présentation --}}
     @if($module->video_url)
-        <section class="px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8">
-            <div class="max-w-5xl mx-auto">
+        <section class="px-4 sm:px-6 lg:px-8 2xl:px-12 pb-6 sm:pb-8">
+            <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
                 <div class="rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700 bg-black">
                     @php
                         $videoUrl = $module->video_url;
@@ -145,14 +145,14 @@
     @endif
 
     {{-- Liste des leçons : grid de cards --}}
-    <section class="px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
-        <div class="max-w-5xl mx-auto">
+    <section class="px-4 sm:px-6 lg:px-8 2xl:px-12 pb-12 sm:pb-16">
+        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">
                 Leçons du module
             </h2>
 
             @if($lessons->count() > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 xl:gap-5">
                     @foreach($lessons as $lesson)
                         @php
                             $isAccessible = $lesson->isAccessibleBy($user);
