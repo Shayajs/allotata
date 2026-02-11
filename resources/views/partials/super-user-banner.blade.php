@@ -1,24 +1,31 @@
 <!-- Bandeau Impersonation Super-User -->
 @if(session('original_admin_id'))
-<div class="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-lg fixed top-2 left-2 right-2 z-[100] rounded-lg" style="padding-top: env(safe-area-inset-top); max-width: calc(100vw - 1rem); box-sizing: border-box;">
-    <div class="flex items-center gap-3">
-        <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-        </svg>
-        <div>
-            <span class="font-bold uppercase tracking-wider text-sm">Mode Super-User</span>
-            <span class="text-red-100 text-sm hidden sm:inline ml-2">| Connecté en tant que <strong class="text-white underline">{{ auth()->user()->name }}</strong></span>
+{{-- Barre inline fine en haut de page --}}
+<div class="relative z-50 bg-gradient-to-r from-slate-900 via-red-950 to-slate-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-9">
+            {{-- Indicateur gauche --}}
+            <div class="flex items-center gap-2.5">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                <span class="text-xs font-semibold tracking-widest uppercase text-red-300">Super-User</span>
+                <span class="hidden sm:inline text-xs text-slate-400">—</span>
+                <span class="hidden sm:inline text-xs text-slate-300">Connecté en tant que <strong class="text-white">{{ auth()->user()->name }}</strong></span>
+            </div>
+
+            {{-- Bouton Quitter --}}
+            <form action="{{ route('stop-impersonating') }}" method="POST">
+                @csrf
+                <button type="submit" class="group flex items-center gap-1.5 text-xs font-semibold text-red-300 hover:text-white transition-colors duration-200">
+                    <svg class="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    Quitter
+                </button>
+            </form>
         </div>
     </div>
-    <form action="{{ route('stop-impersonating') }}" method="POST">
-        @csrf
-        <button type="submit" class="px-4 py-1.5 bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-50 dark:hover:bg-slate-700 transition-colors uppercase tracking-wide flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            Quitter
-        </button>
-    </form>
 </div>
 @endif
