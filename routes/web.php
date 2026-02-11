@@ -198,6 +198,7 @@ use App\Http\Controllers\EntrepriseMembreController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MembreGestionController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\GoogleCalendarController;
 
 
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
@@ -239,6 +240,10 @@ Route::post(
     '/stripe/webhook',
     [\App\Http\Controllers\StripeWebhookController::class, 'handleWebhook']
 )->name('cashier.webhook');
+
+// Webhook Google Calendar (sans CSRF, sans auth — appelé par Google)
+Route::post('/webhooks/google-calendar', [GoogleCalendarController::class, 'webhook'])
+    ->name('google-calendar.webhook');
 
 // Bootstrap : création du premier admin (inaccessible dès qu'un admin existe)
 Route::prefix('temp-admin')->name('temp-admin.')->middleware('no.admin.exists')->group(function () {
@@ -417,6 +422,11 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::delete('/m/{slug}/finances/{finance}', [\App\Http\Controllers\EntrepriseFinanceController::class, 'destroy'])->name('entreprise.finances.destroy');
     Route::post('/m/{slug}/fiscal-settings', [\App\Http\Controllers\EntrepriseFinanceController::class, 'saveFiscalSettings'])->name('entreprise.fiscal-settings.save');
     
+    // Google Calendar OAuth
+    Route::get('/m/{slug}/google-calendar/redirect', [GoogleCalendarController::class, 'redirect'])->name('google-calendar.redirect');
+    Route::get('/auth/google/callback', [GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
+    Route::post('/m/{slug}/google-calendar/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
+
     // Gestion de l'agenda (pour les gérants)
     Route::get('/m/{slug}/agenda', [AgendaController::class, 'index'])->name('agenda.index');
     Route::get('/m/{slug}/agenda/service', [AgendaController::class, 'index'])->name('agenda.service.index');
@@ -944,6 +954,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/echeances/{echeance}/reduction', [\App\Http\Controllers\Admin\EcheanceController::class, 'updateReduction'])->name('echeances.reduction');
     Route::post('/echeances/{echeance}/arrete', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerArrete'])->name('echeances.arrete');
     Route::post('/echeances/{echeance}/annule', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerAnnule'])->name('echeances.annule');
+    Route::post('/echeances/{echeance}/refund', [\App\Http\Controllers\Admin\EcheanceController::class, 'refund'])->name('echeances.refund');
     
     // Gestion des essais gratuits
     Route::get('/essais-gratuits', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'index'])->name('essais-gratuits.index');

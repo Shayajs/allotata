@@ -23,6 +23,9 @@ class ReservationObserver
         if ($reservation->statut === 'confirmee') {
             $this->sendSmsNotification($reservation);
         }
+
+        // Synchroniser vers Google Calendar (asynchrone)
+        $this->syncToGoogle($reservation, 'create');
     }
     
     /**
@@ -71,6 +74,15 @@ class ReservationObserver
             $reservation->load('entreprise');
             if ($reservation->entreprise) {
                 \App\Services\CacheService::clearEntrepriseCache($reservation->entreprise->id, $reservation->entreprise->slug);
+            }
+        }
+
+        // Synchroniser les changements vers Google Calendar (date, statut, etc.)
+        if ($reservation->isDirty(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service'])) {
+            if ($reservation->statut === 'annulee') {
+                $this->syncToGoogle($reservation, 'delete');
+            } else {
+                $this->syncToGoogle($reservation, 'update');
             }
         }
     }
@@ -129,6 +141,25 @@ class ReservationObserver
         // Invalider le cache des statistiques
         if ($reservation->entreprise) {
             \App\Services\CacheService::clearEntrepriseCache($reservation->entreprise->id, $reservation->entreprise->slug);
+        }
+
+        // Supprimer l'événement Google Calendar
+        $this->syncToGoogle($reservation, 'delete');
+    }
+
+    /**
+     * Dispatch un job de synchronisation vers Google Calendar si l'entreprise est connectée.
+     */
+    protected function syncToGoogle(Reservation $reservation, string $action): void
+    {
+        try {
+            $reservation->loadMissing('entreprise');
+
+            if ($reservation->entreprise?->aGoogleCalendar()) {
+                \App\Jobs\SyncReservationToGoogle::dispatch($reservation->id, $action);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Erreur dispatch SyncReservationToGoogle pour réservation #' . $reservation->id . ': ' . $e->getMessage());
         }
     }
 }

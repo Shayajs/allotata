@@ -17,6 +17,7 @@ class Echeance extends Model
     public const STATUT_ECHEC = 'echec';           // Paiement échoué (carte refusée, etc.)
     public const STATUT_ANNULE = 'annule';         // Annulé par l'utilisateur ou le système
     public const STATUT_ARRETE = 'arrete';         // Arrêté (abonnement résilié)
+    public const STATUT_REMBOURSE = 'rembourse';   // Remboursé (total ou partiel)
 
     public const TYPE_DEFAULT = 'default';
     public const TYPE_SITE_WEB = 'site_web';
@@ -37,6 +38,13 @@ class Echeance extends Model
         'promo_code_id',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
+        'stripe_refund_id',
+        'refund_amount',
+        'refund_status',
+        'refund_reason',
+        'refund_notes',
+        'refunded_by',
+        'refunded_at',
         'paye_at',
         'statut',
         'metadata',
@@ -52,6 +60,8 @@ class Echeance extends Model
             'montant_final' => 'decimal:2',
             'reduction_promo' => 'decimal:2',
             'reduction_manuel' => 'decimal:2',
+            'refund_amount' => 'decimal:2',
+            'refunded_at' => 'datetime',
             'paye_at' => 'datetime',
             'metadata' => 'array',
         ];
@@ -151,6 +161,31 @@ class Echeance extends Model
             return 'Multi-Personnes – ' . $nom;
         }
         return $this->subscription_type;
+    }
+
+    public function estRemboursee(): bool
+    {
+        return $this->statut === self::STATUT_REMBOURSE;
+    }
+
+    public function estRemboursable(): bool
+    {
+        return $this->estPayee()
+            && $this->stripe_payment_intent_id
+            && !$this->stripe_refund_id;
+    }
+
+    public function estPartielementRemboursee(): bool
+    {
+        return $this->estPayee()
+            && $this->stripe_refund_id
+            && $this->refund_amount
+            && $this->refund_amount < ($this->montant_final ?? $this->montant_du);
+    }
+
+    public function refundedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'refunded_by');
     }
 
     /**
