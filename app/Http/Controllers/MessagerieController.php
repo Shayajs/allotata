@@ -174,7 +174,7 @@ class MessagerieController extends Controller
             // Créer un message automatique pour informer de la demande
             $messageContenu = "📅 Bonjour, je souhaiterais réserver : " . $service->nom . "\n\n";
             $messageContenu .= "Prix : " . number_format($service->prix, 2, ',', ' ') . " €\n";
-            $messageContenu .= "Durée : " . $service->duree_minutes . " minutes\n\n";
+            $messageContenu .= ($service->estDateButoire() ? "Délai : " : "Durée : ") . $service->duree_formatee . "\n\n";
             if ($service->description) {
                 $messageContenu .= "Description : " . $service->description . "\n\n";
             }

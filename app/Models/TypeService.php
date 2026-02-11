@@ -153,6 +153,20 @@ class TypeService extends Model
     }
 
     /**
+     * Retourne la durée formatée avec l'unité correcte selon le type de structure
+     * Ex: "30 min", "7 jours de délai", "60 min/session", "45 min/RDV"
+     */
+    public function getDureeFormateeAttribute(): string
+    {
+        return match ($this->type_structure) {
+            'date_butoire' => $this->duree_minutes . ' jour' . ($this->duree_minutes > 1 ? 's' : '') . ' de délai',
+            'multi_jours' => $this->duree_minutes . ' min/session',
+            'multi_rendez_vous' => $this->duree_minutes . ' min/RDV',
+            default => $this->duree_minutes . ' min',
+        };
+    }
+
+    /**
      * Relation : Un type de service peut avoir plusieurs options
      */
     public function options(): HasMany

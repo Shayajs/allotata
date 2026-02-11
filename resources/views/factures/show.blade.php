@@ -185,7 +185,13 @@
                                         <td class="px-4 py-4 text-sm text-slate-900 dark:text-white">
                                             {{ $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Service') }}
                                             @if($reservation->duree_minutes)
-                                                <span class="text-slate-500 dark:text-slate-400">({{ $reservation->duree_minutes }} min)</span>
+                                                <span class="text-slate-500 dark:text-slate-400">
+                                                    @if($reservation->typeService && $reservation->typeService->estDateButoire())
+                                                        ({{ $reservation->typeService->duree_formatee }})
+                                                    @else
+                                                        ({{ $reservation->duree_minutes }} min)
+                                                    @endif
+                                                </span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-4 text-sm text-slate-900 dark:text-white">{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
@@ -206,7 +212,13 @@
                                         @if($facture->reservation)
                                             {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
                                             @if($facture->reservation->duree_minutes)
-                                                <span class="text-slate-500 dark:text-slate-400">({{ $facture->reservation->duree_minutes }} min)</span>
+                                                <span class="text-slate-500 dark:text-slate-400">
+                                                    @if($facture->reservation->typeService && $facture->reservation->typeService->estDateButoire())
+                                                        ({{ $facture->reservation->typeService->duree_formatee }})
+                                                    @else
+                                                        ({{ $facture->reservation->duree_minutes }} min)
+                                                    @endif
+                                                </span>
                                             @endif
                                         @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
                                             @if($facture->entrepriseSubscription)

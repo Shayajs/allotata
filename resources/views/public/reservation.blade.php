@@ -113,7 +113,11 @@
                 <div>
                     <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">Détails du service</h3>
                     <p class="text-lg font-semibold text-slate-900 dark:text-white mb-1">{{ $reservation->type_service ?? 'Service' }}</p>
-                    <p class="text-sm text-slate-600 dark:text-slate-400">Durée : {{ $reservation->duree_minutes }} minutes</p>
+                    @if($reservation->typeService && $reservation->typeService->estDateButoire())
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Délai : {{ $reservation->typeService->duree_formatee }}</p>
+                    @else
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Durée : {{ $reservation->duree_minutes }} minutes</p>
+                    @endif
                     <p class="text-xl font-bold text-green-600 dark:text-green-400 mt-2">{{ number_format($reservation->prix, 2, ',', ' ') }} €</p>
                     @if($reservation->est_paye)
                         <span class="inline-block mt-2 px-3 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">

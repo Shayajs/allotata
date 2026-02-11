@@ -52,7 +52,14 @@
             @endif
 
             <div class="grid grid-cols-2 gap-3">
-                @if(!$reservation->date_butoire || !$reservation->typeService || !$reservation->typeService->estDateButoire())
+                @if($reservation->typeService && $reservation->typeService->estDateButoire())
+                <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Délai</p>
+                    <p class="font-bold text-slate-900 dark:text-white">
+                        {{ $reservation->typeService->duree_formatee }}
+                    </p>
+                </div>
+                @else
                 <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                     <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Durée</p>
                     <p class="font-bold text-slate-900 dark:text-white">

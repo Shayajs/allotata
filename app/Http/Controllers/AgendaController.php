@@ -639,6 +639,132 @@ class AgendaController extends Controller
     }
 
     /**
+     * Dupliquer un type de service (avec ses options et choices)
+     */
+    public function duplicateTypeService(Request $request, $slug, $typeServiceId)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $original = TypeService::where('id', $typeServiceId)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        try {
+            DB::beginTransaction();
+
+            $copy = TypeService::create([
+                'entreprise_id' => $entreprise->id,
+                'nom' => 'Copie de ' . $original->nom,
+                'description' => $original->description,
+                'duree_minutes' => $original->duree_minutes,
+                'prix' => $original->prix,
+                'est_actif' => $original->est_actif,
+                'type_structure' => $original->type_structure,
+                'ordre_affichage' => null,
+            ]);
+
+            // Copier les options et leurs choices
+            foreach ($original->options as $option) {
+                $newOption = $copy->options()->create([
+                    'nom' => $option->nom,
+                    'type' => $option->type,
+                    'obligatoire' => $option->obligatoire,
+                    'ordre' => $option->ordre,
+                ]);
+
+                foreach ($option->choices as $choice) {
+                    $newOption->choices()->create([
+                        'nom' => $choice->nom,
+                        'prix_supplementaire' => $choice->prix_supplementaire,
+                        'temps_supplementaire' => $choice->temps_supplementaire,
+                        'ordre' => $choice->ordre,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+                ->with('success', 'Service "' . $copy->nom . '" créé par duplication.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la duplication du service', ['error' => $e->getMessage()]);
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+                ->with('error', 'Erreur lors de la duplication du service.');
+        }
+    }
+
+    /**
+     * Créer plusieurs services en une fois (création rapide)
+     */
+    public function bulkCreateTypeService(Request $request, $slug)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $request->validate([
+            'services_text' => 'required|string',
+            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire',
+        ]);
+
+        $lines = array_filter(array_map('trim', explode("\n", $request->services_text)));
+        $created = 0;
+        $errors = 0;
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($lines as $line) {
+                $parts = array_map('trim', explode(',', $line));
+                $nom = $parts[0] ?? '';
+                $duree = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : null;
+                $prix = isset($parts[2]) && is_numeric($parts[2]) ? (float) $parts[2] : null;
+
+                if (empty($nom)) {
+                    $errors++;
+                    continue;
+                }
+
+                TypeService::create([
+                    'entreprise_id' => $entreprise->id,
+                    'nom' => $nom,
+                    'description' => null,
+                    'duree_minutes' => $duree ?? 30,
+                    'prix' => $prix ?? 0,
+                    'est_actif' => true,
+                    'type_structure' => $request->type_structure,
+                ]);
+
+                $created++;
+            }
+
+            DB::commit();
+
+            $message = $created . ' service' . ($created > 1 ? 's' : '') . ' créé' . ($created > 1 ? 's' : '') . ' avec succès.';
+            if ($errors > 0) {
+                $message .= ' ' . $errors . ' ligne' . ($errors > 1 ? 's' : '') . ' ignorée' . ($errors > 1 ? 's' : '') . ' (format invalide).';
+            }
+
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la création en masse', ['error' => $e->getMessage()]);
+            return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'services'])
+                ->with('error', 'Erreur lors de la création des services.');
+        }
+    }
+
+    /**
      * Supprimer un type de service
      */
     public function deleteTypeService(Request $request, $slug, $typeServiceId)

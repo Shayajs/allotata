@@ -356,7 +356,11 @@
                             <td>
                                 {{ $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Service') }}
                                 @if($reservation->duree_minutes)
-                                    ({{ $reservation->duree_minutes }} min)
+                                    @if($reservation->typeService && $reservation->typeService->estDateButoire())
+                                        ({{ $reservation->typeService->duree_formatee }})
+                                    @else
+                                        ({{ $reservation->duree_minutes }} min)
+                                    @endif
                                 @endif
                             </td>
                             <td>{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
@@ -378,7 +382,11 @@
                             @if($facture->reservation)
                                 {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
                                 @if($facture->reservation->duree_minutes)
-                                    ({{ $facture->reservation->duree_minutes }} min)
+                                    @if($facture->reservation->typeService && $facture->reservation->typeService->estDateButoire())
+                                        ({{ $facture->reservation->typeService->duree_formatee }})
+                                    @else
+                                        ({{ $facture->reservation->duree_minutes }} min)
+                                    @endif
                                 @endif
                             @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
                                 @if($facture->entrepriseSubscription)

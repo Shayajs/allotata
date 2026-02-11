@@ -393,6 +393,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::get('/m/{slug}', [EntrepriseDashboardController::class, 'index'])->name('entreprise.dashboard');
     Route::get('/m/{slug}/reload-tab/{tab}', [EntrepriseDashboardController::class, 'reloadTab'])->name('entreprise.dashboard.reload-tab');
     Route::put('/m/{slug}/update-mode-ordre', [EntrepriseDashboardController::class, 'updateModeOrdre'])->name('entreprise.dashboard.update-mode-ordre');
+    Route::put('/m/{slug}/prestation-libre', [EntrepriseDashboardController::class, 'updatePrestationLibre'])->name('entreprise.prestation-libre.update');
     Route::post('/m/{slug}/update-ordre-manuel', [EntrepriseDashboardController::class, 'updateOrdreManuel'])->name('entreprise.dashboard.update-ordre-manuel');
     
     // Finances d'entreprise
@@ -408,6 +409,8 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::get('/m/{slug}/agenda/reservations', [AgendaController::class, 'getReservations'])->name('agenda.reservations');
     Route::post('/m/{slug}/agenda/horaires', [AgendaController::class, 'storeHoraires'])->name('agenda.horaires.store');
     Route::post('/m/{slug}/agenda/service', [AgendaController::class, 'storeTypeService'])->name('agenda.service.store');
+    Route::post('/m/{slug}/agenda/service/{typeServiceId}/duplicate', [AgendaController::class, 'duplicateTypeService'])->name('agenda.service.duplicate');
+    Route::post('/m/{slug}/agenda/service/bulk', [AgendaController::class, 'bulkCreateTypeService'])->name('agenda.service.bulk');
     Route::delete('/m/{slug}/agenda/service/{typeServiceId}', [AgendaController::class, 'deleteTypeService'])->name('agenda.service.delete');
     Route::post('/m/{slug}/agenda/service/{typeServiceId}/image', [AgendaController::class, 'uploadServiceImage'])->name('agenda.service.image.upload');
     Route::post('/m/{slug}/agenda/service/{typeServiceId}/image/{imageId}/cover', [AgendaController::class, 'setServiceImageCover'])->name('agenda.service.image.cover');
