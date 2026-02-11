@@ -7,12 +7,23 @@
 @section('content')
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gestion des Cours</h1>
-        <button 
-            onclick="document.getElementById('create-module-modal').classList.remove('hidden')"
-            class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
-        >
-            ➕ Nouveau Module
-        </button>
+        <div class="flex items-center gap-3">
+            <button 
+                onclick="openBulkFillModal()"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Remplissage IA
+            </button>
+            <button 
+                onclick="document.getElementById('create-module-modal').classList.remove('hidden')"
+                class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+            >
+                ➕ Nouveau Module
+            </button>
+        </div>
     </div>
 
     <!-- Statistiques -->
@@ -226,6 +237,15 @@
             </form>
         </div>
     </div>
+
+    {{-- Modale Remplissage IA --}}
+    @include('admin.courses._bulk-fill-modal', [
+        'bulkFillMode' => 'global',
+        'bulkFillTargetId' => null,
+        'bulkFillContext' => [
+            'existing_modules' => $modules->pluck('titre')->toArray(),
+        ],
+    ])
 @endsection
 
 @push('scripts')

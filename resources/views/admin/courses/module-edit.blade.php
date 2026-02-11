@@ -12,12 +12,23 @@
         >
             ← Retour aux modules
         </a>
-        <button 
-            onclick="openLessonModal()"
-            class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
-        >
-            ➕ Nouvelle Leçon
-        </button>
+        <div class="flex items-center gap-3">
+            <button 
+                onclick="openBulkFillModal()"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Remplissage IA
+            </button>
+            <button 
+                onclick="openLessonModal()"
+                class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+            >
+                ➕ Nouvelle Leçon
+            </button>
+        </div>
     </div>
 
     <!-- Informations du module -->
@@ -226,6 +237,17 @@
             </form>
         </div>
     </div>
+
+    {{-- Modale Remplissage IA --}}
+    @include('admin.courses._bulk-fill-modal', [
+        'bulkFillMode' => 'module',
+        'bulkFillTargetId' => $module->id,
+        'bulkFillContext' => [
+            'module_titre' => $module->titre,
+            'module_description' => $module->description,
+            'existing_lessons' => $module->lessons->pluck('titre')->toArray(),
+        ],
+    ])
 @endsection
 
 @push('scripts')
