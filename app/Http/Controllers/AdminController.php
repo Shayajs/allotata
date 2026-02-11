@@ -1917,130 +1917,65 @@ class AdminController extends Controller
     }
 
     /**
-     * Créer un prix personnalisé pour un utilisateur ou une entreprise
+     * Créer un prix personnalisé pour un utilisateur ou une entreprise.
+     *
+     * Aucun appel à l'API Stripe : le montant est géré localement.
+     * – Pour les options entreprise (site_web, multi_personnes) : seul le montant local est utilisé.
+     * – Pour l'abonnement Cashier (default) : si vous souhaitez surcharger le prix Stripe,
+     *   créez le Price dans le Dashboard Stripe et collez l'ID ici (optionnel).
      */
     public function createCustomPrice(Request $request)
     {
         $validated = $request->validate([
-            'target_type' => 'required|in:user,entreprise',
-            'user_id' => 'required_if:target_type,user|nullable|exists:users,id',
-            'entreprise_id' => 'required_if:target_type,entreprise|nullable|exists:entreprises,id',
+            'target_type'       => 'required|in:user,entreprise',
+            'user_id'           => 'required_if:target_type,user|nullable|exists:users,id',
+            'entreprise_id'     => 'required_if:target_type,entreprise|nullable|exists:entreprises,id',
             'subscription_type' => 'required|in:default,site_web,multi_personnes',
-            'amount' => 'required|numeric|min:0.01',
-            'currency' => 'required|string|size:3',
-            'interval' => 'required|in:day,week,month,year',
-            'product_name' => 'required|string|max:255',
-            'product_description' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'expires_at' => 'nullable|date|after:today',
+            'amount'            => 'required|numeric|min:0.01',
+            'currency'          => 'required|string|size:3',
+            'stripe_price_id'   => 'nullable|string|max:255',
+            'notes'             => 'nullable|string',
+            'expires_at'        => 'nullable|date|after:today',
         ]);
 
-        // Initialiser Stripe
-        Stripe::setApiKey(config('services.stripe.secret'));
+        // Vérifier l'unicité : pas deux prix actifs pour la même cible + type
+        $exists = CustomPrice::where('subscription_type', $validated['subscription_type'])
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->when($validated['target_type'] === 'user', fn ($q) => $q->where('user_id', $validated['user_id']))
+            ->when($validated['target_type'] === 'entreprise', fn ($q) => $q->where('entreprise_id', $validated['entreprise_id']))
+            ->exists();
 
-        try {
-            // Créer ou récupérer le produit
-            $productName = $validated['product_name'];
-            $products = Product::all(['limit' => 100]);
-            $product = null;
-
-            foreach ($products->data as $p) {
-                if ($p->name === $productName) {
-                    $product = $p;
-                    break;
-                }
-            }
-
-            if (!$product) {
-                $product = Product::create([
-                    'name' => $productName,
-                    'description' => $validated['product_description'] ?? '',
-                ]);
-            }
-
-            // Créer le prix Stripe
-            // Utiliser round() pour éviter les problèmes d'arrondi avec les floats
-            // Ex: 19.99 * 100 peut donner 1998.9999999999998, round() corrige cela
-            $unitAmount = (int)round($validated['amount'] * 100, 0);
-            
-            // Vérification de la conversion pour le debug
-            $amountEntered = $validated['amount'];
-            $amountInCents = $amountEntered * 100;
-            $roundedAmount = round($amountInCents, 0);
-            $finalUnitAmount = (int)$roundedAmount;
-            
-            Log::info('Création prix personnalisé - Conversion', [
-                'montant_saisi' => $amountEntered,
-                'montant_en_centimes_brut' => $amountInCents,
-                'montant_arrondi' => $roundedAmount,
-                'montant_final_stripe' => $finalUnitAmount,
-                'montant_final_euros' => $finalUnitAmount / 100,
-            ]);
-            
-            $price = Price::create([
-                'product' => $product->id,
-                'unit_amount' => $finalUnitAmount,
-                'currency' => strtolower($validated['currency']),
-                'recurring' => [
-                    'interval' => $validated['interval'],
-                ],
-            ]);
-
-            // Vérifier que le prix créé correspond bien
-            $priceRetrieved = Price::retrieve($price->id);
-            Log::info('Prix Stripe créé - Vérification', [
-                'stripe_price_id' => $price->id,
-                'unit_amount_stripe' => $priceRetrieved->unit_amount,
-                'unit_amount_euros' => $priceRetrieved->unit_amount / 100,
-                'montant_attendu_euros' => $amountEntered,
-            ]);
-
-            // Créer l'entrée dans custom_prices
-            $customPrice = CustomPrice::create([
-                'user_id' => $validated['target_type'] === 'user' ? $validated['user_id'] : null,
-                'entreprise_id' => $validated['target_type'] === 'entreprise' ? $validated['entreprise_id'] : null,
-                'subscription_type' => $validated['subscription_type'],
-                'stripe_price_id' => $price->id,
-                'amount' => $validated['amount'],
-                'currency' => strtolower($validated['currency']),
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => auth()->id(),
-                'expires_at' => $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
-                'is_active' => true,
-            ]);
-
-            Log::info('Prix personnalisé créé', [
-                'custom_price_id' => $customPrice->id,
-                'stripe_price_id' => $price->id,
-                'target_type' => $validated['target_type'],
-                'user_id' => $customPrice->user_id,
-                'entreprise_id' => $customPrice->entreprise_id,
-                'montant_saisi' => $amountEntered,
-                'montant_stripe' => $priceRetrieved->unit_amount / 100,
-            ]);
-
-            // Vérifier que le prix créé correspond exactement au montant saisi
-            $priceInEuros = $priceRetrieved->unit_amount / 100;
-            $difference = abs($priceInEuros - $amountEntered);
-            
-            if ($difference > 0.001) { // Tolérance de 0.001€ pour les erreurs d'arrondi
-                Log::warning('Écart détecté entre le prix saisi et le prix Stripe', [
-                    'prix_saisi' => $amountEntered,
-                    'prix_stripe' => $priceInEuros,
-                    'difference' => $difference,
-                ]);
-                
-                return back()->withErrors([
-                    'error' => "Attention : Le prix créé sur Stripe ({$priceInEuros}€) ne correspond pas exactement au prix saisi ({$amountEntered}€). Différence : " . number_format($difference, 2, ',', ' ') . "€. Veuillez vérifier le prix sur Stripe."
-                ]);
-            }
-
-            return back()->with('success', "Prix personnalisé créé avec succès ! ID Stripe: {$price->id}. Montant: {$priceInEuros}€/mois");
-
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la création du prix personnalisé: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Erreur lors de la création du prix personnalisé: ' . $e->getMessage()]);
+        if ($exists) {
+            return back()->withErrors(['error' => 'Un prix personnalisé actif existe déjà pour cette cible et ce type d\'abonnement. Désactivez-le d\'abord.']);
         }
+
+        $customPrice = CustomPrice::create([
+            'user_id'           => $validated['target_type'] === 'user' ? $validated['user_id'] : null,
+            'entreprise_id'     => $validated['target_type'] === 'entreprise' ? $validated['entreprise_id'] : null,
+            'subscription_type' => $validated['subscription_type'],
+            'stripe_price_id'   => $validated['stripe_price_id'] ?: null,
+            'amount'            => $validated['amount'],
+            'currency'          => strtolower($validated['currency']),
+            'notes'             => $validated['notes'] ?? null,
+            'created_by'        => auth()->id(),
+            'expires_at'        => $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
+            'is_active'         => true,
+        ]);
+
+        Log::info('Prix personnalisé créé (local)', [
+            'custom_price_id'   => $customPrice->id,
+            'target_type'       => $validated['target_type'],
+            'subscription_type' => $validated['subscription_type'],
+            'amount'            => $validated['amount'],
+            'stripe_price_id'   => $customPrice->stripe_price_id,
+        ]);
+
+        $label = number_format($validated['amount'], 2, ',', ' ') . ' ' . strtoupper($validated['currency']);
+
+        return back()->with('success', "Prix personnalisé créé : {$label}/mois.");
     }
 
     /**

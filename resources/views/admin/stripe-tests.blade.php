@@ -33,6 +33,34 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             Nettoyer les donn&eacute;es de test
         </button>
+
+        {{-- Export --}}
+        <div class="relative" x-data="{ exportOpen: false }">
+            <button @click="exportOpen = !exportOpen" :disabled="totalCount === 0"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 font-semibold rounded-lg transition text-sm border border-indigo-200 dark:border-indigo-800 disabled:opacity-40">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Exporter
+            </button>
+            <div x-show="exportOpen" @click.away="exportOpen = false" x-transition
+                 class="absolute left-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1">
+                <button @click="exportJSON(); exportOpen = false"
+                    class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    T&eacute;l&eacute;charger JSON
+                </button>
+                <button @click="exportClipboard(); exportOpen = false"
+                    class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                    Copier (presse-papier)
+                </button>
+                <button @click="exportMarkdown(); exportOpen = false"
+                    class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    T&eacute;l&eacute;charger Markdown
+                </button>
+            </div>
+        </div>
+
         <div class="ml-auto flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <span x-text="passCount + '/' + totalCount + ' test(s)'"></span>
             <span x-show="passCount === totalCount && totalCount > 0" class="text-green-600 dark:text-green-400 font-semibold">Tout OK</span>
@@ -251,6 +279,90 @@ function stripeTests() {
             } catch (err) {
                 this.addLog(false, 'Nettoyage \u00e9chou\u00e9 : ' + err.message);
             }
+        },
+
+        // ─── Export ───────────────────────────────────
+        _buildExportData() {
+            const now = new Date().toISOString();
+            const report = {
+                generated_at: now,
+                summary: { pass: this.passCount, fail: this.totalCount - this.passCount, total: this.totalCount },
+                tests: {},
+            };
+            for (const tab of this.tabs) {
+                for (const test of tab.tests) {
+                    if (this.results[test.id]) {
+                        report.tests[test.id] = {
+                            tab: tab.label,
+                            label: test.label,
+                            ok: this.results[test.id].ok,
+                            message: this.results[test.id].message,
+                            elapsed_ms: this.results[test.id].elapsed_ms,
+                            details: this.results[test.id].details,
+                        };
+                    }
+                }
+            }
+            return report;
+        },
+
+        _downloadFile(content, filename, mime) {
+            const blob = new Blob([content], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.addLog(true, 'Export t\u00e9l\u00e9charg\u00e9 : ' + filename);
+        },
+
+        exportJSON() {
+            const data = this._buildExportData();
+            const json = JSON.stringify(data, null, 2);
+            const date = new Date().toISOString().slice(0, 10);
+            this._downloadFile(json, `stripe-tests-${date}.json`, 'application/json');
+        },
+
+        async exportClipboard() {
+            const data = this._buildExportData();
+            const json = JSON.stringify(data, null, 2);
+            try {
+                await navigator.clipboard.writeText(json);
+                this.addLog(true, 'R\u00e9sultats copi\u00e9s dans le presse-papier.');
+            } catch (err) {
+                // Fallback
+                const ta = document.createElement('textarea');
+                ta.value = json;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                this.addLog(true, 'R\u00e9sultats copi\u00e9s (fallback).');
+            }
+        },
+
+        exportMarkdown() {
+            const data = this._buildExportData();
+            let md = `# Rapport Tests Stripe\n\n`;
+            md += `> G\u00e9n\u00e9r\u00e9 le ${new Date().toLocaleString('fr-FR')}\n\n`;
+            md += `## R\u00e9sum\u00e9\n\n`;
+            md += `| Statut | Nombre |\n|--------|--------|\n`;
+            md += `| R\u00e9ussis | ${data.summary.pass} |\n`;
+            md += `| \u00c9chou\u00e9s | ${data.summary.fail} |\n`;
+            md += `| **Total** | **${data.summary.total}** |\n\n`;
+            md += `## D\u00e9tails\n\n`;
+            md += `| Test | Onglet | Statut | Message | Temps |\n`;
+            md += `|------|--------|--------|---------|-------|\n`;
+            for (const [id, t] of Object.entries(data.tests)) {
+                const status = t.ok ? '\u2705' : '\u274c';
+                const msg = (t.message || '').replace(/\|/g, '\\|');
+                md += `| ${t.label} | ${t.tab} | ${status} | ${msg} | ${t.elapsed_ms ?? '-'}ms |\n`;
+            }
+            md += `\n## Donn\u00e9es brutes\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`;
+
+            const date = new Date().toISOString().slice(0, 10);
+            this._downloadFile(md, `stripe-tests-${date}.md`, 'text/markdown');
         },
     };
 }

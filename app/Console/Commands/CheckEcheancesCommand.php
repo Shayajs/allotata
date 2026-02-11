@@ -19,17 +19,29 @@ class CheckEcheancesCommand extends Command
     {
         $this->info('Vérification des échéances mensuelles...');
         $force = $this->option('force');
-        $jour = now()->day();
+        $jour = now()->day;
+        $dernierJourDuMois = now()->daysInMonth;
+        $estDernierJour = ($jour === $dernierJourDuMois);
         $debut = now()->copy()->startOfMonth();
         $fin = now()->copy()->endOfMonth();
 
         $created = 0;
         $skipped = 0;
 
+        if ($estDernierJour && $dernierJourDuMois < 31) {
+            $this->info("Dernier jour du mois ({$dernierJourDuMois}) : les jour_facturation > {$dernierJourDuMois} seront aussi traités.");
+        }
+
         // --- Échéances Premium (jour_facturation user) ---
+        // Fix fin de mois : le 28 fév, on traite aussi jour_facturation = 29, 30, 31
         $users = User::query()
             ->whereNotNull('jour_facturation')
-            ->where('jour_facturation', $jour)
+            ->where(function ($q) use ($jour, $dernierJourDuMois, $estDernierJour) {
+                $q->where('jour_facturation', $jour);
+                if ($estDernierJour) {
+                    $q->orWhere('jour_facturation', '>', $dernierJourDuMois);
+                }
+            })
             ->where(function ($q) {
                 $q->where('abonnement_manuel', false)->orWhereNull('abonnement_manuel');
             })
@@ -100,10 +112,16 @@ class CheckEcheancesCommand extends Command
         }
 
         // --- Échéances options entreprise (jour_renouvellement) ---
+        // Fix fin de mois : le 28 fév, on traite aussi jour_renouvellement = 29, 30, 31
         $subs = EntrepriseSubscription::query()
             ->where('est_manuel', false)
             ->whereNotNull('jour_renouvellement')
-            ->where('jour_renouvellement', $jour)
+            ->where(function ($q) use ($jour, $dernierJourDuMois, $estDernierJour) {
+                $q->where('jour_renouvellement', $jour);
+                if ($estDernierJour) {
+                    $q->orWhere('jour_renouvellement', '>', $dernierJourDuMois);
+                }
+            })
             ->with('entreprise.user')
             ->get();
 

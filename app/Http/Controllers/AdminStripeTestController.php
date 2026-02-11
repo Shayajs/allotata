@@ -182,7 +182,7 @@ class AdminStripeTestController extends Controller
         ];
 
         // Tables critiques
-        $tables = ['echeances', 'subscriptions', 'entreprise_subscriptions', 'stripe_transactions', 'payment_audit_logs'];
+        $tables = ['echeances', 'subscriptions', 'entreprise_subscriptions', 'stripe_transactions', 'payment_audit_log'];
         foreach ($tables as $table) {
             $exists = \Schema::hasTable($table);
             $checks['table_' . $table] = [
