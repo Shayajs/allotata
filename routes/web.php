@@ -875,6 +875,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/email-logs', [\App\Http\Controllers\Admin\EmailLogController::class, 'index'])->name('email-logs.index');
     Route::post('/email-logs/verify-user/{user}', [\App\Http\Controllers\Admin\EmailLogController::class, 'verifyUserEmail'])->name('email-logs.verify-user');
     
+    // Tâches planifiées (CRON)
+    Route::get('/scheduled-tasks', [\App\Http\Controllers\Admin\ScheduledTaskLogController::class, 'index'])->name('scheduled-tasks.index');
+    Route::post('/scheduled-tasks/cleanup', [\App\Http\Controllers\Admin\ScheduledTaskLogController::class, 'cleanup'])->name('scheduled-tasks.cleanup');
+    
     // Gestion des prix Stripe
     Route::get('/stripe-prices', [\App\Http\Controllers\Admin\TarifController::class, 'index'])->name('stripe-prices.index');
     Route::post('/stripe-prices/verify-keys', [\App\Http\Controllers\Admin\TarifController::class, 'verifyStripeKeys'])->name('stripe-prices.verify-keys');
