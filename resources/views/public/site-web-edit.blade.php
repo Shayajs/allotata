@@ -2215,9 +2215,22 @@
                 });
                 const data = await res.json();
                 if (data.success && data.page) {
-                    pagesData.push(data.page);
+                    // Si une migration V1→V2 a eu lieu, remplacer toutes les pages
+                    if (data.all_pages) {
+                        pagesData = data.all_pages;
+                    } else {
+                        pagesData.push(data.page);
+                    }
                     renderPagesList();
                     hideAddPageModal();
+                    if (data.migrated) {
+                        // Feedback visuel de la migration
+                        const info = document.createElement('div');
+                        info.className = 'fixed bottom-4 right-4 z-[9999] bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-fadeIn';
+                        info.innerHTML = '✓ Votre contenu existant a été migré dans l\'onglet « Accueil »';
+                        document.body.appendChild(info);
+                        setTimeout(() => info.remove(), 4000);
+                    }
                 } else {
                     alert(data.error || 'Erreur lors de la création');
                 }

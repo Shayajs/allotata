@@ -729,12 +729,16 @@
 
         <!-- Overlay Upsell Site Web Vitrine -->
         @if(!$aSiteWebActif)
+        @php
+            $userHasPremium = auth()->user()->aAbonnementActif();
+            $peutEssayerSiteWeb = $entreprise->peutDemarrerEssai('site_web');
+        @endphp
         <div id="site-web-upsell-overlay" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <!-- Backdrop -->
             <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('site-web-upsell-overlay').classList.add('hidden')"></div>
             
             <!-- Card -->
-            <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full overflow-hidden animate-in">
+            <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full overflow-hidden">
                 <!-- Header gradient -->
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
                     <div class="w-16 h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-4">
@@ -748,10 +752,25 @@
 
                 <!-- Content -->
                 <div class="px-6 py-6 space-y-4">
+                    <!-- Avertissement Premium requis -->
+                    @if(!$userHasPremium)
+                        <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-yellow-800 dark:text-yellow-400">Abonnement Premium requis</p>
+                                    <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Les options d'entreprise necessitent un abonnement Premium actif.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Prix -->
                     <div class="flex items-center justify-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                        <span class="text-3xl font-extrabold text-green-600 dark:text-green-400">{{ $subscriptionPrices['site_web']['display'] ?? '5 €' }}</span>
-                        <span class="text-slate-500 dark:text-slate-400 text-sm">/mois</span>
+                        <span class="text-3xl font-extrabold text-green-600 dark:text-green-400">{{ $subscriptionPrices['site_web']['formatted'] }}</span>
+                        <span class="text-slate-500 dark:text-slate-400 text-sm">{{ $subscriptionPrices['site_web']['period'] ?? '/mois' }}</span>
                     </div>
 
                     <!-- Avantages -->
@@ -760,7 +779,7 @@
                             <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                             </svg>
-                            <span class="text-slate-700 dark:text-slate-300">Page web personnalisable a votre image</span>
+                            <span class="text-slate-700 dark:text-slate-300">Page vitrine personnalisee accessible via /w/{{ $entreprise->slug_web ?? $entreprise->slug }}</span>
                         </li>
                         <li class="flex items-start gap-2.5">
                             <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -784,17 +803,48 @@
 
                     <!-- Boutons -->
                     <div class="space-y-3 pt-2">
-                        <!-- Bouton principal : Souscrire -->
-                        <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="type" value="site_web">
-                            <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                Activer mon site vitrine
-                            </button>
-                        </form>
+                        @if(!$userHasPremium)
+                            <!-- Pas de Premium : rediriger vers l'abonnement Premium -->
+                            <a href="{{ route('subscription.index') }}" class="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                                <span>🚀</span>
+                                Obtenir l'abonnement Premium
+                            </a>
+                        @else
+                            <!-- Essai gratuit si eligible -->
+                            @if($peutEssayerSiteWeb)
+                                <form action="{{ route('essai-gratuit.entreprise', $entreprise->slug) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="type" value="site_web">
+                                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/25 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                        <span class="text-lg">🎁</span>
+                                        Essayer gratuitement pendant 7 jours
+                                    </button>
+                                </form>
+                                <p class="text-xs text-center text-slate-400 dark:text-slate-500">Sans engagement &bull; Sans carte bancaire</p>
+                                <div class="relative flex items-center justify-center py-1">
+                                    <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
+                                    <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou</span>
+                                </div>
+                            @endif
+
+                            <!-- Bouton souscrire -->
+                            <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="type" value="site_web">
+                                <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    S'abonner a Site Web Vitrine ({{ $subscriptionPrices['site_web']['formatted'] }}{{ $subscriptionPrices['site_web']['period'] ?? '/mois' }})
+                                </button>
+                            </form>
+                        @endif
+
+                        <!-- Separateur -->
+                        <div class="relative flex items-center justify-center py-1">
+                            <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
+                            <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou bien</span>
+                        </div>
 
                         <!-- Bouton secondaire : Creer quand meme -->
                         <a 

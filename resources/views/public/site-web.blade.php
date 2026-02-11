@@ -242,22 +242,15 @@
             
             animatedElements.forEach(el => observer.observe(el));
 
-            // Auth popup : écouter postMessage pour recharger la section réservation
+            // Auth popup : écouter postMessage pour recharger la page si
+            // aucun handler spécifique (system-tab reservation) n'a déjà traité l'event.
             window.addEventListener('message', function(event) {
                 if (event.origin !== window.location.origin) return;
                 if (event.data && event.data.type === 'auth_success') {
-                    // Recharger le formulaire de réservation en AJAX
-                    const container = document.getElementById('reservation-form-container');
-                    if (container) {
-                        const formUrl = '{{ route("site-web.reservation-form", ["slug" => $entreprise->slug_web ?? $entreprise->slug]) }}';
-                        fetch(formUrl, { credentials: 'same-origin' })
-                            .then(r => r.text())
-                            .then(html => { container.innerHTML = html; })
-                            .catch(() => { window.location.reload(); });
-                    } else {
-                        // Pas de container trouvé, recharger la page
-                        window.location.reload();
-                    }
+                    // Si le system-tab reservation a déjà son propre listener, ne pas dupliquer
+                    if (document.getElementById('reservation-form-container')) return;
+                    // Sinon recharger la page entière pour mettre à jour l'état connecté
+                    window.location.reload();
                 }
             });
         });
