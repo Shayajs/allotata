@@ -24,7 +24,7 @@
     <section class="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             @if($modules->count() > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 xl:gap-8">
                     @foreach($modules as $module)
                         @php
                             $progress = $userProgress[$module->id] ?? null;

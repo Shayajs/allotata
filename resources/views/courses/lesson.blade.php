@@ -6,8 +6,8 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-900">
 
     {{-- Header : breadcrumb + badges --}}
-    <div class="pt-20 sm:pt-24 pb-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <div class="max-w-5xl mx-auto">
+    <div class="pt-20 sm:pt-24 pb-4 px-4 sm:px-6 lg:px-8 2xl:px-12 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
             {{-- Breadcrumb --}}
             <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3 overflow-x-auto">
                 <a href="{{ route('courses.index') }}" class="hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap">
@@ -69,11 +69,11 @@
     </div>
 
     {{-- Contenu principal avec sidebar desktop --}}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div class="flex gap-8">
+    <div class="max-w-7xl 2xl:max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-6 sm:py-8">
+        <div class="flex gap-8 xl:gap-10 2xl:gap-12">
 
             {{-- Contenu principal --}}
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 max-w-4xl">
 
                 {{-- Image de couverture --}}
                 @if($lesson->image_path)
@@ -81,7 +81,7 @@
                         <img 
                             src="{{ asset('storage/' . $lesson->image_path) }}" 
                             alt="{{ $lesson->titre }}"
-                            class="w-full h-48 sm:h-64 object-cover"
+                            class="w-full h-48 sm:h-64 xl:h-80 object-cover"
                             loading="lazy"
                         >
                     </div>
@@ -188,7 +188,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
-                                <span class="truncate max-w-[200px]">{{ $previousLesson->titre }}</span>
+                                <span class="truncate max-w-[200px] xl:max-w-[300px]">{{ $previousLesson->titre }}</span>
                             </a>
                         @endif
                     </div>
@@ -221,7 +221,7 @@
                                 href="{{ route('courses.lesson', ['module' => $module, 'lesson' => $nextLesson]) }}"
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition"
                             >
-                                <span class="truncate max-w-[200px]">{{ $nextLesson->titre }}</span>
+                                <span class="truncate max-w-[200px] xl:max-w-[300px]">{{ $nextLesson->titre }}</span>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
@@ -235,9 +235,9 @@
             </div>
 
             {{-- Sidebar droite : sommaire (desktop >= 1024px) --}}
-            <aside class="hidden lg:block w-64 flex-shrink-0">
+            <aside class="hidden lg:block w-64 xl:w-72 2xl:w-80 flex-shrink-0">
                 <div class="sticky top-24">
-                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 xl:p-5 max-h-[calc(100vh-8rem)] overflow-y-auto">
                         <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                             Sommaire
                         </h3>
