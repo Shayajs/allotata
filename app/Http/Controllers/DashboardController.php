@@ -257,6 +257,20 @@ class DashboardController extends Controller
             'unique_ips' => $ipHistory->count(),
         ];
 
+        // Données pour l'onglet Apprendre
+        $courseModules = \App\Models\CourseModule::where('est_actif', true)
+            ->orderBy('ordre')
+            ->with(['activeLessons'])
+            ->get();
+
+        $courseProgress = null;
+        if ($user) {
+            $courseProgress = \App\Models\UserModuleProgress::where('user_id', $user->id)
+                ->whereIn('module_id', $courseModules->pluck('id'))
+                ->get()
+                ->keyBy('module_id');
+        }
+
         return view('dashboard.index', [
             'user' => $user,
             'entreprises' => $entreprises,
@@ -277,6 +291,9 @@ class DashboardController extends Controller
             'isLocked' => $isLocked,
             'hasSuspiciousActivity' => $hasSuspiciousActivity,
             'securityStats' => $stats, // Stats de sécurité
+            // Variables pour l'onglet Apprendre
+            'courseModules' => $courseModules,
+            'courseProgress' => $courseProgress,
         ]);
     }
 
