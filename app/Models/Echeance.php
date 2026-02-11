@@ -10,12 +10,13 @@ class Echeance extends Model
 {
     use HasFactory;
 
-    public const STATUT_A_PAYER = 'a_payer';
-    public const STATUT_EN_ATTENTE = 'en_attente';
-    public const STATUT_PAYE = 'paye';
-    public const STATUT_ECHEC = 'echec';
-    public const STATUT_ANNULE = 'annule';
-    public const STATUT_ARRETE = 'arrete';
+    public const STATUT_BROUILLON = 'brouillon';   // Intention d'achat, pas encore payé (annulable)
+    public const STATUT_A_PAYER = 'a_payer';       // Échéance due (générée par CRON pour renouvellement)
+    public const STATUT_EN_ATTENTE = 'en_attente'; // Paiement en cours de traitement (3DS, SEPA…)
+    public const STATUT_PAYE = 'paye';             // Paiement confirmé
+    public const STATUT_ECHEC = 'echec';           // Paiement échoué (carte refusée, etc.)
+    public const STATUT_ANNULE = 'annule';         // Annulé par l'utilisateur ou le système
+    public const STATUT_ARRETE = 'arrete';         // Arrêté (abonnement résilié)
 
     public const TYPE_DEFAULT = 'default';
     public const TYPE_SITE_WEB = 'site_web';
@@ -86,9 +87,43 @@ class Echeance extends Model
         return $this->statut === self::STATUT_A_PAYER || $this->statut === self::STATUT_EN_ATTENTE;
     }
 
+    public function estBrouillon(): bool
+    {
+        return $this->statut === self::STATUT_BROUILLON;
+    }
+
+    public function estEchec(): bool
+    {
+        return $this->statut === self::STATUT_ECHEC;
+    }
+
     public function estArrete(): bool
     {
         return $this->statut === self::STATUT_ARRETE;
+    }
+
+    /**
+     * L'échéance est-elle réglable ? (bouton "Régler" / "Régulariser")
+     */
+    public function estReglable(): bool
+    {
+        return in_array($this->statut, [
+            self::STATUT_BROUILLON,
+            self::STATUT_A_PAYER,
+            self::STATUT_ECHEC,
+        ], true);
+    }
+
+    /**
+     * L'échéance est-elle annulable par l'utilisateur ?
+     */
+    public function estAnnulable(): bool
+    {
+        return in_array($this->statut, [
+            self::STATUT_BROUILLON,
+            self::STATUT_A_PAYER,
+            self::STATUT_EN_ATTENTE,
+        ], true);
     }
 
     /**

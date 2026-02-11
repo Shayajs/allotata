@@ -88,6 +88,10 @@ function scheduleWithLogging(string $command, string $description = ''): \Illumi
 scheduleWithLogging('subscriptions:check-echeances', 'Échéances abonnements')
     ->dailyAt('06:00')->withoutOverlapping();
 
+// Auto-charge des échéances a_payer + retry des échecs (3 tentatives, cancel après 7j)
+scheduleWithLogging('subscriptions:process-payments', 'Auto-charge & retry paiements')
+    ->dailyAt('06:15')->withoutOverlapping();
+
 // Réconciliation matin : rattrapage webhooks Stripe ratés (vérifie les en_attente)
 scheduleWithLogging('subscriptions:reconcile-echeances', 'Réconciliation Stripe (matin)')
     ->dailyAt('06:30')->withoutOverlapping();

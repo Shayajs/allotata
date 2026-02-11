@@ -656,6 +656,69 @@ class StripeWebhookController extends CashierController
     }
 
     /**
+     * Gérer les événements de paiement échoué (payment_intent.payment_failed).
+     * Marque l'échéance associée en statut « echec » → visible comme dette.
+     */
+    protected function handlePaymentIntentPaymentFailed(array $payload)
+    {
+        $piId = $payload['data']['object']['id'] ?? null;
+        $metadata = $payload['data']['object']['metadata'] ?? [];
+        if (is_object($metadata)) {
+            $metadata = (array) $metadata;
+        }
+
+        $echeanceId = (int) ($metadata['echeance_id'] ?? 0);
+        $userId = (int) ($metadata['user_id'] ?? 0);
+
+        Log::warning('Payment Intent échoué (webhook)', [
+            'payment_intent_id' => $piId,
+            'echeance_id' => $echeanceId,
+            'user_id' => $userId,
+            'last_error' => $payload['data']['object']['last_payment_error']['message'] ?? null,
+        ]);
+
+        if ($echeanceId && $piId) {
+            try {
+                $echeance = \App\Models\Echeance::find($echeanceId);
+                if ($echeance && !$echeance->estPayee()) {
+                    $echeance->update([
+                        'statut' => \App\Models\Echeance::STATUT_ECHEC,
+                        'stripe_payment_intent_id' => $piId,
+                    ]);
+                    Log::info('Webhook payment_intent.payment_failed : échéance marquée en échec', [
+                        'echeance_id' => $echeanceId,
+                        'payment_intent_id' => $piId,
+                    ]);
+                }
+
+                if ($userId) {
+                    try {
+                        \App\Models\PaymentAuditLog::log('webhook_pi_failed', $userId, [
+                            'echeance_id' => $echeanceId,
+                            'stripe_payment_intent_id' => $piId,
+                            'status' => 'echec',
+                            'context' => [
+                                'last_error' => $payload['data']['object']['last_payment_error']['message'] ?? null,
+                                'error_code' => $payload['data']['object']['last_payment_error']['code'] ?? null,
+                            ],
+                            'message' => 'Paiement échoué – échéance marquée en échec.',
+                        ]);
+                    } catch (\Throwable $logEx) {
+                        Log::warning('PaymentAuditLog webhook_pi_failed failed', ['error' => $logEx->getMessage()]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::error('Webhook payment_intent.payment_failed : exception', [
+                    'echeance_id' => $echeanceId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $this->successMethod();
+    }
+
+    /**
      * Gérer les événements de facture payée
      * Note: Cette méthode n'existe pas dans Cashier par défaut, donc on retourne juste success
      */

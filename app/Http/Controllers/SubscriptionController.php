@@ -344,7 +344,7 @@ class SubscriptionController extends Controller
         if ($echeance->user_id !== $user->id) {
             abort(403, 'Cette échéance ne vous appartient pas.');
         }
-        if (!in_array($echeance->statut, [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE], true)) {
+        if (!$echeance->estAnnulable()) {
             return back()->with('error', 'Seules les échéances à venir peuvent être annulées.');
         }
         $echeance->update(['statut' => Echeance::STATUT_ANNULE]);

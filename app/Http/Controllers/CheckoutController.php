@@ -25,29 +25,99 @@ class CheckoutController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+
+        // ── GET ?cancel_pending=KEY → retirer un item session (nouvelle souscription) ──
+        if ($cancelPendingKey = $request->query('cancel_pending')) {
+            $pending = session('checkout_pending', []);
+            if (isset($pending[$cancelPendingKey])) {
+                unset($pending[$cancelPendingKey]);
+                session(['checkout_pending' => $pending]);
+                return redirect()->route('checkout.index')
+                    ->with('success', 'Souscription annulée.');
+            }
+        }
+
+        // ── GET ?cancel=ID → annuler une échéance DB (a_payer) ──
+        if ($cancelId = $request->query('cancel')) {
+            $toCancel = Echeance::where('user_id', $user->id)
+                ->where('id', $cancelId)
+                ->where('statut', Echeance::STATUT_A_PAYER)
+                ->first();
+            if ($toCancel) {
+                $toCancel->update(['statut' => Echeance::STATUT_ANNULE]);
+                return redirect()->route('checkout.index')
+                    ->with('success', 'Échéance annulée.');
+            }
+        }
+
+        // ── Backward compat : annuler tous les vieux brouillons (statut supprimé) ──
+        Echeance::where('user_id', $user->id)
+            ->where('statut', Echeance::STATUT_BROUILLON)
+            ->update(['statut' => Echeance::STATUT_ANNULE]);
+
+        // ── Items en session (nouvelles souscriptions, pas encore en DB) ──
+        $pendingItems = collect(session('checkout_pending', []));
+
+        // ── Récupérer les échéances DB actionnables ──
         $echeances = Echeance::where('user_id', $user->id)
-            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+            ->whereIn('statut', [
+                Echeance::STATUT_ECHEC,
+                Echeance::STATUT_A_PAYER,
+                Echeance::STATUT_EN_ATTENTE,
+            ])
             ->orderBy('periode_debut')
             ->with('entreprise')
             ->get();
 
+        // ── Catégoriser par état pour un affichage clair ──
+        $echeancesEchec     = $echeances->where('statut', Echeance::STATUT_ECHEC)->values();
+        $echeancesAPayer    = $echeances->where('statut', Echeance::STATUT_A_PAYER)->values();
+        $echeancesEnAttente = $echeances->where('statut', Echeance::STATUT_EN_ATTENTE)->values();
+
+        // ── Calculer les montants des échéances DB ──
         $codePromo = $request->session()->get('checkout_promo_code');
         $calculs = [];
         foreach ($echeances as $e) {
-            $calc = CalculMontantDuService::calculerPourEcheance($e, $codePromo);
+            $calc = CalculMontantDuService::calculerPourEcheance($e, $codePromo, false);
             $calculs[$e->id] = $calc;
+        }
+
+        // ── Calculer les montants des items session (nouvelles souscriptions) ──
+        $pendingCalculs = [];
+        foreach ($pendingItems as $key => $item) {
+            $tmp = new Echeance([
+                'user_id'           => $item['user_id'],
+                'entreprise_id'     => $item['entreprise_id'],
+                'subscription_type' => $item['subscription_type'],
+                'periode_debut'     => $item['periode_debut'],
+                'periode_fin'       => $item['periode_fin'],
+                'jour_facturation'  => $item['jour_facturation'],
+                'reduction_manuel'  => 0,
+            ]);
+            $tmp->setRelation('user', $user);
+            if ($item['entreprise_id']) {
+                $tmp->setRelation('entreprise', \App\Models\Entreprise::find($item['entreprise_id']));
+            }
+            $pendingCalculs[$key] = CalculMontantDuService::calculerPourEcheance($tmp, $codePromo, true);
         }
 
         $hasPaymentMethod = !empty($user->stripe_payment_method_id);
         $showCardForm = !$hasPaymentMethod || $request->boolean('change_card');
+        $hasAnything = $echeances->isNotEmpty() || $pendingItems->isNotEmpty();
 
         return view('checkout.index', [
-            'echeances' => $echeances,
-            'calculs' => $calculs,
-            'codePromo' => $codePromo,
-            'hasPaymentMethod' => $hasPaymentMethod,
-            'showCardForm' => $showCardForm,
-            'user' => $user,
+            'echeances'           => $echeances,
+            'echeancesEchec'      => $echeancesEchec,
+            'echeancesAPayer'     => $echeancesAPayer,
+            'echeancesEnAttente'  => $echeancesEnAttente,
+            'pendingItems'        => $pendingItems,
+            'pendingCalculs'      => $pendingCalculs,
+            'calculs'             => $calculs,
+            'codePromo'           => $codePromo,
+            'hasPaymentMethod'    => $hasPaymentMethod,
+            'showCardForm'        => $showCardForm,
+            'hasAnything'         => $hasAnything,
+            'user'                => $user,
         ]);
     }
 
@@ -540,17 +610,26 @@ class CheckoutController extends Controller
     public function charge(Request $request)
     {
         $request->validate([
-            'echeance_id' => 'required|exists:echeances,id',
-            'code_promo' => 'nullable|string|max:64',
+            'echeance_id' => 'required_without:pending_key|nullable|exists:echeances,id',
+            'pending_key'  => 'required_without:echeance_id|nullable|string|max:128',
+            'code_promo'   => 'nullable|string|max:64',
         ]);
 
         $user = Auth::user();
-        
-        // Utiliser une transaction avec verrou pour éviter les doubles paiements
+
+        // ════════ Flux session (nouvelle souscription, pas encore en DB) ════════
+        if ($request->filled('pending_key')) {
+            return $this->chargePending($request, $user);
+        }
+
+        // ════════ Flux DB (renouvellement / régularisation) ════════
         $echeance = \DB::transaction(function () use ($user, $request) {
             return Echeance::where('user_id', $user->id)
-                ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
-                ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
+                ->whereIn('statut', [
+                    Echeance::STATUT_A_PAYER,
+                    Echeance::STATUT_EN_ATTENTE,
+                    Echeance::STATUT_ECHEC,
+                ])
                 ->lockForUpdate()
                 ->findOrFail($request->input('echeance_id'));
         });
@@ -579,7 +658,7 @@ class CheckoutController extends Controller
             }
         }
         
-        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
+        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo, false);
         $montantFinal = $calc['montant_final'];
         
         // Validation stricte du montant : doit être > 0 et <= montant_du
@@ -998,6 +1077,221 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Charge un item session (nouvelle souscription entreprise, pas encore en DB).
+     * Crée l'Echeance + EntrepriseSubscription atomiquement au succès.
+     * Aucune trace en base si le paiement échoue et que l'utilisateur abandonne.
+     */
+    protected function chargePending(Request $request, $user)
+    {
+        $pendingKey = $request->input('pending_key');
+        $item = session("checkout_pending.{$pendingKey}");
+
+        if (!$item) {
+            return response()->json(['success' => false, 'error' => 'Souscription introuvable ou expirée.'], 404);
+        }
+
+        $codePromo = $request->input('code_promo') ?: $request->session()->get('checkout_promo_code');
+
+        // Calcul du montant à partir d'un Echeance temporaire
+        $tmp = new Echeance([
+            'user_id'           => $item['user_id'],
+            'entreprise_id'     => $item['entreprise_id'],
+            'subscription_type' => $item['subscription_type'],
+            'periode_debut'     => $item['periode_debut'],
+            'periode_fin'       => $item['periode_fin'],
+            'jour_facturation'  => $item['jour_facturation'],
+            'reduction_manuel'  => 0,
+        ]);
+        $tmp->setRelation('user', $user);
+        if ($item['entreprise_id']) {
+            $tmp->setRelation('entreprise', \App\Models\Entreprise::find($item['entreprise_id']));
+        }
+
+        if ($codePromo) {
+            $promo = PromoCode::validateCode($codePromo, $user);
+            if (!$promo) {
+                return response()->json(['success' => false, 'error' => 'Code promo invalide ou expiré.'], 422);
+            }
+        }
+
+        $calc = CalculMontantDuService::calculerPourEcheance($tmp, $codePromo, true);
+        $montantFinal = $calc['montant_final'];
+
+        if ($montantFinal <= 0) {
+            return response()->json(['success' => false, 'error' => 'Le montant à régler est nul.'], 422);
+        }
+
+        if (empty($user->stripe_payment_method_id)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Enregistrez d\'abord un moyen de paiement (carte) pour régler.',
+            ], 409);
+        }
+
+        $customerId = StripeCustomerService::ensureCustomer($user);
+        $amountCents = (int) round($montantFinal * 100);
+        $currency = \App\Models\Tarif::currency();
+
+        Stripe::setApiKey(config('services.stripe.secret'));
+
+        try {
+            $pi = PaymentIntent::create([
+                'amount' => $amountCents,
+                'currency' => $currency,
+                'customer' => $customerId,
+                'payment_method' => $user->stripe_payment_method_id,
+                'off_session' => true,
+                'confirm' => true,
+                'metadata' => [
+                    'user_id' => (string) $user->id,
+                    'pending_key' => $pendingKey,
+                    'subscription_type' => $item['subscription_type'],
+                    'entreprise_id' => (string) $item['entreprise_id'],
+                ],
+            ]);
+        } catch (\Stripe\Exception\CardException $e) {
+            $errorCode = $e->getError()->code ?? null;
+            $paymentIntent = $e->getError()->payment_intent ?? null;
+
+            // 3DS requis en mode off_session
+            if ($errorCode === 'authentication_required' && $paymentIntent) {
+                $piId = is_object($paymentIntent) ? $paymentIntent->id : $paymentIntent;
+                $clientSecret = is_object($paymentIntent) ? ($paymentIntent->client_secret ?? null) : null;
+                if (!$clientSecret && $piId) {
+                    try {
+                        $piRetrieved = PaymentIntent::retrieve($piId);
+                        $clientSecret = $piRetrieved->client_secret ?? null;
+                    } catch (\Exception $ex) {
+                        Log::warning('chargePending: cannot retrieve PI for 3DS', ['pi' => $piId, 'error' => $ex->getMessage()]);
+                    }
+                }
+                if ($clientSecret) {
+                    // Créer l'échéance en_attente pour que le flux 3DS la retrouve
+                    $echeance = $this->createEcheanceFromPending($item, $calc, $montantFinal, $piId, Echeance::STATUT_EN_ATTENTE);
+                    $this->removePendingFromSession($pendingKey);
+
+                    PaymentAuditLog::log('charge_pending_3ds', $user->id, [
+                        'echeance_id' => $echeance->id,
+                        'stripe_payment_intent_id' => $piId,
+                        'amount' => $montantFinal,
+                        'currency' => $currency,
+                        'status' => 'requires_action',
+                        'message' => 'Nouvelle souscription : 3DS requis.',
+                    ]);
+
+                    return response()->json([
+                        'requires_action' => true,
+                        'client_secret' => $clientSecret,
+                        'payment_intent_id' => $piId,
+                    ]);
+                }
+            }
+
+            $msg = self::mapStripeErrorToUserMessage($errorCode, $e->getMessage());
+            Log::warning('chargePending card error', [
+                'pending_key' => $pendingKey,
+                'error_code' => $errorCode,
+                'error' => $e->getMessage(),
+            ]);
+            PaymentAuditLog::log('charge_pending_fail', $user->id, [
+                'pending_key' => $pendingKey,
+                'amount' => $montantFinal,
+                'status' => 'card_error',
+                'context' => ['code' => $errorCode, 'raw' => $e->getMessage()],
+                'message' => 'Première souscription refusée : ' . $msg,
+            ]);
+
+            return response()->json(['success' => false, 'error' => $msg, 'error_code' => $errorCode], 422);
+        } catch (\Throwable $e) {
+            Log::error('chargePending failed', ['pending_key' => $pendingKey, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Impossible de lancer le paiement. Réessayez.'], 500);
+        }
+
+        $status = $pi->status ?? '';
+
+        if ($status === 'requires_action') {
+            $echeance = $this->createEcheanceFromPending($item, $calc, $montantFinal, $pi->id, Echeance::STATUT_EN_ATTENTE);
+            $this->removePendingFromSession($pendingKey);
+
+            PaymentAuditLog::log('charge_pending_3ds', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_payment_intent_id' => $pi->id,
+                'amount' => $montantFinal,
+                'status' => 'requires_action',
+                'message' => 'Nouvelle souscription : 3DS requis.',
+            ]);
+
+            return response()->json([
+                'requires_action' => true,
+                'client_secret' => $pi->client_secret,
+                'payment_intent_id' => $pi->id,
+            ]);
+        }
+
+        if ($status === 'succeeded') {
+            $echeance = $this->createEcheanceFromPending($item, $calc, $montantFinal, $pi->id, Echeance::STATUT_PAYE);
+            PaymentVerificationService::ensureEntrepriseSubscriptionForEcheance($echeance);
+            PaymentVerificationService::ensureStripeTransactionFromPaymentIntent($pi, $user->id);
+            $this->removePendingFromSession($pendingKey);
+
+            if ($echeance->promo_code_id) {
+                PromoCode::find($echeance->promo_code_id)?->use();
+            }
+
+            PaymentAuditLog::log('charge_pending_ok', $user->id, [
+                'echeance_id' => $echeance->id,
+                'stripe_payment_intent_id' => $pi->id,
+                'amount' => $montantFinal,
+                'currency' => $currency,
+                'status' => 'succeeded',
+                'message' => 'Nouvelle souscription payée – ' . $echeance->libelle(),
+            ]);
+
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => 'Paiement en attente (status: ' . $status . '). Réessayez ou contactez-nous.',
+        ], 422);
+    }
+
+    /**
+     * Crée une Echeance à partir des données session (pending item).
+     */
+    private function createEcheanceFromPending(array $item, array $calc, float $montantFinal, string $piId, string $statut): Echeance
+    {
+        return DB::transaction(function () use ($item, $calc, $montantFinal, $piId, $statut) {
+            return Echeance::create([
+                'user_id'                  => $item['user_id'],
+                'entreprise_id'            => $item['entreprise_id'],
+                'subscription_type'        => $item['subscription_type'],
+                'periode_debut'            => $item['periode_debut'],
+                'periode_fin'              => $item['periode_fin'],
+                'jour_facturation'         => $item['jour_facturation'],
+                'montant_du'               => $calc['montant_du'],
+                'montant_final'            => $montantFinal,
+                'reduction_promo'          => $calc['reduction_promo'],
+                'promo_code_id'            => $calc['promo_code_id'],
+                'statut'                   => $statut,
+                'stripe_payment_intent_id' => $piId,
+                'paye_at'                  => $statut === Echeance::STATUT_PAYE ? now() : null,
+                'metadata'                 => ['lignes' => $calc['lignes']],
+            ]);
+        });
+    }
+
+    /**
+     * Retire un item pending de la session.
+     */
+    private function removePendingFromSession(string $key): void
+    {
+        $pending = session('checkout_pending', []);
+        unset($pending[$key]);
+        session(['checkout_pending' => $pending]);
+    }
+
+    /**
      * Vérifie le statut d'un PaymentIntent après 3DS (handleCardAction).
      * Body: { "payment_intent_id": "pi_xxx" }
      */
@@ -1060,11 +1354,15 @@ class CheckoutController extends Controller
         ]);
         $user = Auth::user();
         $echeance = Echeance::where('user_id', $user->id)
-            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+            ->whereIn('statut', [
+                Echeance::STATUT_A_PAYER,
+                Echeance::STATUT_EN_ATTENTE,
+                Echeance::STATUT_ECHEC,
+            ])
             ->findOrFail($request->input('echeance_id'));
 
         $codePromo = $request->input('code_promo') ?: $request->session()->get('checkout_promo_code');
-        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
+        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo, false);
         $montantFinal = $calc['montant_final'];
         if ($montantFinal <= 0) {
             return redirect()->route('checkout.index')
@@ -1299,6 +1597,33 @@ class CheckoutController extends Controller
 
         return redirect()->route('settings.index', ['tab' => 'subscription'])
             ->with('success', $message);
+    }
+
+    /**
+     * Annuler une échéance brouillon / a_payer depuis la page checkout (POST).
+     * L'utilisateur ne sera pas débité. Respecte le principe "intention ≠ dette".
+     */
+    public function annulerEcheance(Request $request, Echeance $echeance)
+    {
+        $user = Auth::user();
+        if ((int) $echeance->user_id !== (int) $user->id) {
+            abort(403, 'Cette échéance ne vous appartient pas.');
+        }
+        if (!$echeance->estAnnulable()) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Cette échéance ne peut plus être annulée.');
+        }
+
+        $echeance->update(['statut' => Echeance::STATUT_ANNULE]);
+
+        Log::info('Échéance annulée par l\'utilisateur depuis checkout', [
+            'user_id' => $user->id,
+            'echeance_id' => $echeance->id,
+            'ancien_statut' => $echeance->getOriginal('statut'),
+        ]);
+
+        return redirect()->route('checkout.index')
+            ->with('success', 'Échéance annulée. Vous ne serez pas débité.');
     }
 
     public function cancel()
