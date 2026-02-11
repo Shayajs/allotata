@@ -199,7 +199,10 @@ class SiteWebController extends Controller
         $data = $this->getAgendaData($entreprise);
 
         return view('components.site-web.partials.reservation-form', array_merge(
-            ['entreprise' => $entreprise],
+            [
+                'entreprise' => $entreprise,
+                'slug' => $slug,
+            ],
             $data,
         ));
     }
@@ -795,6 +798,8 @@ class SiteWebController extends Controller
 
     /**
      * Créer une nouvelle page (onglet).
+     * Si c'est la première page créée et que l'entreprise a du contenu V1 (JSON),
+     * on migre automatiquement l'ancien contenu comme page "Accueil" en position 0.
      */
     public function storePage(Request $request, $slug)
     {
@@ -819,6 +824,25 @@ class SiteWebController extends Controller
             }
         }
 
+        // ── Transition V1 → V2 : migrer le contenu JSON existant ──
+        $migratedPage = null;
+        $isFirstPage = $entreprise->siteWebPages()->count() === 0;
+
+        if ($isFirstPage) {
+            $v1Blocks = $entreprise->getSiteWebBlocks();
+            if (!empty($v1Blocks)) {
+                $migratedPage = $entreprise->siteWebPages()->create([
+                    'nom'      => 'Accueil',
+                    'slug'     => 'accueil',
+                    'type'     => 'custom',
+                    'blocs'    => $v1Blocks,
+                    'ordre'    => 0,
+                    'est_actif' => true,
+                    'icone'    => 'home',
+                ]);
+            }
+        }
+
         $pageSlug = Str::slug($validated['nom']);
         // Assurer l'unicité du slug pour cette entreprise
         $baseSlug = $pageSlug;
@@ -839,7 +863,15 @@ class SiteWebController extends Controller
             'icone'    => $validated['icone'] ?? null,
         ]);
 
-        return response()->json(['success' => true, 'page' => $page]);
+        // Retourner toutes les pages (y compris la page Accueil migrée) pour que l'éditeur se mette à jour
+        $allPages = $entreprise->siteWebPages()->orderBy('ordre')->get();
+
+        return response()->json([
+            'success' => true,
+            'page' => $page,
+            'all_pages' => $allPages,
+            'migrated' => $migratedPage !== null,
+        ]);
     }
 
     /**
