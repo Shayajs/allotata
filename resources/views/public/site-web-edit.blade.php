@@ -608,7 +608,54 @@
                 </div>
             </div>
         @endif
-        
+
+        {{-- Barre de navigation des pages (V2) --}}
+        @if($entreprise->siteWebPages->count() > 0)
+        <div id="editor-pages-nav" class="border-b sticky top-[56px] z-40" style="background: var(--site-background); border-color: color-mix(in srgb, var(--site-text) 10%, transparent);">
+            <div class="max-w-7xl mx-auto px-4 flex items-center gap-0 overflow-x-auto py-0">
+                {{-- Onglet V1 (contenu classique) --}}
+                <button type="button" onclick="switchEditorPage(null)"
+                        class="editor-page-tab relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2"
+                        data-page-id="v1"
+                        style="color: var(--site-primary); border-color: var(--site-primary);">
+                    <span>Accueil</span>
+                </button>
+                @foreach($entreprise->siteWebPages->sortBy('ordre') as $p)
+                <button type="button" onclick="switchEditorPage({{ $p->id }})"
+                        class="editor-page-tab relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 border-transparent opacity-60 hover:opacity-80"
+                        data-page-id="{{ $p->id }}"
+                        style="color: var(--site-text);">
+                    <span>{{ $p->nom }}</span>
+                    @if(in_array($p->type, ['reservation','agenda','contact','services']))
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 font-medium">{{ ucfirst($p->type) }}</span>
+                    @endif
+                </button>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Placeholder pour onglets système (masqué par défaut) --}}
+        <div id="system-tab-placeholder" class="hidden">
+            <div class="max-w-2xl mx-auto py-20 px-8 text-center">
+                <div class="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style="background: color-mix(in srgb, var(--site-primary) 10%, var(--site-background));">
+                    <svg class="w-10 h-10" style="color: var(--site-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-3" style="color: var(--site-text); font-family: var(--site-font-heading);" id="system-tab-title">Onglet système</h2>
+                <p class="text-sm opacity-60 mb-6" style="color: var(--site-text);" id="system-tab-desc">
+                    Cet onglet est généré automatiquement. Son contenu s'affichera sur le site public.
+                </p>
+                <a id="system-tab-preview-btn" href="#" target="_blank"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition hover:opacity-90"
+                   style="background: var(--site-primary);">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    Voir dans l'aperçu
+                </a>
+            </div>
+        </div>
+
         {{-- Rendu des blocs --}}
         <div id="blocks-container">
             @if(count($blocks) > 0)
@@ -1034,12 +1081,29 @@
             selectedBlockId: null,
             hasUnsavedChanges: false,
             isSaving: false,
-            saveTimeout: null
+            saveTimeout: null,
+            // V2 : gestion des pages
+            currentEditPageId: null, // null = contenu V1 (Accueil), sinon = id de la page BDD
+            pagesBlocks: {}, // Cache des blocs par page ID
+        };
+
+        // Données des pages depuis la BDD
+        const editorPagesData = @json($entreprise->siteWebPages->sortBy('ordre')->values());
+
+        // Infos des types système pour le placeholder
+        const systemTabInfo = {
+            reservation: { title: 'Réservation', desc: 'Cet onglet affiche automatiquement le calendrier de réservation et le formulaire de prise de rendez-vous.' },
+            agenda:      { title: 'Agenda', desc: 'Cet onglet affiche automatiquement l\'agenda des disponibilités.' },
+            services:    { title: 'Services', desc: 'Cet onglet affiche automatiquement la liste de vos services actifs avec leurs prix et options.' },
+            contact:     { title: 'Contact', desc: 'Cet onglet affiche automatiquement vos coordonnées, horaires d\'ouverture et carte.' },
         };
         
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            // Tabs
+            // Garder une copie des blocs V1 originaux
+            editorState._v1Blocks = [...(editorState.content.blocks || [])];
+
+            // Tabs sidebar
             document.querySelectorAll('.sidebar-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
@@ -1061,6 +1125,168 @@
             initSortable();
         });
         
+        // ═══════════════════════════════════════════════════════
+        //  Navigation entre pages dans l'éditeur (V2)
+        // ═══════════════════════════════════════════════════════
+
+        /**
+         * Basculer l'éditeur sur une page donnée.
+         * @param {number|null} pageId - null = contenu V1, nombre = ID de la page BDD
+         */
+        function switchEditorPage(pageId) {
+            // Sauvegarder les blocs actuels dans le cache avant de basculer
+            saveCurrentPageBlocksToCache();
+
+            editorState.currentEditPageId = pageId;
+            editorState.selectedBlockId = null;
+
+            const blocksContainer = document.getElementById('blocks-container');
+            const addBlockZone = document.getElementById('add-block-zone');
+            const emptyState = document.getElementById('empty-state');
+            const systemPlaceholder = document.getElementById('system-tab-placeholder');
+            const sidebarBlocksTab = document.querySelector('[data-tab="blocks"]');
+
+            // Mettre à jour les onglets visuels
+            document.querySelectorAll('.editor-page-tab').forEach(tab => {
+                const tid = tab.dataset.pageId;
+                const isActive = (pageId === null && tid === 'v1') || (pageId !== null && parseInt(tid) === pageId);
+                if (isActive) {
+                    tab.style.color = 'var(--site-primary)';
+                    tab.style.borderColor = 'var(--site-primary)';
+                    tab.classList.remove('opacity-60', 'border-transparent');
+                } else {
+                    tab.style.color = 'var(--site-text)';
+                    tab.style.borderColor = 'transparent';
+                    tab.classList.add('opacity-60');
+                    tab.classList.remove('border-transparent');
+                }
+            });
+
+            if (pageId === null) {
+                // ── Mode V1 : contenu classique ──
+                systemPlaceholder.classList.add('hidden');
+                blocksContainer.classList.remove('hidden');
+                if (addBlockZone) addBlockZone.classList.remove('hidden');
+                if (sidebarBlocksTab) sidebarBlocksTab.style.display = '';
+
+                // Restaurer les blocs V1
+                editorState.content.blocks = editorState._v1Blocks || editorState.content.blocks;
+                renderBlocksFromState();
+                return;
+            }
+
+            // Chercher la page dans les données
+            const page = editorPagesData.find(p => p.id === pageId);
+            if (!page) return;
+
+            const isSystem = ['reservation', 'agenda', 'contact', 'services'].includes(page.type);
+
+            if (isSystem) {
+                // ── Mode système : placeholder ──
+                blocksContainer.classList.add('hidden');
+                if (addBlockZone) addBlockZone.classList.add('hidden');
+                systemPlaceholder.classList.remove('hidden');
+                if (sidebarBlocksTab) sidebarBlocksTab.style.display = '';
+
+                const info = systemTabInfo[page.type] || { title: page.nom, desc: 'Onglet système.' };
+                document.getElementById('system-tab-title').textContent = info.title;
+                document.getElementById('system-tab-desc').textContent = info.desc;
+
+                const previewUrl = `/w/${editorState.slug}?mode=view&tab=${page.slug}`;
+                document.getElementById('system-tab-preview-btn').href = previewUrl;
+            } else {
+                // ── Mode custom page : éditer ses blocs ──
+                systemPlaceholder.classList.add('hidden');
+                blocksContainer.classList.remove('hidden');
+                if (addBlockZone) addBlockZone.classList.remove('hidden');
+                if (sidebarBlocksTab) sidebarBlocksTab.style.display = '';
+
+                // Charger les blocs de la page depuis le cache ou les données BDD
+                if (!editorState.pagesBlocks[pageId]) {
+                    editorState.pagesBlocks[pageId] = page.blocs || [];
+                }
+                editorState.content.blocks = editorState.pagesBlocks[pageId];
+                renderBlocksFromState();
+            }
+        }
+
+        /**
+         * Sauvegarder les blocs de la page courante dans le cache local.
+         */
+        function saveCurrentPageBlocksToCache() {
+            const pid = editorState.currentEditPageId;
+            if (pid === null) {
+                // Sauvegarder les blocs V1
+                editorState._v1Blocks = [...editorState.content.blocks];
+            } else {
+                // Sauvegarder les blocs de la page BDD
+                editorState.pagesBlocks[pid] = [...editorState.content.blocks];
+            }
+        }
+
+        /**
+         * Reconstruire le DOM des blocs à partir de editorState.content.blocks.
+         * Utilise un fetch vers le backend pour générer le HTML des blocs.
+         */
+        async function renderBlocksFromState() {
+            const container = document.getElementById('blocks-container');
+            const blocks = editorState.content.blocks || [];
+
+            if (blocks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-zone" id="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <p class="text-xl font-semibold text-slate-700 mb-2">Aucun bloc sur cette page</p>
+                        <p class="text-slate-500">Cliquez sur un bloc dans la barre latérale pour l'ajouter</p>
+                    </div>`;
+                return;
+            }
+
+            // Générer le HTML de chaque bloc via le endpoint render-block
+            let html = '';
+            for (const [index, block] of blocks.entries()) {
+                try {
+                    const res = await fetch(`/w/${editorState.slug}/render-block`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': editorState.csrf, 'Accept': 'application/json' },
+                        body: JSON.stringify({ block }),
+                    });
+                    const data = await res.json();
+                    const blockHtml = data.html || '';
+                    html += `
+                    <div class="editable-block" data-block-id="${block.id}" data-block-index="${index}" onclick="selectBlock('${block.id}', event)">
+                        <div class="drag-handle" title="Maintenez et glissez pour déplacer">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                            Déplacer
+                        </div>
+                        <div class="block-type-label">${block.type.charAt(0).toUpperCase() + block.type.slice(1)}</div>
+                        <div class="block-toolbar">
+                            <button type="button" onclick="moveBlock('${block.id}', -1); event.stopPropagation();" title="Monter"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg></button>
+                            <button type="button" onclick="moveBlock('${block.id}', 1); event.stopPropagation();" title="Descendre"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
+                            <button type="button" onclick="duplicateBlock('${block.id}'); event.stopPropagation();" title="Dupliquer"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
+                            <button type="button" onclick="deleteBlock('${block.id}'); event.stopPropagation();" title="Supprimer" class="danger"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div>
+                        ${blockHtml}
+                    </div>`;
+                } catch (e) {
+                    html += `<div class="editable-block p-6 text-center text-red-500">Erreur de rendu: ${block.type}</div>`;
+                }
+            }
+
+            // Zone "Ajouter un bloc" à la fin
+            html += `<div id="add-block-zone" onclick="openBlocksTab()" class="mx-8 my-8 py-8 border-2 border-dashed border-slate-300 rounded-xl text-center cursor-pointer hover:border-green-500 hover:bg-green-50/50 transition group">
+                <div class="flex items-center justify-center gap-2 text-slate-400 group-hover:text-green-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span class="font-medium">Ajouter un bloc</span>
+                </div>
+            </div>`;
+
+            container.innerHTML = html;
+            initSortable();
+        }
+
         // Initialiser SortableJS
         function initSortable() {
             const container = document.getElementById('blocks-container');
@@ -1993,6 +2219,39 @@
             updateSaveStatus('saving');
             
             try {
+                const pid = editorState.currentEditPageId;
+
+                if (pid !== null) {
+                    // ── V2 : sauvegarder les blocs de la page BDD ──
+                    const page = editorPagesData.find(p => p.id === pid);
+                    if (page && page.type === 'custom') {
+                        const response = await fetch(`/w/${editorState.slug}/pages/${pid}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': editorState.csrf,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                nom: page.nom,
+                                blocs: editorState.content.blocks,
+                                est_actif: page.est_actif,
+                            })
+                        });
+                        if (!response.ok) throw new Error('Erreur sauvegarde page');
+                        // Mettre à jour le cache local
+                        editorState.pagesBlocks[pid] = [...editorState.content.blocks];
+                    }
+                    // Aussi sauvegarder le thème dans le JSON V1 (le thème est global)
+                }
+
+                // Toujours sauvegarder le contenu V1 (thème + blocs V1)
+                const v1Content = { ...editorState.content };
+                // Si on est sur une page BDD, restaurer les blocs V1 pour la sauvegarde
+                if (pid !== null && editorState._v1Blocks) {
+                    v1Content.blocks = editorState._v1Blocks;
+                }
+
                 const response = await fetch(`/w/${editorState.slug}/content`, {
                     method: 'PUT',
                     headers: {
@@ -2001,7 +2260,7 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        content: editorState.content,
+                        content: v1Content,
                         is_auto_save: isAutoSave
                     })
                 });
@@ -2120,7 +2379,51 @@
             reservation: '📅', services: '💼', contact: '📧', agenda: '🕐', custom: '📄',
         };
 
+        // Synchroniser la barre de navigation des pages dans la zone de preview
+        function updateEditorPagesNav() {
+            let nav = document.getElementById('editor-pages-nav');
+            if (!pagesData || pagesData.length === 0) {
+                if (nav) nav.remove();
+                return;
+            }
+
+            const sorted = [...pagesData].sort((a, b) => a.ordre - b.ordre);
+            const currentId = editorState.currentEditPageId;
+
+            // Créer la nav si elle n'existe pas encore
+            if (!nav) {
+                nav = document.createElement('div');
+                nav.id = 'editor-pages-nav';
+                nav.className = 'border-b sticky top-[56px] z-40';
+                nav.style.cssText = 'background: var(--site-background); border-color: color-mix(in srgb, var(--site-text) 10%, transparent);';
+                const preview = document.getElementById('site-preview');
+                const blocksContainer = document.getElementById('blocks-container');
+                if (blocksContainer) preview.insertBefore(nav, blocksContainer);
+            }
+
+            const isV1Active = currentId === null;
+            let html = `<div class="max-w-7xl mx-auto px-4 flex items-center gap-0 overflow-x-auto py-0">`;
+            html += `<button type="button" onclick="switchEditorPage(null)" class="editor-page-tab relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2" data-page-id="v1" style="color: ${isV1Active ? 'var(--site-primary)' : 'var(--site-text)'}; border-color: ${isV1Active ? 'var(--site-primary)' : 'transparent'}; ${isV1Active ? '' : 'opacity: 0.6;'}"><span>Accueil</span></button>`;
+
+            sorted.forEach(p => {
+                const isActive = currentId === p.id;
+                const isSystem = ['reservation', 'agenda', 'contact', 'services'].includes(p.type);
+                html += `<button type="button" onclick="switchEditorPage(${p.id})" class="editor-page-tab relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2" data-page-id="${p.id}" style="color: ${isActive ? 'var(--site-primary)' : 'var(--site-text)'}; border-color: ${isActive ? 'var(--site-primary)' : 'transparent'}; ${isActive ? '' : 'opacity: 0.6;'}">
+                    <span>${p.nom}</span>
+                    ${isSystem ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500 font-medium">${p.type.charAt(0).toUpperCase() + p.type.slice(1)}</span>` : ''}
+                </button>`;
+            });
+            html += `</div>`;
+            nav.innerHTML = html;
+        }
+
         function renderPagesList() {
+            // Aussi mettre à jour la nav dans le preview
+            updateEditorPagesNav();
+            // Synchroniser editorPagesData
+            editorPagesData.length = 0;
+            pagesData.forEach(p => editorPagesData.push(p));
+
             const list = document.getElementById('pages-list');
             if (!pagesData || pagesData.length === 0) {
                 list.innerHTML = `
@@ -2136,7 +2439,7 @@
             const sorted = [...pagesData].sort((a, b) => a.ordre - b.ordre);
 
             list.innerHTML = sorted.map(page => `
-                <div class="flex items-center gap-2 p-2.5 mb-1 rounded-xl bg-slate-700/50 hover:bg-slate-700 group transition cursor-grab" data-page-id="${page.id}" draggable="true">
+                <div class="flex items-center gap-2 p-2.5 mb-1 rounded-xl bg-slate-700/50 hover:bg-slate-700 group transition cursor-pointer" data-page-id="${page.id}" onclick="switchEditorPage(${page.id})">
                     <span class="text-sm flex-shrink-0">${systemTypeIcons[page.type] || '📄'}</span>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-white truncate">${page.nom}</p>

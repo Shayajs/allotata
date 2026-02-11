@@ -214,24 +214,25 @@ Route::get('/media/{path}', [StorageController::class, 'serve'])
 //     ->where('path', '.*')
 //     ->name('storage.serve');
 
-// Route de test pour vérifier que Laravel répond
-Route::get('/test-storage', function() {
-    return response()->json([
-        'storage_path' => storage_path('app/public'),
-        'base_path' => base_path(),
-        'test_file' => base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png'),
-        'exists' => file_exists(base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png')),
-    ]);
-});
+// Routes de test (uniquement en environnement local)
+if (app()->environment('local')) {
+    Route::get('/test-storage', function() {
+        return response()->json([
+            'storage_path' => storage_path('app/public'),
+            'base_path' => base_path(),
+            'test_file' => base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png'),
+            'exists' => file_exists(base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png')),
+        ]);
+    });
 
-// Route de test directe pour servir une image
-Route::get('/test-image', function() {
-    $filePath = base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png');
-    if (file_exists($filePath)) {
-        return response()->file($filePath, ['Content-Type' => 'image/png']);
-    }
-    return response()->json(['error' => 'File not found', 'path' => $filePath], 404);
-});
+    Route::get('/test-image', function() {
+        $filePath = base_path('storage/app/public/profils/1767200267_yfZuEju0mV.png');
+        if (file_exists($filePath)) {
+            return response()->file($filePath, ['Content-Type' => 'image/png']);
+        }
+        return response()->json(['error' => 'File not found', 'path' => $filePath], 404);
+    });
+}
 
 // Webhook Stripe (doit être en dehors du middleware auth et sans CSRF)
 Route::post(
@@ -239,13 +240,10 @@ Route::post(
     [\App\Http\Controllers\StripeWebhookController::class, 'handleWebhook']
 )->name('cashier.webhook');
 
-// ⚠️ PAGE TEMPORAIRE - ADMINISTRATION (À SUPPRIMER EN PRODUCTION)
-Route::prefix('temp-admin')->name('temp-admin.')->group(function () {
+// Bootstrap : création du premier admin (inaccessible dès qu'un admin existe)
+Route::prefix('temp-admin')->name('temp-admin.')->middleware('no.admin.exists')->group(function () {
     Route::get('/', [TempAdminController::class, 'index'])->name('index');
     Route::post('/create-admin', [TempAdminController::class, 'createAdmin'])->name('create-admin');
-    Route::post('/promote/{user}', [TempAdminController::class, 'promoteToAdmin'])->name('promote');
-    Route::post('/demote/{user}', [TempAdminController::class, 'demoteFromAdmin'])->name('demote');
-    Route::post('/login-as/{user}', [TempAdminController::class, 'loginAs'])->name('login-as');
 });
 
 // Recherche
@@ -963,203 +961,168 @@ Route::post('/autosave', [\App\Http\Controllers\Admin\DatabaseBackupController::
 Route::get('/cron-run', [\App\Http\Controllers\CronRunController::class, 'run'])->name('cron.run');
 Route::post('/cron-run', [\App\Http\Controllers\CronRunController::class, 'run']);
 
-// Route temporaire pour exécuter les migrations (À SUPPRIMER APRÈS UTILISATION)
-Route::get('/run-error-notifications-migration', function () {
-    // Sécurité basique : vérifier que c'est bien l'admin
-    if (!auth()->check() || !auth()->user()->is_admin) {
-        abort(403, 'Accès refusé');
-    }
-    
-    try {
-        $results = [];
+// Routes de debug et diagnostic (uniquement en environnement local)
+if (app()->environment('local')) {
+    // Migration manuelle
+    Route::get('/run-error-notifications-migration', function () {
+        if (!auth()->check() || !auth()->user()->is_admin) {
+            abort(403, 'Accès refusé');
+        }
         
-        // Vérifier si la colonne existe déjà
-        $hasColumn = Schema::hasColumn('users', 'notifications_erreurs_actives');
-        $hasTable = Schema::hasTable('error_logs');
-        
-        if ($hasColumn && $hasTable) {
+        try {
+            $results = [];
+            $hasColumn = Schema::hasColumn('users', 'notifications_erreurs_actives');
+            $hasTable = Schema::hasTable('error_logs');
+            
+            if ($hasColumn && $hasTable) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Les migrations ont déjà été exécutées. Tout est à jour !',
+                    'hasColumn' => true,
+                    'hasTable' => true,
+                ]);
+            }
+            
+            if (!$hasColumn) {
+                try {
+                    DB::statement('ALTER TABLE `users` ADD COLUMN `notifications_erreurs_actives` BOOLEAN DEFAULT FALSE AFTER `is_admin`');
+                    $results[] = '✓ Colonne notifications_erreurs_actives ajoutée à la table users';
+                } catch (\Exception $e) {
+                    return response()->json(['success' => false, 'error' => 'Erreur ajout colonne : ' . $e->getMessage()], 500);
+                }
+            } else {
+                $results[] = '→ La colonne notifications_erreurs_actives existe déjà';
+            }
+            
+            if (!$hasTable) {
+                try {
+                    DB::statement("
+                        CREATE TABLE IF NOT EXISTS `error_logs` (
+                          `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                          `level` VARCHAR(255) NOT NULL,
+                          `message` VARCHAR(255) NOT NULL,
+                          `context` TEXT NULL,
+                          `file` VARCHAR(255) NULL,
+                          `line` INT NULL,
+                          `trace` TEXT NULL,
+                          `url` VARCHAR(255) NULL,
+                          `method` VARCHAR(255) NULL,
+                          `ip` VARCHAR(255) NULL,
+                          `user_agent` VARCHAR(255) NULL,
+                          `user_id` BIGINT UNSIGNED NULL,
+                          `est_vue` BOOLEAN DEFAULT FALSE,
+                          `vu_at` TIMESTAMP NULL,
+                          `created_at` TIMESTAMP NULL,
+                          `updated_at` TIMESTAMP NULL,
+                          PRIMARY KEY (`id`),
+                          INDEX `idx_level` (`level`),
+                          INDEX `idx_est_vue` (`est_vue`),
+                          INDEX `idx_created_at` (`created_at`),
+                          CONSTRAINT `error_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ");
+                    $results[] = '✓ Table error_logs créée';
+                } catch (\Exception $e) {
+                    return response()->json(['success' => false, 'error' => 'Erreur création table : ' . $e->getMessage()], 500);
+                }
+            } else {
+                $results[] = '→ La table error_logs existe déjà';
+            }
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Les migrations ont déjà été exécutées. Tout est à jour !',
-                'hasColumn' => true,
-                'hasTable' => true,
+                'message' => 'Migrations terminées avec succès !',
+                'results' => $results,
+                'hasColumn' => Schema::hasColumn('users', 'notifications_erreurs_actives'),
+                'hasTable' => Schema::hasTable('error_logs'),
             ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => 'Erreur : ' . $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
         }
-        
-        // Ajouter la colonne notifications_erreurs_actives
-        if (!$hasColumn) {
-            try {
-                DB::statement('ALTER TABLE `users` ADD COLUMN `notifications_erreurs_actives` BOOLEAN DEFAULT FALSE AFTER `is_admin`');
-                $results[] = '✓ Colonne notifications_erreurs_actives ajoutée à la table users';
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Erreur lors de l\'ajout de la colonne : ' . $e->getMessage(),
-                ], 500);
-            }
-        } else {
-            $results[] = '→ La colonne notifications_erreurs_actives existe déjà';
+    })->middleware('auth');
+
+    // Diagnostic d'autorisations
+    Route::get('/diagnostic-auth', function () {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Non authentifié', 'auth_check' => false], 401);
         }
-        
-        // Créer la table error_logs
-        if (!$hasTable) {
-            try {
-                DB::statement("
-                    CREATE TABLE IF NOT EXISTS `error_logs` (
-                      `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                      `level` VARCHAR(255) NOT NULL,
-                      `message` VARCHAR(255) NOT NULL,
-                      `context` TEXT NULL,
-                      `file` VARCHAR(255) NULL,
-                      `line` INT NULL,
-                      `trace` TEXT NULL,
-                      `url` VARCHAR(255) NULL,
-                      `method` VARCHAR(255) NULL,
-                      `ip` VARCHAR(255) NULL,
-                      `user_agent` VARCHAR(255) NULL,
-                      `user_id` BIGINT UNSIGNED NULL,
-                      `est_vue` BOOLEAN DEFAULT FALSE,
-                      `vu_at` TIMESTAMP NULL,
-                      `created_at` TIMESTAMP NULL,
-                      `updated_at` TIMESTAMP NULL,
-                      PRIMARY KEY (`id`),
-                      INDEX `idx_level` (`level`),
-                      INDEX `idx_est_vue` (`est_vue`),
-                      INDEX `idx_created_at` (`created_at`),
-                      CONSTRAINT `error_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                ");
-                $results[] = '✓ Table error_logs créée';
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Erreur lors de la création de la table : ' . $e->getMessage(),
-                ], 500);
-            }
-        } else {
-            $results[] = '→ La table error_logs existe déjà';
-        }
-        
-        // Vérification finale
-        $hasColumn = Schema::hasColumn('users', 'notifications_erreurs_actives');
-        $hasTable = Schema::hasTable('error_logs');
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Migrations terminées avec succès !',
-            'results' => $results,
-            'hasColumn' => $hasColumn,
-            'hasTable' => $hasTable,
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => 'Erreur : ' . $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ], 500);
-    }
-})->middleware('auth');
 
-// Route de diagnostic pour vérifier les autorisations (à supprimer en production)
-Route::get('/diagnostic-auth', function () {
-    if (!Auth::check()) {
-        return response()->json([
-            'error' => 'Non authentifié',
-            'auth_check' => false,
-        ], 401);
-    }
-
-    $user = Auth::user();
-    $diagnostic = [
-        'user_id' => $user->id,
-        'user_email' => $user->email,
-        'is_admin' => $user->is_admin ?? false,
-        'est_gerant' => $user->est_gerant ?? false,
-        'entreprises' => [],
-    ];
-
-    // Vérifier les entreprises de l'utilisateur
-    $entreprises = \App\Models\Entreprise::where('user_id', $user->id)->get();
-    
-    foreach ($entreprises as $entreprise) {
-        $diagnostic['entreprises'][] = [
-            'id' => $entreprise->id,
-            'nom' => $entreprise->nom,
-            'slug' => $entreprise->slug,
-            'user_id' => $entreprise->user_id,
-            'user_id_matches' => $entreprise->user_id === $user->id,
-            'est_verifiee' => $entreprise->est_verifiee,
-            'a_abonnement_actif' => $entreprise->aAbonnementActif(),
+        $user = Auth::user();
+        $diagnostic = [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'is_admin' => $user->is_admin ?? false,
+            'est_gerant' => $user->est_gerant ?? false,
+            'entreprises' => [],
         ];
-    }
 
-    // Vérifier si l'utilisateur peut accéder à une entreprise spécifique (si slug fourni)
-    if (request()->has('slug')) {
-        $slug = request()->get('slug');
-        $entreprise = \App\Models\Entreprise::where('slug', $slug)->first();
-        
-        if ($entreprise) {
-            $diagnostic['entreprise_test'] = [
-                'slug' => $slug,
-                'found' => true,
-                'entreprise_id' => $entreprise->id,
-                'entreprise_user_id' => $entreprise->user_id,
-                'user_id' => $user->id,
-                'is_owner' => $entreprise->user_id === $user->id,
-                'can_access' => $entreprise->user_id === $user->id || $user->is_admin,
-            ];
-        } else {
-            $diagnostic['entreprise_test'] = [
-                'slug' => $slug,
-                'found' => false,
+        $entreprises = \App\Models\Entreprise::where('user_id', $user->id)->get();
+        foreach ($entreprises as $entreprise) {
+            $diagnostic['entreprises'][] = [
+                'id' => $entreprise->id,
+                'nom' => $entreprise->nom,
+                'slug' => $entreprise->slug,
+                'user_id' => $entreprise->user_id,
+                'user_id_matches' => $entreprise->user_id === $user->id,
+                'est_verifiee' => $entreprise->est_verifiee,
+                'a_abonnement_actif' => $entreprise->aAbonnementActif(),
             ];
         }
-    }
 
-    return response()->json($diagnostic, 200);
-})->middleware('auth');
+        if (request()->has('slug')) {
+            $slug = request()->get('slug');
+            $entreprise = \App\Models\Entreprise::where('slug', $slug)->first();
+            if ($entreprise) {
+                $diagnostic['entreprise_test'] = [
+                    'slug' => $slug, 'found' => true,
+                    'entreprise_id' => $entreprise->id, 'entreprise_user_id' => $entreprise->user_id,
+                    'user_id' => $user->id, 'is_owner' => $entreprise->user_id === $user->id,
+                    'can_access' => $entreprise->user_id === $user->id || $user->is_admin,
+                ];
+            } else {
+                $diagnostic['entreprise_test'] = ['slug' => $slug, 'found' => false];
+            }
+        }
 
+        return response()->json($diagnostic, 200);
+    })->middleware('auth');
 
-
-
-// Route de test email (à supprimer en production)
-Route::get('/test-email', function() {
-    if (!auth()->check() || !auth()->user()->is_admin) {
-        abort(403, 'Accès refusé');
-    }
-    
-    try {
-        $testEmail = request()->get('email', auth()->user()->email);
+    // Test email
+    Route::get('/test-email', function() {
+        if (!auth()->check() || !auth()->user()->is_admin) {
+            abort(403, 'Accès refusé');
+        }
         
-        \Illuminate\Support\Facades\Mail::raw('Test email depuis Allo Tata - Configuration SMTP', function ($message) use ($testEmail) {
-            $message->to($testEmail)
-                    ->subject('Test de configuration email - Allo Tata');
-        });
-        
-        return response()->json([
-            'success' => true,
-            'message' => "Email de test envoyé à {$testEmail}",
-            'config' => [
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'encryption' => config('mail.mailers.smtp.encryption'),
-                'username' => config('mail.mailers.smtp.username'),
-                'from_address' => config('mail.from.address'),
-                'from_name' => config('mail.from.name'),
-            ]
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'trace' => config('app.debug') ? $e->getTraceAsString() : null,
-        ], 500);
-    }
-})->middleware('auth');
+        try {
+            $testEmail = request()->get('email', auth()->user()->email);
+            \Illuminate\Support\Facades\Mail::raw('Test email depuis Allo Tata - Configuration SMTP', function ($message) use ($testEmail) {
+                $message->to($testEmail)->subject('Test de configuration email - Allo Tata');
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Email de test envoyé à {$testEmail}",
+                'config' => [
+                    'host' => config('mail.mailers.smtp.host'),
+                    'port' => config('mail.mailers.smtp.port'),
+                    'encryption' => config('mail.mailers.smtp.encryption'),
+                    'username' => config('mail.mailers.smtp.username'),
+                    'from_address' => config('mail.from.address'),
+                    'from_name' => config('mail.from.name'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+            ], 500);
+        }
+    })->middleware('auth');
 
-// Route de debug temporaire
-require __DIR__ . '/debug_temp.php';
+    // Debug temporaire (fichier séparé)
+    require __DIR__ . '/debug_temp.php';
+}
 
 // ⚠️ ROUTE DE SECOURS D'URGENCE - À GARDER SECRÈTE
 // Chemin aléatoire pour éviter la découverte accidentelle

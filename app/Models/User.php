@@ -26,7 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'est_client',
         'est_gerant',
-        'is_admin',
+        // 'is_admin' — EXCLUS : assignation explicite uniquement (sécurité mass assignment)
         'photo_profil',
         'abonnement_manuel',
         'abonnement_manuel_actif_jusqu',
@@ -52,10 +52,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'recovery_method_email',
         'recovery_method_sms',
         'google2fa_enabled',
-        'google2fa_secret',
+        // 'google2fa_secret' — EXCLUS : assignation explicite uniquement (sécurité mass assignment)
         'google2fa_recovery_codes',
         'stripe_payment_method_id',
-        'stripe_id',
+        // 'stripe_id' — EXCLUS : géré par Cashier (forceFill) ou assignation explicite
         'pm_type',
         'pm_last_four',
     ];

@@ -632,30 +632,6 @@ class ReservationController extends Controller
             $membreId = $membre->id;
         }
 
-        // Vérifier chevauchement uniquement si la date est dans le futur
-        if ($debutReservation->isFuture()) {
-            $finReservation = $debutReservation->copy()->addMinutes((int) $validated['duree_minutes']);
-            
-            $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
-                ->whereIn('statut', ['en_attente', 'confirmee']);
-            
-            if ($membreId) {
-                $queryReservations->where('membre_id', $membreId);
-            }
-            
-            $creneauDejaPris = $queryReservations->get()
-                ->filter(function($r) use ($debutReservation, $finReservation) {
-                    $debutR = \Carbon\Carbon::parse($r->date_reservation);
-                    $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
-                    return $debutReservation->lt($finR) && $finReservation->gt($debutR);
-                })
-                ->isNotEmpty();
-
-            if ($creneauDejaPris) {
-                return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
-            }
-        }
-
         // Préparer les données de la réservation
         $reservationData = [
             'user_id' => $validated['user_id'] ?? null,
@@ -693,8 +669,22 @@ class ReservationController extends Controller
             $reservationData['type_service'] = $validated['type_service'];
         }
 
-        // Créer la réservation
-        $reservation = Reservation::create($reservationData);
+        // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
+        // On ne vérifie le chevauchement que pour les dates futures
+        $skipCheck = !$debutReservation->isFuture();
+
+        $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
+            $entreprise->id,
+            $membreId,
+            $debutReservation,
+            (int) $validated['duree_minutes'],
+            fn () => Reservation::create($reservationData),
+            $skipCheck
+        );
+
+        if (!$reservation) {
+            return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
+        }
 
         // Si la réservation est confirmée et créée manuellement, pas de notification
         // (l'entreprise a déjà accepté en créant la réservation)

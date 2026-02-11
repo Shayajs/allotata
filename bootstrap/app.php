@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'check.trusted.device' => \App\Http\Middleware\CheckTrustedDevice::class,
             'lesson.accessible' => \App\Http\Middleware\EnsureLessonAccessible::class,
+            'no.admin.exists' => \App\Http\Middleware\NoAdminExists::class,
         ]);
 
         // Middleware global pour tracker l'activité utilisateur

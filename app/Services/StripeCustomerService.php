@@ -26,7 +26,9 @@ class StripeCustomerService
             'metadata' => ['user_id' => (string) $user->id],
         ]);
 
-        $user->update(['stripe_id' => $customer->id]);
+        // stripe_id hors du $fillable : assignation explicite
+        $user->stripe_id = $customer->id;
+        $user->save();
         return $customer->id;
     }
 

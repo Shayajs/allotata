@@ -774,30 +774,9 @@ class PublicController extends Controller
             }
         }
 
-        // Vérifier si le créneau n'est pas déjà pris (sauf pour date butoire : pas de blocage de créneau)
-        if (!$isDateButoire) {
-            $finReservation = $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes);
-            $queryReservations = Reservation::where('entreprise_id', $entreprise->id)
-                ->whereIn('statut', ['en_attente', 'confirmee']);
-            if ($membreId) {
-                $queryReservations->where('membre_id', $membreId);
-            }
-            $creneauDejaPris = $queryReservations->get()
-                ->filter(function($r) use ($debutReservation, $finReservation) {
-                    $debutR = \Carbon\Carbon::parse($r->date_reservation);
-                    $finR = $debutR->copy()->addMinutes((int) ($r->duree_minutes ?? 30));
-                    return $debutReservation->lt($finR) && $finReservation->gt($debutR);
-                })
-                ->isNotEmpty();
-            if ($creneauDejaPris) {
-                return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
-            }
-        }
-
-        // Déterminer le statut initial : confirmée si acceptation automatique activée, sinon en attente
+        // Vérifier la disponibilité ET créer la réservation dans une transaction atomique (anti-doublon)
         $statutInitial = $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente';
         
-        // Créer la réservation
         $reservationData = [
             'user_id' => $userId,
             'entreprise_id' => $entreprise->id,
@@ -816,7 +795,19 @@ class PublicController extends Controller
         if ($isDateButoire) {
             $reservationData['date_butoire'] = $validated['date_butoire'];
         }
-        $reservation = Reservation::create($reservationData);
+
+        $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
+            $entreprise->id,
+            $membreId,
+            $debutReservation,
+            (int) $typeService->duree_minutes,
+            fn () => Reservation::create($reservationData),
+            $isDateButoire
+        );
+
+        if (!$reservation) {
+            return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
+        }
 
         // Gérer les options sélectionnées
         if ($request->has('service_options')) {
