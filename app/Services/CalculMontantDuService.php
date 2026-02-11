@@ -16,7 +16,10 @@ class CalculMontantDuService
      *
      * @return array{montant_du: float, montant_final: float, reduction_promo: float, lignes: array, promo_code_id: int|null}
      */
-    public static function calculerPourEcheance(Echeance $echeance, ?string $codePromo = null): array
+    /**
+     * @param bool $isNewSubscription Quand true, inclut le tarif même si l'abonnement n'existe pas encore (checkout initial).
+     */
+    public static function calculerPourEcheance(Echeance $echeance, ?string $codePromo = null, bool $isNewSubscription = false): array
     {
         $user = $echeance->user;
         $debut = $echeance->periode_debut;
@@ -50,7 +53,7 @@ class CalculMontantDuService
             }
             if ($scopeType === Echeance::TYPE_SITE_WEB) {
                 $sub = $entreprise->abonnements()->where('type', 'site_web')->first();
-                if ($sub && $sub->estActif()) {
+                if ($isNewSubscription || ($sub && $sub->estActif())) {
                     $tarif = self::tarifPourEntreprise($entreprise, 'site_web');
                     $lignes[] = [
                         'label' => 'Site Web – ' . $entreprise->nom,
@@ -64,7 +67,7 @@ class CalculMontantDuService
                 }
             } elseif ($scopeType === Echeance::TYPE_MULTI_PERSONNES) {
                 $sub = $entreprise->abonnements()->where('type', 'multi_personnes')->first();
-                if ($sub && $sub->estActif()) {
+                if ($isNewSubscription || ($sub && $sub->estActif())) {
                     $tarif = self::tarifPourEntreprise($entreprise, 'multi_personnes');
                     $lignes[] = [
                         'label' => 'Multi-Personnes – ' . $entreprise->nom,

@@ -193,7 +193,7 @@ class EntrepriseSubscriptionController extends Controller
             'reduction_manuel' => 0,
         ]);
         $tmp->setRelation('user', $owner);
-        $calc = CalculMontantDuService::calculerPourEcheance($tmp);
+        $calc = CalculMontantDuService::calculerPourEcheance($tmp, null, true);
         if ($calc['montant_du'] <= 0) {
             return back()->withErrors(['error' => 'Aucun montant à régler pour cette option.']);
         }
