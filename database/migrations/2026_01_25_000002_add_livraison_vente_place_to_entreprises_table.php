@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('entreprises', function (Blueprint $table) {
             // Options de livraison/vente par défaut pour l'entreprise
-            $table->boolean('livraison_disponible_par_defaut')->default(true)->after('livraison_disponible');
-            $table->boolean('vente_sur_place_disponible_par_defaut')->default(true)->after('livraison_disponible_par_defaut');
+            $table->boolean('livraison_disponible_par_defaut')->default(true);
+            $table->boolean('vente_sur_place_disponible_par_defaut')->default(true);
         });
     }
 
