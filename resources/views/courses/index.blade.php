@@ -31,35 +31,52 @@
                             $lessonsCount = $module->activeLessons->count();
                         @endphp
                         <a href="{{ route('courses.module', $module) }}" class="block group">
-                            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
-                                @if($module->image_path)
-                                    <div class="aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-700">
-                                        <img 
-                                            src="{{ asset('storage/' . $module->image_path) }}" 
-                                            alt="{{ $module->titre }}"
-                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        >
-                                    </div>
-                                @else
-                                    <div class="aspect-video w-full bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center">
-                                        <svg class="w-12 h-12 sm:w-16 sm:h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                        </svg>
-                                    </div>
-                                @endif
+                            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg hover:border-green-300 dark:hover:border-green-700 transition-all duration-300 h-full flex flex-col">
+                                {{-- Image / Placeholder --}}
+                                <div class="relative">
+                                    @if($module->image_path)
+                                        <div class="aspect-video w-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                                            <img 
+                                                src="{{ asset('storage/' . $module->image_path) }}" 
+                                                alt="{{ $module->titre }}"
+                                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                loading="lazy"
+                                            >
+                                        </div>
+                                    @else
+                                        <div class="aspect-video w-full bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center">
+                                            <svg class="w-12 h-12 sm:w-16 sm:h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                            </svg>
+                                        </div>
+                                    @endif
+
+                                    {{-- Badge vidéo --}}
+                                    @if($module->video_url)
+                                        <div class="absolute top-3 right-3">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                                                </svg>
+                                                Vidéo
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
                                 
-                                <div class="p-4 sm:p-5 md:p-6">
+                                {{-- Contenu --}}
+                                <div class="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
                                     <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-green-500 transition">
                                         {{ $module->titre }}
                                     </h3>
                                     
                                     @if($module->description)
-                                        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-3 sm:mb-4 line-clamp-2">
+                                        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-3 sm:mb-4 line-clamp-2 flex-1">
                                             {{ $module->description }}
                                         </p>
                                     @endif
 
-                                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
+                                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 text-xs sm:text-sm mt-auto">
                                         <span class="text-slate-500 dark:text-slate-400">
                                             {{ $lessonsCount }} {{ $lessonsCount > 1 ? 'leçons' : 'leçon' }}
                                         </span>
