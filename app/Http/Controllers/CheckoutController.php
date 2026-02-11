@@ -25,16 +25,50 @@ class CheckoutController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+
+        // ── GET ?cancel=ID → annuler un brouillon depuis un lien ──
+        if ($cancelId = $request->query('cancel')) {
+            $toCancel = Echeance::where('user_id', $user->id)
+                ->where('id', $cancelId)
+                ->whereIn('statut', [Echeance::STATUT_BROUILLON, Echeance::STATUT_A_PAYER])
+                ->first();
+            if ($toCancel) {
+                $toCancel->update(['statut' => Echeance::STATUT_ANNULE]);
+                return redirect()->route('checkout.index')
+                    ->with('success', 'Échéance annulée.');
+            }
+        }
+
+        // ── Auto-nettoyage : brouillons > 24 h → annulés (intention abandonnée) ──
+        Echeance::where('user_id', $user->id)
+            ->where('statut', Echeance::STATUT_BROUILLON)
+            ->where('created_at', '<', now()->subHours(24))
+            ->update(['statut' => Echeance::STATUT_ANNULE]);
+
+        // ── Récupérer toutes les échéances actionnables ──
         $echeances = Echeance::where('user_id', $user->id)
-            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+            ->whereIn('statut', [
+                Echeance::STATUT_ECHEC,
+                Echeance::STATUT_BROUILLON,
+                Echeance::STATUT_A_PAYER,
+                Echeance::STATUT_EN_ATTENTE,
+            ])
             ->orderBy('periode_debut')
             ->with('entreprise')
             ->get();
 
+        // ── Catégoriser par état pour un affichage clair ──
+        $echeancesEchec     = $echeances->where('statut', Echeance::STATUT_ECHEC)->values();
+        $echeancesBrouillon = $echeances->where('statut', Echeance::STATUT_BROUILLON)->values();
+        $echeancesAPayer    = $echeances->where('statut', Echeance::STATUT_A_PAYER)->values();
+        $echeancesEnAttente = $echeances->where('statut', Echeance::STATUT_EN_ATTENTE)->values();
+
+        // ── Calculer les montants ──
         $codePromo = $request->session()->get('checkout_promo_code');
         $calculs = [];
         foreach ($echeances as $e) {
-            $calc = CalculMontantDuService::calculerPourEcheance($e, $codePromo);
+            $isNew = $e->estBrouillon();
+            $calc = CalculMontantDuService::calculerPourEcheance($e, $codePromo, $isNew);
             $calculs[$e->id] = $calc;
         }
 
@@ -42,12 +76,16 @@ class CheckoutController extends Controller
         $showCardForm = !$hasPaymentMethod || $request->boolean('change_card');
 
         return view('checkout.index', [
-            'echeances' => $echeances,
-            'calculs' => $calculs,
-            'codePromo' => $codePromo,
-            'hasPaymentMethod' => $hasPaymentMethod,
-            'showCardForm' => $showCardForm,
-            'user' => $user,
+            'echeances'           => $echeances,
+            'echeancesEchec'      => $echeancesEchec,
+            'echeancesBrouillon'  => $echeancesBrouillon,
+            'echeancesAPayer'     => $echeancesAPayer,
+            'echeancesEnAttente'  => $echeancesEnAttente,
+            'calculs'             => $calculs,
+            'codePromo'           => $codePromo,
+            'hasPaymentMethod'    => $hasPaymentMethod,
+            'showCardForm'        => $showCardForm,
+            'user'                => $user,
         ]);
     }
 
@@ -547,10 +585,15 @@ class CheckoutController extends Controller
         $user = Auth::user();
         
         // Utiliser une transaction avec verrou pour éviter les doubles paiements
+        // Autorise brouillon (nouveau), a_payer (renouvellement), en_attente (retry 3DS), echec (régularisation)
         $echeance = \DB::transaction(function () use ($user, $request) {
             return Echeance::where('user_id', $user->id)
-                ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
-                ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
+                ->whereIn('statut', [
+                    Echeance::STATUT_BROUILLON,
+                    Echeance::STATUT_A_PAYER,
+                    Echeance::STATUT_EN_ATTENTE,
+                    Echeance::STATUT_ECHEC,
+                ])
                 ->lockForUpdate()
                 ->findOrFail($request->input('echeance_id'));
         });
@@ -579,7 +622,8 @@ class CheckoutController extends Controller
             }
         }
         
-        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
+        $isNew = $echeance->estBrouillon();
+        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo, $isNew);
         $montantFinal = $calc['montant_final'];
         
         // Validation stricte du montant : doit être > 0 et <= montant_du
@@ -1060,11 +1104,17 @@ class CheckoutController extends Controller
         ]);
         $user = Auth::user();
         $echeance = Echeance::where('user_id', $user->id)
-            ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
+            ->whereIn('statut', [
+                Echeance::STATUT_BROUILLON,
+                Echeance::STATUT_A_PAYER,
+                Echeance::STATUT_EN_ATTENTE,
+                Echeance::STATUT_ECHEC,
+            ])
             ->findOrFail($request->input('echeance_id'));
 
         $codePromo = $request->input('code_promo') ?: $request->session()->get('checkout_promo_code');
-        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo);
+        $isNew = $echeance->estBrouillon();
+        $calc = CalculMontantDuService::calculerPourEcheance($echeance, $codePromo, $isNew);
         $montantFinal = $calc['montant_final'];
         if ($montantFinal <= 0) {
             return redirect()->route('checkout.index')
@@ -1299,6 +1349,33 @@ class CheckoutController extends Controller
 
         return redirect()->route('settings.index', ['tab' => 'subscription'])
             ->with('success', $message);
+    }
+
+    /**
+     * Annuler une échéance brouillon / a_payer depuis la page checkout (POST).
+     * L'utilisateur ne sera pas débité. Respecte le principe "intention ≠ dette".
+     */
+    public function annulerEcheance(Request $request, Echeance $echeance)
+    {
+        $user = Auth::user();
+        if ((int) $echeance->user_id !== (int) $user->id) {
+            abort(403, 'Cette échéance ne vous appartient pas.');
+        }
+        if (!$echeance->estAnnulable()) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Cette échéance ne peut plus être annulée.');
+        }
+
+        $echeance->update(['statut' => Echeance::STATUT_ANNULE]);
+
+        Log::info('Échéance annulée par l\'utilisateur depuis checkout', [
+            'user_id' => $user->id,
+            'echeance_id' => $echeance->id,
+            'ancien_statut' => $echeance->getOriginal('statut'),
+        ]);
+
+        return redirect()->route('checkout.index')
+            ->with('success', 'Échéance annulée. Vous ne serez pas débité.');
     }
 
     public function cancel()

@@ -623,6 +623,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/checkout/payer', [CheckoutController::class, 'creerSessionStripe'])->name('checkout.payer');
         Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
         Route::get('/payment/authenticate/{payment_intent_id}', [CheckoutController::class, 'authenticatePayment'])->name('payment.authenticate');
+        Route::post('/checkout/annuler/{echeance}', [CheckoutController::class, 'annulerEcheance'])->name('checkout.annuler-echeance');
         Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
         // Notifications

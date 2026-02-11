@@ -198,6 +198,9 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Aucun montant à régler pour cette option.']);
         }
 
+        // Créer en « brouillon » : simple intention d'achat, pas encore une dette.
+        // Si l'utilisateur revient en arrière sans payer, le brouillon est annulable
+        // et sera auto-nettoyé après 24 h.
         Echeance::updateOrCreate(
             [
                 'user_id' => $owner->id,
@@ -205,6 +208,7 @@ class EntrepriseSubscriptionController extends Controller
                 'subscription_type' => $type,
                 'periode_debut' => $debut,
                 'periode_fin' => $fin,
+                'statut' => Echeance::STATUT_BROUILLON,
             ],
             [
                 'jour_facturation' => $jour,
@@ -212,7 +216,6 @@ class EntrepriseSubscriptionController extends Controller
                 'montant_final' => $calc['montant_final'],
                 'reduction_promo' => $calc['reduction_promo'],
                 'promo_code_id' => $calc['promo_code_id'],
-                'statut' => Echeance::STATUT_A_PAYER,
                 'metadata' => ['lignes' => $calc['lignes']],
             ]
         );
