@@ -11,6 +11,7 @@ STRUCTURE JSON ATTENDUE :
     {
       "titre": "Nom du module",
       "description": "Description courte du module",
+      "video_url": "",
       "est_actif": true,
       "lessons": [
         {
@@ -46,8 +47,13 @@ TYPES DE BLOCS DISPONIBLES (utilise-les pour rendre les cours visuels et engagea
 - checklist : { "title": "Titre", "items": [{ "text": "Élément à cocher", "checked": false }] }
 - divider : {} (séparateur visuel)
 - exercise : { "title": "Exercice", "instruction": "<p>Instructions</p>", "hint": "<p>Indice optionnel</p>" }
-- image : { "src": "", "alt": "Description de l'image", "caption": "Légende optionnelle" } (laisser src vide, je mettrai les images moi-même)
-- video : { "src": "", "poster": "", "title": "Titre de la vidéo" } (laisser src vide)
+- image : { "src": "", "alt": "Description de l'image", "caption": "Légende optionnelle" } (laisser src vide, je mettrai les images moi-même. src accepte aussi une URL externe)
+- video : { "src": "", "poster": "", "title": "Titre de la vidéo" } (laisser src vide. src accepte aussi une URL externe)
+- iframe : content { "src": "https://url-a-integrer.com" }, settings { "height": 400, "rounded": true } (contenu externe intégré)
+- gallery : { "title": "Titre optionnel", "images": [{ "src": "", "alt": "Description" }], "columns": 3 } (laisser src vide)
+- columns : content { "columns": 2, "content": [{ "html": "<p>Colonne 1</p>" }, { "html": "<p>Colonne 2</p>" }] }, settings { "gap": "small|medium|large" } (mise en page multi-colonnes)
+- quiz_block : content { "question": "Question ?", "type": "multiple_choice", "options": ["A", "B", "C"], "correctAnswer": "A", "explanation": "<p>Explication</p>" }, settings { "showExplanation": false } (mini-quiz intégré dans une leçon de type "course", différent d'une leçon de type "quiz")
+- embed : { "url": "", "title": "Titre du document", "type": "pdf|document" } (laisser url vide)
 
 TYPES DE QUESTIONS QUIZ :
 - multiple_choice : options[] (min 2) + bonne_reponse (doit être dans options)
@@ -56,10 +62,14 @@ TYPES DE QUESTIONS QUIZ :
 
 RÈGLES :
 - Chaque module doit avoir au moins 3-5 leçons de type "course" et 1 quiz de validation
-- Les leçons doivent être riches : utilise heading, text, callout, steps, code, checklist, exercice...
+- Chaque leçon de type "course" doit avoir minimum 8-15 blocs variés
+- Les leçons doivent être riches : utilise heading, text, callout, steps, code, checklist, exercise, columns, quiz_block...
 - Varie les types de blocs pour rendre l'apprentissage engageant
 - Le HTML dans les blocs text doit être riche : paragraphes, listes, gras, liens, etc.
 - Les quiz doivent avoir 4-6 questions variées
+- Le champ "video_url" des modules est optionnel : une URL YouTube, Vimeo ou vide
+- Les blocs peuvent avoir un champ "settings" optionnel pour personnaliser l'affichage (hauteur iframe, gap colonnes, etc.)
+- Ne confonds pas "quiz_block" (mini-quiz intégré dans une leçon "course") et les leçons de type "quiz" (qui utilisent le champ "questions[]" directement)
 - Réponds UNIQUEMENT avec le JSON, sans commentaire ni markdown
 @if(!empty($context['existing_modules']))
 
@@ -111,8 +121,13 @@ TYPES DE BLOCS DISPONIBLES :
 - checklist : { "title": "Liste", "items": [{ "text": "Élément", "checked": false }] }
 - divider : {}
 - exercise : { "title": "Exercice", "instruction": "<p>Instructions</p>", "hint": "<p>Indice</p>" }
-- image : { "src": "", "alt": "Description", "caption": "Légende" } (src vide, j'ajouterai les images)
-- video : { "src": "", "poster": "", "title": "Titre" } (src vide)
+- image : { "src": "", "alt": "Description", "caption": "Légende" } (src vide, j'ajouterai les images. src accepte aussi une URL externe)
+- video : { "src": "", "poster": "", "title": "Titre" } (src vide. src accepte aussi une URL externe)
+- iframe : content { "src": "https://url-a-integrer.com" }, settings { "height": 400, "rounded": true }
+- gallery : { "title": "Titre optionnel", "images": [{ "src": "", "alt": "Description" }], "columns": 3 } (laisser src vide)
+- columns : content { "columns": 2, "content": [{ "html": "<p>Colonne 1</p>" }, { "html": "<p>Colonne 2</p>" }] }, settings { "gap": "small|medium|large" }
+- quiz_block : content { "question": "Question ?", "type": "multiple_choice", "options": ["A", "B", "C"], "correctAnswer": "A", "explanation": "<p>Explication</p>" }, settings { "showExplanation": false } (mini-quiz intégré dans une leçon "course")
+- embed : { "url": "", "title": "Titre du document", "type": "pdf|document" } (laisser url vide)
 
 TYPES DE QUESTIONS QUIZ :
 - multiple_choice : options[] (min 2) + bonne_reponse (dans options)
@@ -120,7 +135,9 @@ TYPES DE QUESTIONS QUIZ :
 - text : bonne_reponse (texte attendu)
 
 RÈGLES :
-- Crée des leçons riches avec des blocs variés (pas juste du texte)
+- Crée des leçons riches avec des blocs variés (minimum 8-15 blocs par leçon, pas juste du texte)
+- Les blocs peuvent avoir un champ "settings" optionnel pour personnaliser l'affichage
+- Ne confonds pas "quiz_block" (mini-quiz intégré dans une leçon "course") et les leçons de type "quiz" (qui utilisent "questions[]")
 - Termine par un quiz de validation avec 4-6 questions
 - Réponds UNIQUEMENT avec le JSON, sans commentaire ni markdown
 @if(!empty($context['existing_lessons']))
@@ -165,14 +182,20 @@ TYPES DE BLOCS DISPONIBLES :
 - checklist : { "title": "Checklist", "items": [{ "text": "Élément", "checked": false }] }
 - divider : {}
 - exercise : { "title": "Exercice", "instruction": "<p>Consigne</p>", "hint": "<p>Indice</p>" }
-- image : { "src": "", "alt": "Description", "caption": "Légende" } (src vide)
-- video : { "src": "", "poster": "", "title": "Titre" } (src vide)
+- image : { "src": "", "alt": "Description", "caption": "Légende" } (src vide. src accepte aussi une URL externe)
+- video : { "src": "", "poster": "", "title": "Titre" } (src vide. src accepte aussi une URL externe)
+- iframe : content { "src": "https://url-a-integrer.com" }, settings { "height": 400, "rounded": true }
+- gallery : { "title": "Titre optionnel", "images": [{ "src": "", "alt": "Description" }], "columns": 3 } (laisser src vide)
+- columns : content { "columns": 2, "content": [{ "html": "<p>Colonne 1</p>" }, { "html": "<p>Colonne 2</p>" }] }, settings { "gap": "small|medium|large" }
+- quiz_block : content { "question": "Question ?", "type": "multiple_choice", "options": ["A", "B", "C"], "correctAnswer": "A", "explanation": "<p>Explication</p>" }, settings { "showExplanation": false } (mini-quiz intégré, différent d'une leçon de type "quiz")
+- embed : { "url": "", "title": "Titre du document", "type": "pdf|document" } (laisser url vide)
 
 RÈGLES :
 - Génère un cours complet et structuré (minimum 8-15 blocs)
-- Commence par un heading niveau 1, puis alterne text, callout, code, steps, exercice...
+- Commence par un heading niveau 1, puis alterne text, callout, code, steps, exercise, columns, quiz_block...
 - Le HTML doit être riche et bien formaté
 - Ajoute des callouts (tip, info, warning) pour les points importants
+- Les blocs peuvent avoir un champ "settings" optionnel pour personnaliser l'affichage
 - Termine par un exercice pratique si pertinent
 - Réponds UNIQUEMENT avec le JSON, sans commentaire ni markdown
 

@@ -1,0 +1,737 @@
+{
+  "modules": [
+    {
+      "titre": "Bienvenue sur AlloTata — Première prise en main",
+      "description": "Découvrez la plateforme AlloTata, créez votre compte et familiarisez-vous avec le tableau de bord.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Qu'est-ce qu'AlloTata ?",
+          "description": "Présentation de la plateforme, de ses fonctionnalités clés et de son public cible.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Qu'est-ce qu'AlloTata ?", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p><strong>AlloTata</strong> est une plateforme française de gestion tout-en-un conçue pour les <strong>micro-entrepreneurs</strong> et les <strong>petites entreprises</strong>. Elle combine la prise de rendez-vous en ligne, la gestion de clientèle, la facturation et bien plus encore dans une seule interface intuitive.</p><p>Que vous soyez coiffeur·se à domicile, coach sportif, thérapeute, artisan·e ou consultant·e, AlloTata vous accompagne dans la gestion quotidienne de votre activité.</p>" }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "À qui s'adresse AlloTata ?", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata cible principalement :</p><ul><li><strong>Les micro-entrepreneurs</strong> (auto-entrepreneurs) en France</li><li><strong>Les petites entreprises</strong> (SARL, EURL, SAS) de moins de 10 salariés</li><li><strong>Les prestataires de services à la personne</strong> : garde d'enfants, aide à domicile, ménage, coaching</li><li><strong>Les professions libérales</strong> : consultants, coachs, thérapeutes</li><li><strong>Les artisans</strong> : coiffeurs, esthéticiennes, réparateurs</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les fonctionnalités principales", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Ce que vous pouvez faire avec AlloTata", "steps": [{ "title": "Créer votre page entreprise", "content": "Présentez votre activité, vos services et vos tarifs sur une page publique professionnelle accessible par vos clients." }, { "title": "Gérer votre agenda", "content": "Définissez vos horaires d'ouverture, gérez vos créneaux et laissez vos clients réserver en ligne 24h/24." }, { "title": "Communiquer avec vos clients", "content": "Utilisez la messagerie intégrée pour échanger, proposer des rendez-vous et négocier les tarifs." }, { "title": "Facturer et suivre vos finances", "content": "Générez des factures PDF, suivez vos recettes et dépenses, et gardez une comptabilité claire." }, { "title": "Construire votre site web vitrine", "content": "Créez un site web professionnel avec l'éditeur de pages intégré, sans aucune compétence technique." }, { "title": "Fidéliser votre clientèle", "content": "Utilisez le programme de fidélité, les notes client et les avis pour construire une relation durable." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Le saviez-vous ?", "html": "AlloTata est disponible en tant qu'<strong>application web progressive (PWA)</strong>. Vos clients peuvent l'installer sur leur téléphone comme une application native, directement depuis votre page !" }, "settings": {} },
+            { "type": "image", "content": { "src": "", "alt": "Vue d'ensemble de la plateforme AlloTata", "caption": "L'interface principale d'AlloTata — tableau de bord, agenda et messagerie" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les deux types d'utilisateurs", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Sur AlloTata, il existe deux profils principaux :</p><ol><li><strong>Le Gérant</strong> — C'est vous, le professionnel. Vous créez votre entreprise, configurez vos services, gérez vos réservations et facturez vos clients.</li><li><strong>Le Client</strong> — C'est votre clientèle. Ils trouvent votre page, consultent vos services, réservent en ligne et vous envoient des messages.</li></ol><p>Un même compte peut être à la fois <strong>Client</strong> et <strong>Gérant</strong>. Vous pouvez donc réserver chez d'autres professionnels tout en gérant votre propre activité.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Créer son compte et configurer son profil",
+          "description": "Inscription, vérification email, personnalisation du profil et sécurité du compte.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Créer son compte AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La création de votre compte est <strong>gratuite</strong> et ne prend que quelques minutes. Voici comment procéder.</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Étapes de création du compte", "steps": [{ "title": "Accéder à la page d'inscription", "content": "Rendez-vous sur AlloTata et cliquez sur « S'inscrire ». Vous pouvez aussi cliquer sur « Se connecter » puis « Créer un compte »." }, { "title": "Remplir le formulaire", "content": "Saisissez votre nom, prénom, adresse email et choisissez un mot de passe sécurisé (minimum 8 caractères, avec majuscules, chiffres et caractères spéciaux recommandés)." }, { "title": "Vérifier votre email", "content": "Un email de vérification vous est envoyé. Cliquez sur le lien pour activer votre compte. Si vous ne le recevez pas, vérifiez vos spams ou demandez un renvoi." }, { "title": "Compléter votre profil", "content": "Ajoutez votre photo de profil, votre numéro de téléphone, votre date de naissance et une courte biographie." }] }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Configurer votre profil", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Un profil complet inspire confiance à vos futurs clients. Voici les éléments à renseigner :</p><ul><li><strong>Photo de profil</strong> — Une photo professionnelle et souriante</li><li><strong>Nom et prénom</strong> — Votre identité réelle</li><li><strong>Téléphone</strong> — Pour être contacté par vos clients</li><li><strong>Bio</strong> — Décrivez brièvement votre activité et votre expérience</li><li><strong>Adresse</strong> — Utile pour les services à domicile</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Sécurité du compte", "html": "<p>Nous vous recommandons fortement d'activer la <strong>double authentification (2FA)</strong> pour protéger votre compte. AlloTata supporte :</p><ul><li><strong>Google Authenticator</strong> (application TOTP)</li><li><strong>Codes par email/SMS</strong></li><li><strong>Codes de récupération</strong> (à conserver précieusement)</li></ul><p>Rendez-vous dans <em>Paramètres > Sécurité</em> pour l'activer.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Bon à savoir", "html": "Après 5 tentatives de connexion échouées, votre compte est verrouillé pendant 15 minutes. C'est une mesure de sécurité pour protéger vos données." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Découvrir le tableau de bord",
+          "description": "Navigation dans l'interface, les onglets principaux et les notifications.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Votre tableau de bord AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Une fois connecté, vous arrivez sur votre <strong>tableau de bord</strong>. C'est votre centre de commande. Depuis cette interface, vous accédez à toutes les fonctionnalités de la plateforme.</p>" }, "settings": {} },
+            { "type": "image", "content": { "src": "", "alt": "Capture d'écran du tableau de bord AlloTata", "caption": "Le tableau de bord avec la barre latérale de navigation" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les onglets principaux", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La barre latérale (sidebar) vous donne accès aux sections suivantes :</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Navigation dans le tableau de bord", "steps": [{ "title": "Accueil", "content": "Vue d'ensemble de votre activité : statut de votre rôle (Client/Gérant), statistiques globales et actions rapides." }, { "title": "Mes Entreprises", "content": "Liste de vos entreprises créées sur AlloTata. Cliquez sur une entreprise pour accéder à son tableau de bord dédié." }, { "title": "Mes Réservations", "content": "Historique de vos réservations en tant que client chez d'autres professionnels." }, { "title": "Mes Factures", "content": "Toutes les factures reçues et générées, téléchargeables en PDF." }, { "title": "Messagerie", "content": "Vos conversations avec les professionnels et les clients. Un badge indique les messages non lus." }, { "title": "Notifications", "content": "Centre de notifications : réservations en attente, messages reçus, alertes de sécurité." }, { "title": "Abonnements", "content": "Gestion de votre abonnement Premium et de vos options (Site Web, Multi-Personnes)." }, { "title": "Sécurité", "content": "Historique de sécurité, appareils de confiance, double authentification." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Astuce navigation", "html": "Sur tablette, la barre latérale se réduit à des icônes avec des infobulles au survol. Sur mobile, utilisez le menu hamburger en haut à gauche pour ouvrir le tiroir de navigation." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les badges et alertes", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Des <strong>badges colorés</strong> apparaissent sur certains onglets pour vous alerter :</p><ul><li><strong>Messagerie</strong> — Nombre de messages non lus</li><li><strong>Réservations</strong> — Réservations en attente de validation</li><li><strong>Notifications</strong> — Nouvelles notifications non consultées</li><li><strong>Sécurité</strong> — Activité suspecte détectée (connexion depuis un nouvel appareil, etc.)</li></ul>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Les rôles : Client vs Gérant",
+          "description": "Comprendre les deux profils utilisateur et leurs accès respectifs.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Client vs Gérant : deux rôles, une seule plateforme", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Sur AlloTata, chaque utilisateur peut endosser <strong>un ou deux rôles</strong> simultanément. Comprendre ces rôles est essentiel pour bien utiliser la plateforme.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Le rôle Client", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En tant que <strong>Client</strong>, vous pouvez :</p><ul><li>Rechercher des professionnels et consulter leurs pages publiques</li><li>Consulter les services, les produits et les avis</li><li>Réserver des créneaux en ligne</li><li>Commander des produits</li><li>Échanger via la messagerie</li><li>Laisser des avis après vos réservations</li><li>Consulter vos factures et votre historique</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Le rôle Gérant", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En tant que <strong>Gérant</strong>, vous débloquez l'ensemble des fonctionnalités professionnelles :</p><ul><li>Créer et gérer une ou plusieurs entreprises</li><li>Configurer des services avec tarifs, durées et options</li><li>Gérer votre agenda et vos horaires d'ouverture</li><li>Accepter, refuser ou modifier des réservations</li><li>Générer des factures et suivre vos finances</li><li>Gérer votre équipe (avec l'option Multi-Personnes)</li><li>Créer votre site web vitrine</li><li>Gérer vos produits et votre stock</li><li>Accéder aux statistiques et rapports</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Comment devenir Gérant ?", "html": "Il suffit de <strong>créer votre première entreprise</strong> depuis le tableau de bord (onglet « Mes Entreprises » > « Créer une entreprise »). Votre compte bascule automatiquement en mode Gérant tout en conservant vos fonctionnalités Client." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Tableau comparatif", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<table><thead><tr><th>Fonctionnalité</th><th>Client</th><th>Gérant</th></tr></thead><tbody><tr><td>Rechercher des professionnels</td><td>✅</td><td>✅</td></tr><tr><td>Réserver en ligne</td><td>✅</td><td>✅</td></tr><tr><td>Messagerie</td><td>✅</td><td>✅</td></tr><tr><td>Créer une entreprise</td><td>❌</td><td>✅</td></tr><tr><td>Gérer un agenda</td><td>❌</td><td>✅</td></tr><tr><td>Facturation</td><td>❌</td><td>✅</td></tr><tr><td>Statistiques</td><td>❌</td><td>✅</td></tr><tr><td>Site web vitrine</td><td>❌</td><td>✅ (option)</td></tr><tr><td>Gestion d'équipe</td><td>❌</td><td>✅ (option)</td></tr></tbody></table>" }, "settings": {} },
+            { "type": "exercise", "content": { "title": "Exercice pratique", "instruction": "Connectez-vous à votre compte AlloTata. Identifiez votre rôle actuel (Client, Gérant ou les deux) depuis la page d'accueil du tableau de bord. Si vous n'êtes que Client, explorez le bouton « Créer une entreprise » sans valider pour vous familiariser avec le formulaire.", "hint": "Votre rôle est affiché dans l'onglet « Accueil » du tableau de bord, sous votre nom." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Première prise en main",
+          "description": "Testez vos connaissances sur les bases d'AlloTata.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 25,
+          "questions": [
+            { "question": "Quel est le public cible principal d'AlloTata ?", "type": "multiple_choice", "options": ["Les grandes entreprises de plus de 500 salariés", "Les micro-entrepreneurs et petites entreprises en France", "Les administrations publiques", "Les associations à but non lucratif"], "bonne_reponse": "Les micro-entrepreneurs et petites entreprises en France", "points": 5 },
+            { "question": "Un même compte AlloTata peut être à la fois Client et Gérant.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Que se passe-t-il après 5 tentatives de connexion échouées ?", "type": "multiple_choice", "options": ["Le compte est supprimé définitivement", "Le compte est verrouillé pendant 15 minutes", "Un email d'alerte est envoyé sans verrouillage", "Rien, il n'y a pas de limite"], "bonne_reponse": "Le compte est verrouillé pendant 15 minutes", "points": 5 },
+            { "question": "Quelle action déclenche le passage du rôle Client au rôle Gérant ?", "type": "multiple_choice", "options": ["Souscrire un abonnement Premium", "Créer sa première entreprise", "Envoyer un message à un professionnel", "Modifier son profil"], "bonne_reponse": "Créer sa première entreprise", "points": 5 },
+            { "question": "AlloTata est disponible en tant qu'application web progressive (PWA).", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Déclarer sa micro-entreprise URSSAF — Les points de vigilance",
+      "description": "Tout savoir pour créer et déclarer correctement sa micro-entreprise : démarches, ACRE, cotisations, fiscalité et documents obligatoires. Données vérifiées février 2026.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Qu'est-ce qu'une micro-entreprise ?",
+          "description": "Comprendre le statut juridique, les plafonds et les différences avec les autres formes d'entreprise.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Qu'est-ce qu'une micro-entreprise ?", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La <strong>micro-entreprise</strong> est un régime simplifié de l'<strong>entreprise individuelle (EI)</strong>. Ce n'est pas une forme juridique à part entière, mais un <strong>régime fiscal et social</strong> allégé, idéal pour démarrer une activité avec un minimum de formalités.</p><p>Depuis 2016, les termes « auto-entrepreneur » et « micro-entrepreneur » désignent <strong>exactement la même chose</strong>.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "À retenir", "html": "<strong>Micro-entreprise = Auto-entreprise</strong>. C'est le même statut. Le terme officiel est désormais « micro-entreprise », mais « auto-entrepreneur » reste couramment utilisé." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Différences avec les sociétés (SARL, EURL, SAS)", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Il est important de ne pas confondre la micro-entreprise avec les formes sociétaires :</p><table><thead><tr><th>Critère</th><th>Micro-entreprise (EI)</th><th>SARL / EURL / SAS</th></tr></thead><tbody><tr><td>Capital social</td><td>Aucun</td><td>Obligatoire (1 € minimum)</td></tr><tr><td>Statuts juridiques</td><td>Aucun à rédiger</td><td>Statuts obligatoires</td></tr><tr><td>Responsabilité</td><td>Illimitée (patrimoine personnel engagé, sauf résidence principale protégée depuis 2015)</td><td>Limitée aux apports</td></tr><tr><td>Comptabilité</td><td>Simplifiée (livre de recettes)</td><td>Comptabilité complète obligatoire</td></tr><tr><td>Charges sociales</td><td>Forfaitaires sur le CA</td><td>Calculées sur la rémunération</td></tr><tr><td>Imposition</td><td>IR (impôt sur le revenu)</td><td>IS ou IR selon le choix</td></tr></tbody></table>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Attention", "html": "L'option EIRL (Entreprise Individuelle à Responsabilité Limitée) a été <strong>supprimée depuis le 15 février 2022</strong>. Depuis cette date, le patrimoine personnel de l'entrepreneur individuel est automatiquement protégé pour les dettes professionnelles nées après cette date (loi du 14 février 2022)." }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Les plafonds de chiffre d'affaires 2025-2026", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour bénéficier du régime micro-entreprise, votre chiffre d'affaires annuel (HT) ne doit pas dépasser les seuils suivants :</p>" }, "settings": {} },
+            { "type": "checklist", "content": { "title": "Plafonds de CA (seuils en vigueur)", "items": [{ "text": "188 700 € pour les activités de vente de marchandises, objets, fournitures et denrées à emporter ou à consommer sur place, ou de fourniture de logement", "checked": false }, { "text": "77 700 € pour les prestations de services commerciales, artisanales et les activités libérales (BIC et BNC)", "checked": false }, { "text": "15 000 € pour les locations de meublés de tourisme non classés", "checked": false }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Conséquence d'un dépassement", "html": "<p>Si vous dépassez ces seuils pendant <strong>2 années civiles consécutives</strong>, vous sortez automatiquement du régime micro au <strong>1er janvier de l'année suivante</strong>. Vous basculez alors vers un régime réel d'imposition avec une comptabilité complète.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les activités compatibles", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La plupart des activités sont éligibles au régime micro-entreprise, notamment :</p><ul><li><strong>Commerciales</strong> : vente de marchandises, restauration rapide</li><li><strong>Artisanales</strong> : coiffure, esthétique, réparation, bâtiment</li><li><strong>Libérales</strong> : coaching, conseil, formation, bien-être, informatique</li><li><strong>Services à la personne</strong> : garde d'enfants, ménage, aide à domicile</li></ul><p><strong>Exceptions</strong> : certaines activités sont exclues du régime micro (activités agricoles rattachées à la MSA, activités relevant de la TVA immobilière, activités artistiques rémunérées en droits d'auteur, etc.). Vérifiez toujours la compatibilité de votre activité.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Les étapes de création pas à pas",
+          "description": "Procédure complète de création via le Guichet unique, choix du statut et réception du SIRET.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Créer sa micro-entreprise : guide pas à pas", "level": 1 }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Site officiel uniquement !", "html": "La seule adresse officielle pour créer votre micro-entreprise est <strong>formalites.entreprises.gouv.fr</strong> (Guichet unique géré par l'INPI). <strong>Méfiez-vous des sites payants</strong> qui imitent le site officiel et facturent des centaines d'euros pour une démarche gratuite !" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Les 5 étapes de la création", "steps": [{ "title": "Étape 1 : Préparer vos documents", "content": "Avant de commencer, rassemblez : une pièce d'identité en cours de validité (CNI ou passeport), un justificatif de domicile de moins de 3 mois, votre numéro de sécurité sociale, et le détail de l'activité que vous souhaitez exercer." }, { "title": "Étape 2 : Se connecter au Guichet unique", "content": "Rendez-vous sur formalites.entreprises.gouv.fr. Connectez-vous avec FranceConnect (recommandé, car il vérifie automatiquement votre identité) ou créez un identifiant INPI. Choisissez « Créer une entreprise » > « Entreprise individuelle / Micro-entreprise »." }, { "title": "Étape 3 : Remplir le formulaire de création", "content": "Renseignez vos informations personnelles, votre adresse professionnelle (peut être votre domicile), la description de votre activité et sa catégorie. C'est ici que vous choisissez entre BIC (vente ou prestations de services) et BNC (activités libérales)." }, { "title": "Étape 4 : Choisir vos options fiscales et sociales", "content": "Vous devez choisir : la périodicité de déclaration du CA (mensuelle ou trimestrielle), et si vous souhaitez opter pour le versement libératoire de l'impôt sur le revenu (voir leçon dédiée). Vous pouvez aussi demander l'ACRE à cette étape." }, { "title": "Étape 5 : Valider et envoyer", "content": "Joignez vos pièces justificatives (scan ou photo de la pièce d'identité, attestation sur l'honneur de non-condamnation), vérifiez l'ensemble et validez. Le dossier est transmis automatiquement à l'INSEE, aux impôts et à l'URSSAF." }] }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Après la validation", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Voici ce qui se passe après l'envoi de votre déclaration :</p><ul><li><strong>Sous ~15 jours</strong> : vous recevez votre <strong>numéro SIRET</strong> (14 chiffres) par courrier ou via votre espace en ligne. Ce numéro est indispensable pour facturer.</li><li><strong>Sous 4 à 10 semaines</strong> : vous recevez votre <strong>notification d'affiliation URSSAF</strong>, confirmant votre inscription au régime micro-social.</li><li><strong>Dans les semaines suivantes</strong> : les impôts vous envoient un <strong>mémento fiscal</strong> récapitulant vos obligations.</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Choisir la bonne catégorie d'activité", "level": 2 }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Catégories courantes pour les utilisateurs AlloTata", "html": "<ul><li><strong>Coiffure / Esthétique à domicile</strong> → Artisan-commerçant → micro-BIC services (taux 21,20 %)</li><li><strong>Coaching / Bien-être / Conseil</strong> → Profession libérale non réglementée → micro-BNC (taux 25,60 % en 2026)</li><li><strong>Garde d'enfants / Ménage / Aide à domicile</strong> → Services à la personne (codes APE 8810A ou 9609Z) — peut nécessiter un agrément ou une déclaration SAP</li><li><strong>Cours particuliers / Formation</strong> → Profession libérale → micro-BNC</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Créer son espace URSSAF en ligne", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Une fois votre SIRET reçu, créez votre espace sur <strong>autoentrepreneur.urssaf.fr</strong> :</p><ol><li>Rendez-vous sur le site et cliquez sur « Mon compte »</li><li>Saisissez votre <strong>numéro SIRET</strong> et votre <strong>numéro de sécurité sociale</strong></li><li>Créez votre mot de passe</li><li>Vous pourrez ensuite déclarer votre chiffre d'affaires, payer vos cotisations et télécharger vos attestations</li></ol>" }, "settings": {} },
+            { "type": "exercise", "content": { "title": "Exercice : Simulez votre création", "instruction": "Rendez-vous sur formalites.entreprises.gouv.fr et explorez le parcours de création sans valider. Identifiez la catégorie qui correspond à votre activité (BIC vente, BIC services ou BNC). Notez les pièces justificatives qui vous seront demandées.", "hint": "Vous pouvez commencer le formulaire sans le finaliser. Le Guichet unique sauvegarde automatiquement vos brouillons." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "L'ACRE : tout savoir pour en bénéficier",
+          "description": "Conditions d'éligibilité, formulaire, pièces justificatives et nouvelles règles 2026.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "L'ACRE : Aide aux Créateurs et Repreneurs d'Entreprise", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'<strong>ACRE</strong> (anciennement ACCRE) est une <strong>exonération partielle de cotisations sociales</strong> accordée aux créateurs et repreneurs d'entreprise pendant leur première année d'activité. C'est l'une des aides les plus avantageuses pour démarrer en micro-entreprise.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Changements majeurs en 2026 — À lire absolument", "html": "<p><strong>1. L'ACRE n'est plus automatique.</strong> Depuis le 1er janvier 2026, vous devez obligatoirement déposer une demande auprès de l'URSSAF pour en bénéficier.</p><p><strong>2. Baisse du taux d'exonération.</strong> Pour les créations à partir du <strong>1er juillet 2026</strong>, l'exonération passe de <strong>50 % à 25 %</strong>. Les créations avant cette date conservent l'exonération à 50 %.</p><p><strong>Conclusion : si vous êtes éligible, créez votre micro-entreprise avant le 1er juillet 2026 pour bénéficier du taux plein !</strong></p>" }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Durée de l'exonération", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'ACRE s'applique jusqu'à la <strong>fin du 3e trimestre civil</strong> suivant la date de début d'activité.</p><p>Concrètement, si vous créez votre activité :</p><ul><li><strong>En début de trimestre</strong> (janvier, avril, juillet, octobre) → vous bénéficiez de <strong>~12 mois complets</strong> d'exonération</li><li><strong>En milieu ou fin de trimestre</strong> → la durée est plus courte</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Astuce cruciale", "html": "<strong>Créez votre micro-entreprise en début de trimestre civil</strong> (janvier, avril, juillet ou octobre) pour maximiser la durée de l'ACRE à environ 12 mois." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Conditions d'éligibilité", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vous devez remplir <strong>au moins une</strong> des conditions suivantes :</p>" }, "settings": {} },
+            { "type": "checklist", "content": { "title": "Êtes-vous éligible à l'ACRE ?", "items": [{ "text": "Demandeur d'emploi indemnisé par France Travail (ex-Pôle Emploi)", "checked": false }, { "text": "Demandeur d'emploi non indemnisé inscrit depuis au moins 6 mois sur les 18 derniers mois", "checked": false }, { "text": "Bénéficiaire du RSA (Revenu de Solidarité Active)", "checked": false }, { "text": "Bénéficiaire de l'ASS (Allocation de Solidarité Spécifique)", "checked": false }, { "text": "Jeune de 18 à 25 ans", "checked": false }, { "text": "Personne de moins de 30 ans non indemnisée", "checked": false }, { "text": "Personne de moins de 30 ans reconnue handicapée (justificatif MDPH)", "checked": false }, { "text": "Salarié ou licencié reprenant une entreprise en procédure collective", "checked": false }, { "text": "Bénéficiaire d'un CAPE (Contrat d'Appui au Projet d'Entreprise)", "checked": false }, { "text": "Créateur dont l'entreprise est installée en QPV (Quartier Prioritaire de la politique de la Ville)", "checked": false }, { "text": "Bénéficiaire de la PreParE (Prestation Partagée d'Éducation de l'Enfant)", "checked": false }, { "text": "Activité exercée en ZFRR ou ZFRR+ (Zone France Ruralités Revitalisation)", "checked": false }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Limitation importante", "html": "L'ACRE ne peut être accordée qu'<strong>une fois tous les 3 ans</strong>. Si vous en avez déjà bénéficié au cours des 3 dernières années, vous ne pouvez pas y prétendre à nouveau." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Formulaire et pièces justificatives", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Comment déposer votre demande ACRE", "steps": [{ "title": "Télécharger le formulaire", "content": "Rendez-vous sur urssaf.fr ou autoentrepreneur.urssaf.fr et téléchargez le formulaire de demande ACRE (ou Cerfa n°13584*04). Le formulaire est également disponible lors de la création via le Guichet unique." }, { "title": "Réunir vos pièces justificatives", "content": "Selon votre situation : notification d'ouverture de droits France Travail, attestation RSA ou ASS de la CAF, pièce d'identité (pour les jeunes), justificatif MDPH (handicap), copie du jugement d'ouverture (reprise d'entreprise), copie du contrat CAPE, justificatif d'adresse en QPV, notification PreParE." }, { "title": "Déposer la demande", "content": "Transmettez le formulaire complété et les justificatifs à l'URSSAF. La demande peut se faire en ligne via votre espace ou directement lors de la création d'activité sur le Guichet unique." }, { "title": "Respecter le délai", "content": "Vous disposez de 60 jours maximum après la date de création de votre activité pour déposer la demande. Passé ce délai, votre demande sera refusée." }, { "title": "Attendre la réponse", "content": "L'URSSAF dispose d'environ 30 jours pour statuer. Si vous ne recevez aucune réponse passé ce délai, l'ACRE est considérée comme acceptée (acceptation tacite). En cas de refus, l'URSSAF doit motiver sa décision." }] }, "settings": {} },
+            { "type": "heading", "content": { "text": "Taux de cotisations avec ACRE", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Voici les taux réduits grâce à l'ACRE (pour les créations <strong>avant le 01/07/2026</strong>, exonération 50 %) :</p><table><thead><tr><th>Type d'activité</th><th>Taux normal 2026</th><th>Taux ACRE (50 %)</th><th>Économie</th></tr></thead><tbody><tr><td>Vente de marchandises (BIC)</td><td>12,30 %</td><td>~6,20 %</td><td>-6,10 pts</td></tr><tr><td>Prestations de services (BIC)</td><td>21,20 %</td><td>~10,60 %</td><td>-10,60 pts</td></tr><tr><td>Activités libérales BNC (hors CIPAV)</td><td>25,60 %</td><td>~13,05 %</td><td>-12,55 pts</td></tr><tr><td>Professions libérales CIPAV</td><td>23,20 %</td><td>~11,60 %</td><td>-11,60 pts</td></tr></tbody></table><p><em>Pour les créations à partir du 01/07/2026, l'exonération sera de 25 % (taux réduits moins avantageux).</em></p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Cotisations sociales et fiscalité",
+          "description": "Taux de cotisations 2026, versement libératoire, franchise de TVA et CFE.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Cotisations sociales et fiscalité du micro-entrepreneur", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En micro-entreprise, les cotisations sociales et l'impôt sur le revenu sont calculés de manière <strong>forfaitaire sur le chiffre d'affaires encaissé</strong>. Pas de CA = pas de charges. C'est le principe fondamental du régime micro-social simplifié.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Taux de cotisations sociales 2026", "level": 2 }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Hausse pour les BNC en 2026", "html": "Les activités libérales BNC (hors CIPAV) subissent une <strong>hausse de 1 point</strong> au 1er janvier 2026, passant de 24,60 % à <strong>25,60 %</strong>. Anticipez cet impact dans vos tarifs !" }, "settings": {} },
+            { "type": "text", "content": { "html": "<table><thead><tr><th>Type d'activité</th><th>Taux global 2026</th><th>Exemples</th></tr></thead><tbody><tr><td>Vente de marchandises (BIC)</td><td><strong>12,30 %</strong></td><td>Commerce, restauration à emporter</td></tr><tr><td>Prestations de services (BIC)</td><td><strong>21,20 %</strong></td><td>Coiffure, esthétique, réparation, artisanat</td></tr><tr><td>Activités libérales BNC (hors CIPAV)</td><td><strong>25,60 %</strong></td><td>Coaching, conseil, formation, bien-être</td></tr><tr><td>Professions libérales CIPAV</td><td><strong>23,20 %</strong></td><td>Architectes, psychologues, ostéopathes</td></tr></tbody></table>" }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>À ces taux s'ajoute la <strong>contribution à la formation professionnelle (CFP)</strong> :</p><ul><li>Vente : <strong>+0,30 %</strong></li><li>Services commerciaux/artisanaux : <strong>+0,10 %</strong></li><li>BNC : <strong>+0,20 %</strong></li></ul>" }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Le versement libératoire de l'impôt sur le revenu", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Le <strong>versement libératoire (VL)</strong> est une option qui permet de payer l'impôt sur le revenu <strong>en même temps que vos cotisations sociales</strong>, sous forme d'un pourcentage supplémentaire sur votre CA :</p><ul><li>Vente : <strong>+1,0 %</strong></li><li>Prestations de services BIC : <strong>+1,7 %</strong></li><li>BNC : <strong>+2,2 %</strong></li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Condition de revenus pour le VL", "html": "<p>Pour opter pour le versement libératoire en <strong>2026</strong>, votre <strong>revenu fiscal de référence (RFR) de 2024</strong> ne doit pas dépasser <strong>29 315 € par part de quotient familial</strong>.</p><p>Exemples : 1 part = 29 315 € | 2 parts = 58 630 € | 2,5 parts = 73 288 €</p>" }, "settings": {} },
+            { "type": "text", "content": { "html": "<p><strong>Quand opter ?</strong></p><ul><li>À la <strong>création</strong> : avant le dernier jour du 3e mois suivant la création</li><li>En <strong>cours d'activité</strong> : avant le 30 septembre N pour une application au 1er janvier N+1</li></ul><p><strong>Attention :</strong> même avec le versement libératoire, vous devez toujours faire votre <strong>déclaration annuelle de revenus</strong> (formulaire 2042 C PRO).</p>" }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "La franchise en base de TVA", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En dessous de certains seuils, vous êtes <strong>exonéré de TVA</strong> (vous ne la facturez pas et ne la récupérez pas). Les seuils ont été <strong>stabilisés par la loi de novembre 2025</strong> :</p><table><thead><tr><th>Activité</th><th>Seuil de base</th><th>Seuil majoré (tolérance)</th></tr></thead><tbody><tr><td>Ventes / Logement</td><td>85 000 €</td><td>93 500 €</td></tr><tr><td>Prestations de services</td><td>37 500 €</td><td>41 250 €</td></tr></tbody></table><p>Si votre CA dépasse le seuil de base mais reste sous le seuil majoré, vous conservez la franchise l'année en cours mais la perdez l'année suivante. Si vous dépassez le seuil majoré, vous devez facturer la TVA <strong>dès le 1er jour du mois de dépassement</strong>.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Mention obligatoire sur vos factures", "html": "Tant que vous bénéficiez de la franchise de TVA, vous devez inscrire sur toutes vos factures : <strong>« TVA non applicable, article 293 B du CGI »</strong>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "La Cotisation Foncière des Entreprises (CFE)", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La CFE est un impôt local dû par toutes les entreprises, y compris les micro-entreprises :</p><ul><li><strong>1re année</strong> : vous êtes <strong>exonéré</strong> (l'année de création)</li><li><strong>Années suivantes</strong> : la CFE est due, calculée sur la valeur locative de vos locaux professionnels ou une cotisation minimale</li><li><strong>Exception</strong> : si votre CA de référence (N-2) est <strong>≤ 5 000 €</strong>, la cotisation minimale n'est pas due</li></ul><p><strong>Important :</strong> déposez la <strong>déclaration 1447-C-SD</strong> auprès de votre Service des Impôts des Entreprises (SIE) <strong>avant le 31 décembre de l'année de création</strong> pour que l'exonération soit prise en compte.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Obligations comptables et administratives",
+          "description": "Livre de recettes, factures, déclarations et assurances obligatoires.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Vos obligations comptables et administratives", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Même si la comptabilité est simplifiée en micro-entreprise, vous avez des <strong>obligations légales</strong> à respecter. Le non-respect peut entraîner des sanctions financières et la perte du régime.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Le livre des recettes", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vous devez tenir un <strong>livre des recettes</strong> chronologique contenant :</p><ul><li>La <strong>date</strong> de l'encaissement</li><li>Le <strong>numéro de facture</strong></li><li>Le <strong>nom du client</strong></li><li>La <strong>nature de la prestation</strong> ou de la vente</li><li>Le <strong>montant</strong> encaissé</li><li>Le <strong>mode de règlement</strong> (espèces, chèque, virement, CB)</li></ul><p><strong>Conservation :</strong> 10 ans minimum. Les écritures ne doivent pas être modifiables (pas de blanco, pas de ratures). Utiliser un logiciel ou un fichier protégé est recommandé.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "AlloTata vous aide !", "html": "La fonctionnalité <strong>Facturation</strong> d'AlloTata génère automatiquement des factures conformes et vous permet de suivre vos encaissements. Combinez-la avec l'onglet <strong>Recettes</strong> pour un suivi comptable simplifié." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les factures conformes", "level": 2 }, "settings": {} },
+            { "type": "checklist", "content": { "title": "Mentions obligatoires sur vos factures", "items": [{ "text": "La mention « Facture » et un numéro unique chronologique (sans trou dans la numérotation)", "checked": false }, { "text": "La date d'émission de la facture", "checked": false }, { "text": "La date de la vente ou de la prestation", "checked": false }, { "text": "Votre identité : nom, prénom, adresse, numéro SIRET", "checked": false }, { "text": "L'identité du client : nom (ou raison sociale) et adresse", "checked": false }, { "text": "Le détail des prestations ou produits : désignation, quantité, prix unitaire", "checked": false }, { "text": "Le montant total HT et TTC", "checked": false }, { "text": "La mention « TVA non applicable, article 293 B du CGI » (si franchise de TVA)", "checked": false }, { "text": "Les conditions de paiement (délai, mode de règlement)", "checked": false }] }, "settings": {} },
+            { "type": "heading", "content": { "text": "Le compte bancaire dédié", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Un <strong>compte bancaire dédié</strong> à votre activité professionnelle est <strong>obligatoire</strong> dès que votre chiffre d'affaires dépasse <strong>10 000 € pendant 2 années civiles consécutives</strong>.</p><p>Même si ce n'est pas obligatoire en dessous de ce seuil, c'est <strong>fortement recommandé</strong> pour séparer vos finances personnelles et professionnelles. Un simple compte courant séparé suffit (pas besoin d'un compte professionnel bancaire coûteux).</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Déclarations obligatoires", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Vos déclarations récurrentes", "steps": [{ "title": "Déclaration de CA (mensuelle ou trimestrielle)", "content": "Sur autoentrepreneur.urssaf.fr, déclarez votre chiffre d'affaires encaissé même s'il est à 0 €. Première déclaration : minimum 90 jours après le début d'activité. Pénalité en cas d'oubli : ~60 € + risque de taxation d'office." }, { "title": "Déclaration annuelle des revenus (2042 C PRO)", "content": "Chaque année entre avril et juin, déclarez vos revenus de micro-entrepreneur sur le formulaire 2042 C PRO. Remplissez les cases 5KO/5KP/5HQ (sans versement libératoire) ou 5TA/5TB/5TE (avec versement libératoire). Déclarez le CA brut encaissé — l'administration applique elle-même l'abattement." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Erreur fréquente", "html": "Ne déduisez <strong>JAMAIS</strong> vos frais ou commissions du chiffre d'affaires que vous déclarez à l'URSSAF. Déclarez toujours le montant <strong>brut encaissé</strong> par vos clients. L'abattement forfaitaire est automatiquement appliqué par l'administration." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Assurance professionnelle", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La <strong>Responsabilité Civile Professionnelle (RC Pro)</strong> n'est pas obligatoire pour toutes les activités, mais elle est <strong>fortement recommandée</strong>. Elle est <strong>obligatoire</strong> pour :</p><ul><li><strong>Les métiers du bâtiment</strong> : garantie décennale obligatoire</li><li><strong>Les professions de santé</strong> : médecins, kinés, ostéopathes, etc.</li><li><strong>Les métiers du transport</strong> : taxis, VTC</li></ul><p>Pour les services à la personne (garde d'enfants, aide à domicile), une RC Pro est vivement recommandée même si elle n'est pas toujours légalement exigée.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Les documents et attestations à générer",
+          "description": "Liste complète des documents à obtenir, télécharger et conserver.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Les documents et attestations du micro-entrepreneur", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En tant que micro-entrepreneur, vous devez obtenir, conserver et parfois fournir un certain nombre de documents officiels. Voici la <strong>liste complète</strong>, classée par catégorie.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Documents obtenus à la création", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Documents reçus automatiquement après immatriculation", "steps": [{ "title": "Certificat d'inscription au RNE", "content": "Le Registre National des Entreprises (RNE), géré par l'INPI, vous délivre un certificat d'inscription. Téléchargeable gratuitement sur le site de l'INPI ou via formalites.entreprises.gouv.fr." }, { "title": "Avis de situation SIRENE (INSEE)", "content": "Ce document certifie l'existence légale de votre entreprise et contient votre numéro SIREN/SIRET, votre code APE/NAF et votre adresse. Téléchargeable gratuitement sur avis-situation-sirene.insee.fr." }, { "title": "Extrait K (équivalent Kbis pour les EI)", "content": "Si votre activité est commerciale, vous êtes inscrit au RCS. L'extrait K est disponible gratuitement sur MonIdenum.fr (pour le dirigeant) ou sur Infogreffe. Les artisans et les libéraux n'ont pas de Kbis mais peuvent utiliser l'avis SIRENE." }, { "title": "Notification d'affiliation URSSAF", "content": "Reçue sous 4 à 10 semaines après la création, elle confirme votre inscription au régime micro-social. Conservez-la précieusement." }, { "title": "Mémento fiscal", "content": "Envoyé par les impôts dans les semaines suivant la création. Il récapitule vos obligations fiscales (TVA, CFE, impôt sur le revenu)." }] }, "settings": {} },
+            { "type": "divider", "content": {}, "settings": {} },
+            { "type": "heading", "content": { "text": "Attestations URSSAF téléchargeables", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Depuis votre espace <strong>autoentrepreneur.urssaf.fr > Mes attestations</strong>, vous pouvez télécharger :</p>" }, "settings": {} },
+            { "type": "checklist", "content": { "title": "Attestations disponibles sur l'URSSAF", "items": [{ "text": "Attestation fiscale annuelle — Disponible en février, indique le CA déclaré sur l'année. Nécessaire pour votre déclaration 2042 C PRO.", "checked": false }, { "text": "Attestation de chiffre d'affaires — Preuve officielle des montants déclarés, utile pour les banques et les bailleurs.", "checked": false }, { "text": "Attestation de contribution à la formation professionnelle (CFP) — Prouve l'ouverture de vos droits à la formation. Indispensable pour monter un dossier de financement de formation.", "checked": false }, { "text": "Attestation de vigilance — Prouve que vous êtes à jour de vos cotisations. Obligatoire pour tout contrat ≥ 5 000 € HT. À renouveler tous les 6 mois pendant l'exécution du contrat.", "checked": false }] }, "settings": {} },
+            { "type": "heading", "content": { "text": "Documents fiscaux à déposer", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Déclaration 1447-C-SD (CFE)</strong> : à déposer auprès de votre SIE (Service des Impôts des Entreprises) <strong>avant le 31 décembre de l'année de création</strong>. Elle permet de bénéficier de l'exonération de CFE la 1re année.</li><li><strong>Formulaire 2042 C PRO</strong> : déclaration annuelle des revenus de micro-entreprise à effectuer chaque année entre avril et juin sur impots.gouv.fr.</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Documents ACRE", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Formulaire de demande ACRE</strong> (Cerfa n°13584*04 ou formulaire URSSAF en ligne)</li><li><strong>Pièces justificatives</strong> selon votre situation d'éligibilité (cf. leçon « L'ACRE »)</li><li><strong>Délai</strong> : 60 jours après la création pour déposer la demande</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Documents pour les Services à la Personne (SAP)", "level": 2 }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Concerne les gardes d'enfants, aides à domicile, ménage…", "html": "<ul><li><strong>Déclaration SAP</strong> : à déposer auprès de la DDETS (ex-DIRECCTE) de votre département pour permettre à vos clients de bénéficier du crédit d'impôt de 50 %.</li><li><strong>Agrément SAP</strong> : <strong>obligatoire</strong> si vous intervenez auprès de <strong>publics fragiles</strong> (enfants de moins de 3 ans, personnes âgées dépendantes, personnes handicapées).</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Tableau récapitulatif", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<table><thead><tr><th>Document</th><th>Où l'obtenir</th><th>Quand</th><th>Obligatoire ?</th></tr></thead><tbody><tr><td>Certificat RNE</td><td>INPI / Guichet unique</td><td>À la création</td><td>Automatique</td></tr><tr><td>Avis SIRENE</td><td>avis-situation-sirene.insee.fr</td><td>Dès réception du SIRET</td><td>Recommandé</td></tr><tr><td>Extrait K</td><td>MonIdenum.fr / Infogreffe</td><td>Dès inscription au RCS</td><td>Si activité commerciale</td></tr><tr><td>Notification URSSAF</td><td>Par courrier</td><td>4-10 semaines après création</td><td>Automatique</td></tr><tr><td>Attestation fiscale</td><td>autoentrepreneur.urssaf.fr</td><td>Chaque février</td><td>Oui (pour déclaration IR)</td></tr><tr><td>Attestation vigilance</td><td>autoentrepreneur.urssaf.fr</td><td>Sur demande</td><td>Si contrat ≥ 5 000 €</td></tr><tr><td>Déclaration 1447-C-SD</td><td>SIE (impôts)</td><td>Avant le 31/12 année 1</td><td>Oui</td></tr><tr><td>2042 C PRO</td><td>impots.gouv.fr</td><td>Avril-juin chaque année</td><td>Oui</td></tr><tr><td>Formulaire ACRE</td><td>urssaf.fr</td><td>60 jours après création</td><td>Si éligible</td></tr><tr><td>Déclaration SAP</td><td>DDETS</td><td>Avant début activité SAP</td><td>Si SAP</td></tr></tbody></table>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Points de vigilance et erreurs fatales",
+          "description": "Les 12 erreurs les plus courantes qui peuvent vous coûter cher.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Les erreurs fatales à éviter", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Créer sa micro-entreprise est simple, mais de nombreux pièges guettent les nouveaux entrepreneurs. Voici les <strong>12 erreurs les plus courantes</strong> et comment les éviter.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Erreur n°1 : Créer sur un faux site", "html": "<p>De nombreux sites payants imitent le Guichet unique officiel et facturent des centaines d'euros pour une démarche <strong>gratuite</strong>. Le seul site officiel est : <strong>formalites.entreprises.gouv.fr</strong></p><p>En cas de doute, vérifiez que l'URL se termine bien par <strong>.gouv.fr</strong></p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Erreur n°2 : Se tromper de code APE", "html": "Le code APE (attribué par l'INSEE) détermine votre convention collective, vos obligations et vos taux de cotisations. Si le code attribué ne correspond pas à votre activité réelle, demandez une modification auprès de l'INSEE via le formulaire dédié." }, "settings": {} },
+            { "type": "callout", "content": { "type": "danger", "title": "Erreur n°3 : Oublier de demander l'ACRE", "html": "L'ACRE peut vous faire économiser <strong>des milliers d'euros</strong> la première année. En 2026, elle n'est plus automatique : vous devez la demander dans les 60 jours. Ne laissez pas passer ce délai !" }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Erreur n°4 : Ne pas déclarer quand le CA est à 0 €", "html": "<p>Même si vous n'avez rien encaissé, vous <strong>devez déclarer 0 €</strong> à chaque échéance (mensuelle ou trimestrielle). L'absence de déclaration entraîne :</p><ul><li>Une pénalité d'environ <strong>60 €</strong> par déclaration manquante</li><li>Un risque de <strong>taxation d'office</strong> (l'URSSAF estime votre CA)</li><li>Après 24 mois consécutifs de non-déclaration : <strong>radiation automatique</strong></li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Erreur n°5 : Confondre CA encaissé et CA facturé", "html": "Vous devez déclarer le chiffre d'affaires <strong>encaissé</strong> (les sommes réellement reçues sur votre compte), pas les factures émises. Si un client n'a pas encore payé, ne déclarez pas cette somme." }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Erreur n°6 : Déduire les frais du CA déclaré", "html": "En micro-entreprise, vous ne pouvez <strong>PAS déduire vos charges réelles</strong> (matériel, déplacements, fournitures). L'administration applique un abattement forfaitaire automatique. Déclarez toujours le montant <strong>brut</strong> encaissé." }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Erreur n°7 : Opter pour le versement libératoire sans vérifier", "html": "Le versement libératoire n'est avantageux que si vous payez de l'impôt sur le revenu. Si vous êtes non imposable, vous paierez de l'impôt « pour rien ». Vérifiez votre RFR et simulez avant de choisir." }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Erreur n°8 : Oublier la déclaration 2042 C PRO", "html": "Même avec le versement libératoire, vous devez remplir la déclaration annuelle de revenus. Les cases sont différentes selon votre option fiscale. Oublier cette déclaration peut entraîner des pénalités." }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Erreur n°9 : Ne pas déposer la 1447-C-SD pour la CFE", "html": "Cette déclaration doit être envoyée avant le 31 décembre de l'année de création au SIE. Sans elle, vous risquez de ne pas bénéficier de l'exonération de CFE la première année." }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Erreur n°10 : Ignorer les seuils de TVA", "html": "Surveillez régulièrement votre CA cumulé. Si vous dépassez le seuil majoré (93 500 € ventes / 41 250 € services), vous devez facturer la TVA dès le 1er jour du mois de dépassement. Cela impacte vos prix et votre comptabilité." }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Erreur n°11 : Ne pas anticiper la hausse BNC 2026", "html": "Si vous êtes en activité libérale BNC, intégrez la hausse de 1 point (24,60 % → 25,60 %) dans vos tarifs dès maintenant pour ne pas rogner vos marges." }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Erreur n°12 : Exercer une activité SAP sans agrément", "html": "Si vous intervenez auprès de publics fragiles (enfants < 3 ans, personnes dépendantes), l'agrément SAP est obligatoire. Exercer sans agrément est passible de sanctions et empêche vos clients de bénéficier du crédit d'impôt." }, "settings": {} },
+            { "type": "exercise", "content": { "title": "Auto-diagnostic", "instruction": "Parcourez les 12 erreurs ci-dessus et cochez celles qui vous concernent ou pourraient vous concerner. Pour chacune, notez l'action corrective à entreprendre et la date limite le cas échéant.", "hint": "Utilisez la checklist de la leçon précédente (Documents et attestations) pour vérifier que vous avez bien tous les papiers en règle." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Déclaration micro-entreprise URSSAF",
+          "description": "Testez vos connaissances sur la déclaration, l'ACRE, les cotisations et les documents.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 30,
+          "questions": [
+            { "question": "Quel est le plafond de chiffre d'affaires annuel pour les prestations de services en micro-entreprise ?", "type": "multiple_choice", "options": ["188 700 €", "77 700 €", "37 500 €", "50 000 €"], "bonne_reponse": "77 700 €", "points": 5 },
+            { "question": "Quel est le taux de cotisations sociales 2026 pour une activité libérale BNC (hors CIPAV) ?", "type": "multiple_choice", "options": ["21,20 %", "23,20 %", "24,60 %", "25,60 %"], "bonne_reponse": "25,60 %", "points": 5 },
+            { "question": "En 2026, l'ACRE est accordée automatiquement à tous les créateurs de micro-entreprise.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Faux", "points": 5 },
+            { "question": "Quel est le délai maximum pour déposer une demande ACRE après la création en 2026 ?", "type": "multiple_choice", "options": ["30 jours", "45 jours", "60 jours", "90 jours"], "bonne_reponse": "60 jours", "points": 5 },
+            { "question": "Quel est le seul site officiel pour créer sa micro-entreprise ?", "type": "text", "options": [], "bonne_reponse": "formalites.entreprises.gouv.fr", "points": 5 },
+            { "question": "Un micro-entrepreneur doit déclarer son chiffre d'affaires à l'URSSAF même s'il est de 0 €.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Créer son entreprise sur AlloTata — Services, agenda et paramétrage",
+      "description": "Créez votre fiche entreprise, configurez vos services, gérez votre agenda et optimisez vos paramètres.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Créer sa fiche entreprise",
+          "description": "Nom, type d'activité, logo, adresse, SIREN et vérification.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Créer votre entreprise sur AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La création de votre entreprise sur AlloTata est la première étape pour commencer à recevoir des clients. C'est votre <strong>vitrine professionnelle en ligne</strong>.</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Étapes de création de l'entreprise", "steps": [{ "title": "Accéder au formulaire", "content": "Depuis votre tableau de bord, cliquez sur « Mes Entreprises » puis « Créer une entreprise ». Le formulaire de création s'ouvre." }, { "title": "Nom et type d'activité", "content": "Choisissez un nom d'entreprise clair et mémorable. Sélectionnez votre type d'activité (coiffure, coaching, garde d'enfants, etc.). Ce choix détermine les catégories de recherche." }, { "title": "Description", "content": "Rédigez une description engageante de votre activité. Expliquez ce que vous proposez, votre expérience et ce qui vous différencie. Utilisez des mots-clés pertinents pour le référencement." }, { "title": "Logo et images", "content": "Uploadez votre logo (format carré recommandé) et une image de couverture. Des visuels professionnels inspirent confiance." }, { "title": "Coordonnées", "content": "Renseignez votre email professionnel, votre numéro de téléphone et votre adresse complète (rue, code postal, ville). L'adresse permet la géolocalisation sur la carte." }, { "title": "SIREN (optionnel mais recommandé)", "content": "Si vous avez un numéro SIREN, renseignez-le. Il sera vérifié par l'équipe AlloTata pour obtenir le badge « Entreprise vérifiée » qui rassure les clients." }, { "title": "Statut juridique", "content": "Sélectionnez votre statut : Auto-entrepreneur, SARL, EURL ou SAS. Cela s'affiche sur votre page publique." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Le badge « Vérifiée »", "html": "En renseignant un SIREN valide, votre entreprise obtient un <strong>badge de vérification</strong> sur sa page publique. Ce badge augmente significativement la confiance des clients et votre taux de réservation." }, "settings": {} },
+            { "type": "image", "content": { "src": "", "alt": "Formulaire de création d'entreprise sur AlloTata", "caption": "Le formulaire de création avec les champs obligatoires" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Votre page publique", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Une fois créée, votre entreprise dispose d'une <strong>page publique</strong> accessible à l'adresse <strong>/p/votre-slug</strong>. Cette page affiche :</p><ul><li>Votre logo et image de couverture</li><li>Votre nom, activité et description</li><li>Vos services avec tarifs et durées</li><li>Votre calendrier de disponibilités</li><li>Les avis de vos clients</li><li>Un bouton de réservation en ligne</li><li>Vos coordonnées</li></ul>" }, "settings": {} },
+            { "type": "exercise", "content": { "title": "Exercice : Créez votre entreprise", "instruction": "Créez votre entreprise sur AlloTata en remplissant tous les champs. Ajoutez un logo, une description et vos coordonnées. Si vous avez un SIREN, renseignez-le pour obtenir la vérification.", "hint": "Prenez le temps de rédiger une description soignée. Elle est la première chose que verront vos futurs clients." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Configurer ses services",
+          "description": "Types de services, durée, prix, options personnalisables et images.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Configurer vos services", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Les <strong>services</strong> sont le cœur de votre activité sur AlloTata. Chaque service que vous créez apparaît sur votre page publique et peut être réservé par vos clients.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Créer un service", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour chaque service, vous définissez :</p><ul><li><strong>Nom</strong> — Ex : « Coupe femme », « Coaching individuel 1h », « Garde d'enfant demi-journée »</li><li><strong>Description</strong> — Détaillez ce qui est inclus dans la prestation</li><li><strong>Durée</strong> — En minutes (30 min, 45 min, 1h, 2h, etc.)</li><li><strong>Prix</strong> — Tarif affiché aux clients</li><li><strong>Images</strong> — Ajoutez plusieurs photos et définissez une image de couverture</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les types de structure", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata propose 4 types de structure pour vos services :</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Types de services disponibles", "steps": [{ "title": "Ponctuel (par défaut)", "content": "Un rendez-vous unique à une date et une heure précises. Idéal pour : coupes, consultations, séances de coaching." }, { "title": "Multi-jours", "content": "Une prestation qui s'étend sur plusieurs jours. Idéal pour : formations, stages, chantiers." }, { "title": "Multi-rendez-vous", "content": "Un forfait comprenant plusieurs rendez-vous. Idéal pour : pack de 5 séances, programme de coaching en 10 étapes." }, { "title": "Date butoir", "content": "Un service avec une deadline (date limite). Idéal pour : livraisons, projets avec échéance." }] }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les options de service", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vous pouvez ajouter des <strong>options personnalisables</strong> à chaque service :</p><ul><li><strong>Choix unique</strong> — Le client choisit une seule option (ex : « Type de coupe : courte / mi-longue / longue »)</li><li><strong>Choix multiple</strong> — Le client peut sélectionner plusieurs options (ex : « Soins ajoutés : masque + brushing + soin kératine »)</li></ul><p>Chaque option peut avoir un <strong>prix supplémentaire</strong> et un <strong>temps supplémentaire</strong> qui s'ajoutent automatiquement au service de base.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Astuce : création en masse", "html": "Vous pouvez créer plusieurs services d'un coup grâce à la <strong>création en masse</strong>. Saisissez simplement la liste de vos services (un par ligne) et AlloTata les crée automatiquement. Vous pourrez ensuite les personnaliser individuellement." }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Dupliquer un service", "html": "Pour gagner du temps, utilisez la fonction <strong>Dupliquer</strong> sur un service existant. Toutes les options et images sont copiées. Il ne vous reste qu'à modifier le nom, le prix et la durée." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Gérer son agenda et ses horaires",
+          "description": "Horaires d'ouverture, exceptions, jours fériés et gestion des créneaux.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Gérer votre agenda et vos horaires", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'agenda est l'outil central de votre gestion quotidienne. Il détermine <strong>quand vos clients peuvent réserver</strong> et vous donne une vue claire de votre planning.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Configurer vos horaires d'ouverture", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Depuis l'onglet <strong>Agenda</strong> de votre tableau de bord entreprise, définissez vos horaires pour chaque jour de la semaine :</p><ul><li>Définissez les <strong>plages horaires</strong> pour chaque jour (ex : 9h-12h et 14h-18h)</li><li>Vous pouvez avoir <strong>plusieurs plages par jour</strong> (matin + après-midi)</li><li>Laissez un jour vide pour indiquer une <strong>fermeture</strong></li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les exceptions et jours fériés", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata gère finement les exceptions à vos horaires habituels :</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Types d'exceptions", "steps": [{ "title": "Exception jour unique", "content": "Fermez un jour précis (ex : rendez-vous médical le 15 mars) ou ouvrez exceptionnellement un jour habituellement fermé." }, { "title": "Exception mois entier", "content": "Modifiez vos horaires pour un mois complet (ex : horaires d'été en août) avec possibilité d'exclure certains jours." }, { "title": "Exception plage de dates", "content": "Définissez une période de fermeture (ex : vacances du 20 décembre au 3 janvier)." }, { "title": "Jours fériés automatiques", "content": "Activez la gestion automatique des jours fériés français. Choisissez votre zone (métropole, Alsace-Moselle, DOM-TOM) pour les jours fériés spécifiques." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "warning", "title": "Détection de conflits", "html": "AlloTata détecte automatiquement les <strong>conflits de réservation</strong>. Si un client tente de réserver un créneau déjà pris ou en dehors de vos horaires, la réservation est bloquée. Aucun double-booking possible !" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Vue calendrier", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'agenda affiche un <strong>calendrier interactif</strong> avec vos réservations colorées par statut :</p><ul><li><strong>Jaune/Orange</strong> — En attente de confirmation</li><li><strong>Vert</strong> — Confirmée</li><li><strong>Rouge</strong> — Annulée</li><li><strong>Gris</strong> — Terminée</li></ul><p>Cliquez sur une réservation pour voir les détails, ajouter des notes ou modifier le statut.</p>" }, "settings": {} },
+            { "type": "image", "content": { "src": "", "alt": "Vue calendrier de l'agenda AlloTata", "caption": "L'agenda avec les réservations colorées par statut" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Paramètres avancés de l'entreprise",
+          "description": "Réservation automatique, prix négociables, rayon de déplacement et prestation libre.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Les paramètres avancés", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata offre de nombreuses options pour personnaliser le fonctionnement de votre entreprise selon vos besoins.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Acceptation automatique des réservations", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Par défaut, les réservations sont en <strong>attente de confirmation</strong>. Vous pouvez activer l'<strong>acceptation automatique</strong> pour que les réservations soient confirmées immédiatement sans votre validation manuelle.</p><p><strong>Quand l'utiliser ?</strong> Si vos créneaux sont bien définis et que vous n'avez pas besoin de valider chaque client individuellement.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Prix négociables", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Activez les <strong>prix négociables</strong> pour permettre aux clients de proposer un prix via la messagerie. Vous gardez le contrôle total : vous pouvez accepter, refuser ou contre-proposer.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Réservation uniquement par messagerie", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Si vous préférez échanger avec vos clients avant de confirmer un rendez-vous, activez le mode <strong>« Réservation uniquement par messagerie »</strong>. Les clients devront vous contacter via le chat pour convenir d'un créneau.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Rayon de déplacement", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Si vous vous déplacez au domicile de vos clients, définissez votre <strong>rayon de déplacement</strong> en kilomètres. Cela permet aux clients de savoir si vous intervenez dans leur zone géographique.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Prestation libre", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Activez la <strong>prestation libre</strong> pour proposer un service « sur mesure ». Les clients peuvent décrire leur besoin et vous définissez le tarif au cas par cas. Vous pouvez configurer un <strong>tarif horaire</strong> comme base de référence.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Paramètres fiscaux", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Dans les paramètres de votre entreprise, configurez vos <strong>données fiscales</strong> pour la facturation :</p><ul><li><strong>Taux de TVA</strong> applicable (ou mention de franchise)</li><li><strong>Conditions de paiement</strong> par défaut</li><li><strong>Numéro SIRET</strong> (affiché sur les factures)</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Complétez votre profil à 100 %", "html": "AlloTata affiche un <strong>indicateur de complétion</strong> sur votre tableau de bord. Plus votre profil est complet (services, horaires, photos, description), plus vous apparaissez haut dans les résultats de recherche." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Création d'entreprise sur AlloTata",
+          "description": "Testez vos connaissances sur la création et la configuration de votre entreprise.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 25,
+          "questions": [
+            { "question": "Quel type de structure de service convient pour un forfait de 5 séances de coaching ?", "type": "multiple_choice", "options": ["Ponctuel", "Multi-jours", "Multi-rendez-vous", "Date butoir"], "bonne_reponse": "Multi-rendez-vous", "points": 5 },
+            { "question": "AlloTata détecte automatiquement les conflits de réservation pour éviter les doubles-bookings.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Que permet l'option « Prix négociables » ?", "type": "multiple_choice", "options": ["Le client fixe lui-même le prix", "Le client peut proposer un prix via la messagerie", "Les prix changent automatiquement selon la demande", "Les prix sont affichés sans TVA"], "bonne_reponse": "Le client peut proposer un prix via la messagerie", "points": 5 },
+            { "question": "Quel avantage apporte le renseignement d'un numéro SIREN valide ?", "type": "multiple_choice", "options": ["Un abonnement gratuit pendant 1 an", "Le badge « Entreprise vérifiée » sur la page publique", "L'accès au mode multi-personnes", "La suppression de la publicité"], "bonne_reponse": "Le badge « Entreprise vérifiée » sur la page publique", "points": 5 },
+            { "question": "Combien de types d'exceptions aux horaires AlloTata propose-t-il ?", "type": "multiple_choice", "options": ["2 (jour unique et vacances)", "3 (jour, semaine, mois)", "4 (jour unique, mois, plage de dates, jours fériés)", "1 seul (fermeture exceptionnelle)"], "bonne_reponse": "4 (jour unique, mois, plage de dates, jours fériés)", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Gérer ses finances, créer des prospects et fidéliser ses clients",
+      "description": "Facturation, comptabilité, abonnements AlloTata, relation client et programme de fidélité.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Comprendre le système de facturation",
+          "description": "Créer des factures, gérer les échéances et suivre les paiements.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Le système de facturation AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata intègre un système de facturation complet qui vous permet de générer des factures conformes, de suivre les paiements et de gérer vos échéances.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Types de factures", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Facture de réservation</strong> — Générée automatiquement lorsqu'une réservation est marquée comme payée</li><li><strong>Facture groupée</strong> — Regroupez plusieurs réservations d'un même client en une seule facture</li><li><strong>Facture d'abonnement</strong> — Générée automatiquement pour vos abonnements AlloTata</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Générer une facture", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Créer une facture en 3 étapes", "steps": [{ "title": "Marquer la réservation comme payée", "content": "Depuis l'onglet Réservations, ouvrez la réservation concernée et cliquez sur « Marquer comme payé ». Une facture est automatiquement générée." }, { "title": "Vérifier la facture", "content": "Rendez-vous dans l'onglet Factures pour consulter la facture générée. Vérifiez les informations (client, montant, TVA, conditions de paiement)." }, { "title": "Télécharger le PDF", "content": "Cliquez sur « Télécharger PDF » pour obtenir la facture au format PDF. Vous pouvez l'envoyer par email ou la conserver pour votre comptabilité." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Factures groupées", "html": "Pour un client régulier, utilisez les <strong>factures groupées</strong> : sélectionnez plusieurs réservations et générez une seule facture récapitulative. Idéal pour facturer en fin de mois." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Suivi des paiements", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Chaque facture a un <strong>statut</strong> qui vous permet de suivre son état :</p><ul><li><strong>Émise</strong> — La facture a été créée mais n'est pas encore payée</li><li><strong>Payée</strong> — Le paiement a été reçu</li><li><strong>Annulée</strong> — La facture a été annulée</li></ul><p>Vous pouvez filtrer vos factures par statut, date ou client pour un suivi précis.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Gérer ses recettes et dépenses",
+          "description": "Comptabilité simplifiée, rapports financiers et exports.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Suivre vos finances", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'onglet <strong>Recettes</strong> (ou Comptabilité) de votre tableau de bord entreprise vous offre une vue complète de votre santé financière.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Enregistrer des entrées financières", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vous pouvez enregistrer deux types d'entrées :</p><ul><li><strong>Recettes</strong> — Toutes les entrées d'argent (réservations payées, ventes de produits, prestations libres)</li><li><strong>Dépenses</strong> — Vos charges professionnelles (fournitures, déplacements, publicité, assurance, etc.)</li></ul><p>Pour chaque entrée, renseignez : la catégorie, le montant, la description et la date.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Recettes automatiques", "html": "Les réservations marquées comme payées sont automatiquement ajoutées à vos recettes. Vous n'avez pas besoin de les saisir manuellement." }, "settings": {} },
+            { "type": "heading", "content": { "text": "Rapports financiers", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata génère des <strong>rapports</strong> que vous pouvez exporter :</p><ul><li><strong>Rapport de réservations</strong> — Liste détaillée de toutes vos réservations sur une période, exportable</li><li><strong>Rapport financier PDF</strong> — Récapitulatif de vos recettes et dépenses par période, avec totaux HT/TVA/TTC</li><li><strong>Ventilation mensuelle</strong> — Vue mois par mois de votre chiffre d'affaires</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Pour votre déclaration URSSAF", "html": "Utilisez le rapport financier pour retrouver facilement votre <strong>chiffre d'affaires encaissé</strong> à déclarer à l'URSSAF chaque mois ou trimestre. Croisez avec votre attestation fiscale URSSAF pour vérification." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Les abonnements AlloTata",
+          "description": "Premium, Site Web Vitrine et Multi-Personnes : tarifs, fonctionnalités et gestion.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Les abonnements AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata propose un abonnement principal et des options complémentaires pour développer votre activité.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "L'abonnement Premium", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'abonnement <strong>Premium</strong> est l'offre principale qui débloque toutes les fonctionnalités professionnelles :</p><ul><li>Gestion complète des réservations</li><li>Facturation et comptabilité</li><li>Messagerie avec propositions de rendez-vous</li><li>Statistiques et rapports</li><li>Programme de fidélité</li><li>Page publique personnalisée</li></ul><p>Un <strong>essai gratuit de 14 jours</strong> est disponible pour tester toutes les fonctionnalités avant de s'engager.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les options complémentaires", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<table><thead><tr><th>Option</th><th>Prix</th><th>Ce qu'elle apporte</th></tr></thead><tbody><tr><td>Site Web Vitrine</td><td>2 €/mois</td><td>Créez un site web professionnel avec éditeur de pages, templates et URL personnalisée</td></tr><tr><td>Multi-Personnes</td><td>20 €/mois</td><td>Gérez une équipe : invitez des membres, gérez leurs agendas individuels et leurs statistiques</td></tr></tbody></table>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Gestion de votre abonnement", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Depuis l'onglet <strong>Abonnements</strong>, vous pouvez :</p><ul><li>Souscrire ou modifier votre abonnement</li><li>Appliquer un <strong>code promo</strong> pour bénéficier de réductions</li><li>Consulter et télécharger vos <strong>factures d'abonnement</strong></li><li>Suspendre ou annuler votre abonnement à tout moment</li><li>Reprendre un abonnement suspendu</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Paiement sécurisé", "html": "Les paiements sont gérés par <strong>Stripe</strong>, leader mondial du paiement en ligne. Vos données bancaires sont chiffrées et ne sont jamais stockées sur nos serveurs." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Fidéliser ses clients",
+          "description": "Notes client, programme de fidélité et avis pour construire une relation durable.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Fidéliser vos clients", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Acquérir un nouveau client coûte <strong>5 à 7 fois plus cher</strong> que de fidéliser un client existant. AlloTata vous donne les outils pour construire des relations durables.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les notes client", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour chaque client, vous pouvez créer des <strong>notes privées</strong> (invisibles par le client) :</p><ul><li>Préférences du client (ex : « Aime le café sans sucre », « Allergique aux noix »)</li><li>Historique des échanges importants</li><li>Points d'attention (ex : « Toujours en retard de 10 min »)</li><li>Tags pour catégoriser (ex : « VIP », « Nouveau », « Fidèle »)</li><li>Marquage « Important » pour les notes critiques</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Le programme de fidélité", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata intègre un <strong>programme de fidélité à points</strong> :</p><ul><li>Vos clients accumulent des <strong>points</strong> à chaque réservation</li><li>Les points déterminent leur <strong>niveau</strong> : Bronze → Argent → Or → VIP</li><li>Vous pouvez consulter l'historique des points de chaque client</li><li>Le programme vous aide à identifier vos <strong>meilleurs clients</strong></li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les avis clients", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Après chaque réservation, vos clients peuvent laisser un <strong>avis</strong> avec une note de 1 à 5 étoiles. Les avis sont :</p><ul><li><strong>Vérifiés</strong> — Seuls les clients ayant effectivement réservé peuvent laisser un avis</li><li><strong>Modérables</strong> — Vous pouvez signaler un avis inapproprié</li><li><strong>Visibles publiquement</strong> — Ils s'affichent sur votre page et renforcent votre crédibilité</li></ul><p>Encouragez vos clients satisfaits à laisser un avis. C'est le meilleur levier pour attirer de nouveaux clients.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Photos de réalisations", "html": "Ajoutez des <strong>photos de réalisations</strong> à votre profil entreprise pour montrer votre travail. Les clients associés à un avis peuvent aussi joindre des photos. C'est un puissant outil de preuve sociale." }, "settings": {} },
+            { "type": "exercise", "content": { "title": "Exercice : Préparez votre stratégie de fidélisation", "instruction": "Listez 5 informations que vous aimeriez noter pour chaque client récurrent. Réfléchissez à un système de récompense simple pour vos clients les plus fidèles (ex : 10e séance offerte, réduction de 10 %, cadeau de bienvenue…).", "hint": "Les notes client sont un outil puissant. Plus vous personnalisez l'expérience, plus vos clients reviendront." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Finances et fidélisation",
+          "description": "Testez vos connaissances sur la facturation, la comptabilité et la fidélisation.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 25,
+          "questions": [
+            { "question": "Quel type de facture permet de regrouper plusieurs réservations d'un même client ?", "type": "multiple_choice", "options": ["Facture de réservation", "Facture groupée", "Facture d'abonnement", "Facture proforma"], "bonne_reponse": "Facture groupée", "points": 5 },
+            { "question": "Les réservations marquées comme payées sont automatiquement ajoutées aux recettes.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Combien coûte l'option Site Web Vitrine d'AlloTata ?", "type": "multiple_choice", "options": ["Gratuit", "2 €/mois", "10 €/mois", "20 €/mois"], "bonne_reponse": "2 €/mois", "points": 5 },
+            { "question": "Les notes client sont visibles par le client concerné.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Faux", "points": 5 },
+            { "question": "Quels niveaux composent le programme de fidélité AlloTata ?", "type": "multiple_choice", "options": ["Débutant, Intermédiaire, Expert, Maître", "Bronze, Argent, Or, VIP", "Starter, Pro, Business, Enterprise", "1 étoile, 2 étoiles, 3 étoiles, 5 étoiles"], "bonne_reponse": "Bronze, Argent, Or, VIP", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "La messagerie et la relation client",
+      "description": "Maîtrisez la messagerie, proposez des rendez-vous par chat, gérez vos réservations et vos notifications.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Utiliser la messagerie",
+          "description": "Conversations, envoi de messages et images, gestion des échanges.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "La messagerie AlloTata", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La messagerie est le lien direct entre vous et vos clients. Elle permet des échanges fluides, contextualisés et professionnels.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Fonctionnalités principales", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Messages texte</strong> — Communiquez par écrit avec vos clients</li><li><strong>Images</strong> — Envoyez et recevez des photos (idéal pour montrer un résultat, partager une localisation, etc.)</li><li><strong>Indicateur de lecture</strong> — Voyez quand votre message a été lu</li><li><strong>Conversations contextuelles</strong> — Les conversations peuvent être liées à une réservation, un produit ou un service spécifique</li><li><strong>Archivage</strong> — Archivez les conversations terminées pour garder un espace propre</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Conversations côté Client vs côté Entreprise", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>La messagerie s'adapte à votre rôle :</p><ul><li><strong>En tant que Client</strong> : accédez à vos conversations depuis le tableau de bord principal > Messagerie</li><li><strong>En tant que Gérant</strong> : accédez aux conversations de votre entreprise depuis le tableau de bord entreprise > Messagerie</li></ul><p>Les deux vues sont distinctes : vous ne mélangez jamais vos échanges personnels et professionnels.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Démarrer une conversation depuis un produit ou service", "html": "Un client peut initier une conversation directement depuis la page d'un <strong>produit</strong> ou d'un <strong>service</strong>. Le contexte (nom du produit/service) est automatiquement inclus dans la conversation." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Proposer et négocier des rendez-vous par chat",
+          "description": "Propositions de rendez-vous, négociation de prix et gestion des propositions.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Les propositions de rendez-vous", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata permet de <strong>proposer des rendez-vous directement dans le chat</strong>. C'est une fonctionnalité unique qui fluidifie la prise de rendez-vous.</p>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Comment ça fonctionne", "steps": [{ "title": "Proposer un créneau", "content": "Dans une conversation, cliquez sur « Proposer un rendez-vous ». Sélectionnez la date, l'heure de début, l'heure de fin et le prix proposé." }, { "title": "Le client reçoit la proposition", "content": "La proposition apparaît dans le chat sous forme de carte visuelle avec les détails du rendez-vous. Le client peut accepter, refuser ou demander une modification." }, { "title": "Négociation du prix", "content": "Si vous avez activé les prix négociables, le client peut proposer un prix différent. Vous pouvez contre-proposer jusqu'à trouver un accord." }, { "title": "Confirmation automatique", "content": "Lorsque la proposition est acceptée par les deux parties, la réservation est automatiquement créée dans votre agenda." }] }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Vérification des conflits", "html": "Avant de valider une proposition, AlloTata vérifie automatiquement votre agenda pour s'assurer qu'il n'y a <strong>aucun conflit</strong> avec vos autres réservations." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Gérer ses réservations efficacement",
+          "description": "Statuts, filtres, notes de réservation et réservations manuelles.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Gestion efficace des réservations", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'onglet <strong>Réservations</strong> est votre centre de gestion des rendez-vous. Voici comment l'utiliser au mieux.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les statuts de réservation", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>En attente</strong> — Le client a réservé, vous devez confirmer (sauf si acceptation automatique activée)</li><li><strong>Confirmée</strong> — Vous avez accepté la réservation</li><li><strong>Annulée</strong> — La réservation a été annulée (par vous ou le client)</li><li><strong>Terminée</strong> — La prestation a été effectuée</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Filtres et recherche", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Utilisez les filtres pour retrouver rapidement une réservation :</p><ul><li>Filtrer par <strong>statut</strong> (en attente, confirmée, etc.)</li><li>Filtrer par <strong>paiement</strong> (payée / non payée)</li><li>Filtrer par <strong>date</strong></li><li><strong>Rechercher</strong> un client par nom ou email</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Réservations manuelles", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vous pouvez créer des <strong>réservations manuelles</strong> pour les clients qui vous contactent par téléphone ou en personne. Renseignez le nom du client, le service, la date, l'heure et les notes éventuelles.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Lien de réservation partageable", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Chaque réservation dispose d'un <strong>lien unique partageable</strong> (format /r/hash). Envoyez ce lien à votre client pour qu'il puisse consulter les détails ou annuler si besoin, sans avoir de compte AlloTata.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Les notifications et alertes",
+          "description": "Centre de notifications, alertes email/SMS et préférences.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Notifications et alertes", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata vous tient informé en temps réel grâce à un système de notifications multi-canal.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Types de notifications", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Nouvelle réservation</strong> — Un client a réservé un créneau</li><li><strong>Message reçu</strong> — Nouveau message dans une conversation</li><li><strong>Réservation annulée</strong> — Un client a annulé</li><li><strong>Paiement reçu</strong> — Un paiement a été enregistré</li><li><strong>Nouvelle commande</strong> — Un client a commandé un produit</li><li><strong>Alerte de sécurité</strong> — Connexion depuis un nouvel appareil</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Canaux de notification", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>In-app</strong> — Notifications dans votre centre de notifications (badge sur l'onglet)</li><li><strong>Email</strong> — Emails automatiques pour les événements importants</li><li><strong>SMS</strong> — Alertes SMS pour les notifications critiques (si activé)</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Personnalisez vos préférences", "html": "Rendez-vous dans <strong>Paramètres > Notifications</strong> pour choisir quels types de notifications vous souhaitez recevoir et par quel canal. Désactivez les notifications non essentielles pour éviter la surcharge." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Messagerie et relation client",
+          "description": "Testez vos connaissances sur la messagerie, les réservations et les notifications.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 20,
+          "questions": [
+            { "question": "Que se passe-t-il quand une proposition de rendez-vous est acceptée par les deux parties ?", "type": "multiple_choice", "options": ["Un email de confirmation est envoyé", "La réservation est automatiquement créée dans l'agenda", "Le paiement est prélevé immédiatement", "Rien, il faut créer la réservation manuellement"], "bonne_reponse": "La réservation est automatiquement créée dans l'agenda", "points": 5 },
+            { "question": "Un client peut initier une conversation directement depuis la page d'un produit.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Quel lien permet à un client sans compte de consulter sa réservation ?", "type": "multiple_choice", "options": ["Le lien de la page entreprise", "Le lien de réservation partageable (/r/hash)", "Un QR code généré automatiquement", "Le lien de la messagerie"], "bonne_reponse": "Le lien de réservation partageable (/r/hash)", "points": 5 },
+            { "question": "AlloTata peut envoyer des notifications par SMS.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Gérer son équipe avec le mode Multi-Personnes",
+      "description": "Activez le multi-personnes, invitez des membres, gérez leurs agendas et suivez leurs performances.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Activer le mode Multi-Personnes",
+          "description": "Souscription, activation et premiers pas avec la gestion d'équipe.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Le mode Multi-Personnes", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Le mode <strong>Multi-Personnes</strong> est une option à <strong>20 €/mois</strong> qui vous permet de gérer une équipe au sein de votre entreprise. Chaque membre a son propre agenda, ses disponibilités et ses statistiques.</p><p><strong>Cas d'usage :</strong></p><ul><li>Un salon de coiffure avec 3 coiffeurs</li><li>Un cabinet de coaching avec 2 coachs</li><li>Une entreprise de services à domicile avec plusieurs intervenants</li></ul>" }, "settings": {} },
+            { "type": "steps", "content": { "title": "Activer Multi-Personnes", "steps": [{ "title": "Souscrire l'option", "content": "Rendez-vous dans l'onglet Abonnements de votre entreprise et souscrivez l'option Multi-Personnes (20 €/mois)." }, { "title": "Accéder à l'onglet Équipe", "content": "Un nouvel onglet « Équipe » apparaît dans votre tableau de bord entreprise." }, { "title": "Configurer les membres", "content": "Vous pouvez maintenant inviter des membres, définir leurs rôles et gérer leurs disponibilités." }] }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Inviter et gérer des membres",
+          "description": "Invitations, rôles, acceptation et gestion de l'équipe.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Gestion de votre équipe", "level": 1 }, "settings": {} },
+            { "type": "heading", "content": { "text": "Inviter un membre", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Processus d'invitation", "steps": [{ "title": "Envoyer l'invitation", "content": "Depuis l'onglet Équipe, cliquez sur « Inviter un membre ». Saisissez l'adresse email du collaborateur et sélectionnez son rôle (administrateur ou membre)." }, { "title": "Le collaborateur reçoit l'email", "content": "Un email d'invitation est envoyé avec un lien unique. Le collaborateur peut accepter ou refuser l'invitation." }, { "title": "Acceptation", "content": "Si le collaborateur n'a pas de compte AlloTata, il devra en créer un. Sinon, il est directement ajouté à votre équipe." }] }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les rôles", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Administrateur</strong> — Accès complet à la gestion de l'entreprise (paramètres, facturation, membres)</li><li><strong>Membre</strong> — Accès limité : gestion de ses propres réservations et de son agenda</li></ul>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Disponibilités et agendas individuels",
+          "description": "Configurer les disponibilités par membre et gérer les indisponibilités.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Agendas individuels", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Chaque membre de votre équipe dispose de son <strong>propre agenda</strong> avec des disponibilités indépendantes des horaires de l'entreprise.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Disponibilités par membre", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour chaque membre, définissez :</p><ul><li><strong>Les jours et horaires de travail</strong> — Chaque membre peut avoir des horaires différents</li><li><strong>Les périodes d'indisponibilité</strong> — Congés, formations, absences avec une date de début, une date de fin et une raison</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Réservation avec choix du membre", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Lorsqu'un client réserve, il peut <strong>choisir le membre</strong> avec qui il souhaite le rendez-vous (si vous avez activé cette option). Sinon, le système attribue automatiquement un membre disponible.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Vue agenda par membre", "html": "Depuis l'onglet Équipe, cliquez sur un membre pour voir son <strong>agenda individuel</strong>. Vous pouvez visualiser toutes ses réservations et ses créneaux disponibles." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Statistiques par membre",
+          "description": "Suivre les performances individuelles de chaque membre de l'équipe.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Statistiques d'équipe", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>AlloTata collecte des <strong>statistiques individuelles</strong> pour chaque membre de votre équipe :</p><ul><li><strong>Nombre de réservations</strong> — Total des rendez-vous sur une période</li><li><strong>Revenu total généré</strong> — Somme des prestations facturées</li><li><strong>Temps total travaillé</strong> — En minutes, basé sur la durée des services</li><li><strong>Taux d'occupation</strong> — Ratio temps réservé / temps disponible</li></ul><p>Ces données vous permettent d'identifier les membres les plus performants, d'ajuster la charge de travail et d'optimiser la répartition des clients.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Utilisation stratégique", "html": "Comparez les statistiques de vos membres pour <strong>équilibrer la charge</strong>. Un membre avec peu de réservations pourrait être mis en avant sur votre page ou avoir des créneaux plus visibles." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Gestion d'équipe",
+          "description": "Testez vos connaissances sur le mode Multi-Personnes.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 20,
+          "questions": [
+            { "question": "Combien coûte l'option Multi-Personnes par mois ?", "type": "multiple_choice", "options": ["2 €", "10 €", "20 €", "50 €"], "bonne_reponse": "20 €", "points": 5 },
+            { "question": "Chaque membre de l'équipe peut avoir ses propres horaires de disponibilité.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Quel rôle donne un accès complet à la gestion de l'entreprise ?", "type": "multiple_choice", "options": ["Membre", "Administrateur", "Gérant", "Superviseur"], "bonne_reponse": "Administrateur", "points": 5 },
+            { "question": "Quelles statistiques individuelles sont disponibles par membre ?", "type": "multiple_choice", "options": ["Uniquement le nombre de réservations", "Réservations, revenu, temps travaillé", "Seulement le revenu généré", "Aucune statistique individuelle"], "bonne_reponse": "Réservations, revenu, temps travaillé", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Créer son site web vitrine",
+      "description": "Activez et personnalisez votre site web professionnel avec l'éditeur intégré d'AlloTata.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Activer et découvrir le site web vitrine",
+          "description": "Souscription, URL personnalisée et premiers pas avec l'éditeur.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Votre site web professionnel", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'option <strong>Site Web Vitrine</strong> (2 €/mois) vous permet de créer un véritable <strong>site web professionnel</strong> accessible à une URL dédiée (<strong>/w/votre-slug</strong>).</p><p>Aucune compétence technique n'est requise : l'éditeur est entièrement visuel.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Ce que votre site peut contenir", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Pages personnalisables</strong> — Accueil, Services, À propos, Contact, etc.</li><li><strong>Formulaire de réservation intégré</strong> — Vos clients réservent directement depuis votre site</li><li><strong>Agenda public</strong> — Visualisation des créneaux disponibles</li><li><strong>Galerie photos</strong> — Montrez vos réalisations</li><li><strong>Contenu riche</strong> — Textes, images, vidéos, boutons d'action</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "info", "title": "Historique des versions", "html": "AlloTata conserve un <strong>historique des versions</strong> de votre site. Si vous faites une erreur, vous pouvez <strong>restaurer une version précédente</strong> en un clic." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "L'éditeur de pages",
+          "description": "Système de blocs, templates et gestion des pages.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "L'éditeur de pages", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>L'éditeur fonctionne par <strong>système de blocs</strong>. Vous construisez vos pages en empilant et en ordonnant des blocs de contenu.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Types de blocs disponibles", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<ul><li><strong>Texte</strong> — Paragraphes avec mise en forme riche</li><li><strong>Titre</strong> — Titres de différents niveaux (H1, H2, H3)</li><li><strong>Image</strong> — Photos avec légendes</li><li><strong>Vidéo</strong> — Intégrez des vidéos</li><li><strong>Bouton</strong> — Boutons d'action cliquables</li><li><strong>Séparateur</strong> — Ligne de séparation visuelle</li><li><strong>Colonnes</strong> — Mise en page multi-colonnes</li><li><strong>Formulaire de réservation</strong> — Intégrez directement le système de réservation</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Gestion des pages", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Votre site peut contenir <strong>plusieurs pages</strong> (onglets) :</p><ul><li>Créez, renommez et supprimez des pages</li><li>Réordonnez les pages par glisser-déposer</li><li>Choisissez une icône pour chaque page dans la navigation</li><li>Activez/désactivez des pages sans les supprimer</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Templates", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Gagnez du temps en utilisant les <strong>templates prédéfinis</strong>. Chargez un template, puis personnalisez-le avec vos propres contenus, couleurs et images.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "SEO et visibilité",
+          "description": "Optimisation pour les moteurs de recherche, avis et photos de réalisations.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Optimiser votre visibilité en ligne", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Avoir un site, c'est bien. Être trouvé par vos futurs clients, c'est mieux. Voici les leviers pour maximiser votre visibilité.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Mots-clés et description", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Dans les paramètres de votre entreprise :</p><ul><li>Ajoutez des <strong>mots-clés</strong> pertinents pour votre activité (ex : « coiffure domicile Paris », « coach sportif Lyon »)</li><li>Rédigez une <strong>description riche</strong> contenant les termes que vos clients pourraient rechercher</li><li>Choisissez un <strong>type d'activité</strong> précis</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les avis comme levier", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Les avis clients sont un puissant signal de <strong>confiance</strong> :</p><ul><li>Encouragez vos clients satisfaits à laisser un avis après chaque prestation</li><li>Répondez aux avis (positifs comme négatifs) pour montrer votre professionnalisme</li><li>Les avis sont affichés sur votre page publique et votre site vitrine</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Photos de réalisations", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Ajoutez régulièrement des <strong>photos de vos réalisations</strong> (avant/après, résultats de prestations). C'est la meilleure preuve de votre savoir-faire et un élément différenciant fort.</p>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "La page publique comme outil commercial", "html": "Partagez le lien de votre <strong>page publique</strong> (/p/votre-slug) sur vos réseaux sociaux, vos cartes de visite et vos signatures d'email. C'est votre vitrine accessible 24h/24." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Site web vitrine",
+          "description": "Testez vos connaissances sur le site web vitrine.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 20,
+          "questions": [
+            { "question": "Combien coûte l'option Site Web Vitrine par mois ?", "type": "multiple_choice", "options": ["Gratuit", "2 €", "5 €", "10 €"], "bonne_reponse": "2 €", "points": 5 },
+            { "question": "L'éditeur de site web d'AlloTata nécessite des compétences en programmation.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Faux", "points": 5 },
+            { "question": "AlloTata conserve un historique des versions du site pour restauration.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Quel format d'URL est utilisé pour le site web vitrine ?", "type": "multiple_choice", "options": ["/p/votre-slug", "/w/votre-slug", "/site/votre-slug", "/web/votre-slug"], "bonne_reponse": "/w/votre-slug", "points": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "titre": "Produits, stock et commandes",
+      "description": "Créez votre catalogue produits, gérez les stocks et les promotions, et traitez les commandes.",
+      "est_actif": true,
+      "lessons": [
+        {
+          "titre": "Créer et gérer ses produits",
+          "description": "Catalogue produits, images, tarification et activation.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Votre catalogue de produits", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>En plus de vos services, AlloTata vous permet de vendre des <strong>produits</strong>. Idéal pour les professionnels qui vendent des articles complémentaires à leurs prestations (produits capillaires, compléments alimentaires, accessoires, etc.).</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Créer un produit", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour chaque produit, renseignez :</p><ul><li><strong>Nom</strong> et <strong>description</strong> détaillée</li><li><strong>Prix</strong> de vente</li><li><strong>Images</strong> — Plusieurs photos possibles avec une image de couverture</li><li><strong>Mode de gestion du stock</strong> :<ul><li><em>Disponible immédiatement</em> — Le produit est en stock et livrable</li><li><em>En attente de commandes</em> — Le produit est en pré-commande</li></ul></li><li><strong>Options de livraison</strong> : livraison à domicile, retrait sur place, ou les deux</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Votre boutique publique", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Vos produits apparaissent dans votre <strong>boutique en ligne</strong> accessible depuis votre page publique (<strong>/p/votre-slug/store</strong>). Les clients peuvent consulter vos produits, voir les avis et passer commande.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Gestion des stocks et promotions",
+          "description": "Quantités, alertes de stock et promotions temporaires.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Gestion des stocks", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Pour chaque produit, AlloTata gère :</p><ul><li><strong>Quantité disponible</strong> — Mise à jour automatique à chaque vente</li><li><strong>Quantité minimum</strong> — Seuil d'alerte</li><li><strong>Alerte de stock</strong> — Notification quand le stock atteint le seuil minimum</li></ul>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Les promotions", "level": 2 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Boostez vos ventes avec les <strong>promotions temporaires</strong> :</p><ul><li>Définissez un <strong>prix promotionnel</strong></li><li>Fixez une <strong>date de début</strong> et une <strong>date de fin</strong></li><li>Activez ou désactivez la promotion à tout moment</li><li>Le prix barré et le nouveau prix s'affichent automatiquement sur votre boutique</li></ul>" }, "settings": {} },
+            { "type": "callout", "content": { "type": "tip", "title": "Promotions stratégiques", "html": "Lancez des promotions pendant les périodes creuses pour stimuler vos ventes. Utilisez les statistiques pour identifier les moments les moins chargés." }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Gérer les commandes clients",
+          "description": "Acceptation, suivi et gestion des commandes de produits.",
+          "type": "course",
+          "est_actif": true,
+          "blocks": [
+            { "type": "heading", "content": { "text": "Gestion des commandes", "level": 1 }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Lorsqu'un client commande un produit, vous recevez une notification et la commande apparaît dans l'onglet <strong>Commandes</strong>.</p>" }, "settings": {} },
+            { "type": "heading", "content": { "text": "Cycle de vie d'une commande", "level": 2 }, "settings": {} },
+            { "type": "steps", "content": { "title": "Traitement d'une commande", "steps": [{ "title": "Réception de la commande", "content": "Vous êtes notifié (in-app + email). La commande contient : nom du client, produit, quantité, prix, mode de livraison et adresse si applicable." }, { "title": "Acceptation ou refus", "content": "Validez la commande pour confirmer ou refusez-la si le produit n'est pas disponible." }, { "title": "Préparation et livraison", "content": "Préparez le produit et organisez la livraison ou le retrait sur place." }, { "title": "Marquage du paiement", "content": "Lorsque le paiement est reçu, marquez la commande comme payée." }] }, "settings": {} },
+            { "type": "text", "content": { "html": "<p>Le stock est automatiquement mis à jour lorsque vous acceptez une commande.</p>" }, "settings": {} }
+          ]
+        },
+        {
+          "titre": "Quiz — Produits et commandes",
+          "description": "Testez vos connaissances sur la gestion de produits, stocks et commandes.",
+          "type": "quiz",
+          "est_actif": true,
+          "points_quiz": 20,
+          "questions": [
+            { "question": "Quels sont les deux modes de gestion de stock disponibles ?", "type": "multiple_choice", "options": ["Manuel et automatique", "Disponible immédiatement et en attente de commandes", "En stock et rupture de stock", "Livrable et non livrable"], "bonne_reponse": "Disponible immédiatement et en attente de commandes", "points": 5 },
+            { "question": "Le stock est automatiquement mis à jour lors de l'acceptation d'une commande.", "type": "true_false", "options": ["Vrai", "Faux"], "bonne_reponse": "Vrai", "points": 5 },
+            { "question": "Que s'affiche sur la boutique lorsqu'une promotion est active ?", "type": "multiple_choice", "options": ["Uniquement le nouveau prix", "Le prix barré et le nouveau prix", "Un badge « Promo » sans prix", "Rien de spécial"], "bonne_reponse": "Le prix barré et le nouveau prix", "points": 5 },
+            { "question": "Un client peut-il commander un produit sans avoir de compte AlloTata ?", "type": "multiple_choice", "options": ["Non, un compte est toujours obligatoire", "Oui, en mode invité avec email et téléphone", "Oui, sans aucune information", "Seulement pour les retraits sur place"], "bonne_reponse": "Oui, en mode invité avec email et téléphone", "points": 5 }
+          ]
+        }
+      ]
+    }
+  ]
+}

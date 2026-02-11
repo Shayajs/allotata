@@ -10,6 +10,7 @@ class CourseModule extends Model
         'titre',
         'description',
         'image_path',
+        'video_url',
         'ordre',
         'est_actif',
     ];

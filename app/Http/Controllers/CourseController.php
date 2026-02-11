@@ -37,14 +37,11 @@ class CourseController extends Controller
     }
 
     /**
-     * Afficher un module avec sa sidebar de navigation
+     * Afficher un module avec ses leçons
      */
     public function showModule(CourseModule $module)
     {
         $user = Auth::user();
-        
-        // Les admins peuvent voir la page publique pour prévisualiser
-        // Ils ont un bouton flottant pour aller vers l'édition
 
         // Vérifier que le module est actif
         if (!$module->est_actif && (!Auth::check() || !Auth::user()->is_admin)) {
@@ -88,31 +85,9 @@ class CourseController extends Controller
             }
         }
 
-        // Charger tous les modules pour la navigation
-        $allModules = CourseModule::where('est_actif', true)
-            ->orderBy('ordre')
-            ->get();
-
-        // Si pas de leçon spécifique, afficher la première accessible
-        $currentLesson = null;
-        if ($lessons->count() > 0) {
-            foreach ($lessons as $lesson) {
-                if ($lesson->isAccessibleBy($user)) {
-                    $currentLesson = $lesson;
-                    break;
-                }
-            }
-            // Si aucune accessible et pas connecté, montrer la première (en mode bloqué)
-            if (!$currentLesson) {
-                $currentLesson = $lessons->first();
-            }
-        }
-
         return view('courses.module', compact(
             'module',
             'lessons',
-            'allModules',
-            'currentLesson',
             'user',
             'moduleProgress',
             'lessonProgress'
@@ -147,11 +122,6 @@ class CourseController extends Controller
         // Charger toutes les leçons du module pour la navigation
         $lessons = $module->activeLessons;
 
-        // Charger tous les modules pour la navigation
-        $allModules = CourseModule::where('est_actif', true)
-            ->orderBy('ordre')
-            ->get();
-
         // Récupérer la progression
         $moduleProgress = $user ? $module->getUserProgress($user) : null;
         $lessonProgress = $user ? $lesson->getUserProgress($user) : null;
@@ -183,7 +153,6 @@ class CourseController extends Controller
             'module',
             'lesson',
             'lessons',
-            'allModules',
             'user',
             'moduleProgress',
             'lessonProgress',

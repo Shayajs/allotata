@@ -29,6 +29,7 @@ class CourseController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'video_url' => 'nullable|url|max:500',
             'ordre' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
             'image' => 'nullable|image|max:5120', // 5MB max
@@ -42,6 +43,7 @@ class CourseController extends Controller
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'image_path' => $validated['image_path'] ?? null,
+            'video_url' => $validated['video_url'] ?? null,
             'ordre' => $validated['ordre'] ?? 0,
             'est_actif' => $validated['est_actif'] ?? true,
         ]);
@@ -58,6 +60,7 @@ class CourseController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'video_url' => 'nullable|url|max:500',
             'ordre' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
             'image' => 'nullable|image|max:5120',
@@ -75,6 +78,7 @@ class CourseController extends Controller
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'image_path' => $validated['image_path'] ?? $module->image_path,
+            'video_url' => array_key_exists('video_url', $validated) ? $validated['video_url'] : $module->video_url,
             'ordre' => $validated['ordre'] ?? $module->ordre,
             'est_actif' => $validated['est_actif'] ?? $module->est_actif,
         ]);
@@ -1017,6 +1021,7 @@ class CourseController extends Controller
             $module = CourseModule::create([
                 'titre' => $moduleData['titre'],
                 'description' => $moduleData['description'] ?? null,
+                'video_url' => $moduleData['video_url'] ?? null,
                 'ordre' => $moduleData['ordre'] ?? $maxOrdre,
                 'est_actif' => $moduleData['est_actif'] ?? true,
             ]);
