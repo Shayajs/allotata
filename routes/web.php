@@ -267,6 +267,11 @@ Route::post('/signup', [AuthController::class, 'register'])->name('register');
 Route::get('/signin', [AuthController::class, 'showSignin'])->name('login');
 Route::post('/signin', [AuthController::class, 'login']);
 
+// Auth Popup (IdP style Google - pour site vitrine)
+Route::get('/auth/popup', [AuthController::class, 'showPopup'])->name('auth.popup');
+Route::post('/auth/popup/login', [AuthController::class, 'loginPopup'])->name('auth.popup.login');
+Route::post('/auth/popup/register', [AuthController::class, 'registerPopup'])->name('auth.popup.register');
+
 // Invitations (public et authentifié)
 Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
 Route::post('/invitations/{token}/accepter', [InvitationController::class, 'accepter'])->name('invitations.accepter');
@@ -327,6 +332,11 @@ Route::post("/r/{hash}/annuler", [PublicController::class, 'annulerReservation']
 // Sites web vitrine (Public)
 Route::get("/w/{slug}", [SiteWebController::class, 'show'])->name('site-web.show');
 
+// Endpoints publics du site vitrine (agenda / réservation)
+Route::get("/w/{slug}/reservation-form", [SiteWebController::class, 'reservationForm'])->name('site-web.reservation-form');
+Route::post("/w/{slug}/reservation", [SiteWebController::class, 'storeReservationWeb'])->name('site-web.reservation.store');
+Route::get("/w/{slug}/reservations", [SiteWebController::class, 'getReservationsWeb'])->name('site-web.reservations');
+
 // API Site Web Vitrine (Authentifié - Propriétaire uniquement)
 Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(function () {
     Route::put('/', [SiteWebController::class, 'update'])->name('update');
@@ -336,6 +346,12 @@ Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(functio
     Route::post('/render-block', [SiteWebController::class, 'renderBlock'])->name('render-block');
     Route::get('/versions', [SiteWebController::class, 'getVersions'])->name('versions');
     Route::post('/restore/{version}', [SiteWebController::class, 'restoreVersion'])->name('restore');
+
+    // CRUD Pages (onglets)
+    Route::post('/pages', [SiteWebController::class, 'storePage'])->name('pages.store');
+    Route::put('/pages/{pageId}', [SiteWebController::class, 'updatePage'])->name('pages.update');
+    Route::delete('/pages/{pageId}', [SiteWebController::class, 'deletePage'])->name('pages.delete');
+    Route::post('/pages/reorder', [SiteWebController::class, 'reorderPages'])->name('pages.reorder');
 });
 
 // Contact (public - depuis le footer)

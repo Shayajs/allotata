@@ -399,6 +399,8 @@ class EntrepriseDashboardController extends Controller
             'fidelisationData' => $fidelisationData,
             'fidelisationClientsARisque' => $fidelisationClientsARisque,
             'fidelisationStats' => $fidelisationStats,
+            // Site Web
+            'aSiteWebActif' => $entreprise->aSiteWebActif(),
         ]);
     }
 

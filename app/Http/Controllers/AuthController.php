@@ -498,4 +498,188 @@ class AuthController extends Controller
             }
         }
     }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Popup Auth (IdP style Google)
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Afficher le popup de connexion (layout minimal).
+     */
+    public function showPopup(Request $request)
+    {
+        $mode = $request->query('mode', 'login'); // login | register
+        return view('auth.popup', ['mode' => $mode]);
+    }
+
+    /**
+     * Traiter le login depuis le popup.
+     * Retourne du JSON pour que le popup puisse communiquer avec le parent via postMessage.
+     */
+    public function loginPopup(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+        $user = User::where('email', $credentials['email'])->first();
+
+        // Logger la tentative
+        $loginAttempt = LoginAttempt::create([
+            'email' => $credentials['email'],
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'success' => false,
+            'user_id' => $user?->id,
+            'attempted_at' => now(),
+        ]);
+
+        // Vérifications : compte interdit/supprimé/verrouillé
+        if ($user) {
+            if ($user->isInterdit() || $user->isSupprime()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Ce compte n\'est pas accessible.',
+                ], 403);
+            }
+
+            $lockout = AccountLockout::firstOrCreate(
+                ['user_id' => $user->id],
+                ['failed_attempts' => 0, 'is_locked' => false]
+            );
+
+            if ($lockout->isCurrentlyLocked()) {
+                $mins = now()->diffInMinutes($lockout->locked_until, false);
+                return response()->json([
+                    'success' => false,
+                    'error' => "Compte temporairement verrouillé. Réessayez dans {$mins} minute(s).",
+                ], 429);
+            }
+        }
+
+        // Tentative d'auth
+        $remember = $request->boolean('remember');
+        $attemptSucceeded = false;
+        try {
+            $attemptSucceeded = $user && Auth::attempt($credentials, $remember);
+        } catch (\RuntimeException $e) {
+            if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
+                $attemptSucceeded = $user && Auth::attempt($credentials, false);
+            } else {
+                throw $e;
+            }
+        }
+
+        if (!$attemptSucceeded) {
+            // Incrémenter les tentatives échouées
+            if ($user) {
+                $lockout = $user->accountLockout;
+                if ($lockout) {
+                    $lockout->increment('failed_attempts');
+                    $lockout->update(['last_failed_attempt' => now()]);
+                    if ($lockout->failed_attempts >= 5) {
+                        $lockout->update(['is_locked' => true, 'locked_until' => now()->addMinutes(15)]);
+                    }
+                }
+            }
+
+            $loginAttempt->update(['failure_reason' => $user ? 'invalid_credentials' : 'user_not_found']);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Identifiants incorrects.',
+            ], 401);
+        }
+
+        // Email non vérifié → signaler au popup
+        if (!$user->hasVerifiedEmail()) {
+            $request->session()->put('pending_verification_email', $user->email);
+            $this->safeLogout($request);
+            $request->session()->regenerateToken();
+
+            return response()->json([
+                'success' => false,
+                'needs_verification' => true,
+                'error' => 'Votre email n\'est pas encore vérifié. Un email vous a été envoyé.',
+            ], 403);
+        }
+
+        // 2FA requis → signaler au popup (le popup redirigera vers /two-factor)
+        $hasGoogle2fa = class_exists(\PragmaRX\Google2FA\Google2FA::class) && $user->hasGoogle2faEnabled();
+        if ($user->a2f_enabled || $hasGoogle2fa) {
+            $securityService = app(SecurityService::class);
+            if ($hasGoogle2fa || ($user->a2f_enabled && $securityService->shouldRequireA2F($user, $ipAddress, $userAgent))) {
+                $request->session()->put('two_factor_user_id', $user->id);
+                $request->session()->put('two_factor_remember', $remember);
+                $this->safeLogout($request);
+                $request->session()->regenerateToken();
+
+                return response()->json([
+                    'success' => false,
+                    'needs_2fa' => true,
+                    'redirect' => route('two-factor.show'),
+                ], 403);
+            }
+            $securityService->markDeviceAsTrusted($user, $ipAddress, $userAgent);
+        }
+
+        // Connexion réussie
+        $loginAttempt->update(['success' => true, 'user_id' => $user->id]);
+        if ($user->accountLockout) {
+            $user->accountLockout->update(['failed_attempts' => 0, 'last_failed_attempt' => null]);
+        }
+
+        $securityService = app(SecurityService::class);
+        $securityService->recordSuccessfulLogin($user, $ipAddress, $userAgent);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'telephone' => $user->telephone ?? '',
+            ],
+        ]);
+    }
+
+    /**
+     * Traiter l'inscription depuis le popup.
+     */
+    public function registerPopup(Request $request)
+    {
+        $validated = $request->validate([
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'name'              => $validated['name'],
+            'email'             => $validated['email'],
+            'password'          => Hash::make($validated['password']),
+            'est_client'        => true,
+            'est_gerant'        => false,
+            'email_verified_at' => null,
+        ]);
+
+        // Vérification email
+        $emailVerification = \App\Models\EmailVerification::generateHashForUser($user->id);
+        try {
+            $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
+        } catch (\Exception $e) {
+            \Log::error("Erreur envoi email vérification popup : " . $e->getMessage());
+        }
+
+        SecurityLog::log($user->id, 'account_created', $request->ip(), $request->userAgent(), null, ['source' => 'popup'], 'low', false);
+
+        return response()->json([
+            'success' => true,
+            'needs_verification' => true,
+            'message' => 'Compte créé ! Vérifiez votre email pour vous connecter.',
+        ]);
+    }
 }

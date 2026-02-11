@@ -300,6 +300,22 @@ class Entreprise extends Model
     }
 
     /**
+     * Relation : Une entreprise peut avoir plusieurs pages de site web (onglets)
+     */
+    public function siteWebPages()
+    {
+        return $this->hasMany(SiteWebPage::class)->orderBy('ordre', 'asc');
+    }
+
+    /**
+     * Pages actives du site web, triees par ordre.
+     */
+    public function siteWebPagesActives()
+    {
+        return $this->hasMany(SiteWebPage::class)->where('est_actif', true)->orderBy('ordre', 'asc');
+    }
+
+    /**
      * Retourne le nom à afficher du gérant
      */
     public function getNomGerantAttribute(): ?string

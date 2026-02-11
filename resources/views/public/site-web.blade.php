@@ -96,100 +96,117 @@
         </div>
         <div class="h-10"></div>
     @endif
-    
-    {{-- Contenu principal --}}
-    <main>
-        @php
-            $blocks = $entreprise->getSiteWebBlocks();
-        @endphp
-        
-        @if(count($blocks) > 0)
-            @foreach($blocks as $block)
-                @php
-                    $animation = $block['animation'] ?? 'none';
-                    $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
-                @endphp
-                
-                <div class="{{ $animationClass }}" data-animation="{{ $animation }}">
-                    @switch($block['type'])
-                        @case('hero')
-                            <x-site-web.blocks.hero :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('text')
-                            <x-site-web.blocks.text :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('image')
-                            <x-site-web.blocks.image :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('gallery')
-                            <x-site-web.blocks.gallery :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('contact')
-                            <x-site-web.blocks.contact :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('video')
-                            <x-site-web.blocks.video :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('services')
-                            <x-site-web.blocks.services :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('testimonials')
-                            <x-site-web.blocks.testimonials :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('cta')
-                            <x-site-web.blocks.cta :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('divider')
-                            <x-site-web.blocks.divider :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('iframe')
-                            <x-site-web.blocks.iframe :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('faq')
-                            <x-site-web.blocks.faq :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('team')
-                            <x-site-web.blocks.team :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('stats')
-                            <x-site-web.blocks.stats :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('features')
-                            <x-site-web.blocks.features :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('map')
-                            <x-site-web.blocks.map :block="$block" :entreprise="$entreprise" />
-                            @break
-                        @case('columns')
-                            <x-site-web.blocks.columns :block="$block" :entreprise="$entreprise" />
-                            @break
-                    @endswitch
-                </div>
-            @endforeach
-        @else
-            {{-- Fallback si pas de contenu --}}
-            <div class="min-h-screen flex items-center justify-center">
-                <div class="text-center p-8">
-                    @if(!empty($entreprise->logo))
-                        <img src="{{ route('storage.serve', ['path' => $entreprise->logo]) }}" alt="{{ $entreprise->nom }}" class="w-32 h-32 mx-auto mb-6 rounded-xl object-cover">
-                    @endif
-                    <h1 class="text-4xl font-bold mb-4" style="font-family: var(--site-font-heading);">
-                        {{ $entreprise->nom }}
-                    </h1>
-                    @if($entreprise->phrase_accroche)
-                        <p class="text-xl text-slate-600 dark:text-slate-400 mb-6">
-                            {{ $entreprise->phrase_accroche }}
-                        </p>
-                    @endif
-                    <a href="{{ route('public.entreprise', ['slug' => $entreprise->slug]) }}" 
-                       class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
-                       style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
-                        Voir la page entreprise
-                    </a>
-                </div>
-            </div>
+
+    @php
+        $slug = $entreprise->slug_web ?? $entreprise->slug;
+        $hasPages = isset($pages) && $pages->count() > 0;
+        $navStyle = $entreprise->contenu_site_web['theme']['navigation_style'] ?? 'tabs';
+        $isSidebar = $hasPages && $navStyle === 'sidebar';
+    @endphp
+
+    {{-- Navigation (navbar ou tabs) : affichée en haut --}}
+    @if($hasPages && !$isSidebar)
+        @include('components.site-web.navigation.' . $navStyle, [
+            'pages' => $pages,
+            'currentPage' => $currentPage ?? null,
+            'entreprise' => $entreprise,
+            'slug' => $slug,
+        ])
+    @endif
+
+    {{-- Layout principal (sidebar = flex, sinon normal) --}}
+    <div class="{{ $isSidebar ? 'flex flex-col lg:flex-row min-h-screen' : '' }}">
+
+        {{-- Sidebar navigation --}}
+        @if($isSidebar)
+            @include('components.site-web.navigation.sidebar', [
+                'pages' => $pages,
+                'currentPage' => $currentPage ?? null,
+                'entreprise' => $entreprise,
+                'slug' => $slug,
+            ])
         @endif
-    </main>
+
+        {{-- Contenu principal --}}
+        <main class="{{ $isSidebar ? 'flex-1 min-w-0' : '' }}">
+
+            {{-- Messages flash --}}
+            @if(session('success'))
+                <div class="max-w-4xl mx-auto mt-4 px-4">
+                    <div class="p-4 rounded-xl border" style="background: color-mix(in srgb, var(--site-primary) 10%, var(--site-background)); border-color: var(--site-primary);">
+                        <p class="text-sm font-medium" style="color: var(--site-primary);">{{ session('success') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if($hasPages && isset($currentPage) && $currentPage)
+                {{-- ── Rendu d'un onglet ─────────────────────── --}}
+                @if($currentPage->isSystemTab())
+                    @include('components.site-web.system-tabs.' . $currentPage->type, [
+                        'entreprise' => $entreprise,
+                        'page' => $currentPage,
+                        'slug' => $slug,
+                        'horaires' => $horaires ?? collect(),
+                        'jours' => $jours ?? [],
+                        'membres' => $membres ?? collect(),
+                        'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false,
+                        'userInfo' => $userInfo ?? null,
+                        'services' => $services ?? collect(),
+                    ])
+                @else
+                    {{-- Onglet custom : rendu des blocs --}}
+                    @php $blocks = $currentPage->getBlocks(); @endphp
+                    @foreach($blocks as $block)
+                        @php
+                            $animation = $block['animation'] ?? 'none';
+                            $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
+                        @endphp
+                        <div class="{{ $animationClass }}" data-animation="{{ $animation }}">
+                            @include('components.site-web.partials.render-block', ['block' => $block, 'entreprise' => $entreprise])
+                        </div>
+                    @endforeach
+                @endif
+
+            @else
+                {{-- ── Fallback : rendu classique (contenu_site_web) ── --}}
+                @php
+                    $blocks = $entreprise->getSiteWebBlocks();
+                @endphp
+
+                @if(count($blocks) > 0)
+                    @foreach($blocks as $block)
+                        @php
+                            $animation = $block['animation'] ?? 'none';
+                            $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
+                        @endphp
+                        <div class="{{ $animationClass }}" data-animation="{{ $animation }}">
+                            @include('components.site-web.partials.render-block', ['block' => $block, 'entreprise' => $entreprise])
+                        </div>
+                    @endforeach
+                @else
+                    {{-- Fallback si pas de contenu du tout --}}
+                    <div class="min-h-screen flex items-center justify-center">
+                        <div class="text-center p-8">
+                            @if(!empty($entreprise->logo))
+                                <img src="{{ route('storage.serve', ['path' => $entreprise->logo]) }}" alt="{{ $entreprise->nom }}" class="w-32 h-32 mx-auto mb-6 rounded-xl object-cover">
+                            @endif
+                            <h1 class="text-4xl font-bold mb-4" style="font-family: var(--site-font-heading);">
+                                {{ $entreprise->nom }}
+                            </h1>
+                            @if($entreprise->phrase_accroche)
+                                <p class="text-xl opacity-60 mb-6">{{ $entreprise->phrase_accroche }}</p>
+                            @endif
+                            <a href="{{ route('public.entreprise', ['slug' => $entreprise->slug]) }}" 
+                               class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
+                               style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
+                                Voir la page entreprise
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            @endif
+        </main>
+    </div>
     
     {{-- Footer simple --}}
     <footer class="py-8 px-4 text-center border-t border-slate-200 dark:border-slate-700">
@@ -201,9 +218,10 @@
         </p>
     </footer>
     
-    {{-- Script pour animations au scroll --}}
+    {{-- Script pour animations au scroll + auth popup listener --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Animations au scroll
             const animatedElements = document.querySelectorAll('.animate-on-scroll');
             
             const observer = new IntersectionObserver((entries) => {
@@ -223,6 +241,25 @@
             });
             
             animatedElements.forEach(el => observer.observe(el));
+
+            // Auth popup : écouter postMessage pour recharger la section réservation
+            window.addEventListener('message', function(event) {
+                if (event.origin !== window.location.origin) return;
+                if (event.data && event.data.type === 'auth_success') {
+                    // Recharger le formulaire de réservation en AJAX
+                    const container = document.getElementById('reservation-form-container');
+                    if (container) {
+                        const formUrl = '{{ route("site-web.reservation-form", ["slug" => $entreprise->slug_web ?? $entreprise->slug]) }}';
+                        fetch(formUrl, { credentials: 'same-origin' })
+                            .then(r => r.text())
+                            .then(html => { container.innerHTML = html; })
+                            .catch(() => { window.location.reload(); });
+                    } else {
+                        // Pas de container trouvé, recharger la page
+                        window.location.reload();
+                    }
+                }
+            });
         });
     </script>
 </body>
