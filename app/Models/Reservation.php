@@ -37,6 +37,7 @@ class Reservation extends Model
         'telephone_client_non_inscrit',
         'creee_manuellement',
         'hash',
+        'google_event_id',
     ];
 
     protected function casts(): array

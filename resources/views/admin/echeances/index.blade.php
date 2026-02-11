@@ -65,6 +65,9 @@
         <a href="{{ route('admin.echeances.index', ['statut' => 'arrete']) }}" class="px-3 py-1.5 rounded-lg text-sm {{ request('statut') === 'arrete' ? 'bg-slate-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
             Arrêté ({{ $stats['arrete'] }})
         </a>
+        <a href="{{ route('admin.echeances.index', ['statut' => 'rembourse']) }}" class="px-3 py-1.5 rounded-lg text-sm {{ request('statut') === 'rembourse' ? 'bg-purple-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+            Remboursé ({{ $stats['rembourse'] ?? 0 }})
+        </a>
         <a href="{{ route('admin.echeances.index') }}" class="px-3 py-1.5 rounded-lg text-sm {{ !request('statut') ? 'bg-green-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
             Tous
         </a>
@@ -158,6 +161,7 @@
                                         'en_attente' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
                                         'paye' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
                                         'echec' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                        'rembourse' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
                                         'annule', 'arrete' => 'bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-300',
                                         default => 'bg-slate-100 text-slate-700 dark:bg-slate-600 dark:text-slate-300',
                                     };
@@ -172,7 +176,19 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm" data-label="Actions">
-                                @if(!$e->estPayee() && !$e->estArrete())
+                                @if($e->estPayee() && $e->stripe_payment_intent_id && !$e->stripe_refund_id)
+                                    {{-- Échéance payée : bouton rembourser --}}
+                                    <button type="button" onclick="document.getElementById('refund-form-{{ $e->id }}').classList.toggle('hidden')" class="text-purple-600 dark:text-purple-400 hover:underline mr-2">Rembourser</button>
+                                @elseif($e->estPayee() && $e->stripe_refund_id && $e->statut !== 'rembourse')
+                                    {{-- Partiellement remboursée : nouveau remboursement possible --}}
+                                    <button type="button" onclick="document.getElementById('refund-form-{{ $e->id }}').classList.toggle('hidden')" class="text-purple-600 dark:text-purple-400 hover:underline mr-2">Compléter remb.</button>
+                                    <span class="text-xs text-purple-500">{{ number_format($e->refund_amount, 2, ',', ' ') }} € remb.</span>
+                                @elseif($e->statut === 'rembourse')
+                                    <span class="text-xs text-purple-600 dark:text-purple-400">
+                                        Remboursé {{ number_format($e->refund_amount, 2, ',', ' ') }} €
+                                        @if($e->refunded_at) le {{ $e->refunded_at->format('d/m/Y') }} @endif
+                                    </span>
+                                @elseif(!$e->estPayee() && !$e->estArrete() && !$e->estRemboursee())
                                     <button type="button" onclick="document.getElementById('reduction-form-{{ $e->id }}').classList.toggle('hidden')" class="text-blue-600 dark:text-blue-400 hover:underline mr-2">Réduction</button>
                                     <form action="{{ route('admin.echeances.arrete', $e) }}" method="POST" class="inline" onsubmit="return confirm('Marquer cette échéance comme arrêtée ?');">
                                         @csrf
@@ -187,7 +203,51 @@
                                 @endif
                             </td>
                         </tr>
-                        @if(!$e->estPayee() && !$e->estArrete())
+                        {{-- Formulaire de remboursement (échéances payées) --}}
+                        @if(($e->estPayee() || $e->estPartielementRemboursee()) && $e->stripe_payment_intent_id && $e->statut !== 'rembourse')
+                            <tr id="refund-form-{{ $e->id }}" class="hidden bg-purple-50 dark:bg-purple-900/10">
+                                <td colspan="8" class="px-6 py-4">
+                                    <form action="{{ route('admin.echeances.refund', $e) }}" method="POST" x-data="{ refundType: 'total' }" onsubmit="return confirm('Confirmer le remboursement ? Cette action est irréversible.');">
+                                        @csrf
+                                        <div class="flex flex-wrap gap-4 items-end">
+                                            <div>
+                                                <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Type</label>
+                                                <select name="refund_type" x-model="refundType" class="w-36 px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                                                    <option value="total">Total</option>
+                                                    <option value="partiel">Partiel</option>
+                                                </select>
+                                            </div>
+                                            <div x-show="refundType === 'partiel'" x-transition>
+                                                <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">
+                                                    Montant (€)
+                                                    <span class="text-slate-400 font-normal">max {{ number_format((float)($e->montant_final ?? $e->montant_du) - (float)($e->refund_amount ?? 0), 2, ',', ' ') }} €</span>
+                                                </label>
+                                                <input type="number" name="refund_amount" step="0.01" min="0.01"
+                                                    max="{{ (float)($e->montant_final ?? $e->montant_du) - (float)($e->refund_amount ?? 0) }}"
+                                                    class="w-32 px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Raison</label>
+                                                <select name="refund_reason" class="w-56 px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                                                    <option value="requested_by_customer">Demandé par le client</option>
+                                                    <option value="duplicate">Doublon</option>
+                                                    <option value="fraudulent">Fraude</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex-1 min-w-[200px]">
+                                                <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Notes internes</label>
+                                                <input type="text" name="refund_notes" placeholder="Raison détaillée du remboursement..." class="w-full px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" maxlength="1000">
+                                            </div>
+                                            <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition text-sm">
+                                                Rembourser
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endif
+                        {{-- Formulaire de réduction (échéances non payées) --}}
+                        @if(!$e->estPayee() && !$e->estArrete() && !$e->estRemboursee())
                             <tr id="reduction-form-{{ $e->id }}" class="hidden bg-slate-50 dark:bg-slate-800/80">
                                 <td colspan="8" class="px-6 py-4">
                                     <form action="{{ route('admin.echeances.reduction', $e) }}" method="POST" class="flex flex-wrap gap-4 items-end">

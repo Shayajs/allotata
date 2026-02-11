@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Echeance;
 use App\Models\User;
+use App\Services\RefundService;
 use Illuminate\Http\Request;
 
 class EcheanceController extends Controller
@@ -48,6 +49,7 @@ class EcheanceController extends Controller
             'echec' => Echeance::where('statut', Echeance::STATUT_ECHEC)->count(),
             'annule' => Echeance::where('statut', Echeance::STATUT_ANNULE)->count(),
             'arrete' => Echeance::where('statut', Echeance::STATUT_ARRETE)->count(),
+            'rembourse' => Echeance::where('statut', Echeance::STATUT_REMBOURSE)->count(),
         ];
 
         return view('admin.echeances.index', [
@@ -87,5 +89,34 @@ class EcheanceController extends Controller
         }
         $echeance->update(['statut' => Echeance::STATUT_ANNULE]);
         return back()->with('success', 'Échéance annulée.');
+    }
+
+    /**
+     * Rembourser une échéance payée (total ou partiel) via Stripe.
+     */
+    public function refund(Request $request, Echeance $echeance)
+    {
+        $validated = $request->validate([
+            'refund_type' => 'required|in:total,partiel',
+            'refund_amount' => 'required_if:refund_type,partiel|nullable|numeric|min:0.01',
+            'refund_reason' => 'required|in:requested_by_customer,duplicate,fraudulent',
+            'refund_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $amount = $validated['refund_type'] === 'total' ? null : (float) $validated['refund_amount'];
+
+        $result = RefundService::refund(
+            echeance: $echeance,
+            amount: $amount,
+            reason: $validated['refund_reason'],
+            notes: $validated['refund_notes'] ?? null,
+            adminId: auth()->id(),
+        );
+
+        if ($result['ok']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
     }
 }

@@ -141,6 +141,14 @@ scheduleWithLogging('db:backup --keep=30', 'Sauvegarde BDD')
     ->dailyAt('02:00')->withoutOverlapping();
 
 // =============================================
+// GOOGLE CALENDAR
+// =============================================
+
+// Renouveler les webhooks Google Calendar (expirent après 7 jours)
+scheduleWithLogging('google-calendar:renew-watches', 'Renouvellement watches Google Calendar')
+    ->dailyAt('05:00')->withoutOverlapping();
+
+// =============================================
 // NETTOYAGE & MAINTENANCE
 // =============================================
 

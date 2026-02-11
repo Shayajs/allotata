@@ -70,6 +70,14 @@ class Entreprise extends Model
         'contenu_site_web',
         'phrase_accroche',
         'site_web_externe',
+        // Google Calendar
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
+        'google_calendar_id',
+        'google_watch_channel_id',
+        'google_watch_expiration',
+        'google_sync_token',
         // Paramètres fiscaux pour le calcul de l'impôt
         'fiscal_situation_familiale',
         'fiscal_nombre_enfants',
@@ -108,6 +116,11 @@ class Entreprise extends Model
             'rayon_deplacement' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web
+            // Google Calendar (tokens chiffrés)
+            'google_access_token' => 'encrypted',
+            'google_refresh_token' => 'encrypted',
+            'google_token_expires_at' => 'datetime',
+            'google_watch_expiration' => 'datetime',
             // Casts pour les paramètres fiscaux
             'fiscal_nombre_enfants' => 'integer',
             'fiscal_enfants_garde_alternee' => 'integer',
@@ -704,5 +717,13 @@ class Entreprise extends Model
     public function hasCoordinates(): bool
     {
         return !is_null($this->latitude) && !is_null($this->longitude);
+    }
+
+    /**
+     * Vérifie si l'entreprise est connectée à Google Calendar
+     */
+    public function aGoogleCalendar(): bool
+    {
+        return !empty($this->google_refresh_token);
     }
 }
