@@ -86,7 +86,7 @@
 
                 {{-- ==================== COLONNE GAUCHE : Échéances catégorisées ==================== --}}
                 <div class="lg:col-span-3 space-y-6">
-                    @if($echeances->isEmpty())
+                    @if(!($hasAnything ?? false))
                         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                             <div class="p-10 sm:p-14 text-center">
                                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-6">
@@ -138,39 +138,54 @@
                             </section>
                         @endif
 
-                        {{-- ═══════════════ SECTION 2 : Nouvelles souscriptions (brouillon) ═══════════════ --}}
-                        @if($echeancesBrouillon->isNotEmpty())
+                        {{-- ═══════════════ SECTION 2 : Nouvelles souscriptions (session, pas en DB) ═══════════════ --}}
+                        @if(($pendingItems ?? collect())->isNotEmpty())
                             <section>
                                 <div class="flex items-center gap-2 mb-3">
                                     <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                                     <h2 class="text-base font-bold text-slate-700 dark:text-slate-300">Nouvelles souscriptions</h2>
                                 </div>
                                 <div class="space-y-4">
-                                    @foreach($echeancesBrouillon as $e)
-                                        @php $calc = $calculs[$e->id] ?? []; $montantFinal = $calc['montant_final'] ?? $e->montant_final ?? 0; @endphp
+                                    @foreach($pendingItems as $pendingKey => $pItem)
+                                        @php
+                                            $pCalc = $pendingCalculs[$pendingKey] ?? [];
+                                            $pMontant = $pCalc['montant_final'] ?? $pItem['montant_final'] ?? 0;
+                                            $pType = $pItem['subscription_type'] ?? '';
+                                            $pNom = $pItem['entreprise_nom'] ?? '?';
+                                            $pLabel = ($pType === 'site_web' ? 'Site Web' : ($pType === 'multi_personnes' ? 'Multi-Personnes' : $pType)) . ' – ' . $pNom;
+                                            $pDebut = \Carbon\Carbon::parse($pItem['periode_debut'])->format('d/m/Y');
+                                            $pFin = \Carbon\Carbon::parse($pItem['periode_fin'])->format('d/m/Y');
+                                        @endphp
                                         <article class="bg-white dark:bg-slate-800 rounded-2xl border border-blue-200 dark:border-blue-800 shadow-sm overflow-hidden">
                                             <div class="bg-blue-50 dark:bg-blue-900/20 px-5 py-2.5 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between">
                                                 <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
                                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path></svg>
                                                     Nouvelle souscription
                                                 </span>
-                                                <form action="{{ route('checkout.annuler-echeance', $e) }}" method="POST" class="inline" onsubmit="return confirm('Annuler cette souscription\u00a0?');">
-                                                    @csrf
-                                                    <button type="submit" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition underline underline-offset-2">Annuler</button>
-                                                </form>
+                                                <a href="{{ route('checkout.index', ['cancel_pending' => $pendingKey]) }}" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition underline underline-offset-2" onclick="return confirm('Annuler cette souscription\u00a0?');">Annuler</a>
                                             </div>
                                             <div class="p-5">
                                                 <div class="flex flex-wrap items-baseline gap-2 mb-3">
-                                                    <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ $e->libelle() }}</h3>
-                                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ $e->periode_debut->format('d/m/Y') }} &rarr; {{ $e->periode_fin->format('d/m/Y') }}</span>
+                                                    <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ $pLabel }}</h3>
+                                                    <span class="text-sm text-slate-500 dark:text-slate-400">{{ $pDebut }} &rarr; {{ $pFin }}</span>
                                                 </div>
-                                                @include('checkout._echeance-lignes', ['calc' => $calc, 'e' => $e])
+                                                {{-- Lignes détaillées --}}
+                                                @if(!empty($pCalc['lignes']))
+                                                    <div class="space-y-1 text-sm">
+                                                        @foreach($pCalc['lignes'] as $ligne)
+                                                            <div class="flex justify-between">
+                                                                <span class="text-slate-600 dark:text-slate-400">{{ $ligne['label'] ?? '–' }}</span>
+                                                                <span class="font-medium text-slate-900 dark:text-white tabular-nums">{{ number_format($ligne['montant'] ?? 0, 2, ',', ' ') }} &euro;</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                                 <div class="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-blue-100 dark:border-blue-900/30">
                                                     <div>
                                                         <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Total &agrave; r&eacute;gler</p>
-                                                        <p class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($montantFinal, 2, ',', ' ') }} &euro;</p>
+                                                        <p class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($pMontant, 2, ',', ' ') }} &euro;</p>
                                                     </div>
-                                                    <button type="button" class="checkout-regler-btn inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation" data-echeance-id="{{ $e->id }}" @if($codePromo) data-code-promo="{{ $codePromo }}" @endif>
+                                                    <button type="button" class="checkout-regler-btn inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation" data-pending-key="{{ $pendingKey }}" @if($codePromo) data-code-promo="{{ $codePromo }}" @endif>
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                                                         <span class="checkout-regler-label">R&eacute;gler cette &eacute;ch&eacute;ance</span>
                                                     </button>
@@ -262,10 +277,10 @@
                 <div class="lg:col-span-2 mt-8 lg:mt-0">
                     <div class="lg:sticky lg:top-6 space-y-5">
 
-                        {{-- Récapitulatif compact (seulement s'il y a des échéances) --}}
-                        @if($echeances->isNotEmpty())
+                        {{-- Récapitulatif compact (seulement s'il y a quelque chose) --}}
+                        @if($hasAnything ?? false)
                             @php
-                                // Somme uniquement des échéances réglables (pas en_attente qui est déjà en cours)
+                                // Somme des échéances DB réglables
                                 $totalReglable = 0;
                                 $countReglable = 0;
                                 foreach ($echeances as $e) {
@@ -274,6 +289,12 @@
                                         $totalReglable += (float) ($c['montant_final'] ?? $e->montant_final ?? 0);
                                         $countReglable++;
                                     }
+                                }
+                                // + items session (nouvelles souscriptions)
+                                foreach (($pendingItems ?? []) as $pk => $pi) {
+                                    $pc = $pendingCalculs[$pk] ?? [];
+                                    $totalReglable += (float) ($pc['montant_final'] ?? $pi['montant_final'] ?? 0);
+                                    $countReglable++;
                                 }
                             @endphp
                             <section class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">

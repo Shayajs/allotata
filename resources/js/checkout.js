@@ -252,13 +252,19 @@ async function initRegler() {
     btns.forEach((btn) => {
         btn.addEventListener('click', async () => {
             const echeanceId = btn.dataset.echeanceId;
+            const pendingKey = btn.dataset.pendingKey;
             const codePromo = btn.dataset.codePromo || '';
             const label = btn.querySelector('.checkout-regler-label');
             btn.disabled = true;
             if (label) label.textContent = 'Paiement…';
 
             try {
-                const body = { echeance_id: parseInt(echeanceId, 10) };
+                const body = {};
+                if (pendingKey) {
+                    body.pending_key = pendingKey;
+                } else {
+                    body.echeance_id = parseInt(echeanceId, 10);
+                }
                 if (codePromo) body.code_promo = codePromo;
                 const res = await fetch(window.location.origin + '/checkout/charge', {
                     method: 'POST',

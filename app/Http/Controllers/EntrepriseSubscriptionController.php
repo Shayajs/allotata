@@ -198,9 +198,34 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Aucun montant à régler pour cette option.']);
         }
 
-        // Créer en « brouillon » : simple intention d'achat, pas encore une dette.
-        // Si l'utilisateur revient en arrière sans payer, le brouillon est annulable
-        // et sera auto-nettoyé après 24 h.
+        // ── Stateless checkout : session-based si l'utilisateur est le propriétaire ──
+        // Aucune écriture en BDD avant le paiement → « intention ≠ dette ».
+        // Si l'utilisateur revient en arrière, rien ne reste dans la base.
+        if ((int) $user->id === (int) $owner->id) {
+            $pendingKey = "{$type}_{$entreprise->id}";
+            $pending = session('checkout_pending', []);
+            $pending[$pendingKey] = [
+                'entreprise_id'    => $entreprise->id,
+                'entreprise_nom'   => $entreprise->nom,
+                'subscription_type' => $type,
+                'user_id'          => $owner->id,
+                'periode_debut'    => $debut->toDateString(),
+                'periode_fin'      => $fin->toDateString(),
+                'jour_facturation' => $jour,
+                'montant_du'       => $calc['montant_du'],
+                'montant_final'    => $calc['montant_final'],
+                'reduction_promo'  => $calc['reduction_promo'],
+                'promo_code_id'    => $calc['promo_code_id'],
+                'lignes'           => $calc['lignes'],
+                'created_at'       => now()->toIso8601String(),
+            ];
+            session(['checkout_pending' => $pending]);
+
+            return redirect()->route('checkout.index')
+                ->with('info', 'Réglez l\'échéance ci-dessous pour activer l\'option.');
+        }
+
+        // ── Gestionnaire tiers → écrire en DB (a_payer) pour que le propriétaire voie l'échéance ──
         Echeance::updateOrCreate(
             [
                 'user_id' => $owner->id,
@@ -208,7 +233,6 @@ class EntrepriseSubscriptionController extends Controller
                 'subscription_type' => $type,
                 'periode_debut' => $debut,
                 'periode_fin' => $fin,
-                'statut' => Echeance::STATUT_BROUILLON,
             ],
             [
                 'jour_facturation' => $jour,
@@ -216,14 +240,11 @@ class EntrepriseSubscriptionController extends Controller
                 'montant_final' => $calc['montant_final'],
                 'reduction_promo' => $calc['reduction_promo'],
                 'promo_code_id' => $calc['promo_code_id'],
+                'statut' => Echeance::STATUT_A_PAYER,
                 'metadata' => ['lignes' => $calc['lignes']],
             ]
         );
 
-        if ((int) $user->id === (int) $owner->id) {
-            return redirect()->route('checkout.index')
-                ->with('info', 'Réglez l\'échéance ci-dessous pour activer l\'option.');
-        }
         return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'abonnements'])
             ->with('info', 'Échéance créée. Le propriétaire doit régler le paiement depuis l\'Espace Paiement.');
     }
