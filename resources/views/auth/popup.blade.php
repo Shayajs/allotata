@@ -18,12 +18,14 @@
                 $logoUrl = \App\Helpers\SiteHelper::getLogo('transparent');
                 $siteName = \App\Helpers\SiteHelper::getSiteName();
             @endphp
-            @if($logoUrl)
-                <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-10 mx-auto mb-3">
-            @endif
-            <h1 class="text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                {{ $siteName }}
-            </h1>
+            <a href="{{ route('home') }}" class="block">
+                @if($logoUrl)
+                    <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-10 mx-auto mb-3">
+                @endif
+                <h1 class="text-xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                    {{ $siteName }}
+                </h1>
+            </a>
         </div>
 
         {{-- Tabs Login / Register --}}
