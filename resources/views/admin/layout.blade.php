@@ -111,7 +111,7 @@
 
     <div class="min-h-screen flex">
         <!-- Sidebar (PC) -->
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky {{ session('original_admin_id') ? 'top-[60px]' : 'top-0' }} h-[calc(100vh-{{ session('original_admin_id') ? '60px' : '0px' }})] overflow-y-auto">
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
                 <a href="{{ route('admin.index') }}" class="flex items-center gap-3 text-xl font-bold">
@@ -462,7 +462,7 @@
         <!-- Main content -->
         <main class="flex-1 flex flex-col min-w-0">
             <!-- Top bar -->
-            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky {{ session('original_admin_id') ? 'top-[60px]' : 'top-0' }} z-30">
+            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <button onclick="toggleBurgerMenu('admin_mobile_nav')" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Menu">
