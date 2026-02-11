@@ -53,11 +53,13 @@ class SubscriptionController extends Controller
             }
         }
 
-        // Vérifier s'il y a un prix personnalisé pour cet utilisateur
+        // Vérifier s'il y a un prix personnalisé avec un stripe_price_id explicite
         $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
         
-        // Utiliser le prix personnalisé s'il existe, sinon le prix par défaut
-        $priceId = $customPrice ? $customPrice->stripe_price_id : config('services.stripe.price_id');
+        // Utiliser le stripe_price_id du prix personnalisé s'il est renseigné, sinon le prix par défaut du .env
+        $priceId = ($customPrice && $customPrice->stripe_price_id)
+            ? $customPrice->stripe_price_id
+            : config('services.stripe.price_id');
         
         // Vérifier que le price_id est bien configuré
         if (empty($priceId)) {
