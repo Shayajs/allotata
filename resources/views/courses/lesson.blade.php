@@ -6,65 +6,67 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-900">
 
     {{-- Header : breadcrumb + badges --}}
-    <div class="pt-20 sm:pt-24 pb-4 px-4 sm:px-6 lg:px-8 2xl:px-12 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto">
-            {{-- Breadcrumb --}}
-            <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3 overflow-x-auto">
-                <a href="{{ route('courses.index') }}" class="hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap">
-                    Apprendre
-                </a>
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-                <a href="{{ route('courses.module', $module) }}" class="hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap truncate max-w-[120px] sm:max-w-none">
-                    {{ $module->titre }}
-                </a>
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-                <span class="text-slate-900 dark:text-white font-medium truncate">{{ $lesson->titre }}</span>
-            </nav>
-
-            {{-- Titre + badges --}}
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                {{-- Bouton retour mobile --}}
-                <a href="{{ route('courses.module', $module) }}" class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition sm:hidden mb-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+    <div class="pt-20 sm:pt-24 px-4 sm:px-6 lg:px-8 2xl:px-12">
+        <div class="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto mt-4 sm:mt-6">
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-5 md:p-6">
+                {{-- Breadcrumb --}}
+                <nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3 overflow-x-auto">
+                    <a href="{{ route('courses.index') }}" class="hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap">
+                        Apprendre
+                    </a>
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
-                    Retour au module
-                </a>
+                    <a href="{{ route('courses.module', $module) }}" class="hover:text-green-600 dark:hover:text-green-400 transition whitespace-nowrap truncate max-w-[120px] sm:max-w-none">
+                        {{ $module->titre }}
+                    </a>
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <span class="text-slate-900 dark:text-white font-medium truncate">{{ $lesson->titre }}</span>
+                </nav>
 
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex-1 min-w-0">
-                    {{ $lesson->titre }}
-                </h1>
+                {{-- Titre + badges --}}
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    {{-- Bouton retour mobile --}}
+                    <a href="{{ route('courses.module', $module) }}" class="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition sm:hidden mb-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Retour au module
+                    </a>
 
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    @if($lesson->isQuiz())
-                        <span class="px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium">
-                            Quiz
-                        </span>
-                    @else
-                        <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium">
-                            Cours
-                        </span>
-                    @endif
-                    @if($lessonProgress && $lessonProgress->completed_at)
-                        <span class="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            Complété
-                        </span>
-                    @endif
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex-1 min-w-0">
+                        {{ $lesson->titre }}
+                    </h1>
+
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        @if($lesson->isQuiz())
+                            <span class="px-2.5 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium">
+                                Quiz
+                            </span>
+                        @else
+                            <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium">
+                                Cours
+                            </span>
+                        @endif
+                        @if($lessonProgress && $lessonProgress->completed_at)
+                            <span class="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Complété
+                            </span>
+                        @endif
+                    </div>
                 </div>
-            </div>
 
-            @if($lesson->description)
-                <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2">
-                    {{ $lesson->description }}
-                </p>
-            @endif
+                @if($lesson->description)
+                    <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2">
+                        {{ $lesson->description }}
+                    </p>
+                @endif
+            </div>
         </div>
     </div>
 
