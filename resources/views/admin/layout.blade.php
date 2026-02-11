@@ -114,7 +114,7 @@
         <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 text-xl font-bold">
+                <a href="{{ route('home') }}" class="flex items-center gap-3 text-xl font-bold">
                     @php
                         use App\Helpers\SiteHelper;
                         $logoUrl = SiteHelper::getLogo('transparent');

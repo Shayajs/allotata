@@ -38,13 +38,15 @@
                     use App\Helpers\SiteHelper;
                     $logoUrl = SiteHelper::getLogo('transparent');
                 @endphp
-                @if($logoUrl)
-                    <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-6 w-auto">
-                @else
-                    <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
-                        Allo Tata
-                    </span>
-                @endif
+                <a href="{{ route('home') }}" class="flex items-center">
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-6 w-auto">
+                    @else
+                        <span class="text-lg font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                            Allo Tata
+                        </span>
+                    @endif
+                </a>
                 <button onclick="closeBurgerMenu('{{ $uniqueId }}')" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
