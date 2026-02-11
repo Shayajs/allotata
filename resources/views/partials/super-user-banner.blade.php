@@ -1,6 +1,6 @@
 <!-- Bandeau Impersonation Super-User -->
 @if(session('original_admin_id'))
-<div class="bg-red-600 text-white px-4 py-3 flex items-center justify-between shadow-lg fixed top-0 left-0 right-0 z-[100]" style="padding-top: env(safe-area-inset-top); max-width: 100vw; box-sizing: border-box;">
+<div class="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-lg fixed top-2 left-2 right-2 z-[100] rounded-lg" style="padding-top: env(safe-area-inset-top); max-width: calc(100vw - 1rem); box-sizing: border-box;">
     <div class="flex items-center gap-3">
         <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
