@@ -747,6 +747,7 @@
         {{-- Tabs --}}
         <div class="sidebar-tabs">
             <button type="button" class="sidebar-tab active" data-tab="blocks">Blocs</button>
+            <button type="button" class="sidebar-tab" data-tab="pages">Pages</button>
             <button type="button" class="sidebar-tab" data-tab="properties">Propriétés</button>
             <button type="button" class="sidebar-tab" data-tab="theme">Thème</button>
             <button type="button" class="sidebar-tab" data-tab="settings">Réglages</button>
@@ -828,9 +829,81 @@
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
                     <span>Colonnes</span>
                 </div>
+                {{-- Blocs spéciaux --}}
+                <div class="col-span-2 mt-2 mb-1"><span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Spéciaux</span></div>
+                <div class="block-item" data-block-type="reservation">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Réservation</span>
+                </div>
+                <div class="block-item" data-block-type="agenda">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Agenda</span>
+                </div>
+                <div class="block-item" data-block-type="login-cta">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span>Connexion</span>
+                </div>
             </div>
         </div>
         
+        {{-- Tab: Pages (Onglets) --}}
+        <div id="tab-pages" class="sidebar-tab-content">
+            <div class="p-4 border-b border-slate-700">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-white text-sm">Pages / Onglets</h3>
+                    <button type="button" onclick="showAddPageModal()" class="text-xs bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded-lg transition">
+                        + Ajouter
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400">Gérez les onglets de votre site. Glissez pour réordonner.</p>
+            </div>
+
+            {{-- Style de navigation --}}
+            <div class="p-4 border-b border-slate-700">
+                <label class="block text-xs font-medium text-slate-300 mb-2">Style de navigation</label>
+                <select id="nav-style-select" onchange="updateNavStyle(this.value)" class="w-full bg-slate-700 border-slate-600 text-white text-sm rounded-lg px-3 py-2">
+                    <option value="tabs" {{ ($entreprise->contenu_site_web['theme']['navigation_style'] ?? 'tabs') === 'tabs' ? 'selected' : '' }}>Onglets horizontaux</option>
+                    <option value="navbar" {{ ($entreprise->contenu_site_web['theme']['navigation_style'] ?? 'tabs') === 'navbar' ? 'selected' : '' }}>Barre de navigation</option>
+                    <option value="sidebar" {{ ($entreprise->contenu_site_web['theme']['navigation_style'] ?? 'tabs') === 'sidebar' ? 'selected' : '' }}>Menu latéral</option>
+                </select>
+            </div>
+
+            {{-- Liste des pages --}}
+            <div id="pages-list" class="p-2">
+                <div class="text-center py-8 text-slate-400">
+                    <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="text-xs">Chargement...</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal ajout de page --}}
+        <div id="add-page-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/50">
+            <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                <h3 class="text-lg font-bold text-white mb-4">Ajouter une page</h3>
+                <form onsubmit="event.preventDefault(); createPage();">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Type</label>
+                        <select id="new-page-type" class="w-full bg-slate-700 border-slate-600 text-white text-sm rounded-lg px-3 py-2" onchange="toggleNewPageName(this.value)">
+                            <option value="custom">Page personnalisée</option>
+                            <option value="reservation">Réservation (système)</option>
+                            <option value="services">Services (système)</option>
+                            <option value="contact">Contact (système)</option>
+                            <option value="agenda">Agenda (système)</option>
+                        </select>
+                    </div>
+                    <div class="mb-4" id="new-page-name-group">
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Nom de la page</label>
+                        <input type="text" id="new-page-name" class="w-full bg-slate-700 border-slate-600 text-white text-sm rounded-lg px-3 py-2" placeholder="Ex: À propos, Tarifs...">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="hideAddPageModal()" class="flex-1 px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 rounded-xl transition">Annuler</button>
+                        <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-xl transition">Créer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- Tab: Propriétés --}}
         <div id="tab-properties" class="sidebar-tab-content">
             <div id="block-properties" class="p-4">
@@ -2025,6 +2098,177 @@
                 e.preventDefault();
                 e.returnValue = '';
             }
+        });
+
+        // ═══════════════════════════════════════════════════════
+        //  Gestion des Pages (Onglets)
+        // ═══════════════════════════════════════════════════════
+
+        const pagesBaseUrl = '/w/{{ $entreprise->slug_web ?? $entreprise->slug }}/pages';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        let pagesData = @json($entreprise->siteWebPages ?? []);
+
+        // Noms par défaut pour les types système
+        const systemTypeNames = {
+            reservation: 'Réservation',
+            services: 'Services',
+            contact: 'Contact',
+            agenda: 'Agenda',
+        };
+
+        const systemTypeIcons = {
+            reservation: '📅', services: '💼', contact: '📧', agenda: '🕐', custom: '📄',
+        };
+
+        function renderPagesList() {
+            const list = document.getElementById('pages-list');
+            if (!pagesData || pagesData.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="text-xs mb-2">Aucune page créée</p>
+                        <p class="text-[10px] text-slate-500">Ajoutez des onglets pour organiser votre site</p>
+                    </div>`;
+                return;
+            }
+
+            // Trier par ordre
+            const sorted = [...pagesData].sort((a, b) => a.ordre - b.ordre);
+
+            list.innerHTML = sorted.map(page => `
+                <div class="flex items-center gap-2 p-2.5 mb-1 rounded-xl bg-slate-700/50 hover:bg-slate-700 group transition cursor-grab" data-page-id="${page.id}" draggable="true">
+                    <span class="text-sm flex-shrink-0">${systemTypeIcons[page.type] || '📄'}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate">${page.nom}</p>
+                        <p class="text-[10px] text-slate-400">${page.type === 'custom' ? 'Personnalisée' : 'Système'} &bull; /${page.slug}</p>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                        <button type="button" onclick="togglePageActive(${page.id}, ${page.est_actif ? 'false' : 'true'})" title="${page.est_actif ? 'Désactiver' : 'Activer'}"
+                                class="p-1 rounded-lg hover:bg-slate-600 transition ${page.est_actif ? 'text-green-400' : 'text-slate-500'}">
+                            <svg class="w-4 h-4" fill="${page.est_actif ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                        <button type="button" onclick="deletePage(${page.id})" title="Supprimer" class="p-1 rounded-lg hover:bg-red-600/20 text-slate-400 hover:text-red-400 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Drag & drop pour réordonner
+            if (window.Sortable) {
+                new Sortable(list, {
+                    animation: 150,
+                    ghostClass: 'opacity-30',
+                    handle: '[draggable]',
+                    onEnd: async function() {
+                        const ids = Array.from(list.querySelectorAll('[data-page-id]')).map(el => parseInt(el.dataset.pageId));
+                        try {
+                            await fetch(pagesBaseUrl + '/reorder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                                body: JSON.stringify({ order: ids }),
+                            });
+                            // Mettre à jour l'ordre local
+                            ids.forEach((id, i) => {
+                                const p = pagesData.find(p => p.id === id);
+                                if (p) p.ordre = i;
+                            });
+                        } catch (e) { console.error(e); }
+                    }
+                });
+            }
+        }
+
+        function showAddPageModal() {
+            document.getElementById('add-page-modal').classList.remove('hidden');
+            document.getElementById('new-page-name').value = '';
+            document.getElementById('new-page-type').value = 'custom';
+            toggleNewPageName('custom');
+        }
+
+        function hideAddPageModal() {
+            document.getElementById('add-page-modal').classList.add('hidden');
+        }
+
+        function toggleNewPageName(type) {
+            const group = document.getElementById('new-page-name-group');
+            const input = document.getElementById('new-page-name');
+            if (type !== 'custom') {
+                group.style.opacity = '0.5';
+                input.value = systemTypeNames[type] || type;
+            } else {
+                group.style.opacity = '1';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        async function createPage() {
+            const type = document.getElementById('new-page-type').value;
+            const nom = document.getElementById('new-page-name').value || systemTypeNames[type] || 'Nouvelle page';
+
+            try {
+                const res = await fetch(pagesBaseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify({ nom, type }),
+                });
+                const data = await res.json();
+                if (data.success && data.page) {
+                    pagesData.push(data.page);
+                    renderPagesList();
+                    hideAddPageModal();
+                } else {
+                    alert(data.error || 'Erreur lors de la création');
+                }
+            } catch (e) {
+                alert('Erreur réseau');
+                console.error(e);
+            }
+        }
+
+        async function togglePageActive(pageId, active) {
+            try {
+                const res = await fetch(pagesBaseUrl + '/' + pageId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                    body: JSON.stringify({ est_actif: active }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const p = pagesData.find(p => p.id === pageId);
+                    if (p) p.est_actif = active;
+                    renderPagesList();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function deletePage(pageId) {
+            if (!confirm('Supprimer cette page ?')) return;
+            try {
+                const res = await fetch(pagesBaseUrl + '/' + pageId, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    pagesData = pagesData.filter(p => p.id !== pageId);
+                    renderPagesList();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateNavStyle(style) {
+            // Sauvegarder dans le thème
+            if (editorState.content && editorState.content.theme) {
+                editorState.content.theme.navigation_style = style;
+                editorState.hasUnsavedChanges = true;
+            }
+        }
+
+        // Charger la liste des pages au démarrage
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPagesList();
         });
     </script>
 </body>

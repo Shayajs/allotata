@@ -3,9 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
+use App\Models\EntrepriseMembre;
+use App\Models\Reservation;
+use App\Models\SiteWebPage;
 use App\Models\SiteWebVersion;
+use App\Models\TypeService;
+use App\Services\ExceptionDateService;
 use App\Services\ImageService;
 use App\Services\SiteWebTemplateService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -14,18 +20,24 @@ use Illuminate\Support\Str;
 class SiteWebController extends Controller
 {
     /**
+     * Résoudre l'entreprise par slug (public).
+     */
+    private function resolveEntreprise(string $slug): ?Entreprise
+    {
+        $entreprise = Entreprise::where('slug_web', $slug)->first();
+        if (!$entreprise) {
+            $entreprise = Entreprise::where('slug', $slug)->first();
+        }
+        return $entreprise;
+    }
+
+    /**
      * Afficher le site web vitrine d'une entreprise
      */
     public function show(Request $request, $slug)
     {
-        // Chercher d'abord par slug_web
-        $entreprise = Entreprise::where('slug_web', $slug)->first();
+        $entreprise = $this->resolveEntreprise($slug);
 
-        // Si pas trouvé par slug_web, chercher par slug classique
-        if (!$entreprise) {
-            $entreprise = Entreprise::where('slug', $slug)->first();
-        }
-        
         if (!$entreprise) {
             abort(404, 'Site web introuvable. Vérifiez que le slug est correct.');
         }
@@ -35,71 +47,292 @@ class SiteWebController extends Controller
 
         // Si ce n'est pas le propriétaire, vérifier les conditions strictes
         if (!$isOwner) {
-            // L'entreprise doit être vérifiée pour les visiteurs
             if (!$entreprise->est_verifiee) {
                 abort(404, 'Site web non disponible.');
             }
-
-            // L'entreprise doit avoir un abonnement site web actif pour les visiteurs
             if (!$entreprise->aSiteWebActif()) {
                 abort(404, 'Site web non disponible.');
             }
-            
-            // Les visiteurs doivent accéder via le bon slug (slug_web si défini, sinon slug)
             $expectedSlug = $entreprise->slug_web ?? $entreprise->slug;
-            
             if ($slug !== $expectedSlug) {
-                // Si le slug utilisé n'est pas celui attendu, on redirige ou 404
-                // Ici 404 pour sécurité
                 abort(404, 'Site web introuvable.');
             }
-        } else {
-            // Le propriétaire peut accéder même si l'entreprise n'est pas vérifiée ou n'a pas d'abonnement
-            // Mais on affiche un avertissement si nécessaire
         }
-        
+
         // Déterminer le mode
         $requestedMode = $request->query('mode');
-        
+
         if ($isOwner) {
-            // Si le propriétaire accède sans paramètre ?mode=, mode édition par défaut
-            if ($requestedMode === null) {
-                $mode = 'edit';
-            } 
-            // Si le propriétaire force le mode view avec ?mode=view
-            else if ($requestedMode === 'view') {
-                $mode = 'view';
-            }
-            // Si le propriétaire force le mode edit avec ?mode=edit (redondant mais possible)
-            else {
-                $mode = 'edit';
-            }
+            $mode = ($requestedMode === 'view') ? 'view' : 'edit';
         } else {
-            // Si ce n'est pas le propriétaire, toujours en mode view
             $mode = 'view';
         }
 
         if ($mode === 'edit') {
-            // Charger les relations nécessaires
-            $entreprise->load(['realisationPhotos', 'typesServices', 'avis']);
-            
-            // Générer le contenu initial si vide
+            $entreprise->load(['realisationPhotos', 'typesServices', 'avis', 'siteWebPages']);
+
             if (empty($entreprise->contenu_site_web) || empty($entreprise->contenu_site_web['blocks'])) {
                 $templateService = app(SiteWebTemplateService::class);
                 $templateService->applyTemplate($entreprise, 'default');
                 $entreprise->refresh();
             }
-            
+
             return view('public.site-web-edit', [
                 'entreprise' => $entreprise,
                 'isOwner' => $isOwner,
             ]);
         }
 
+        // ── Mode view : résoudre l'onglet actif ──────────────
+        $pages = $entreprise->siteWebPagesActives;
+        $tabSlug = $request->query('tab');
+
+        // Si l'entreprise a des pages en BDD, les utiliser
+        if ($pages->count() > 0) {
+            $currentPage = $tabSlug
+                ? $pages->firstWhere('slug', $tabSlug)
+                : $pages->first();
+
+            if (!$currentPage) {
+                $currentPage = $pages->first();
+            }
+
+            // Données supplémentaires pour les onglets système
+            $extraData = $this->loadSystemTabData($entreprise, $currentPage);
+
+            return view('public.site-web', array_merge([
+                'entreprise' => $entreprise,
+                'isOwner'    => $isOwner,
+                'pages'      => $pages,
+                'currentPage' => $currentPage,
+            ], $extraData));
+        }
+
+        // Fallback : pas de pages en BDD → rendu classique (contenu_site_web)
         return view('public.site-web', [
-            'entreprise' => $entreprise,
-            'isOwner' => $isOwner,
+            'entreprise'  => $entreprise,
+            'isOwner'     => $isOwner,
+            'pages'       => collect(),
+            'currentPage' => null,
         ]);
+    }
+
+    /**
+     * Charger les données nécessaires aux onglets système.
+     */
+    private function loadSystemTabData(Entreprise $entreprise, SiteWebPage $page): array
+    {
+        if (!$page->isSystemTab()) {
+            return [];
+        }
+
+        switch ($page->type) {
+            case 'reservation':
+            case 'agenda':
+                return $this->getAgendaData($entreprise);
+
+            case 'services':
+                $entreprise->load(['typesServices' => fn($q) => $q->where('est_actif', true)->with('options.choices', 'imageCouverture', 'serviceAvis')]);
+                return ['services' => $entreprise->typesServices];
+
+            case 'contact':
+                return [];
+
+            default:
+                return [];
+        }
+    }
+
+    /**
+     * Données pour l'onglet agenda / réservation.
+     */
+    private function getAgendaData(Entreprise $entreprise): array
+    {
+        $entreprise->load(['typesServices' => fn($q) => $q->where('est_actif', true)->with('options.choices')]);
+
+        $membres = collect();
+        $aGestionMultiPersonnes = $entreprise->aGestionMultiPersonnes();
+        if ($aGestionMultiPersonnes) {
+            $membres = $entreprise->membres()->where('est_actif', true)->with('user')->get();
+        }
+
+        $horairesRaw = $entreprise->horairesOuverture()->orderBy('jour_semaine')->orderBy('ordre_plage')->get();
+        $horaires = $horairesRaw->map(fn($h) => [
+            'id'               => $h->id,
+            'jour_semaine'     => $h->jour_semaine,
+            'heure_ouverture'  => $h->heure_ouverture ? Carbon::parse($h->heure_ouverture)->format('H:i') : null,
+            'heure_fermeture'  => $h->heure_fermeture ? Carbon::parse($h->heure_fermeture)->format('H:i') : null,
+            'est_exceptionnel' => $h->est_exceptionnel,
+            'date_exception'   => $h->date_exception ? $h->date_exception->format('Y-m-d') : null,
+        ]);
+
+        // Info utilisateur connecté pour pré-remplissage
+        $user = Auth::user();
+        $userInfo = null;
+        if ($user) {
+            $userInfo = [
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'telephone' => $user->telephone ?? '',
+            ];
+        }
+
+        return [
+            'horaires'                => $horaires,
+            'jours'                   => [],
+            'membres'                 => $membres,
+            'aGestionMultiPersonnes'  => $aGestionMultiPersonnes,
+            'userInfo'                => $userInfo,
+        ];
+    }
+
+    /**
+     * Retourne le partial HTML du formulaire de réservation (AJAX).
+     */
+    public function reservationForm(Request $request, $slug)
+    {
+        $entreprise = $this->resolveEntreprise($slug);
+        if (!$entreprise) {
+            abort(404);
+        }
+
+        $data = $this->getAgendaData($entreprise);
+
+        return view('components.site-web.partials.reservation-form', array_merge(
+            ['entreprise' => $entreprise],
+            $data,
+        ));
+    }
+
+    /**
+     * Stocker une réservation depuis le site vitrine (guest ou connecté).
+     */
+    public function storeReservationWeb(Request $request, $slug)
+    {
+        $entreprise = $this->resolveEntreprise($slug);
+        if (!$entreprise) {
+            abort(404);
+        }
+
+        $typeService = TypeService::where('id', $request->input('type_service_id'))
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_actif', true)
+            ->firstOrFail();
+
+        $isDateButoire = $typeService->estDateButoire();
+
+        $rules = [
+            'type_service_id'    => 'required|exists:types_services,id',
+            'membre_id'          => 'nullable|exists:entreprise_membres,id',
+            'lieu'               => 'nullable|string|max:255',
+            'telephone_client'   => 'required|string|max:20',
+            'telephone_cache'    => 'boolean',
+            'notes'              => 'nullable|string',
+            // Champs guest
+            'nom_client'         => 'nullable|string|max:255',
+            'email_client'       => 'nullable|email|max:255',
+        ];
+
+        if ($isDateButoire) {
+            $rules['date_butoire'] = 'required|date|after_or_equal:today';
+        } else {
+            $rules['date_reservation'] = 'required|date|after:now';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Calculer la date de début
+        if ($isDateButoire) {
+            $debutReservation = Carbon::parse($validated['date_butoire'] . ' 00:00:00');
+        } else {
+            $debutReservation = Carbon::parse($validated['date_reservation'] . ' ' . $validated['heure_reservation']);
+        }
+
+        $userId = Auth::id();
+
+        // Gérer le membre
+        $membreId = null;
+        if (!empty($validated['membre_id'])) {
+            $membre = EntrepriseMembre::where('id', $validated['membre_id'])
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+            if ($membre) {
+                $membreId = $membre->id;
+            }
+        }
+
+        // Prix et durée
+        $prixTotal = $typeService->prix ?? 0;
+        $dureeTotal = $typeService->duree_minutes ?? 30;
+
+        // Traiter les options de service
+        $serviceOptions = $request->input('service_options', []);
+        foreach ($serviceOptions as $optionId => $choiceId) {
+            $choice = \App\Models\ServiceOptionChoice::find($choiceId);
+            if ($choice) {
+                $prixTotal += $choice->prix_supplementaire ?? 0;
+                $dureeTotal += $choice->temps_supplementaire ?? 0;
+            }
+        }
+
+        // Créer la réservation
+        $reservation = Reservation::create([
+            'user_id'                     => $userId,
+            'entreprise_id'               => $entreprise->id,
+            'type_service_id'             => $typeService->id,
+            'membre_id'                   => $membreId,
+            'date_reservation'            => $isDateButoire ? null : $debutReservation,
+            'date_fin'                    => $isDateButoire ? null : $debutReservation->copy()->addMinutes($dureeTotal),
+            'date_butoire'                => $isDateButoire ? $debutReservation : null,
+            'lieu'                        => $validated['lieu'] ?? null,
+            'telephone_client'            => $userId ? $validated['telephone_client'] : null,
+            'telephone_client_non_inscrit' => !$userId ? $validated['telephone_client'] : null,
+            'telephone_cache'             => $validated['telephone_cache'] ?? false,
+            'notes'                       => $validated['notes'] ?? null,
+            'nom_client'                  => !$userId ? ($validated['nom_client'] ?? null) : null,
+            'email_client'                => !$userId ? ($validated['email_client'] ?? null) : null,
+            'prix'                        => $prixTotal,
+            'duree_minutes'               => $dureeTotal,
+            'statut'                      => $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente',
+            'hash'                        => Str::random(64),
+        ]);
+
+        $redirectUrl = route('site-web.show', ['slug' => $slug]) . '?tab=reservation';
+
+        return redirect($redirectUrl)
+            ->with('success', 'Votre réservation a bien été enregistrée !');
+    }
+
+    /**
+     * Retourne les réservations en JSON pour le calendrier embarqué.
+     */
+    public function getReservationsWeb($slug)
+    {
+        $entreprise = $this->resolveEntreprise($slug);
+        if (!$entreprise) {
+            return response()->json([]);
+        }
+
+        $membreId = request()->get('membre_id');
+
+        $query = Reservation::where('entreprise_id', $entreprise->id)
+            ->whereIn('statut', ['en_attente', 'confirmee']);
+
+        if ($membreId && $entreprise->aGestionMultiPersonnes()) {
+            $query->where('membre_id', $membreId);
+        }
+
+        $reservations = $query->get()->map(fn($r) => [
+            'id'    => $r->id,
+            'title' => 'Indisponible',
+            'start' => Carbon::parse($r->date_reservation)->toIso8601String(),
+            'end'   => Carbon::parse($r->date_reservation)->addMinutes((int) ($r->duree_minutes ?? 30))->toIso8601String(),
+            'color' => '#9ca3af',
+        ]);
+
+        return response()->json($reservations);
     }
 
     /**
@@ -526,7 +759,7 @@ class SiteWebController extends Controller
         $validated = $request->validate([
             'block' => ['required', 'array'],
             'block.id' => ['required', 'string'],
-            'block.type' => ['required', 'string', 'in:hero,text,image,gallery,contact,video,services,testimonials,cta,divider,iframe,faq,team,stats,features,map,columns'],
+            'block.type' => ['required', 'string', 'in:hero,text,image,gallery,contact,video,services,testimonials,cta,divider,iframe,faq,team,stats,features,map,columns,reservation,agenda,login-cta'],
             'block.content' => ['required', 'array'],
             'block.settings' => ['nullable', 'array'],
             'block.animation' => ['nullable', 'string'],
@@ -554,5 +787,130 @@ class SiteWebController extends Controller
                 'error' => 'Erreur lors du rendu du bloc: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CRUD Pages (Onglets)
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Créer une nouvelle page (onglet).
+     */
+    public function storePage(Request $request, $slug)
+    {
+        $entreprise = $this->findEntrepriseBySlug($slug);
+        if (!$entreprise) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $validated = $request->validate([
+            'nom'  => 'required|string|max:255',
+            'type' => 'required|string|in:custom,reservation,agenda,contact,services',
+            'icone' => 'nullable|string|max:50',
+        ]);
+
+        // Vérifier l'unicité des types systeme (un seul onglet reservation, etc.)
+        if (in_array($validated['type'], SiteWebPage::SYSTEM_TYPES)) {
+            $exists = $entreprise->siteWebPages()->where('type', $validated['type'])->exists();
+            if ($exists) {
+                return response()->json([
+                    'error' => 'Un onglet de type "' . $validated['type'] . '" existe déjà.',
+                ], 422);
+            }
+        }
+
+        $pageSlug = Str::slug($validated['nom']);
+        // Assurer l'unicité du slug pour cette entreprise
+        $baseSlug = $pageSlug;
+        $counter = 1;
+        while ($entreprise->siteWebPages()->where('slug', $pageSlug)->exists()) {
+            $pageSlug = $baseSlug . '-' . $counter++;
+        }
+
+        $maxOrdre = $entreprise->siteWebPages()->max('ordre') ?? -1;
+
+        $page = $entreprise->siteWebPages()->create([
+            'nom'      => $validated['nom'],
+            'slug'     => $pageSlug,
+            'type'     => $validated['type'],
+            'blocs'    => $validated['type'] === 'custom' ? [] : null,
+            'ordre'    => $maxOrdre + 1,
+            'est_actif' => true,
+            'icone'    => $validated['icone'] ?? null,
+        ]);
+
+        return response()->json(['success' => true, 'page' => $page]);
+    }
+
+    /**
+     * Mettre à jour une page.
+     */
+    public function updatePage(Request $request, $slug, $pageId)
+    {
+        $entreprise = $this->findEntrepriseBySlug($slug);
+        if (!$entreprise) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $page = $entreprise->siteWebPages()->findOrFail($pageId);
+
+        $validated = $request->validate([
+            'nom'      => 'sometimes|string|max:255',
+            'blocs'    => 'sometimes|nullable|array',
+            'est_actif' => 'sometimes|boolean',
+            'icone'    => 'sometimes|nullable|string|max:50',
+        ]);
+
+        if (isset($validated['nom']) && $validated['nom'] !== $page->nom) {
+            $newSlug = Str::slug($validated['nom']);
+            $base = $newSlug;
+            $c = 1;
+            while ($entreprise->siteWebPages()->where('slug', $newSlug)->where('id', '!=', $page->id)->exists()) {
+                $newSlug = $base . '-' . $c++;
+            }
+            $validated['slug'] = $newSlug;
+        }
+
+        $page->update($validated);
+
+        return response()->json(['success' => true, 'page' => $page->fresh()]);
+    }
+
+    /**
+     * Supprimer une page.
+     */
+    public function deletePage(Request $request, $slug, $pageId)
+    {
+        $entreprise = $this->findEntrepriseBySlug($slug);
+        if (!$entreprise) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $page = $entreprise->siteWebPages()->findOrFail($pageId);
+        $page->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Réordonner les pages.
+     */
+    public function reorderPages(Request $request, $slug)
+    {
+        $entreprise = $this->findEntrepriseBySlug($slug);
+        if (!$entreprise) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:site_web_pages,id',
+        ]);
+
+        foreach ($validated['order'] as $index => $pageId) {
+            $entreprise->siteWebPages()->where('id', $pageId)->update(['ordre' => $index]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }
