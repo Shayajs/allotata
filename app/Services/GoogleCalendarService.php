@@ -34,13 +34,30 @@ class GoogleCalendarService
         $client = $this->createBaseClient();
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
+        Log::info('Google Calendar OAuth token reçu pour entreprise #' . $entreprise->id, [
+            'has_access_token' => isset($token['access_token']),
+            'has_refresh_token' => isset($token['refresh_token']),
+            'expires_in' => $token['expires_in'] ?? null,
+            'error' => $token['error'] ?? null,
+        ]);
+
         if (isset($token['error'])) {
             throw new \Exception('Erreur Google OAuth : ' . ($token['error_description'] ?? $token['error']));
         }
 
+        if (empty($token['access_token'])) {
+            throw new \Exception('Google n\'a pas retourné de token d\'accès.');
+        }
+
+        $refreshToken = $token['refresh_token'] ?? $entreprise->google_refresh_token;
+
+        if (empty($refreshToken)) {
+            Log::warning('Google Calendar : aucun refresh_token reçu pour entreprise #' . $entreprise->id . '. L\'utilisateur devra peut-être révoquer l\'accès dans son compte Google et reconnecter.');
+        }
+
         $entreprise->update([
             'google_access_token' => $token['access_token'],
-            'google_refresh_token' => $token['refresh_token'] ?? $entreprise->google_refresh_token,
+            'google_refresh_token' => $refreshToken,
             'google_token_expires_at' => now()->addSeconds($token['expires_in'] ?? 3600),
             'google_calendar_id' => 'primary',
         ]);
