@@ -552,7 +552,7 @@
     </form>
 
     <!-- Google Calendar -->
-    <div class="mt-8 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
+    <div class="mt-8 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6" id="google-calendar-section">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -572,6 +572,24 @@
                 </span>
             @endif
         </div>
+
+        {{-- Messages flash spécifiques Google Calendar --}}
+        @if(session('success') && str_contains(session('success'), 'Google'))
+            <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-sm font-medium text-green-800 dark:text-green-300">{{ session('success') }}</p>
+            </div>
+        @endif
+        @if(session('error') && str_contains(session('error'), 'Google'))
+            <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg flex items-center gap-2">
+                <svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
+            </div>
+        @endif
 
         @if($entreprise->aGoogleCalendar())
             <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">

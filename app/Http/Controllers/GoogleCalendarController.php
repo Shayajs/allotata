@@ -38,6 +38,14 @@ class GoogleCalendarController extends Controller
      */
     public function callback(Request $request)
     {
+        Log::info('=== Google Calendar callback atteint ===', [
+            'has_code' => $request->has('code'),
+            'has_state' => $request->has('state'),
+            'has_error' => $request->has('error'),
+            'session_slug' => session('google_calendar_entreprise_slug'),
+            'user_id' => auth()->id(),
+        ]);
+
         $slug = session('google_calendar_entreprise_slug', 'dashboard');
 
         if ($request->has('error')) {
@@ -48,7 +56,7 @@ class GoogleCalendarController extends Controller
         }
 
         $code = $request->get('code');
-        $entrepriseId = $request->get('state'); // L'ID de l'entreprise qu'on a passé en state
+        $entrepriseId = $request->get('state');
 
         if (!$code || !$entrepriseId) {
             Log::warning('Google Calendar callback : paramètres manquants', [
@@ -63,14 +71,24 @@ class GoogleCalendarController extends Controller
         try {
             $entreprise = Entreprise::findOrFail($entrepriseId);
 
-            // Vérifier que l'utilisateur peut gérer cette entreprise
             if (!$entreprise->peutEtreGereePar(auth()->user())) {
                 abort(403, 'Vous n\'avez pas accès à cette entreprise.');
             }
 
             $slug = $entreprise->slug;
 
+            Log::info('Google Calendar : échange du code OAuth pour entreprise #' . $entreprise->id);
+
             $this->googleCalendarService->handleCallback($code, $entreprise);
+
+            // Rafraîchir l'entreprise depuis la BDD pour confirmer la sauvegarde
+            $entreprise->refresh();
+
+            Log::info('Google Calendar : tokens sauvegardés pour entreprise #' . $entreprise->id, [
+                'has_access_token' => !empty($entreprise->google_access_token),
+                'has_refresh_token' => !empty($entreprise->google_refresh_token),
+                'aGoogleCalendar' => $entreprise->aGoogleCalendar(),
+            ]);
 
             // Mettre en place le webhook pour la sync bidirectionnelle
             try {
@@ -84,6 +102,7 @@ class GoogleCalendarController extends Controller
                 ->with('success', 'Google Calendar connecté avec succès ! Vos réservations seront synchronisées automatiquement.');
         } catch (\Throwable $e) {
             Log::error('Erreur callback Google Calendar : ' . $e->getMessage(), [
+                'exception_class' => get_class($e),
                 'trace' => $e->getTraceAsString(),
                 'entreprise_id' => $entrepriseId,
             ]);
