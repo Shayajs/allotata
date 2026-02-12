@@ -553,28 +553,49 @@
 
     <!-- Google Calendar -->
     <div class="mt-8 bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
-        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            Synchronisation Google Agenda
-        </h3>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Synchronisation Google Agenda
+            </h3>
+            @if($entreprise->aGoogleCalendar())
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-bold rounded-full border border-green-300 dark:border-green-700">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Connecté
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400 text-xs font-medium rounded-full">
+                    <span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+                    Non connecté
+                </span>
+            @endif
+        </div>
 
         @if($entreprise->aGoogleCalendar())
             <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-white dark:bg-green-800 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-semibold text-green-800 dark:text-green-300">
-                            Google Agenda est connecte
+                            Google Agenda est connecté
                         </p>
                         <p class="text-xs text-green-600 dark:text-green-400 mt-1">
-                            Vos reservations sont automatiquement synchronisees avec votre agenda Google. Les evenements ajoutes sur Google creent des indisponibilites dans Allotata.
+                            Vos réservations sont automatiquement synchronisées avec votre agenda Google. Les événements ajoutés sur Google créent des indisponibilités dans Allotata.
                         </p>
+                        @if($entreprise->google_token_expires_at)
+                            <p class="text-xs text-green-500 dark:text-green-500 mt-2">
+                                Token valide jusqu'au {{ $entreprise->google_token_expires_at->format('d/m/Y à H:i') }} (rafraîchi automatiquement)
+                            </p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -583,24 +604,24 @@
                 @csrf
                 <button
                     type="submit"
-                    onclick="return confirm('Deconnecter Google Agenda ? La synchronisation sera arretee.')"
-                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
+                    onclick="return confirm('Déconnecter Google Agenda ? La synchronisation sera arrêtée.')"
+                    class="px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg transition border border-red-200 dark:border-red-800 flex items-center gap-2"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                     </svg>
-                    Deconnecter Google Agenda
+                    Déconnecter Google Agenda
                 </button>
             </form>
         @else
             <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
                 <p class="text-sm text-blue-800 dark:text-blue-300 mb-2">
-                    Connectez votre Google Agenda pour synchroniser automatiquement vos reservations. Les nouvelles reservations apparaitront sur votre calendrier Google, et les evenements ajoutes sur Google bloqueront les creneaux dans Allotata.
+                    Connectez votre Google Agenda pour synchroniser automatiquement vos réservations. Les nouvelles réservations apparaîtront sur votre calendrier Google, et les événements ajoutés sur Google bloqueront les créneaux dans Allotata.
                 </p>
                 <ul class="text-xs text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
                     <li>Synchronisation bidirectionnelle automatique</li>
-                    <li>Evitez les doublons de rendez-vous</li>
-                    <li>Vos creneaux occupes sur Google deviennent indisponibles ici</li>
+                    <li>Évitez les doublons de rendez-vous</li>
+                    <li>Vos créneaux occupés sur Google deviennent indisponibles ici</li>
                 </ul>
             </div>
 
