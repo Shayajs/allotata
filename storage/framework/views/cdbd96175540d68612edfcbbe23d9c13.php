@@ -40,7 +40,7 @@
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
         <?php echo $__env->make('partials.super-user-banner', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky <?php echo e(session('original_admin_id') ? 'top-[52px]' : 'top-0'); ?> z-40">
+        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-2 sm:gap-4">
@@ -390,6 +390,42 @@
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Fidélisation</span>
                         </button>
 
+                        <!-- Site Web Vitrine -->
+                        <?php if($aSiteWebActif): ?>
+                            <a 
+                                href="<?php echo e(route('site-web.show', $entreprise->slug_web ?? $entreprise->slug)); ?>?mode=edit"
+                                class="w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-700 dark:text-blue-400 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 border border-blue-200/50 dark:border-blue-800/50"
+                            >
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                                </svg>
+                                <span class="hidden xl:inline font-semibold">Site Web</span>
+                                <svg class="hidden xl:inline w-4 h-4 ml-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Site Web</span>
+                            </a>
+                        <?php else: ?>
+                            <button 
+                                onclick="document.getElementById('site-web-upsell-overlay').classList.remove('hidden')"
+                                class="w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300"
+                            >
+                                <div class="relative flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                                    </svg>
+                                    <svg class="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <span class="hidden xl:inline">Site Web</span>
+                                <svg class="hidden xl:inline w-3.5 h-3.5 ml-auto text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Site Web (verrouillé)</span>
+                            </button>
+                        <?php endif; ?>
+
                         <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
 
                         <!-- Abonnements -->
@@ -694,6 +730,154 @@
         
         <!-- Modal Produits (Déplacé ici pour éviter les problèmes de z-index/transform) -->
         <?php echo $__env->make('entreprise.dashboard.tabs.stock-modal-content', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
+        <!-- Overlay Upsell Site Web Vitrine -->
+        <?php if(!$aSiteWebActif): ?>
+        <?php
+            $userHasPremium = auth()->user()->aAbonnementActif();
+            $peutEssayerSiteWeb = $entreprise->peutDemarrerEssai('site_web');
+        ?>
+        <div id="site-web-upsell-overlay" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('site-web-upsell-overlay').classList.add('hidden')"></div>
+            
+            <!-- Card -->
+            <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full overflow-hidden">
+                <!-- Header gradient -->
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
+                    <div class="w-16 h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Votre site vitrine professionnel</h3>
+                    <p class="text-blue-100 mt-2 text-sm">Donnez une vitrine en ligne a votre activite</p>
+                </div>
+
+                <!-- Content -->
+                <div class="px-6 py-6 space-y-4">
+                    <!-- Avertissement Premium requis -->
+                    <?php if(!$userHasPremium): ?>
+                        <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-yellow-800 dark:text-yellow-400">Abonnement Premium requis</p>
+                                    <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Les options d'entreprise necessitent un abonnement Premium actif.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Prix -->
+                    <div class="flex items-center justify-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                        <span class="text-3xl font-extrabold text-green-600 dark:text-green-400"><?php echo e($subscriptionPrices['site_web']['formatted']); ?></span>
+                        <span class="text-slate-500 dark:text-slate-400 text-sm"><?php echo e($subscriptionPrices['site_web']['period'] ?? '/mois'); ?></span>
+                    </div>
+
+                    <!-- Avantages -->
+                    <ul class="space-y-2.5 text-sm">
+                        <li class="flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-slate-700 dark:text-slate-300">Page vitrine personnalisee accessible via /w/<?php echo e($entreprise->slug_web ?? $entreprise->slug); ?></span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-slate-700 dark:text-slate-300">Visible par tous vos clients et prospects</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-slate-700 dark:text-slate-300">Agenda, reservation et contact integres</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-slate-700 dark:text-slate-300">Aucune connaissance technique requise</span>
+                        </li>
+                    </ul>
+
+                    <!-- Boutons -->
+                    <div class="space-y-3 pt-2">
+                        <?php if(!$userHasPremium): ?>
+                            <!-- Pas de Premium : rediriger vers l'abonnement Premium -->
+                            <a href="<?php echo e(route('subscription.index')); ?>" class="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                                <span>🚀</span>
+                                Obtenir l'abonnement Premium
+                            </a>
+                        <?php else: ?>
+                            <!-- Essai gratuit si eligible -->
+                            <?php if($peutEssayerSiteWeb): ?>
+                                <form action="<?php echo e(route('essai-gratuit.entreprise', $entreprise->slug)); ?>" method="POST">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="type" value="site_web">
+                                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/25 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                        <span class="text-lg">🎁</span>
+                                        Essayer gratuitement pendant 7 jours
+                                    </button>
+                                </form>
+                                <p class="text-xs text-center text-slate-400 dark:text-slate-500">Sans engagement &bull; Sans carte bancaire</p>
+                                <div class="relative flex items-center justify-center py-1">
+                                    <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
+                                    <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou</span>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- Bouton souscrire -->
+                            <form action="<?php echo e(route('entreprise.subscriptions.checkout', $entreprise->slug)); ?>" method="POST">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="type" value="site_web">
+                                <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    S'abonner a Site Web Vitrine (<?php echo e($subscriptionPrices['site_web']['formatted']); ?><?php echo e($subscriptionPrices['site_web']['period'] ?? '/mois'); ?>)
+                                </button>
+                            </form>
+                        <?php endif; ?>
+
+                        <!-- Separateur -->
+                        <div class="relative flex items-center justify-center py-1">
+                            <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
+                            <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou bien</span>
+                        </div>
+
+                        <!-- Bouton secondaire : Creer quand meme -->
+                        <a 
+                            href="<?php echo e(route('site-web.show', $entreprise->slug_web ?? $entreprise->slug)); ?>?mode=edit"
+                            class="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Creer mon site quand meme
+                        </a>
+                        <p class="text-xs text-center text-slate-400 dark:text-slate-500">
+                            Votre site ne sera pas visible publiquement tant que l'abonnement n'est pas actif.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Close button -->
+                <button 
+                    onclick="document.getElementById('site-web-upsell-overlay').classList.add('hidden')"
+                    class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php echo $__env->make('partials.footer', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <?php echo $__env->make('partials.cookie-banner', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

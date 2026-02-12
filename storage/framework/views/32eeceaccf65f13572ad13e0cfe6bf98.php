@@ -96,425 +96,118 @@
         </div>
         <div class="h-10"></div>
     <?php endif; ?>
+
+    <?php
+        $slug = $entreprise->slug_web ?? $entreprise->slug;
+        $hasPages = isset($pages) && $pages->count() > 0;
+        $navStyle = $entreprise->contenu_site_web['theme']['navigation_style'] ?? 'tabs';
+        $isSidebar = $hasPages && $navStyle === 'sidebar';
+    ?>
+
     
+    <?php if($hasPages && !$isSidebar): ?>
+        <?php echo $__env->make('components.site-web.navigation.' . $navStyle, [
+            'pages' => $pages,
+            'currentPage' => $currentPage ?? null,
+            'entreprise' => $entreprise,
+            'slug' => $slug,
+        ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <?php endif; ?>
+
     
-    <main>
-        <?php
-            $blocks = $entreprise->getSiteWebBlocks();
-        ?>
+    <div class="<?php echo e($isSidebar ? 'flex flex-col lg:flex-row min-h-screen' : ''); ?>">
+
         
-        <?php if(count($blocks) > 0): ?>
-            <?php $__currentLoopData = $blocks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $block): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <?php
-                    $animation = $block['animation'] ?? 'none';
-                    $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
-                ?>
-                
-                <div class="<?php echo e($animationClass); ?>" data-animation="<?php echo e($animation); ?>">
-                    <?php switch($block['type']):
-                        case ('hero'): ?>
-                            <?php if (isset($component)) { $__componentOriginal7745d108ebf7deee2b7bc694469f3ca2 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal7745d108ebf7deee2b7bc694469f3ca2 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.hero','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.hero'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal7745d108ebf7deee2b7bc694469f3ca2)): ?>
-<?php $attributes = $__attributesOriginal7745d108ebf7deee2b7bc694469f3ca2; ?>
-<?php unset($__attributesOriginal7745d108ebf7deee2b7bc694469f3ca2); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal7745d108ebf7deee2b7bc694469f3ca2)): ?>
-<?php $component = $__componentOriginal7745d108ebf7deee2b7bc694469f3ca2; ?>
-<?php unset($__componentOriginal7745d108ebf7deee2b7bc694469f3ca2); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('text'): ?>
-                            <?php if (isset($component)) { $__componentOriginal64ffcd5500967c73d2e1958da0416329 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal64ffcd5500967c73d2e1958da0416329 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.text','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.text'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal64ffcd5500967c73d2e1958da0416329)): ?>
-<?php $attributes = $__attributesOriginal64ffcd5500967c73d2e1958da0416329; ?>
-<?php unset($__attributesOriginal64ffcd5500967c73d2e1958da0416329); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal64ffcd5500967c73d2e1958da0416329)): ?>
-<?php $component = $__componentOriginal64ffcd5500967c73d2e1958da0416329; ?>
-<?php unset($__componentOriginal64ffcd5500967c73d2e1958da0416329); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('image'): ?>
-                            <?php if (isset($component)) { $__componentOriginal8503e750abbf21a2ac209fab58ac98d8 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal8503e750abbf21a2ac209fab58ac98d8 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.image','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.image'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal8503e750abbf21a2ac209fab58ac98d8)): ?>
-<?php $attributes = $__attributesOriginal8503e750abbf21a2ac209fab58ac98d8; ?>
-<?php unset($__attributesOriginal8503e750abbf21a2ac209fab58ac98d8); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal8503e750abbf21a2ac209fab58ac98d8)): ?>
-<?php $component = $__componentOriginal8503e750abbf21a2ac209fab58ac98d8; ?>
-<?php unset($__componentOriginal8503e750abbf21a2ac209fab58ac98d8); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('gallery'): ?>
-                            <?php if (isset($component)) { $__componentOriginalf17a9807bb1654906e2038773e485502 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalf17a9807bb1654906e2038773e485502 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.gallery','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.gallery'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalf17a9807bb1654906e2038773e485502)): ?>
-<?php $attributes = $__attributesOriginalf17a9807bb1654906e2038773e485502; ?>
-<?php unset($__attributesOriginalf17a9807bb1654906e2038773e485502); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalf17a9807bb1654906e2038773e485502)): ?>
-<?php $component = $__componentOriginalf17a9807bb1654906e2038773e485502; ?>
-<?php unset($__componentOriginalf17a9807bb1654906e2038773e485502); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('contact'): ?>
-                            <?php if (isset($component)) { $__componentOriginal090daa7cd73c0eeaaa8d2caf2c211970 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal090daa7cd73c0eeaaa8d2caf2c211970 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.contact','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.contact'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal090daa7cd73c0eeaaa8d2caf2c211970)): ?>
-<?php $attributes = $__attributesOriginal090daa7cd73c0eeaaa8d2caf2c211970; ?>
-<?php unset($__attributesOriginal090daa7cd73c0eeaaa8d2caf2c211970); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal090daa7cd73c0eeaaa8d2caf2c211970)): ?>
-<?php $component = $__componentOriginal090daa7cd73c0eeaaa8d2caf2c211970; ?>
-<?php unset($__componentOriginal090daa7cd73c0eeaaa8d2caf2c211970); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('video'): ?>
-                            <?php if (isset($component)) { $__componentOriginalf7aeca9d0d1205d3a9387af58eddb8d1 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginalf7aeca9d0d1205d3a9387af58eddb8d1 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.video','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.video'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginalf7aeca9d0d1205d3a9387af58eddb8d1)): ?>
-<?php $attributes = $__attributesOriginalf7aeca9d0d1205d3a9387af58eddb8d1; ?>
-<?php unset($__attributesOriginalf7aeca9d0d1205d3a9387af58eddb8d1); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalf7aeca9d0d1205d3a9387af58eddb8d1)): ?>
-<?php $component = $__componentOriginalf7aeca9d0d1205d3a9387af58eddb8d1; ?>
-<?php unset($__componentOriginalf7aeca9d0d1205d3a9387af58eddb8d1); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('services'): ?>
-                            <?php if (isset($component)) { $__componentOriginal4244f3ed034654166e8ea1db61f02e90 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal4244f3ed034654166e8ea1db61f02e90 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.services','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.services'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal4244f3ed034654166e8ea1db61f02e90)): ?>
-<?php $attributes = $__attributesOriginal4244f3ed034654166e8ea1db61f02e90; ?>
-<?php unset($__attributesOriginal4244f3ed034654166e8ea1db61f02e90); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal4244f3ed034654166e8ea1db61f02e90)): ?>
-<?php $component = $__componentOriginal4244f3ed034654166e8ea1db61f02e90; ?>
-<?php unset($__componentOriginal4244f3ed034654166e8ea1db61f02e90); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('testimonials'): ?>
-                            <?php if (isset($component)) { $__componentOriginal40d8476e28c7ec8ca175ec4ce824db4b = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal40d8476e28c7ec8ca175ec4ce824db4b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.testimonials','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.testimonials'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal40d8476e28c7ec8ca175ec4ce824db4b)): ?>
-<?php $attributes = $__attributesOriginal40d8476e28c7ec8ca175ec4ce824db4b; ?>
-<?php unset($__attributesOriginal40d8476e28c7ec8ca175ec4ce824db4b); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal40d8476e28c7ec8ca175ec4ce824db4b)): ?>
-<?php $component = $__componentOriginal40d8476e28c7ec8ca175ec4ce824db4b; ?>
-<?php unset($__componentOriginal40d8476e28c7ec8ca175ec4ce824db4b); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('cta'): ?>
-                            <?php if (isset($component)) { $__componentOriginal974c75a2ab2fdd49254c582b0ebcfedb = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal974c75a2ab2fdd49254c582b0ebcfedb = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.cta','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.cta'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal974c75a2ab2fdd49254c582b0ebcfedb)): ?>
-<?php $attributes = $__attributesOriginal974c75a2ab2fdd49254c582b0ebcfedb; ?>
-<?php unset($__attributesOriginal974c75a2ab2fdd49254c582b0ebcfedb); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal974c75a2ab2fdd49254c582b0ebcfedb)): ?>
-<?php $component = $__componentOriginal974c75a2ab2fdd49254c582b0ebcfedb; ?>
-<?php unset($__componentOriginal974c75a2ab2fdd49254c582b0ebcfedb); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('divider'): ?>
-                            <?php if (isset($component)) { $__componentOriginal41b21e422f2a1294d433c5954ff15f5f = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal41b21e422f2a1294d433c5954ff15f5f = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.divider','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.divider'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal41b21e422f2a1294d433c5954ff15f5f)): ?>
-<?php $attributes = $__attributesOriginal41b21e422f2a1294d433c5954ff15f5f; ?>
-<?php unset($__attributesOriginal41b21e422f2a1294d433c5954ff15f5f); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal41b21e422f2a1294d433c5954ff15f5f)): ?>
-<?php $component = $__componentOriginal41b21e422f2a1294d433c5954ff15f5f; ?>
-<?php unset($__componentOriginal41b21e422f2a1294d433c5954ff15f5f); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('iframe'): ?>
-                            <?php if (isset($component)) { $__componentOriginal4fa597dd0540b5b80c6a09b2fcc0360d = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal4fa597dd0540b5b80c6a09b2fcc0360d = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.iframe','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.iframe'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal4fa597dd0540b5b80c6a09b2fcc0360d)): ?>
-<?php $attributes = $__attributesOriginal4fa597dd0540b5b80c6a09b2fcc0360d; ?>
-<?php unset($__attributesOriginal4fa597dd0540b5b80c6a09b2fcc0360d); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal4fa597dd0540b5b80c6a09b2fcc0360d)): ?>
-<?php $component = $__componentOriginal4fa597dd0540b5b80c6a09b2fcc0360d; ?>
-<?php unset($__componentOriginal4fa597dd0540b5b80c6a09b2fcc0360d); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('faq'): ?>
-                            <?php if (isset($component)) { $__componentOriginala12e82fcdca41d9cee5421aceb8fa852 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginala12e82fcdca41d9cee5421aceb8fa852 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.faq','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.faq'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginala12e82fcdca41d9cee5421aceb8fa852)): ?>
-<?php $attributes = $__attributesOriginala12e82fcdca41d9cee5421aceb8fa852; ?>
-<?php unset($__attributesOriginala12e82fcdca41d9cee5421aceb8fa852); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginala12e82fcdca41d9cee5421aceb8fa852)): ?>
-<?php $component = $__componentOriginala12e82fcdca41d9cee5421aceb8fa852; ?>
-<?php unset($__componentOriginala12e82fcdca41d9cee5421aceb8fa852); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('team'): ?>
-                            <?php if (isset($component)) { $__componentOriginal5f4e0664069fe21f498197ee9673e277 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal5f4e0664069fe21f498197ee9673e277 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.team','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.team'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal5f4e0664069fe21f498197ee9673e277)): ?>
-<?php $attributes = $__attributesOriginal5f4e0664069fe21f498197ee9673e277; ?>
-<?php unset($__attributesOriginal5f4e0664069fe21f498197ee9673e277); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal5f4e0664069fe21f498197ee9673e277)): ?>
-<?php $component = $__componentOriginal5f4e0664069fe21f498197ee9673e277; ?>
-<?php unset($__componentOriginal5f4e0664069fe21f498197ee9673e277); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('stats'): ?>
-                            <?php if (isset($component)) { $__componentOriginald69b6139a1ecbd279dd2d39b328d1ac6 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginald69b6139a1ecbd279dd2d39b328d1ac6 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.stats','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.stats'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginald69b6139a1ecbd279dd2d39b328d1ac6)): ?>
-<?php $attributes = $__attributesOriginald69b6139a1ecbd279dd2d39b328d1ac6; ?>
-<?php unset($__attributesOriginald69b6139a1ecbd279dd2d39b328d1ac6); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginald69b6139a1ecbd279dd2d39b328d1ac6)): ?>
-<?php $component = $__componentOriginald69b6139a1ecbd279dd2d39b328d1ac6; ?>
-<?php unset($__componentOriginald69b6139a1ecbd279dd2d39b328d1ac6); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('features'): ?>
-                            <?php if (isset($component)) { $__componentOriginal42bab4acb632131c6552c79e63ad30dc = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal42bab4acb632131c6552c79e63ad30dc = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.features','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.features'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal42bab4acb632131c6552c79e63ad30dc)): ?>
-<?php $attributes = $__attributesOriginal42bab4acb632131c6552c79e63ad30dc; ?>
-<?php unset($__attributesOriginal42bab4acb632131c6552c79e63ad30dc); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal42bab4acb632131c6552c79e63ad30dc)): ?>
-<?php $component = $__componentOriginal42bab4acb632131c6552c79e63ad30dc; ?>
-<?php unset($__componentOriginal42bab4acb632131c6552c79e63ad30dc); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('map'): ?>
-                            <?php if (isset($component)) { $__componentOriginal407c715ad084f558bd7fb5f75606fe98 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal407c715ad084f558bd7fb5f75606fe98 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.map','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.map'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal407c715ad084f558bd7fb5f75606fe98)): ?>
-<?php $attributes = $__attributesOriginal407c715ad084f558bd7fb5f75606fe98; ?>
-<?php unset($__attributesOriginal407c715ad084f558bd7fb5f75606fe98); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal407c715ad084f558bd7fb5f75606fe98)): ?>
-<?php $component = $__componentOriginal407c715ad084f558bd7fb5f75606fe98; ?>
-<?php unset($__componentOriginal407c715ad084f558bd7fb5f75606fe98); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                        <?php case ('columns'): ?>
-                            <?php if (isset($component)) { $__componentOriginal4936e6ec4d341e85550108c1a5ae0b49 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal4936e6ec4d341e85550108c1a5ae0b49 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.site-web.blocks.columns','data' => ['block' => $block,'entreprise' => $entreprise]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('site-web.blocks.columns'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['block' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($block),'entreprise' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($entreprise)]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal4936e6ec4d341e85550108c1a5ae0b49)): ?>
-<?php $attributes = $__attributesOriginal4936e6ec4d341e85550108c1a5ae0b49; ?>
-<?php unset($__attributesOriginal4936e6ec4d341e85550108c1a5ae0b49); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal4936e6ec4d341e85550108c1a5ae0b49)): ?>
-<?php $component = $__componentOriginal4936e6ec4d341e85550108c1a5ae0b49; ?>
-<?php unset($__componentOriginal4936e6ec4d341e85550108c1a5ae0b49); ?>
-<?php endif; ?>
-                            <?php break; ?>
-                    <?php endswitch; ?>
-                </div>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        <?php else: ?>
-            
-            <div class="min-h-screen flex items-center justify-center">
-                <div class="text-center p-8">
-                    <?php if(!empty($entreprise->logo)): ?>
-                        <img src="<?php echo e(route('storage.serve', ['path' => $entreprise->logo])); ?>" alt="<?php echo e($entreprise->nom); ?>" class="w-32 h-32 mx-auto mb-6 rounded-xl object-cover">
-                    <?php endif; ?>
-                    <h1 class="text-4xl font-bold mb-4" style="font-family: var(--site-font-heading);">
-                        <?php echo e($entreprise->nom); ?>
-
-                    </h1>
-                    <?php if($entreprise->phrase_accroche): ?>
-                        <p class="text-xl text-slate-600 dark:text-slate-400 mb-6">
-                            <?php echo e($entreprise->phrase_accroche); ?>
-
-                        </p>
-                    <?php endif; ?>
-                    <a href="<?php echo e(route('public.entreprise', ['slug' => $entreprise->slug])); ?>" 
-                       class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
-                       style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
-                        Voir la page entreprise
-                    </a>
-                </div>
-            </div>
+        <?php if($isSidebar): ?>
+            <?php echo $__env->make('components.site-web.navigation.sidebar', [
+                'pages' => $pages,
+                'currentPage' => $currentPage ?? null,
+                'entreprise' => $entreprise,
+                'slug' => $slug,
+            ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <?php endif; ?>
-    </main>
+
+        
+        <main class="<?php echo e($isSidebar ? 'flex-1 min-w-0' : ''); ?>">
+
+            
+            <?php if(session('success')): ?>
+                <div class="max-w-4xl mx-auto mt-4 px-4">
+                    <div class="p-4 rounded-xl border" style="background: color-mix(in srgb, var(--site-primary) 10%, var(--site-background)); border-color: var(--site-primary);">
+                        <p class="text-sm font-medium" style="color: var(--site-primary);"><?php echo e(session('success')); ?></p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if($hasPages && isset($currentPage) && $currentPage): ?>
+                
+                <?php if($currentPage->isSystemTab()): ?>
+                    <?php echo $__env->make('components.site-web.system-tabs.' . $currentPage->type, [
+                        'entreprise' => $entreprise,
+                        'page' => $currentPage,
+                        'slug' => $slug,
+                        'horaires' => $horaires ?? collect(),
+                        'jours' => $jours ?? [],
+                        'membres' => $membres ?? collect(),
+                        'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false,
+                        'userInfo' => $userInfo ?? null,
+                        'services' => $services ?? collect(),
+                    ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                <?php else: ?>
+                    
+                    <?php $blocks = $currentPage->getBlocks(); ?>
+                    <?php $__currentLoopData = $blocks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $block): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
+                            $animation = $block['animation'] ?? 'none';
+                            $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
+                        ?>
+                        <div class="<?php echo e($animationClass); ?>" data-animation="<?php echo e($animation); ?>">
+                            <?php echo $__env->make('components.site-web.partials.render-block', ['block' => $block, 'entreprise' => $entreprise], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
+
+            <?php else: ?>
+                
+                <?php
+                    $blocks = $entreprise->getSiteWebBlocks();
+                ?>
+
+                <?php if(count($blocks) > 0): ?>
+                    <?php $__currentLoopData = $blocks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $block): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
+                            $animation = $block['animation'] ?? 'none';
+                            $animationClass = $animation !== 'none' ? "animate-on-scroll" : '';
+                        ?>
+                        <div class="<?php echo e($animationClass); ?>" data-animation="<?php echo e($animation); ?>">
+                            <?php echo $__env->make('components.site-web.partials.render-block', ['block' => $block, 'entreprise' => $entreprise], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php else: ?>
+                    
+                    <div class="min-h-screen flex items-center justify-center">
+                        <div class="text-center p-8">
+                            <?php if(!empty($entreprise->logo)): ?>
+                                <img src="<?php echo e(route('storage.serve', ['path' => $entreprise->logo])); ?>" alt="<?php echo e($entreprise->nom); ?>" class="w-32 h-32 mx-auto mb-6 rounded-xl object-cover">
+                            <?php endif; ?>
+                            <h1 class="text-4xl font-bold mb-4" style="font-family: var(--site-font-heading);">
+                                <?php echo e($entreprise->nom); ?>
+
+                            </h1>
+                            <?php if($entreprise->phrase_accroche): ?>
+                                <p class="text-xl opacity-60 mb-6"><?php echo e($entreprise->phrase_accroche); ?></p>
+                            <?php endif; ?>
+                            <a href="<?php echo e(route('public.entreprise', ['slug' => $entreprise->slug])); ?>" 
+                               class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
+                               style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
+                                Voir la page entreprise
+                            </a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </main>
+    </div>
     
     
     <footer class="py-8 px-4 text-center border-t border-slate-200 dark:border-slate-700">
@@ -529,6 +222,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Animations au scroll
             const animatedElements = document.querySelectorAll('.animate-on-scroll');
             
             const observer = new IntersectionObserver((entries) => {
@@ -548,6 +242,18 @@
             });
             
             animatedElements.forEach(el => observer.observe(el));
+
+            // Auth popup : écouter postMessage pour recharger la page si
+            // aucun handler spécifique (system-tab reservation) n'a déjà traité l'event.
+            window.addEventListener('message', function(event) {
+                if (event.origin !== window.location.origin) return;
+                if (event.data && event.data.type === 'auth_success') {
+                    // Si le system-tab reservation a déjà son propre listener, ne pas dupliquer
+                    if (document.getElementById('reservation-form-container')) return;
+                    // Sinon recharger la page entière pour mettre à jour l'état connecté
+                    window.location.reload();
+                }
+            });
         });
     </script>
 </body>

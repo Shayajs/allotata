@@ -179,7 +179,11 @@
                                             <strong><?php echo e($reservation->type_service ?? 'Service'); ?></strong> - 
                                             <?php echo e($reservation->date_reservation->format('d/m/Y à H:i')); ?>
 
-                                            (<?php echo e($reservation->duree_minutes); ?> min)
+                                            <?php if($reservation->typeService && $reservation->typeService->estDateButoire()): ?>
+                                                (<?php echo e($reservation->typeService->duree_formatee); ?>)
+                                            <?php else: ?>
+                                                (<?php echo e($reservation->duree_minutes); ?> min)
+                                            <?php endif; ?>
                                         </p>
                                         <?php if($aGestionMultiPersonnes && $reservation->membre): ?>
                                             <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">

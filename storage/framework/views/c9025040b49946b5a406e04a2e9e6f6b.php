@@ -111,10 +111,10 @@
 
     <div class="min-h-screen flex">
         <!-- Sidebar (PC) -->
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky <?php echo e(session('original_admin_id') ? 'top-[52px]' : 'top-0'); ?> h-[calc(100vh-<?php echo e(session('original_admin_id') ? '52px' : '0px'); ?>)] overflow-y-auto">
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-                <a href="<?php echo e(route('admin.index')); ?>" class="flex items-center gap-3 text-xl font-bold">
+                <a href="<?php echo e(route('home')); ?>" class="flex items-center gap-3 text-xl font-bold">
                     <?php
                         use App\Helpers\SiteHelper;
                         $logoUrl = SiteHelper::getLogo('transparent');
@@ -370,6 +370,14 @@
                     <span class="font-medium">Webhooks Stripe</span>
                 </a>
 
+                <!-- Tests Stripe -->
+                <a href="<?php echo e(route('admin.stripe-tests.index')); ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all <?php echo e(request()->routeIs('admin.stripe-tests.*') ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'); ?>" style="border: 1px dashed rgba(245, 158, 11, 0.3);">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                    </svg>
+                    <span class="font-medium">Tests Stripe</span>
+                </a>
+
                 
                 <div class="pt-4 pb-2">
                     <p class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Outils</p>
@@ -432,6 +440,14 @@
                     <span class="font-medium">Logs SMS</span>
                 </a>
 
+                <!-- Tâches CRON -->
+                <a href="<?php echo e(route('admin.scheduled-tasks.index')); ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all <?php echo e(request()->routeIs('admin.scheduled-tasks.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'); ?>">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-medium">Tâches CRON</span>
+                </a>
+
                 <!-- Exports -->
                 <a href="<?php echo e(route('admin.exports.index')); ?>" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all <?php echo e(request()->routeIs('admin.exports.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'); ?>">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -462,7 +478,7 @@
         <!-- Main content -->
         <main class="flex-1 flex flex-col min-w-0">
             <!-- Top bar -->
-            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky <?php echo e(session('original_admin_id') ? 'top-[52px]' : 'top-0'); ?> z-30">
+            <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <button onclick="toggleBurgerMenu('admin_mobile_nav')" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Menu">

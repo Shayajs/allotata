@@ -50,8 +50,8 @@
                                 ></textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Durée (min) *</label>
+                                <div id="duree-field-wrapper">
+                                    <label id="duree-label" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Durée (min) *</label>
                                     <input 
                                         type="number" 
                                         name="duree_minutes" 
@@ -61,9 +61,10 @@
                                         value="30"
                                         class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
+                                    <p id="duree-hint" class="mt-1 text-xs text-slate-500 dark:text-slate-400 hidden"></p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Prix (€) *</label>
+                                    <label id="prix-label" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Prix (€) *</label>
                                     <input 
                                         type="number" 
                                         name="prix" 
@@ -74,6 +75,7 @@
                                         value="25"
                                         class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
+                                    <p id="prix-hint" class="mt-1 text-xs text-slate-500 dark:text-slate-400 hidden"></p>
                                 </div>
                             </div>
                             
@@ -309,17 +311,87 @@
         updateImagesDisplay();
     }
     
-    function toggleStructureFields() {
+    // Configuration dynamique des champs selon le type de structure
+    const structureConfig = {
+        ponctuel: {
+            dureeLabel: 'Durée (min) *',
+            dureeDefault: 30,
+            dureeMin: 5,
+            dureeHint: 'Ex : 30 min pour une coupe, 60 min pour un massage',
+            prixHint: '',
+            tempsOptionLabel: 'min supp.',
+        },
+        multi_jours: {
+            dureeLabel: 'Durée par session (min) *',
+            dureeDefault: 60,
+            dureeMin: 15,
+            dureeHint: 'Durée de chaque session ou journée de travail',
+            prixHint: 'Prix total du service multi-jours',
+            tempsOptionLabel: 'min supp.',
+        },
+        multi_rendez_vous: {
+            dureeLabel: 'Durée par RDV (min) *',
+            dureeDefault: 45,
+            dureeMin: 10,
+            dureeHint: 'Durée moyenne de chaque rendez-vous',
+            prixHint: 'Prix total pour l\'ensemble des rendez-vous',
+            tempsOptionLabel: 'min supp.',
+        },
+        date_butoire: {
+            dureeLabel: 'Délai de préparation (jours) *',
+            dureeDefault: 7,
+            dureeMin: 1,
+            dureeHint: 'Nombre de jours minimum avant la date souhaitée par le client',
+            prixHint: '',
+            tempsOptionLabel: 'jour(s) supp.',
+        },
+    };
+
+    function toggleStructureFields(preserveValues = false) {
         const typeStructure = document.getElementById('service_type_structure').value;
+        const config = structureConfig[typeStructure] || structureConfig.ponctuel;
         
-        // Masquer tous les messages d'aide
+        // Masquer tous les messages d'aide de structure
         document.querySelectorAll('.structure-help').forEach(el => el.classList.add('hidden'));
-        
-        // Afficher le message d'aide correspondant
         const helpElement = document.getElementById('structure-help-' + typeStructure);
-        if (helpElement) {
-            helpElement.classList.remove('hidden');
+        if (helpElement) helpElement.classList.remove('hidden');
+
+        // Adapter le champ durée
+        const dureeLabel = document.getElementById('duree-label');
+        const dureeInput = document.getElementById('service_duree');
+        const dureeHint = document.getElementById('duree-hint');
+        
+        if (dureeLabel) dureeLabel.textContent = config.dureeLabel;
+        if (dureeInput) {
+            dureeInput.min = config.dureeMin;
+            if (!preserveValues) {
+                dureeInput.value = config.dureeDefault;
+            }
         }
+        if (dureeHint) {
+            if (config.dureeHint) {
+                dureeHint.textContent = config.dureeHint;
+                dureeHint.classList.remove('hidden');
+            } else {
+                dureeHint.classList.add('hidden');
+            }
+        }
+
+        // Adapter le hint du prix
+        const prixHint = document.getElementById('prix-hint');
+        if (prixHint) {
+            if (config.prixHint) {
+                prixHint.textContent = config.prixHint;
+                prixHint.classList.remove('hidden');
+            } else {
+                prixHint.classList.add('hidden');
+            }
+        }
+
+        // Adapter les labels "temps supplémentaire" dans les variantes
+        document.querySelectorAll('.option-temps-label').forEach(el => {
+            el.textContent = config.tempsOptionLabel;
+        });
     }
 
     function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel', options = []) {
@@ -338,7 +410,7 @@
         document.getElementById('service_duree').value = duree;
         document.getElementById('service_prix').value = prix;
         document.getElementById('service_type_structure').value = typeStructure || 'ponctuel';
-        toggleStructureFields();
+        toggleStructureFields(true); // preserveValues = true pour garder la durée du service existant
         document.getElementById('service_actif').checked = estActif;
         document.getElementById('service_images').value = '';
         document.getElementById('modal-title').textContent = 'Modifier le service';
@@ -420,7 +492,7 @@
             <div class="w-40">
                 <div class="relative group">
                     <input type="number" name="options[${optionIdx}][choices][${choiceIdx}][temps]" value="${temps}" placeholder="0" class="w-full pl-3 pr-20 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold transition-colors group-focus-within:text-green-500 text-xs pointer-events-none">minutes</span>
+                    <span class="option-temps-label absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold transition-colors group-focus-within:text-green-500 text-xs pointer-events-none">${(structureConfig[document.getElementById('service_type_structure')?.value] || structureConfig.ponctuel).tempsOptionLabel}</span>
                 </div>
             </div>
             <button type="button" onclick="this.closest('.choice-item').remove()" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Supprimer ce choix">

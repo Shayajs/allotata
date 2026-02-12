@@ -37,7 +37,7 @@
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
         <?php echo $__env->make('partials.super-user-banner', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 <?php echo e(session('original_admin_id') ? 'mt-[52px]' : ''); ?>">
+        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 ">
             <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-4">
@@ -155,6 +155,19 @@
                             </svg>
                             <span class="hidden xl:inline">Accueil</span>
                             <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Accueil</span>
+                        </button>
+
+                        <!-- Apprendre -->
+                        <button 
+                            onclick="showTab('apprendre')"
+                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative <?php echo e($activeTab === 'apprendre' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'); ?>"
+                            data-tab="apprendre"
+                        >
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            <span class="hidden xl:inline">Apprendre</span>
+                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Apprendre</span>
                         </button>
 
                         <!-- Mes Entreprises -->
@@ -316,6 +329,10 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                                 Accueil
                             </button>
+                            <button type="button" onclick="showTab('apprendre')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="apprendre">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                Apprendre
+                            </button>
                             <?php if($user->est_gerant || $entreprises->count() > 0): ?>
                             <button type="button" onclick="showTab('entreprises')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="entreprises">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -362,6 +379,11 @@
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content <?php echo e($activeTab !== 'accueil' ? 'hidden' : ''); ?>">
                             <?php echo $__env->make('dashboard.tabs.accueil', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        </div>
+
+                        <!-- Onglet Apprendre -->
+                        <div id="tab-apprendre" class="tab-content <?php echo e($activeTab !== 'apprendre' ? 'hidden' : ''); ?>">
+                            <?php echo $__env->make('dashboard.tabs.apprendre', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                         </div>
 
                         <!-- Onglet Entreprises -->

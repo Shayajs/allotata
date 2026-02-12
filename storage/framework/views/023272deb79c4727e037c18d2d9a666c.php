@@ -7,7 +7,7 @@
                     $logoUrl = SiteHelper::getLogo('transparent');
                     $siteName = SiteHelper::getSiteName();
                 ?>
-                <div class="flex items-center gap-3 mb-4">
+                <a href="<?php echo e(route('home')); ?>" class="flex items-center gap-3 mb-4">
                     <?php if($logoUrl): ?>
                         <img src="<?php echo e($logoUrl); ?>" alt="<?php echo e($siteName); ?>" class="h-10 w-auto hidden sm:block" style="max-height: 40px;">
                     <?php endif; ?>
@@ -15,7 +15,7 @@
                         <?php echo e($siteName); ?>
 
                     </h3>
-                </div>
+                </a>
                 <p class="text-slate-500">
                     La plateforme de gestion complète pour les micro-entreprises à succès.
                 </p>
@@ -63,7 +63,7 @@
 </footer>
 
 <!-- Modal de contact (si non présent sur la page) -->
-<?php if (! $__env->hasRenderedOnce('078f655e-3779-42ab-a350-2f0b53f5251b')): $__env->markAsRenderedOnce('078f655e-3779-42ab-a350-2f0b53f5251b'); ?>
+<?php if (! $__env->hasRenderedOnce('c14c5510-2414-40df-8545-734154c77d1d')): $__env->markAsRenderedOnce('c14c5510-2414-40df-8545-734154c77d1d'); ?>
     <div id="contact-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target === this) document.getElementById('contact-modal').classList.add('hidden')">
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4">

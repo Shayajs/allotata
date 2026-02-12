@@ -119,7 +119,8 @@
                                             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                             </svg>
-                                            <?php echo e($service->duree_minutes); ?> min
+                                            <?php echo e($service->duree_formatee); ?>
+
                                         </span>
                                         <span class="font-bold text-green-600 dark:text-green-400">
                                             <?php echo e(number_format($service->prix, 0, ',', ' ')); ?> €
@@ -181,7 +182,8 @@
                                                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                         </svg>
-                                                        <?php echo e($service->duree_minutes); ?> min
+                                                        <?php echo e($service->duree_formatee); ?>
+
                                                     </span>
                                                     <span class="font-bold text-green-600 dark:text-green-400">
                                                         <?php echo e(number_format($service->prix, 0, ',', ' ')); ?> €
@@ -192,6 +194,26 @@
                                     </div>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($entreprise->prestation_libre_active && $entreprise->tarif_horaire): ?>
+                        <div class="mt-4 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl bg-green-50/50 dark:bg-green-900/10 p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-900 dark:text-white text-sm">Prestation sur demande</h3>
+                                    <p class="text-lg font-bold text-green-600 dark:text-green-400"><?php echo e(number_format($entreprise->tarif_horaire, 0, ',', ' ')); ?> €/h</p>
+                                </div>
+                            </div>
+                            <?php if($entreprise->prestation_libre_description): ?>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 mb-3"><?php echo e($entreprise->prestation_libre_description); ?></p>
+                            <?php endif; ?>
+                            <a href="<?php echo e(route('messagerie.show', $entreprise->slug)); ?>" class="block w-full text-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition">
+                                Contacter pour une demande
+                            </a>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -249,7 +271,8 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
-                                        <?php echo e($service->duree_minutes); ?> min
+                                        <?php echo e($service->duree_formatee); ?>
+
                                     </span>
                                     <span class="font-bold text-green-600 dark:text-green-400">
                                         <?php echo e(number_format($service->prix, 0, ',', ' ')); ?> €
@@ -310,7 +333,8 @@
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                     </svg>
-                                                    <?php echo e($service->duree_minutes); ?> min
+                                                    <?php echo e($service->duree_formatee); ?>
+
                                                 </span>
                                                 <span class="font-bold text-green-600 dark:text-green-400">
                                                     <?php echo e(number_format($service->prix, 0, ',', ' ')); ?> €
@@ -322,6 +346,22 @@
                                         </div>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if($entreprise->prestation_libre_active && $entreprise->tarif_horaire): ?>
+                            <div class="mt-4 border-2 border-dashed border-green-300 dark:border-green-700 rounded-xl bg-green-50/50 dark:bg-green-900/10 p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white">Prestation sur demande</span>
+                                </div>
+                                <p class="text-sm font-bold text-green-600 dark:text-green-400 mb-1"><?php echo e(number_format($entreprise->tarif_horaire, 0, ',', ' ')); ?> €/h</p>
+                                <?php if($entreprise->prestation_libre_description): ?>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2"><?php echo e($entreprise->prestation_libre_description); ?></p>
+                                <?php endif; ?>
+                                <a href="<?php echo e(route('messagerie.show', $entreprise->slug)); ?>" class="block w-full text-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition">
+                                    Contacter
+                                </a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -428,7 +468,7 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
-                                        <span id="service-duree"><?php echo e($firstService->duree_minutes); ?> minutes</span>
+                                        <span id="service-duree"><?php echo e($firstService->duree_formatee); ?></span>
                                     </span>
                                     <span class="text-2xl font-bold text-green-600 dark:text-green-400" id="service-prix">
                                         <?php echo e(number_format($firstService->prix, 0, ',', ' ')); ?> €
@@ -648,6 +688,7 @@
                 'nom' => $service->nom,
                 'description' => $service->description ?? '',
                 'duree_minutes' => $service->duree_minutes,
+                'duree_formatee' => $service->duree_formatee,
                 'prix' => $service->prix,
                 'options' => $service->options->map(function($opt) {
                     return [
@@ -722,7 +763,7 @@
 
         function updateDesktopServiceDetails(service) {
             document.getElementById('service-title').textContent = service.nom;
-            document.getElementById('service-duree').textContent = service.duree_minutes + ' minutes';
+            document.getElementById('service-duree').textContent = service.duree_formatee || (service.duree_minutes + ' min');
             document.getElementById('service-prix').textContent = numberFormat(service.prix, 0, ',', ' ') + ' €';
             document.getElementById('service-description').textContent = service.description || 'Aucune description disponible.';
 
@@ -865,7 +906,7 @@
                 ` : ''}
                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">${service.nom}</h2>
                 <div class="flex items-center gap-4 mb-4">
-                    <span class="text-slate-600 dark:text-slate-400">${service.duree_minutes} min</span>
+                    <span class="text-slate-600 dark:text-slate-400">${service.duree_formatee || (service.duree_minutes + ' min')}</span>
                     <span class="text-xl font-bold text-green-600 dark:text-green-400">${numberFormat(service.prix, 0, ',', ' ')} €</span>
                 </div>
                 <p class="text-slate-700 dark:text-slate-300 mb-6">${service.description || 'Aucune description disponible.'}</p>
