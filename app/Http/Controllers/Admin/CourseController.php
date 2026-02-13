@@ -115,7 +115,7 @@ class CourseController extends Controller
             'est_actif' => $validated['est_actif'] ?? $module->est_actif,
         ]);
 
-        return redirect()->route('admin.courses.index')
+        return redirect()->route('admin.courses.module.edit', $module)
             ->with('success', 'Module mis à jour avec succès.');
     }
 
