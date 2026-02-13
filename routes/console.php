@@ -153,6 +153,10 @@ scheduleWithLogging('google-calendar:renew-watches', 'Renouvellement watches Goo
 scheduleWithLogging('google-calendar:sync-all', 'Sync bidirectionnelle Google Calendar')
     ->everyFifteenMinutes()->withoutOverlapping();
 
+// Régénérer le feed Reserve with Google (Merchant Feed) — tous les jours à 4h
+scheduleWithLogging('google:generate-merchant-feed', 'Génération feed RwG Merchant')
+    ->dailyAt('04:00')->withoutOverlapping();
+
 // =============================================
 // NETTOYAGE & MAINTENANCE
 // =============================================
