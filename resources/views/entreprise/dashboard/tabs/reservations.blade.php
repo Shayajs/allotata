@@ -592,6 +592,7 @@
 </div>
 
 <script>
+(function() {
     let searchTimeout;
     const searchUrl = '{{ route("reservations.search-clients", $entreprise->slug) }}';
 
@@ -836,9 +837,17 @@
     });
 
     // Fermer la modale en cliquant en dehors
-    document.getElementById('create-reservation-modal').addEventListener('click', function(e) {
+    document.getElementById('create-reservation-modal')?.addEventListener('click', function(e) {
         if (e.target === this) {
             closeCreateReservationModal();
         }
     });
+
+    // Exposer les fonctions utilisées dans le HTML (onclick/onchange)
+    window.openCreateReservationModal = openCreateReservationModal;
+    window.closeCreateReservationModal = closeCreateReservationModal;
+    window.toggleDatePaiement = toggleDatePaiement;
+    window.updateServiceInfo = updateServiceInfo;
+    window.selectClient = selectClient;
+})();
 </script>

@@ -429,6 +429,9 @@ class EntrepriseDashboardController extends Controller
             'typesServices' => collect([]),
             'commandes' => collect([]),
             'commandesEnAttente' => 0,
+            'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
+            'membresAvecStats' => collect([]),
+            'reservations' => collect([]),
         ];
         
         // Charger les données spécifiques selon l'onglet
@@ -461,8 +464,20 @@ class EntrepriseDashboardController extends Controller
                 break;
                 
             case 'reservations':
-                // Les réservations sont gérées par ReservationController
-                // On retourne juste un indicateur pour recharger
+                $data['reservations'] = $this->getReservationsGroupedByStatus($request, $entreprise);
+                $data['aGestionMultiPersonnes'] = $entreprise->aGestionMultiPersonnes();
+                $data['typesServices'] = $entreprise->typesServices()
+                    ->with(['images', 'imageCouverture'])
+                    ->orderBy('nom')
+                    ->get();
+                if ($data['aGestionMultiPersonnes']) {
+                    $membres = $entreprise->membres()->with('user')->get();
+                    $data['membresAvecStats'] = $membres->map(function($membre) {
+                        return ['membre' => $membre, 'stats' => []];
+                    });
+                } else {
+                    $data['membresAvecStats'] = collect([]);
+                }
                 break;
                 
             case 'agenda':
