@@ -846,34 +846,213 @@
                     <div id="tab-notifications" class="tab-content hidden">
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Préférences de notifications</h2>
                         
-                        <div class="space-y-4">
-                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h3 class="font-semibold text-slate-900 dark:text-white">Notifications par email</h3>
-                                        <p class="text-sm text-slate-600 dark:text-slate-400">Recevez des emails pour les nouvelles réservations</p>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
-                                    </label>
-                                </div>
-                            </div>
+                        <!-- Section Push Notifications -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                Notifications Push
+                            </h3>
 
-                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h3 class="font-semibold text-slate-900 dark:text-white">Notifications de paiement</h3>
-                                        <p class="text-sm text-slate-600 dark:text-slate-400">Soyez informé lorsque vous recevez un paiement</p>
+                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg mb-4">
+                                <div id="settings-push-status">
+                                    <div id="settings-push-unsupported" class="hidden text-sm text-amber-700 dark:text-amber-300">
+                                        Votre navigateur ne supporte pas les notifications push.
                                     </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" class="sr-only peer" checked>
-                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
-                                    </label>
+                                    <div id="settings-push-denied" class="hidden text-sm text-amber-700 dark:text-amber-300">
+                                        Les notifications push sont bloquées par votre navigateur. Modifiez les permissions dans les paramètres de votre navigateur pour les réactiver.
+                                    </div>
+                                    <div id="settings-push-inactive" class="hidden">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="font-medium text-slate-900 dark:text-white">Notifications push</p>
+                                                <p class="text-sm text-slate-600 dark:text-slate-400">Recevez des notifications en temps réel dans votre navigateur</p>
+                                            </div>
+                                            <button type="button" id="btn-settings-activate-push"
+                                                class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                                                Activer
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="settings-push-active" class="hidden">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <div>
+                                                    <p class="font-medium text-slate-900 dark:text-white">Notifications push activées</p>
+                                                    <p class="text-sm text-slate-600 dark:text-slate-400">Vous recevez des notifications dans ce navigateur</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="btn-settings-deactivate-push"
+                                                class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                                                Désactiver
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Section Préférences par catégorie -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Catégories de notifications</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Choisissez les types de notifications que vous souhaitez recevoir (email, push et in-app).</p>
+
+                            <form action="{{ route('settings.notifications.update') }}" method="POST">
+                                @csrf
+                                <div class="space-y-3">
+                                    @php
+                                        $notifPrefs = [
+                                            ['field' => 'notifications_reservations', 'label' => 'Réservations', 'desc' => 'Confirmations, rappels et modifications de vos réservations'],
+                                            ['field' => 'notifications_paiements', 'label' => 'Paiements', 'desc' => 'Confirmations de paiement et factures'],
+                                            ['field' => 'notifications_messages', 'label' => 'Messages', 'desc' => 'Nouveaux messages de vos contacts'],
+                                            ['field' => 'notifications_rappels', 'label' => 'Rappels de RDV', 'desc' => 'Rappels avant vos rendez-vous'],
+                                            ['field' => 'notifications_promotions', 'label' => 'Promotions & Offres', 'desc' => 'Offres spéciales et promotions'],
+                                            ['field' => 'notifications_mises_a_jour', 'label' => 'Mises à jour', 'desc' => 'Nouvelles fonctionnalités et améliorations'],
+                                        ];
+                                    @endphp
+
+                                    @foreach($notifPrefs as $pref)
+                                        <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                            <div class="flex items-center justify-between">
+                                                <div>
+                                                    <p class="font-medium text-slate-900 dark:text-white">{{ $pref['label'] }}</p>
+                                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ $pref['desc'] }}</p>
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" name="{{ $pref['field'] }}" value="1"
+                                                        {{ $user->{$pref['field']} ? 'checked' : '' }}
+                                                        onchange="this.form.submit()"
+                                                        class="sr-only peer">
+                                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </form>
+                        </div>
                     </div>
+
+                    <!-- Script Push Notifications Settings -->
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+                            
+                            if (!supported) {
+                                document.getElementById('settings-push-unsupported').classList.remove('hidden');
+                                return;
+                            }
+
+                            async function checkPushStatus() {
+                                const perm = Notification.permission;
+                                if (perm === 'denied') {
+                                    document.getElementById('settings-push-denied').classList.remove('hidden');
+                                    return;
+                                }
+
+                                const reg = await navigator.serviceWorker.ready;
+                                const sub = await reg.pushManager.getSubscription();
+
+                                if (sub) {
+                                    document.getElementById('settings-push-active').classList.remove('hidden');
+                                } else {
+                                    document.getElementById('settings-push-inactive').classList.remove('hidden');
+                                }
+                            }
+
+                            checkPushStatus();
+
+                            // Activer push
+                            const activateBtn = document.getElementById('btn-settings-activate-push');
+                            if (activateBtn) {
+                                activateBtn.addEventListener('click', async function() {
+                                    const permission = await Notification.requestPermission();
+                                    if (permission !== 'granted') {
+                                        document.getElementById('settings-push-inactive').classList.add('hidden');
+                                        document.getElementById('settings-push-denied').classList.remove('hidden');
+                                        return;
+                                    }
+
+                                    try {
+                                        const reg = await navigator.serviceWorker.ready;
+                                        const vapidKey = '{{ config("webpush.vapid.public_key") }}';
+                                        const padding = '='.repeat((4 - vapidKey.length % 4) % 4);
+                                        const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+                                        const rawData = window.atob(base64);
+                                        const outputArray = new Uint8Array(rawData.length);
+                                        for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+
+                                        const subscription = await reg.pushManager.subscribe({
+                                            userVisibleOnly: true,
+                                            applicationServerKey: outputArray,
+                                        });
+
+                                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content 
+                                            || document.querySelector('input[name="_token"]')?.value;
+
+                                        await fetch('/push-subscription', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': csrfToken,
+                                                'Accept': 'application/json',
+                                            },
+                                            body: JSON.stringify({
+                                                endpoint: subscription.endpoint,
+                                                keys: {
+                                                    p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+                                                    auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))),
+                                                },
+                                                content_encoding: (PushManager.supportedContentEncodings || ['aesgcm'])[0],
+                                            }),
+                                        });
+
+                                        document.getElementById('settings-push-inactive').classList.add('hidden');
+                                        document.getElementById('settings-push-active').classList.remove('hidden');
+                                    } catch (e) {
+                                        console.error('Erreur activation push:', e);
+                                    }
+                                });
+                            }
+
+                            // Désactiver push
+                            const deactivateBtn = document.getElementById('btn-settings-deactivate-push');
+                            if (deactivateBtn) {
+                                deactivateBtn.addEventListener('click', async function() {
+                                    try {
+                                        const reg = await navigator.serviceWorker.ready;
+                                        const subscription = await reg.pushManager.getSubscription();
+
+                                        if (subscription) {
+                                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content 
+                                                || document.querySelector('input[name="_token"]')?.value;
+
+                                            await fetch('/push-subscription', {
+                                                method: 'DELETE',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'X-CSRF-TOKEN': csrfToken,
+                                                    'Accept': 'application/json',
+                                                },
+                                                body: JSON.stringify({ endpoint: subscription.endpoint }),
+                                            });
+
+                                            await subscription.unsubscribe();
+                                        }
+
+                                        document.getElementById('settings-push-active').classList.add('hidden');
+                                        document.getElementById('settings-push-inactive').classList.remove('hidden');
+                                    } catch (e) {
+                                        console.error('Erreur désactivation push:', e);
+                                    }
+                                });
+                            }
+                        });
+                    </script>
 
                     <!-- Onglet Sécurité -->
                     <div id="tab-security" class="tab-content hidden">

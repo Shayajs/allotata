@@ -269,6 +269,9 @@ Route::prefix('api/address')->name('api.address.')->group(function () {
 Route::get('/signup', [AuthController::class, 'showSignup'])->name('signup');
 Route::post('/signup', [AuthController::class, 'register'])->name('register');
 
+// Push Notifications (guest — pour le wizard d'inscription)
+Route::post('/push-subscription/guest', [\App\Http\Controllers\PushSubscriptionController::class, 'storeGuest'])->name('push-subscription.store-guest');
+
 // Connexion (Signin)
 Route::get('/signin', [AuthController::class, 'showSignin'])->name('login');
 Route::post('/signin', [AuthController::class, 'login']);
@@ -537,6 +540,12 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/settings/error-notifications', [SettingsController::class, 'updateErrorNotifications'])->name('settings.error-notifications.update');
     Route::post('/settings/confidentialite', [SettingsController::class, 'updateConfidentialite'])->name('settings.confidentialite.update');
     Route::post('/settings/interblocage', [SettingsController::class, 'updateInterblocage'])->name('settings.interblocage.update');
+    Route::post('/settings/notifications', [SettingsController::class, 'updateNotificationPreferences'])->name('settings.notifications.update');
+
+    // Push Notifications (authentifié)
+    Route::post('/push-subscription', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push-subscription.store');
+    Route::delete('/push-subscription', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->name('push-subscription.destroy');
+    Route::post('/push-subscription/dismiss-banner', [\App\Http\Controllers\PushSubscriptionController::class, 'dismissBanner'])->name('push-subscription.dismiss-banner');
     
     // Sécurité
     Route::get('/security', [SecurityController::class, 'index'])->name('security.index');

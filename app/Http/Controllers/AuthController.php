@@ -37,16 +37,35 @@ class AuthController extends Controller
     }
 
     /**
-     * Traiter l'inscription
+     * Traiter l'inscription (wizard multi-étapes)
      */
     public function register(Request $request)
     {
         $validated = $request->validate([
+            // Étape 1 : Informations personnelles
             'name' => ['required', 'string', 'max:255'],
-            'surname' => ['nullable', 'string', 'max:255'],
+            'surname' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'date_naissance' => ['required', 'date', 'before:today'],
+            'telephone' => ['required', 'string', 'max:20'],
+            'adresse' => ['required', 'string', 'max:255'],
+            'ville' => ['required', 'string', 'max:255'],
+            'code_postal' => ['required', 'string', 'max:10'],
             'invitation_token' => ['nullable', 'string'],
+
+            // Étape 2 : Préférences de notifications
+            'notifications_reservations' => ['nullable'],
+            'notifications_paiements' => ['nullable'],
+            'notifications_messages' => ['nullable'],
+            'notifications_rappels' => ['nullable'],
+            'notifications_promotions' => ['nullable'],
+            'notifications_mises_a_jour' => ['nullable'],
+
+            // Étape 3 : CGU / CGV / Confidentialité
+            'cgu_accepted' => ['required', 'accepted'],
+            'cgv_accepted' => ['required', 'accepted'],
+            'confidentialite_accepted' => ['required', 'accepted'],
         ]);
 
         // Si une invitation est fournie, vérifier qu'elle correspond à l'email
@@ -63,22 +82,52 @@ class AuthController extends Controller
         }
 
         // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
-        $fullName = trim($validated['name']);
-        if (!empty($validated['surname'])) {
-            $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
-        }
+        $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
 
         // Créer un membre (par défaut client uniquement)
-        // email_verified_at reste null jusqu'à vérification
         $user = User::create([
-            'name' => $fullName, // Nom complet pour la compatibilité
-            'surname' => $validated['surname'] ?? null, // Nom de famille séparé
+            'name' => $fullName,
+            'surname' => $validated['surname'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'est_client' => true, // Par défaut, tous les membres sont clients
-            'est_gerant' => false, // Ils deviendront gérants après avoir ajouté une entreprise
-            'email_verified_at' => null, // Pas vérifié à la création
+            'est_client' => true,
+            'est_gerant' => false,
+            'email_verified_at' => null,
+            // Informations personnelles
+            'date_naissance' => $validated['date_naissance'],
+            'telephone' => $validated['telephone'],
+            'adresse' => $validated['adresse'],
+            'ville' => $validated['ville'],
+            'code_postal' => $validated['code_postal'],
+            // Acceptation CGU / CGV / Confidentialité
+            'cgu_accepted_at' => now(),
+            'cgv_accepted_at' => now(),
+            'confidentialite_accepted_at' => now(),
+            // Préférences de notifications (checkbox non cochée = absent de la requête = false)
+            'notifications_reservations' => $request->has('notifications_reservations'),
+            'notifications_paiements' => $request->has('notifications_paiements'),
+            'notifications_messages' => $request->has('notifications_messages'),
+            'notifications_rappels' => $request->has('notifications_rappels'),
+            'notifications_promotions' => $request->has('notifications_promotions'),
+            'notifications_mises_a_jour' => $request->has('notifications_mises_a_jour'),
         ]);
+
+        // Rattacher la push subscription stockée en session (si l'utilisateur a accepté les push)
+        $pendingPush = $request->session()->get('pending_push_subscription');
+        if ($pendingPush) {
+            try {
+                \App\Models\PushSubscription::create([
+                    'user_id' => $user->id,
+                    'endpoint' => $pendingPush['endpoint'],
+                    'p256dh_key' => $pendingPush['p256dh_key'],
+                    'auth_token' => $pendingPush['auth_token'],
+                    'content_encoding' => $pendingPush['content_encoding'] ?? 'aesgcm',
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning("Erreur lors du rattachement de la push subscription : " . $e->getMessage());
+            }
+            $request->session()->forget('pending_push_subscription');
+        }
 
         // Générer un hash de vérification
         $emailVerification = \App\Models\EmailVerification::generateHashForUser($user->id);
@@ -103,9 +152,6 @@ class AuthController extends Controller
         );
 
         // NE PAS connecter automatiquement - rediriger vers le sas de vérification
-        // Les invitations seront gérées après la vérification de l'email (dans EmailVerificationController après vérification)
-
-        // Rediriger vers le sas de vérification d'email
         return redirect()->route('verification.required')
             ->with('status', 'Votre compte a été créé avec succès ! Veuillez vérifier votre email pour accéder à votre compte.');
     }

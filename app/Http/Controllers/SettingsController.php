@@ -696,6 +696,33 @@ class SettingsController extends Controller
     }
 
     /**
+     * Mettre à jour les préférences de notifications
+     */
+    public function updateNotificationPreferences(Request $request)
+    {
+        $user = Auth::user();
+
+        $fields = [
+            'notifications_reservations',
+            'notifications_paiements',
+            'notifications_messages',
+            'notifications_rappels',
+            'notifications_promotions',
+            'notifications_mises_a_jour',
+        ];
+
+        $data = [];
+        foreach ($fields as $field) {
+            $data[$field] = $request->has($field);
+        }
+
+        $user->update($data);
+
+        return redirect()->route('settings.index', ['tab' => 'notifications'])
+            ->with('success', 'Préférences de notifications mises à jour.');
+    }
+
+    /**
      * Restaurer une entreprise archivée
      */
     public function restoreEntreprise(Request $request, $slug)

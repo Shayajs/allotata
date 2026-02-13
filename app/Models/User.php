@@ -60,6 +60,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'pm_type',
         'pm_last_four',
         'client_guide_dismissed_at',
+        // Acceptation CGU / CGV / Politique de confidentialité
+        'cgu_accepted_at',
+        'cgv_accepted_at',
+        'confidentialite_accepted_at',
+        // Préférences de notifications push
+        'notifications_reservations',
+        'notifications_paiements',
+        'notifications_messages',
+        'notifications_rappels',
+        'notifications_promotions',
+        'notifications_mises_a_jour',
+        'push_banner_dismissed_at',
     ];
 
     /**
@@ -102,6 +114,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'google2fa_enabled' => 'boolean',
             'google2fa_recovery_codes' => 'array',
             'client_guide_dismissed_at' => 'datetime',
+            'cgu_accepted_at' => 'datetime',
+            'cgv_accepted_at' => 'datetime',
+            'confidentialite_accepted_at' => 'datetime',
+            'notifications_reservations' => 'boolean',
+            'notifications_paiements' => 'boolean',
+            'notifications_messages' => 'boolean',
+            'notifications_rappels' => 'boolean',
+            'notifications_promotions' => 'boolean',
+            'notifications_mises_a_jour' => 'boolean',
+            'push_banner_dismissed_at' => 'datetime',
         ];
     }
 
@@ -311,6 +333,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ipHistory()
     {
         return $this->hasMany(UserIpHistory::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs souscriptions push
+     */
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 
     /**

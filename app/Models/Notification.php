@@ -46,7 +46,29 @@ class Notification extends Model
     }
 
     /**
-     * Créer une notification
+     * Mapping des types de notification vers les catégories push
+     */
+    private const TYPE_TO_PUSH_CATEGORY = [
+        'reservation' => 'reservation',
+        'reservation_confirmee' => 'reservation',
+        'reservation_annulee' => 'reservation',
+        'nouvelle_reservation' => 'reservation',
+        'paiement' => 'paiement',
+        'paiement_recu' => 'paiement',
+        'message' => 'message',
+        'nouveau_message' => 'message',
+        'rappel' => 'rappel',
+        'rappel_rdv' => 'rappel',
+        'promotion' => 'promotion',
+        'offre' => 'promotion',
+        'mise_a_jour' => 'mise_a_jour',
+        'devis' => 'paiement',
+        'devis_accepte' => 'paiement',
+        'devis_refuse' => 'paiement',
+    ];
+
+    /**
+     * Créer une notification (in-app + push si activé)
      */
     public static function creer(
         int $userId,
@@ -56,7 +78,7 @@ class Notification extends Model
         ?string $lien = null,
         ?array $donnees = null
     ): self {
-        return self::create([
+        $notification = self::create([
             'user_id' => $userId,
             'type' => $type,
             'titre' => $titre,
@@ -64,5 +86,21 @@ class Notification extends Model
             'lien' => $lien,
             'donnees' => $donnees,
         ]);
+
+        // Envoyer une notification push si l'utilisateur a des souscriptions
+        try {
+            $user = User::find($userId);
+            if ($user && $user->pushSubscriptions()->exists()) {
+                $pushCategory = self::TYPE_TO_PUSH_CATEGORY[$type] ?? 'general';
+                $pushUrl = $lien ? (str_starts_with($lien, 'http') ? $lien : config('app.url') . $lien) : null;
+
+                $pushService = new \App\Services\PushNotificationService();
+                $pushService->sendToUser($user, $titre, $message, $pushCategory, $pushUrl);
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Erreur envoi push notification : " . $e->getMessage());
+        }
+
+        return $notification;
     }
 }

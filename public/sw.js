@@ -31,6 +31,71 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+// ═══════════════════════════════════════════════════════════
+//  Push Notifications
+// ═══════════════════════════════════════════════════════════
+
+// Réception d'une notification push
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let data;
+    try {
+        data = event.data.json();
+    } catch (e) {
+        data = {
+            title: 'Allo Tata',
+            body: event.data.text(),
+        };
+    }
+
+    const title = data.title || 'Allo Tata';
+    const options = {
+        body: data.body || '',
+        icon: data.icon || '/icons/icon-192x192.png',
+        badge: data.badge || '/icons/icon-192x192.png',
+        data: {
+            url: data.url || '/',
+            category: data.category || 'general',
+        },
+        vibrate: [200, 100, 200],
+        tag: data.category || 'general', // Remplace les notifs de même catégorie
+        renotify: true,
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+    );
+});
+
+// Clic sur une notification push
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const url = event.notification.data?.url || '/';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            // Si une fenêtre/onglet de l'app est déjà ouvert, on le focus et on navigue
+            for (const client of clientList) {
+                if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                    client.focus();
+                    client.navigate(url);
+                    return;
+                }
+            }
+            // Sinon on ouvre un nouvel onglet
+            if (clients.openWindow) {
+                return clients.openWindow(url);
+            }
+        })
+    );
+});
+
+// ═══════════════════════════════════════════════════════════
+//  Cache (PWA)
+// ═══════════════════════════════════════════════════════════
+
 // Stratégie : Network First (Réseau en priorité, Cache en secours)
 // Cela permet d'avoir toujours la version la plus récente du site, mais de fonctionner hors-ligne si besoin.
 self.addEventListener('fetch', (event) => {
