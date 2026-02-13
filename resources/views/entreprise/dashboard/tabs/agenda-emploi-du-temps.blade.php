@@ -111,6 +111,7 @@
     const csrfToken = '{{ csrf_token() }}';
     const googleConnected = {{ $entreprise->aGoogleCalendar() ? 'true' : 'false' }};
     const googleConnectUrl = '{{ route("google-calendar.redirect", $entreprise->slug) }}';
+    const googleSyncUrl = '{{ route("google-calendar.sync", $entreprise->slug) }}';
 
     // Autres entreprises de l'utilisateur pour la propagation
     const autresEntreprises = @json($autresEntreprisesData);
@@ -131,6 +132,7 @@
             googleConnected: googleConnected,
             showGoogleBanner: !googleConnected,
             googleConnectUrl: googleConnectUrl,
+            syncUrl: googleConnected ? googleSyncUrl : '',
             csrfToken: csrfToken,
             onEventClick: function(event) {
                 showEdtReservationDetails(event);

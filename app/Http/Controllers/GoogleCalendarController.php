@@ -172,6 +172,44 @@ class GoogleCalendarController extends Controller
     }
 
     /**
+     * Force une synchronisation manuelle Google Calendar → Allotata.
+     */
+    public function forceSync(string $slug)
+    {
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (!$entreprise->peutEtreGereePar(auth()->user())) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        if (!$entreprise->aGoogleCalendar()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Google Calendar n\'est pas connecté pour cette entreprise.',
+            ], 422);
+        }
+
+        try {
+            $this->googleCalendarService->syncIncrementalChanges($entreprise);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Synchronisation terminée avec succès.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Erreur sync manuelle Google Calendar', [
+                'entreprise_id' => $entreprise->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la synchronisation : ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Reçoit les notifications push de Google Calendar.
      * Google appelle cette route quand un événement change sur un calendrier surveillé.
      */

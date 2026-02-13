@@ -434,6 +434,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::get('/m/{slug}/google-calendar/redirect', [GoogleCalendarController::class, 'redirect'])->name('google-calendar.redirect');
     Route::get('/auth/google/callback', [GoogleCalendarController::class, 'callback'])->name('google-calendar.callback');
     Route::post('/m/{slug}/google-calendar/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google-calendar.disconnect');
+    Route::post('/m/{slug}/google-calendar/sync', [GoogleCalendarController::class, 'forceSync'])->name('google-calendar.sync');
 
     // Gestion de l'agenda (pour les gérants)
     Route::get('/m/{slug}/agenda', [AgendaController::class, 'index'])->name('agenda.index');

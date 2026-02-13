@@ -20,7 +20,9 @@ class EmploiDuTemps {
         this.googleConnected = options.googleConnected || false;
         this.googleConnectUrl = options.googleConnectUrl || '';
         this.csrfToken = options.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
+        this.syncUrl = options.syncUrl || '';
         this.loading = false;
+        this.syncing = false;
         this.hourStart = 0;   // Journée complète depuis minuit
         this.hourEnd = 24;    // Jusqu'à minuit
         this.pixelsPerHour = 60;
@@ -85,6 +87,59 @@ class EmploiDuTemps {
 
         this.loading = false;
         this.renderContent();
+    }
+
+    async forceSync() {
+        if (!this.syncUrl || this.syncing) return;
+        this.syncing = true;
+
+        const syncBtn = this.headerEl?.querySelector('.edt-sync-btn');
+        const syncIcon = this.headerEl?.querySelector('.edt-sync-icon');
+        const syncLabel = this.headerEl?.querySelector('.edt-sync-label');
+
+        if (syncIcon) syncIcon.classList.add('animate-spin');
+        if (syncLabel) syncLabel.textContent = 'Sync...';
+        if (syncBtn) syncBtn.disabled = true;
+
+        try {
+            const response = await fetch(this.syncUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                if (syncLabel) syncLabel.textContent = 'Synchronisé !';
+                if (syncBtn) syncBtn.classList.remove('text-emerald-600', 'dark:text-emerald-400', 'border-emerald-200', 'dark:border-emerald-700');
+                if (syncBtn) syncBtn.classList.add('text-green-600', 'dark:text-green-400', 'border-green-300', 'dark:border-green-600');
+                // Rafraîchir les événements du calendrier
+                await this.fetchEvents();
+            } else {
+                if (syncLabel) syncLabel.textContent = 'Erreur';
+                if (syncBtn) syncBtn.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+                if (syncBtn) syncBtn.classList.add('text-red-600', 'dark:text-red-400');
+            }
+        } catch (e) {
+            console.error('EmploiDuTemps: erreur sync', e);
+            if (syncLabel) syncLabel.textContent = 'Erreur';
+        }
+
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+        if (syncBtn) syncBtn.disabled = false;
+        this.syncing = false;
+
+        // Remettre le texte original après 3 secondes
+        setTimeout(() => {
+            if (syncLabel) syncLabel.textContent = 'Sync Google';
+            if (syncBtn) {
+                syncBtn.classList.remove('text-green-600', 'dark:text-green-400', 'border-green-300', 'dark:border-green-600', 'text-red-600', 'dark:text-red-400');
+                syncBtn.classList.add('text-emerald-600', 'dark:text-emerald-400', 'border-emerald-200', 'dark:border-emerald-700');
+            }
+        }, 3000);
     }
 
     getDateRange() {
@@ -171,10 +226,23 @@ class EmploiDuTemps {
         // Controls bar
         const controls = document.createElement('div');
         controls.className = 'px-4 sm:px-6 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3';
+
+        const syncBtnHtml = this.googleConnected && this.syncUrl
+            ? `<button type="button" class="edt-sync-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors border border-emerald-200 dark:border-emerald-700" title="Synchroniser Google Agenda">
+                    <svg class="w-4 h-4 edt-sync-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="edt-sync-label hidden sm:inline">Sync Google</span>
+               </button>`
+            : '';
+
         controls.innerHTML = `
-            <button type="button" class="edt-today-btn px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-700">
-                Aujourd'hui
-            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" class="edt-today-btn px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-700">
+                    Aujourd'hui
+                </button>
+                ${syncBtnHtml}
+            </div>
             <div class="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
                 <button type="button" class="edt-view-btn px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors" data-view="month">Mois</button>
                 <button type="button" class="edt-view-btn px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors" data-view="week">Semaine</button>
@@ -193,6 +261,11 @@ class EmploiDuTemps {
         header.querySelectorAll('.edt-view-btn').forEach(btn => {
             btn.addEventListener('click', () => this.setView(btn.dataset.view));
         });
+
+        const syncBtn = header.querySelector('.edt-sync-btn');
+        if (syncBtn) {
+            syncBtn.addEventListener('click', () => this.forceSync());
+        }
 
         this.headerEl = header;
         this.updateHeaderState();
