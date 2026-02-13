@@ -44,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         Reservation::observe(ReservationObserver::class);
         User::observe(UserObserver::class);
         Entreprise::observe(EntrepriseObserver::class);
+        Reservation::observe(ReservationObserver::class);
 
         // Enregistrer les policies
         Gate::policy(\App\Models\CourseLesson::class, \App\Policies\CourseLessonPolicy::class);

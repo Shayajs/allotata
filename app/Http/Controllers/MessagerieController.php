@@ -967,8 +967,10 @@ class MessagerieController extends Controller
                 ->firstOrFail();
             
             // Mettre à jour la réservation existante
+            $debutMsg = \Carbon\Carbon::parse($dateTime);
             $updateData = [
                 'date_reservation' => $dateTime,
+                'date_fin' => $debutMsg->copy()->addMinutes((int) $proposition->duree_minutes),
                 'lieu' => $proposition->lieu ?? $reservation->lieu,
                 'prix' => $prixFinal,
                 'duree_minutes' => $proposition->duree_minutes,
@@ -989,10 +991,12 @@ class MessagerieController extends Controller
             $reservation->update($updateData);
         } else {
             // Créer une nouvelle réservation
+            $debutMsg = \Carbon\Carbon::parse($dateTime);
             $reservation = Reservation::create([
                 'user_id' => $proposition->conversation->user_id, // Le client de la conversation
                 'entreprise_id' => $entreprise->id,
                 'date_reservation' => $dateTime,
+                'date_fin' => $debutMsg->copy()->addMinutes((int) $proposition->duree_minutes),
                 'type_service' => 'Rendez-vous via messagerie',
                 'lieu' => $proposition->lieu ?? null,
                 'prix' => $prixFinal,

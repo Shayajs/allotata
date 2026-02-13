@@ -148,6 +148,11 @@ scheduleWithLogging('db:backup --keep=30', 'Sauvegarde BDD')
 scheduleWithLogging('google-calendar:renew-watches', 'Renouvellement watches Google Calendar')
     ->dailyAt('05:00')->withoutOverlapping();
 
+// Synchronisation complète bidirectionnelle Google Calendar (toutes les 15 min)
+// Pousse les réservations sans google_event_id + récupère les changements Google
+scheduleWithLogging('google-calendar:sync-all', 'Sync bidirectionnelle Google Calendar')
+    ->everyFifteenMinutes()->withoutOverlapping();
+
 // =============================================
 // NETTOYAGE & MAINTENANCE
 // =============================================

@@ -783,6 +783,7 @@ class PublicController extends Controller
             'membre_id' => $membreId,
             'type_service_id' => $typeService->id,
             'date_reservation' => $dateTime,
+            'date_fin' => $isDateButoire ? null : $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes),
             'lieu' => $validated['lieu'] ?? null,
             'telephone_client' => $validated['telephone_client'],
             'telephone_cache' => $validated['telephone_cache'] ?? false,
