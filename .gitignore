@@ -29,3 +29,4 @@ nginx.conf
 docker-compose.yaml
 vite.config.js
 npm/env.txt
+env.txt
