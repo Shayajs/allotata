@@ -12,7 +12,7 @@
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <nav class="pwa-desktop-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center gap-4">
@@ -63,13 +63,13 @@
 
             @php $activeTab = request('tab', 'account'); @endphp
 
+            {{-- Header PWA (visible uniquement en PWA mobile) --}}
+            <x-nav.pwa-header :title="'Paramètres'" :show-back="true" :back-url="route('dashboard')" />
+
             <!-- Layout avec Sidebar -->
-            <div class="flex gap-6">
+            <div class="flex gap-6 pwa-flex-layout">
                 {{-- Sidebar (composant centralisé) --}}
                 <x-nav.sidebar :items="$navItems" :active-tab="$activeTab" context="settings" />
-
-                {{-- Header PWA (visible uniquement en PWA mobile) --}}
-                <x-nav.pwa-header :title="'Paramètres'" :show-back="true" :back-url="route('dashboard')" />
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">

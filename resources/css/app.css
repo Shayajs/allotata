@@ -235,9 +235,10 @@ input.flatpickr-input {
     .mobile-nav-burger,
     .burger-drawer,
     .burger-overlay { display: none !important; }
-    .pwa-bottom-bar { display: block !important; }
+    .pwa-bottom-bar { display: flex !important; }
     .pwa-header { display: flex !important; }
     .pwa-desktop-header { display: none !important; }
+    .pwa-flex-layout { gap: 0 !important; }
     main { padding-bottom: 5rem; } /* espace pour la bottom bar */
 }
 
@@ -248,18 +249,19 @@ input.flatpickr-input {
 }
 
 /* Fallback JS : classe is-pwa ajoutée par app.js */
-.is-pwa .pwa-bottom-bar { display: block; }
-.is-pwa .pwa-header { display: flex; }
-@media (min-width: 769px) {
-    .is-pwa .pwa-bottom-bar { display: none !important; }
-    .is-pwa .pwa-header { display: none !important; }
-}
 @media (max-width: 768px) {
     .is-pwa .nav-sidebar,
     .is-pwa .nav-mobile-tabs,
     .is-pwa .mobile-nav-burger,
     .is-pwa .burger-drawer,
     .is-pwa .burger-overlay { display: none !important; }
+    .is-pwa .pwa-bottom-bar { display: flex !important; }
+    .is-pwa .pwa-header { display: flex !important; }
     .is-pwa .pwa-desktop-header { display: none !important; }
+    .is-pwa .pwa-flex-layout { gap: 0 !important; }
     .is-pwa main { padding-bottom: 5rem; }
+}
+@media (min-width: 769px) {
+    .is-pwa .pwa-bottom-bar { display: none !important; }
+    .is-pwa .pwa-header { display: none !important; }
 }

@@ -32,7 +32,7 @@
                         <span class="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-{{ $badgeColor }}-500 text-white rounded-full flex items-center justify-center">{{ $badge }}</span>
                     @endif
                 </span>
-                <span class="text-[10px] font-medium leading-tight truncate max-w-[64px]">{{ $bItem['label'] }}</span>
+                <span class="text-[10px] font-medium leading-tight truncate max-w-[64px]">{{ $bItem['short_label'] ?? $bItem['label'] }}</span>
             </button>
         @endforeach
 
@@ -48,8 +48,8 @@
 </div>
 
 {{-- Sheet "Plus" (slide-up drawer) --}}
-<div id="pwa-more-overlay-{{ $context }}" class="pwa-bottom-bar fixed inset-0 z-[60] bg-black/40 hidden transition-opacity" onclick="closePwaMoreSheet('{{ $context }}')"></div>
-<div id="pwa-more-sheet-{{ $context }}" class="pwa-bottom-bar fixed bottom-0 left-0 right-0 z-[70] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-h-[70vh] overflow-y-auto" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
+<div id="pwa-more-overlay-{{ $context }}" class="pwa-more-overlay fixed inset-0 z-[60] bg-black/40 hidden transition-opacity" onclick="closePwaMoreSheet('{{ $context }}')"></div>
+<div id="pwa-more-sheet-{{ $context }}" class="pwa-more-sheet fixed bottom-0 left-0 right-0 z-[70] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out max-h-[70vh] overflow-y-auto" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
     {{-- Handle --}}
     <div class="flex justify-center pt-3 pb-2">
         <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>

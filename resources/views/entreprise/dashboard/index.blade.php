@@ -40,7 +40,7 @@
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
         @include('partials.super-user-banner')
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+        <nav class="pwa-desktop-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-2 sm:gap-4">
@@ -208,13 +208,13 @@
                 </div>
             </div>
 
+            {{-- Header PWA (visible uniquement en PWA mobile) --}}
+            <x-nav.pwa-header :title="$entreprise->nom" :show-back="true" :back-url="route('dashboard')" />
+
             <!-- Layout avec Sidebar -->
-            <div class="flex gap-6">
+            <div class="flex gap-6 pwa-flex-layout">
                 {{-- Sidebar (composant centralisé) --}}
                 <x-nav.sidebar :items="$navItems" :active-tab="$activeTab" context="entreprise" />
-
-                {{-- Header PWA (visible uniquement en PWA mobile) --}}
-                <x-nav.pwa-header :title="$entreprise->nom" :show-back="true" :back-url="route('dashboard')" />
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">

@@ -53,6 +53,7 @@ class NavigationService
         $items[] = [
             'key'        => 'accueil',
             'label'      => 'Accueil',
+            'short_label'=> 'Accueil',
             'icon'       => 'home',
             'tab'        => 'accueil',
             'group'      => 'primary',
@@ -76,6 +77,7 @@ class NavigationService
             $items[] = [
                 'key'        => 'entreprises',
                 'label'      => 'Mes entreprises',
+                'short_label'=> 'Entreprises',
                 'icon'       => 'building',
                 'tab'        => 'entreprises',
                 'group'      => 'primary',
@@ -87,6 +89,7 @@ class NavigationService
             $items[] = [
                 'key'        => 'abonnements',
                 'label'      => 'Mes abonnements',
+                'short_label'=> 'Abonnés',
                 'icon'       => 'credit-card',
                 'tab'        => 'abonnements',
                 'group'      => 'primary',
@@ -100,6 +103,7 @@ class NavigationService
             $items[] = [
                 'key'        => 'reservations',
                 'label'      => 'Mes réservations',
+                'short_label'=> 'Réserv.',
                 'icon'       => 'calendar',
                 'tab'        => 'reservations',
                 'group'      => 'primary',
@@ -197,6 +201,7 @@ class NavigationService
         $items[] = [
             'key'        => 'accueil',
             'label'      => 'Accueil',
+            'short_label'=> 'Accueil',
             'icon'       => 'home',
             'tab'        => 'accueil',
             'group'      => 'primary',
@@ -208,6 +213,7 @@ class NavigationService
         $items[] = [
             'key'        => 'agenda',
             'label'      => 'Agenda',
+            'short_label'=> 'Agenda',
             'icon'       => 'calendar',
             'tab'        => 'agenda',
             'group'      => 'primary',
@@ -263,6 +269,7 @@ class NavigationService
         $items[] = [
             'key'        => 'reservations',
             'label'      => 'Réservations',
+            'short_label'=> 'Réserv.',
             'icon'       => 'clipboard',
             'tab'        => 'reservations',
             'group'      => 'primary',
@@ -314,6 +321,7 @@ class NavigationService
         $items[] = [
             'key'        => 'messagerie',
             'label'      => 'Messagerie',
+            'short_label'=> 'Messages',
             'icon'       => 'chat',
             'tab'        => 'messagerie',
             'group'      => 'primary',
@@ -392,7 +400,7 @@ class NavigationService
     public static function getSettingsItems($user, array $data = []): array
     {
         $items = [
-            ['key' => 'account',       'label' => 'Mon compte',     'icon' => 'user',        'tab' => 'account',       'group' => 'primary', 'pwa_bottom' => true, 'visible' => true, 'badge' => null],
+            ['key' => 'account',       'label' => 'Mon compte',     'short_label' => 'Compte', 'icon' => 'user',        'tab' => 'account',       'group' => 'primary', 'pwa_bottom' => true, 'visible' => true, 'badge' => null],
         ];
 
         if ($user->est_gerant && ($data['entreprises_count'] ?? 0) > 0) {
@@ -400,7 +408,7 @@ class NavigationService
         }
 
         $items[] = ['key' => 'notifications', 'label' => 'Notifications',  'icon' => 'bell',        'tab' => 'notifications', 'group' => 'primary', 'pwa_bottom' => false, 'visible' => true, 'badge' => null];
-        $items[] = ['key' => 'security',      'label' => 'Sécurité',       'icon' => 'lock',        'tab' => 'security',      'group' => 'primary', 'pwa_bottom' => true, 'visible' => true, 'badge' => null];
+        $items[] = ['key' => 'security',      'label' => 'Sécurité',       'short_label' => 'Sécurité', 'icon' => 'lock',        'tab' => 'security',      'group' => 'primary', 'pwa_bottom' => true, 'visible' => true, 'badge' => null];
 
         if ($user->est_gerant) {
             $items[] = ['separator' => true];
