@@ -5,6 +5,7 @@ import './presence';
 // ========================================
 // Flatpickr — Dates en français
 // ========================================
+import 'flatpickr/dist/flatpickr.min.css';
 import flatpickr from 'flatpickr';
 import { French } from 'flatpickr/dist/l10n/fr.js';
 
