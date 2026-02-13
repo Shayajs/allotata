@@ -16,7 +16,7 @@
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/emploi-du-temps.js'])
         @include('partials.theme-script')
         
         <script>
@@ -165,6 +165,13 @@
                             </div>
                         @endif
 
+                        <!-- Onglet Emploi du temps -->
+                        @if($user->est_gerant || $entreprises->count() > 0)
+                            <div id="tab-emploi-du-temps" class="tab-content {{ $activeTab !== 'emploi-du-temps' ? 'hidden' : '' }}">
+                                @include('dashboard.tabs.emploi-du-temps')
+                            </div>
+                        @endif
+
                         <!-- Onglet Factures -->
                         <div id="tab-factures" class="tab-content {{ $activeTab !== 'factures' ? 'hidden' : '' }}">
                             @include('dashboard.tabs.factures')
@@ -243,6 +250,11 @@
                 const url = new URL(window.location);
                 url.searchParams.set('tab', tabName);
                 window.history.replaceState({}, '', url);
+
+                // Initialiser l'emploi du temps si on affiche cet onglet
+                if (tabName === 'emploi-du-temps' && typeof window.initDashboardEmploiDuTemps === 'function') {
+                    setTimeout(() => window.initDashboardEmploiDuTemps(), 100);
+                }
             }
         </script>
 

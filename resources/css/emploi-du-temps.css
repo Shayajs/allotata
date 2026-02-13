@@ -1,0 +1,328 @@
+/* ========================================
+   Emploi du temps — Calendrier custom
+   ======================================== */
+
+/* Grille horaire — axe des heures */
+.edt-time-axis {
+    width: 56px;
+    flex-shrink: 0;
+}
+
+.edt-time-label {
+    height: 60px;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding-right: 8px;
+    text-align: right;
+    color: #64748b;
+    position: relative;
+    top: -7px;
+}
+
+.dark .edt-time-label {
+    color: #94a3b8;
+}
+
+/* Colonnes jour (semaine/jour) */
+.edt-day-column {
+    position: relative;
+    min-height: 1440px; /* 24h * 60px */
+    border-left: 1px solid #e2e8f0;
+}
+
+.dark .edt-day-column {
+    border-left-color: #334155;
+}
+
+.edt-day-column:first-child {
+    border-left: none;
+}
+
+/* Lignes horizontales des heures */
+.edt-hour-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #e2e8f0;
+}
+
+.dark .edt-hour-line {
+    background-color: #334155;
+}
+
+.edt-hour-line-half {
+    background-color: #f1f5f9;
+}
+
+.dark .edt-hour-line-half {
+    background-color: #1e293b;
+}
+
+/* Bloc événement positionné */
+.edt-event {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.1s;
+    z-index: 10;
+    border-left: 3px solid transparent;
+}
+
+.edt-event:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateX(1px);
+    z-index: 20;
+}
+
+.edt-event-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.edt-event-time {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+.edt-event-meta {
+    font-size: 0.6rem;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Couleurs par statut */
+.edt-event-en_attente {
+    background-color: #fef3c7;
+    border-left-color: #f59e0b;
+    color: #92400e;
+}
+.dark .edt-event-en_attente {
+    background-color: rgba(245, 158, 11, 0.15);
+    border-left-color: #f59e0b;
+    color: #fcd34d;
+}
+
+.edt-event-confirmee {
+    background-color: #dcfce7;
+    border-left-color: #22c55e;
+    color: #166534;
+}
+.dark .edt-event-confirmee {
+    background-color: rgba(34, 197, 94, 0.15);
+    border-left-color: #22c55e;
+    color: #86efac;
+}
+
+.edt-event-terminee {
+    background-color: #dbeafe;
+    border-left-color: #3b82f6;
+    color: #1e40af;
+}
+.dark .edt-event-terminee {
+    background-color: rgba(59, 130, 246, 0.15);
+    border-left-color: #3b82f6;
+    color: #93c5fd;
+}
+
+.edt-event-annulee {
+    background-color: #fee2e2;
+    border-left-color: #ef4444;
+    color: #991b1b;
+    opacity: 0.7;
+}
+.dark .edt-event-annulee {
+    background-color: rgba(239, 68, 68, 0.12);
+    border-left-color: #ef4444;
+    color: #fca5a5;
+    opacity: 0.7;
+}
+
+/* Événements Google Calendar — fond rayé */
+.edt-event-google {
+    background: repeating-linear-gradient(
+        -45deg,
+        #e0e7ff,
+        #e0e7ff 4px,
+        #eef2ff 4px,
+        #eef2ff 8px
+    );
+    border-left-color: #6366f1;
+    color: #3730a3;
+}
+.dark .edt-event-google {
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(99, 102, 241, 0.15),
+        rgba(99, 102, 241, 0.15) 4px,
+        rgba(99, 102, 241, 0.08) 4px,
+        rgba(99, 102, 241, 0.08) 8px
+    );
+    border-left-color: #818cf8;
+    color: #c7d2fe;
+}
+
+/* Événements d'autres entreprises */
+.edt-event-other_business {
+    background-color: #f3e8ff;
+    border-left-color: #a855f7;
+    color: #6b21a8;
+}
+.dark .edt-event-other_business {
+    background-color: rgba(168, 85, 247, 0.12);
+    border-left-color: #a855f7;
+    color: #d8b4fe;
+}
+
+/* Vue mois — cellules jour */
+.edt-month-cell {
+    min-height: 100px;
+    border: 1px solid #e2e8f0;
+    padding: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.dark .edt-month-cell {
+    border-color: #334155;
+}
+
+.edt-month-cell:hover {
+    background-color: #f8fafc;
+}
+
+.dark .edt-month-cell:hover {
+    background-color: #1e293b;
+}
+
+.edt-month-cell-today {
+    background-color: #f0fdf4;
+}
+
+.dark .edt-month-cell-today {
+    background-color: rgba(34, 197, 94, 0.05);
+}
+
+.edt-month-cell-other {
+    opacity: 0.4;
+}
+
+/* Carte événement en vue mois */
+.edt-month-event {
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    border-left: 2px solid transparent;
+}
+
+.edt-month-event:hover {
+    opacity: 0.85;
+}
+
+/* Indicateur "now" (ligne rouge horizontale) */
+.edt-now-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #ef4444;
+    z-index: 30;
+    pointer-events: none;
+}
+
+.edt-now-indicator::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ef4444;
+}
+
+/* Conteneur scrollable pour les vues semaine/jour */
+.edt-scroll-container {
+    overflow-y: auto;
+    max-height: 700px;
+    position: relative;
+}
+
+/* En-tête jour fixe */
+.edt-header-cell {
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+}
+
+.edt-header-cell-today {
+    background-color: #f0fdf4;
+    border-radius: 8px;
+}
+
+.dark .edt-header-cell-today {
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+/* Vue mois — compteur overflow */
+.edt-month-more {
+    font-size: 0.6rem;
+    color: #6366f1;
+    cursor: pointer;
+    padding: 1px 4px;
+    font-weight: 600;
+}
+
+.dark .edt-month-more {
+    color: #818cf8;
+}
+
+.edt-month-more:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .edt-time-axis {
+        width: 40px;
+    }
+    
+    .edt-time-label {
+        font-size: 0.6rem;
+        padding-right: 4px;
+    }
+    
+    .edt-event {
+        font-size: 0.6rem;
+        padding: 2px 4px;
+    }
+    
+    .edt-month-cell {
+        min-height: 70px;
+        padding: 2px;
+    }
+    
+    .edt-month-event {
+        font-size: 0.55rem;
+    }
+
+    .edt-scroll-container {
+        max-height: 500px;
+    }
+}

@@ -3,6 +3,7 @@
 @import './course-blocks.css';
 @import './dev-docs.css';
 @import './flatpickr.css';
+@import './emploi-du-temps.css';
 
 /* Configuration du mode sombre avec le sélecteur de classe (au lieu de media query) */
 @custom-variant dark (&:where(.dark, .dark *));

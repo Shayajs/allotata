@@ -27,6 +27,19 @@
                         </span>
                     </button>
                     <button 
+                        onclick="showAgendaSubTab('emploi-du-temps')"
+                        id="agenda-subtab-emploi-du-temps"
+                        class="agenda-subtab-btn flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-sm font-medium text-center border-b-2 transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 border-transparent"
+                        data-subtab="emploi-du-temps"
+                    >
+                        <span class="flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                            </svg>
+                            <span>Emploi du temps</span>
+                        </span>
+                    </button>
+                    <button 
                         onclick="showAgendaSubTab('parametres')"
                         id="agenda-subtab-parametres"
                         class="agenda-subtab-btn flex-1 sm:flex-initial px-4 sm:px-6 py-3 text-sm font-medium text-center border-b-2 transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 border-transparent"
@@ -122,6 +135,11 @@
                     </div>
                 </div>
             </div>
+            </div>
+
+            <!-- Contenu de l'onglet Emploi du temps -->
+            <div id="agenda-subtab-content-emploi-du-temps" class="agenda-subtab-content hidden">
+                @include('entreprise.dashboard.tabs.agenda-emploi-du-temps')
             </div>
 
             <!-- Contenu de l'onglet Paramètres -->
@@ -618,6 +636,15 @@
             } else {
                 // Si le calendrier n'est pas encore initialisé, charger au moins les réservations pour la liste
                 loadReservations();
+            }
+        }
+
+        // Initialiser l'emploi du temps si on affiche cet onglet
+        if (subtabName === 'emploi-du-temps') {
+            if (typeof window.initEmploiDuTemps === 'function') {
+                setTimeout(() => {
+                    window.initEmploiDuTemps();
+                }, 100);
             }
         }
     }

@@ -409,6 +409,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/dashboard/dismiss-guide', [DashboardController::class, 'dismissGuide'])->name('dashboard.dismiss-guide');
     Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
     Route::patch('/dashboard/reservation/{reservation}/modify', [DashboardController::class, 'modify'])->name('dashboard.reservation.modify');
+    Route::get('/dashboard/emploi-du-temps/events', [\App\Http\Controllers\EmploiDuTempsController::class, 'userEvents'])->name('dashboard.emploi-du-temps.events');
     Route::post('/stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('stop-impersonating');
     
     // Création d'entreprise
@@ -448,6 +449,9 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::delete('/m/{slug}/agenda/service/{typeServiceId}/image/{imageId}', [AgendaController::class, 'deleteServiceImage'])->name('agenda.service.image.delete');
     Route::post('/m/{slug}/agenda/jour-exceptionnel', [AgendaController::class, 'storeJourExceptionnel'])->name('agenda.jour-exceptionnel.store');
     Route::delete('/m/{slug}/agenda/jour-exceptionnel/{horaireId}', [AgendaController::class, 'deleteJourExceptionnel'])->name('agenda.jour-exceptionnel.delete');
+
+    // Emploi du temps — API événements
+    Route::get('/m/{slug}/emploi-du-temps/events', [\App\Http\Controllers\EmploiDuTempsController::class, 'events'])->name('emploi-du-temps.events');
     
     // Gestion des stocks et produits
     Route::get('/m/{slug}/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
@@ -531,6 +535,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
     Route::post('/settings/error-notifications', [SettingsController::class, 'updateErrorNotifications'])->name('settings.error-notifications.update');
     Route::post('/settings/confidentialite', [SettingsController::class, 'updateConfidentialite'])->name('settings.confidentialite.update');
+    Route::post('/settings/interblocage', [SettingsController::class, 'updateInterblocage'])->name('settings.interblocage.update');
     
     // Sécurité
     Route::get('/security', [SecurityController::class, 'index'])->name('security.index');

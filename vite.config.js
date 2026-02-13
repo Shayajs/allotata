@@ -18,7 +18,8 @@ export default defineConfig({
                 'resources/js/admin-kanban.js',
                 'resources/js/admin-notes.js',
                 'resources/js/admin-internal-messaging.js',
-                'resources/js/checkout.js'
+                'resources/js/checkout.js',
+                'resources/js/emploi-du-temps.js'
             ],
             refresh: true,
         }),

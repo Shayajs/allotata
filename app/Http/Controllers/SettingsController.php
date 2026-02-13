@@ -658,6 +658,23 @@ class SettingsController extends Controller
     }
 
     /**
+     * Mettre à jour le paramètre d'interblocage entre entreprises
+     */
+    public function updateInterblocage(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'interbloquer_entreprises' => ['required', 'boolean'],
+        ]);
+
+        $user->update($validated);
+
+        return redirect()->route('settings.index', ['tab' => 'preferences'])
+            ->with('success', 'Paramètre d\'interblocage mis à jour.');
+    }
+
+    /**
      * Archiver (supprimer) une entreprise
      */
     public function deleteEntreprise(Request $request, $slug)

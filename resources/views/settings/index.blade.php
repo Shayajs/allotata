@@ -1364,6 +1364,40 @@
                                     </div>
                                 @endif
                             @endif
+
+                            {{-- Interblocage entre entreprises --}}
+                            @if($user->est_gerant && $user->entreprises()->count() >= 2)
+                                <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Interblocage entre entreprises</h3>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                        Quand cette option est activée, les réservations de toutes vos entreprises sont visibles dans l'emploi du temps de chacune. Les créneaux réservés sur une entreprise apparaîtront sur les autres.
+                                    </p>
+                                    <form action="{{ route('settings.interblocage.update') }}" method="POST">
+                                        @csrf
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-slate-900 dark:text-white">Synchroniser les créneaux entre mes entreprises</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input 
+                                                    type="hidden" 
+                                                    name="interbloquer_entreprises" 
+                                                    value="0"
+                                                >
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="interbloquer_entreprises" 
+                                                    value="1"
+                                                    {{ $user->interbloquer_entreprises ? 'checked' : '' }}
+                                                    onchange="this.form.submit()"
+                                                    class="sr-only peer"
+                                                >
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                                            </label>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
                         </div>
                     </div>
                     </div>
