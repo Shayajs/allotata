@@ -128,27 +128,48 @@
                             <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="telephone"></p>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="sm:col-span-1">
-                                <label for="adresse" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Adresse *</label>
-                                <input id="adresse" name="adresse" type="text" required value="{{ old('adresse') }}"
-                                    class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
-                                    placeholder="12 rue de la Paix">
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="adresse"></p>
+                        <!-- Adresse avec autocomplétion -->
+                        <div class="relative">
+                            <label for="address-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Adresse *</label>
+                            <div class="relative">
+                                <input id="address-search" type="text" autocomplete="off"
+                                    value="{{ old('adresse') ? old('adresse') . ', ' . old('code_postal') . ' ' . old('ville') : '' }}"
+                                    class="appearance-none relative block w-full px-3 py-3 pl-10 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
+                                    placeholder="Commencez à taper votre adresse...">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
                             </div>
-                            <div>
-                                <label for="ville" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ville *</label>
-                                <input id="ville" name="ville" type="text" required value="{{ old('ville') }}"
-                                    class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
-                                    placeholder="Paris">
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="ville"></p>
-                            </div>
-                            <div>
-                                <label for="code_postal" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Code postal *</label>
-                                <input id="code_postal" name="code_postal" type="text" required value="{{ old('code_postal') }}"
-                                    class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
-                                    placeholder="75001" maxlength="10">
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="code_postal"></p>
+                            <!-- Résultats autocomplétion -->
+                            <div id="address-results" class="hidden absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"></div>
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="adresse"></p>
+
+                            <!-- Champs cachés remplis par l'autocomplétion -->
+                            <input type="hidden" id="adresse" name="adresse" value="{{ old('adresse') }}">
+                            <input type="hidden" id="ville" name="ville" value="{{ old('ville') }}">
+                            <input type="hidden" id="code_postal" name="code_postal" value="{{ old('code_postal') }}">
+                            <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude') }}">
+                            <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude') }}">
+                        </div>
+
+                        <!-- Adresse sélectionnée (résumé) -->
+                        <div id="address-selected" class="hidden p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm font-medium text-green-800 dark:text-green-300" id="address-selected-label"></p>
+                                        <p class="text-xs text-green-600 dark:text-green-400" id="address-selected-detail"></p>
+                                    </div>
+                                </div>
+                                <button type="button" id="address-change-btn" class="text-xs text-green-700 dark:text-green-400 hover:underline font-medium">
+                                    Modifier
+                                </button>
                             </div>
                         </div>
 
@@ -417,9 +438,6 @@
                     { id: 'email', msg: 'L\'adresse email est requise.' },
                     { id: 'date_naissance', msg: 'La date de naissance est requise.' },
                     { id: 'telephone', msg: 'Le numéro de téléphone est requis.' },
-                    { id: 'adresse', msg: 'L\'adresse est requise.' },
-                    { id: 'ville', msg: 'La ville est requise.' },
-                    { id: 'code_postal', msg: 'Le code postal est requis.' },
                     { id: 'password', msg: 'Le mot de passe est requis.' },
                 ];
 
@@ -430,6 +448,13 @@
                         valid = false;
                     }
                 });
+
+                // Vérifier l'adresse (champs cachés remplis par l'autocomplétion)
+                const adresse = document.getElementById('adresse');
+                if (!adresse || !adresse.value.trim()) {
+                    showError('adresse', 'Veuillez sélectionner une adresse dans la liste de suggestions.');
+                    valid = false;
+                }
 
                 // Email format
                 const email = document.getElementById('email');
@@ -636,6 +661,75 @@
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
             }
+
+            // ── Autocomplétion d'adresse ──
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof AddressAutocomplete === 'undefined') return;
+
+                const addressAC = new AddressAutocomplete({
+                    minLength: 3,
+                    debounceMs: 300,
+                    onSelect: function(addressData) {
+                        // Remplir les champs cachés
+                        const street = addressData.housenumber 
+                            ? addressData.housenumber + ' ' + (addressData.street || '') 
+                            : (addressData.street || addressData.label || '');
+                        
+                        document.getElementById('adresse').value = street.trim();
+                        document.getElementById('ville').value = addressData.city || '';
+                        document.getElementById('code_postal').value = addressData.postcode || '';
+                        document.getElementById('latitude').value = addressData.latitude || '';
+                        document.getElementById('longitude').value = addressData.longitude || '';
+
+                        // Afficher le résumé
+                        document.getElementById('address-search').classList.add('hidden');
+                        document.getElementById('address-search').parentElement.querySelector('.pointer-events-none')?.closest('.relative')?.classList.add('hidden');
+                        
+                        const selectedDiv = document.getElementById('address-selected');
+                        selectedDiv.classList.remove('hidden');
+                        document.getElementById('address-selected-label').textContent = addressData.label || street;
+                        document.getElementById('address-selected-detail').textContent = 
+                            (addressData.postcode || '') + ' ' + (addressData.city || '') + 
+                            (addressData.context ? ' — ' + addressData.context : '');
+
+                        // Masquer le champ de recherche, montrer le résumé
+                        document.getElementById('address-search').closest('.relative').querySelector('#address-search').style.display = 'none';
+                        document.getElementById('address-search').closest('.relative').querySelector('.pointer-events-none')?.parentElement && 
+                            (document.getElementById('address-search').style.display = 'none');
+
+                        clearErrors();
+                    }
+                });
+
+                addressAC.init('address-search', 'address-results', 'address');
+
+                // Bouton "Modifier" pour changer l'adresse
+                document.getElementById('address-change-btn')?.addEventListener('click', function() {
+                    document.getElementById('address-selected').classList.add('hidden');
+                    const searchInput = document.getElementById('address-search');
+                    searchInput.style.display = '';
+                    searchInput.classList.remove('hidden');
+                    searchInput.value = '';
+                    searchInput.focus();
+                    // Vider les champs cachés
+                    document.getElementById('adresse').value = '';
+                    document.getElementById('ville').value = '';
+                    document.getElementById('code_postal').value = '';
+                    document.getElementById('latitude').value = '';
+                    document.getElementById('longitude').value = '';
+                });
+
+                // Si on a déjà une adresse (retour avec old()), afficher le résumé
+                const existingAdresse = document.getElementById('adresse').value;
+                if (existingAdresse) {
+                    const ville = document.getElementById('ville').value;
+                    const cp = document.getElementById('code_postal').value;
+                    document.getElementById('address-selected').classList.remove('hidden');
+                    document.getElementById('address-selected-label').textContent = existingAdresse;
+                    document.getElementById('address-selected-detail').textContent = cp + ' ' + ville;
+                    document.getElementById('address-search').style.display = 'none';
+                }
+            });
         </script>
     </body>
 </html>

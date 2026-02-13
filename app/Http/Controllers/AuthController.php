@@ -52,6 +52,8 @@ class AuthController extends Controller
             'adresse' => ['required', 'string', 'max:255'],
             'ville' => ['required', 'string', 'max:255'],
             'code_postal' => ['required', 'string', 'max:10'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'invitation_token' => ['nullable', 'string'],
 
             // Étape 2 : Préférences de notifications
@@ -99,6 +101,8 @@ class AuthController extends Controller
             'adresse' => $validated['adresse'],
             'ville' => $validated['ville'],
             'code_postal' => $validated['code_postal'],
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
             // Acceptation CGU / CGV / Confidentialité
             'cgu_accepted_at' => now(),
             'cgv_accepted_at' => now(),
