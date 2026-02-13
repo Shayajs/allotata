@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\Facture;
 use App\Models\Conversation;
 use App\Models\HorairesOuverture;
+use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -401,6 +402,15 @@ class EntrepriseDashboardController extends Controller
             'fidelisationStats' => $fidelisationStats,
             // Site Web
             'aSiteWebActif' => $entreprise->aSiteWebActif(),
+            // Navigation centralisée
+            'navItems' => NavigationService::getEntrepriseItems($entreprise, $user, [
+                'reservations_en_attente' => $stats['reservations_en_attente'] ?? 0,
+                'commandes_en_attente' => $commandesEnAttente,
+                'a_gestion_multi_personnes' => $entreprise->aGestionMultiPersonnes(),
+                'messages_non_lus' => $conversations->sum(fn($c) => $c->messagesNonLus($user->id)),
+                'a_site_web_actif' => $entreprise->aSiteWebActif(),
+                'site_web_url' => $entreprise->aSiteWebActif() ? route('site-web.show', $entreprise->slug_web ?? $entreprise->slug) . '?mode=edit' : null,
+            ]),
         ]);
     }
 

@@ -6,6 +6,7 @@ use App\Models\Echeance;
 use App\Models\Entreprise;
 use App\Models\StripeTransaction;
 use App\Services\ImageService;
+use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -115,6 +116,9 @@ class SettingsController extends Controller
             'lastPayments' => $lastPayments,
             'upcomingEcheances' => $upcomingEcheances,
             'gdprData' => $gdprData,
+            'navItems' => NavigationService::getSettingsItems($user, [
+                'entreprises_count' => $entreprises->count(),
+            ]),
         ]);
     }
 
