@@ -24,6 +24,9 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        chunkSizeWarningLimit: 800,
+    },
     server: {
         host: true,
         hmr: {
