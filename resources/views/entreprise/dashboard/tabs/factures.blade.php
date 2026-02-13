@@ -1,9 +1,10 @@
 <div>
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Factures
-            </h2>
+            <div class="flex items-center gap-3 mb-2">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Factures</h2>
+                <x-course-link-badge page-key="entreprise.factures" :course-links="$courseLinks ?? []" />
+            </div>
             <p class="text-slate-600 dark:text-slate-400">
                 Gérez les factures générées automatiquement pour les réservations payées.
             </p>

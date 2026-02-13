@@ -1,5 +1,8 @@
 <div>
-    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Statistiques des visites</h2>
+    <div class="flex items-center gap-3 mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Statistiques des visites</h2>
+        <x-course-link-badge page-key="entreprise.statistiques" :course-links="$courseLinks ?? []" />
+    </div>
 
     <!-- Note de mise à jour en temps réel -->
     <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">

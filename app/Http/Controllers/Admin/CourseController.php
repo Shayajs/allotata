@@ -62,6 +62,7 @@ class CourseController extends Controller
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
             'video_url' => 'nullable|url|max:500',
+            'page_key' => 'nullable|string|max:100',
             'ordre' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
             'image' => 'nullable|image|max:5120',
@@ -80,6 +81,7 @@ class CourseController extends Controller
             'description' => $validated['description'] ?? null,
             'image_path' => $validated['image_path'] ?? $module->image_path,
             'video_url' => array_key_exists('video_url', $validated) ? $validated['video_url'] : $module->video_url,
+            'page_key' => $validated['page_key'] ?: null,
             'ordre' => $validated['ordre'] ?? $module->ordre,
             'est_actif' => $validated['est_actif'] ?? $module->est_actif,
         ]);
@@ -186,6 +188,7 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'contenu_rich_html' => 'nullable|string',
             'type' => 'required|in:course,quiz',
+            'page_key' => 'nullable|string|max:100',
             'ordre' => 'nullable|integer|min:0',
             'points_quiz' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
@@ -211,6 +214,7 @@ class CourseController extends Controller
             'contenu_rich_html' => $validated['contenu_rich_html'] ?? $lesson->contenu_rich_html,
             'image_path' => $validated['image_path'] ?? $lesson->image_path,
             'type' => $validated['type'],
+            'page_key' => $validated['page_key'] ?: null,
             'ordre' => $validated['ordre'] ?? $lesson->ordre,
             'points_quiz' => $validated['points_quiz'] ?? $lesson->points_quiz,
             'est_actif' => $validated['est_actif'] ?? $lesson->est_actif,
@@ -361,6 +365,7 @@ class CourseController extends Controller
             'titre' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'type' => 'nullable|in:course,quiz',
+            'page_key' => 'nullable|string|max:100',
             'ordre' => 'nullable|integer|min:0',
             'points_quiz' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
@@ -394,6 +399,9 @@ class CourseController extends Controller
         }
         if (isset($validated['est_actif'])) {
             $updateData['est_actif'] = $validated['est_actif'];
+        }
+        if (array_key_exists('page_key', $validated)) {
+            $updateData['page_key'] = $validated['page_key'] ?: null;
         }
 
         $lesson->update($updateData);

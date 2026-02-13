@@ -8,6 +8,8 @@ use App\Models\Reservation;
 use App\Models\Facture;
 use App\Models\Conversation;
 use App\Models\HorairesOuverture;
+use App\Models\CourseModule;
+use App\Models\CourseLesson;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -361,6 +363,9 @@ class EntrepriseDashboardController extends Controller
             'multi_personnes' => \App\Models\Tarif::displayForEntreprise($entreprise, 'multi_personnes'),
         ];
 
+        // ===== Cours liés aux pages (bidirectionnel) =====
+        $courseLinks = $this->loadCourseLinks();
+
         return view('entreprise.dashboard.index', [
             'user' => $user,
             'entreprise' => $entreprise,
@@ -402,6 +407,8 @@ class EntrepriseDashboardController extends Controller
             'fidelisationStats' => $fidelisationStats,
             // Site Web
             'aSiteWebActif' => $entreprise->aSiteWebActif(),
+            // Cours liés aux pages
+            'courseLinks' => $courseLinks,
             // Navigation centralisée
             'navItems' => NavigationService::getEntrepriseItems($entreprise, $user, [
                 'reservations_en_attente' => $stats['reservations_en_attente'] ?? 0,
@@ -520,6 +527,8 @@ class EntrepriseDashboardController extends Controller
 
         if (isset($viewMap[$tab])) {
             try {
+                // Ajouter les cours liés pour les onglets rechargés en AJAX
+                $data['courseLinks'] = $this->loadCourseLinks();
                 // Utiliser la méthode render() pour obtenir le HTML
                 $html = view($viewMap[$tab], $data)->render();
                 return response()->json(['success' => true, 'html' => $html]);
@@ -902,5 +911,50 @@ class EntrepriseDashboardController extends Controller
             \DB::rollBack();
             return response()->json(['error' => 'Erreur lors de la mise à jour'], 500);
         }
+    }
+
+    /**
+     * Charger les liens cours <-> pages pour le badge discret
+     */
+    private function loadCourseLinks(): array
+    {
+        $links = [];
+
+        // Modules avec page_key
+        $modules = CourseModule::whereNotNull('page_key')
+            ->where('est_actif', true)
+            ->select('id', 'titre', 'page_key')
+            ->get();
+
+        foreach ($modules as $module) {
+            $links[$module->page_key] = [
+                'module_id' => $module->id,
+                'module_titre' => $module->titre,
+                'lesson_id' => null,
+                'lesson_titre' => null,
+            ];
+        }
+
+        // Leçons avec page_key (surcharge les modules si même clé)
+        $lessons = CourseLesson::whereNotNull('page_key')
+            ->where('est_actif', true)
+            ->select('id', 'module_id', 'titre', 'page_key')
+            ->get();
+
+        foreach ($lessons as $lesson) {
+            if (isset($links[$lesson->page_key])) {
+                $links[$lesson->page_key]['lesson_id'] = $lesson->id;
+                $links[$lesson->page_key]['lesson_titre'] = $lesson->titre;
+            } else {
+                $links[$lesson->page_key] = [
+                    'module_id' => $lesson->module_id,
+                    'module_titre' => null,
+                    'lesson_id' => $lesson->id,
+                    'lesson_titre' => $lesson->titre,
+                ];
+            }
+        }
+
+        return $links;
     }
 }

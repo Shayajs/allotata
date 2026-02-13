@@ -13,6 +13,7 @@ class CourseModule extends Model
         'video_url',
         'ordre',
         'est_actif',
+        'page_key',
     ];
 
     protected $casts = [
@@ -67,5 +68,13 @@ class CourseModule extends Model
     {
         // Tous les modules sont visibles, mais peuvent être grisés si pas de progression
         return true;
+    }
+
+    /**
+     * Scope : filtrer par page_key
+     */
+    public function scopeForPage($query, string $pageKey)
+    {
+        return $query->where('page_key', $pageKey)->where('est_actif', true);
     }
 }

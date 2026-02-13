@@ -158,6 +158,7 @@ class CoursesBulkService
                 'titre' => $module->titre,
                 'description' => $module->description,
                 'video_url' => $module->video_url,
+                'page_key' => $module->page_key,
                 'ordre' => $module->ordre,
                 'est_actif' => $module->est_actif,
                 'lessons' => [],
@@ -172,6 +173,7 @@ class CoursesBulkService
                     'ordre' => $lesson->ordre,
                     'points_quiz' => $lesson->points_quiz,
                     'est_actif' => $lesson->est_actif,
+                    'page_key' => $lesson->page_key,
                     'is_draft' => $lesson->is_draft,
                     'published_at' => $lesson->published_at?->toIso8601String(),
                     'blocks_count' => is_array($lesson->contenu_blocks_json) ? count($lesson->contenu_blocks_json) : 0,
@@ -706,6 +708,7 @@ SCHEMA;
                 if (isset($mod['titre'])) $u['titre'] = $mod['titre'];
                 if (isset($mod['description'])) $u['description'] = $mod['description'];
                 if (isset($mod['video_url'])) $u['video_url'] = $mod['video_url'] ?: null;
+                if (isset($mod['page_key'])) $u['page_key'] = $mod['page_key'] ?: null;
                 if (isset($mod['ordre'])) $u['ordre'] = (int) $mod['ordre'];
                 if (isset($mod['est_actif'])) $u['est_actif'] = (bool) $mod['est_actif'];
                 if (!empty($u)) { $module->update($u); $affected['modules']++; }
@@ -720,6 +723,7 @@ SCHEMA;
                 if (isset($les['titre'])) $u['titre'] = $les['titre'];
                 if (isset($les['description'])) $u['description'] = $les['description'];
                 if (isset($les['type'])) $u['type'] = $les['type'];
+                if (isset($les['page_key'])) $u['page_key'] = $les['page_key'] ?: null;
                 if (isset($les['ordre'])) $u['ordre'] = (int) $les['ordre'];
                 if (isset($les['points_quiz'])) $u['points_quiz'] = (int) $les['points_quiz'];
                 if (isset($les['est_actif'])) $u['est_actif'] = (bool) $les['est_actif'];

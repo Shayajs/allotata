@@ -41,6 +41,22 @@
                             Cours
                         </span>
                     @endif
+                    @php
+                        $pageKey = $lesson->page_key ?? $module->page_key;
+                    @endphp
+                    @if($pageKey)
+                        @php
+                            $pageUrl = \App\Services\CoursePageLinkService::resolve($pageKey, auth()->user());
+                        @endphp
+                        @if($pageUrl)
+                            <a href="{{ $pageUrl }}" class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                Voir la page
+                            </a>
+                        @endif
+                    @endif
                     @if($lessonProgress && $lessonProgress->completed_at)
                         <span class="px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs font-medium flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">

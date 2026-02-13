@@ -1,7 +1,10 @@
 {{-- Onglet Messagerie --}}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Messagerie</h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Messagerie</h2>
+            <x-course-link-badge page-key="dashboard.messagerie" :course-links="$courseLinks ?? []" />
+        </div>
         <a href="{{ route('messagerie.index') }}" class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
             Ouvrir en plein écran →
         </a>

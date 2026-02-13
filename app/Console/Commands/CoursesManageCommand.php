@@ -197,6 +197,7 @@ class CoursesManageCommand extends Command
             ['Titre', $module->titre],
             ['Description', \Str::limit($module->description ?? '-', 100)],
             ['Video URL', $module->video_url ?? '-'],
+            ['Page liée', $module->page_key ?? '-'],
             ['Ordre', $module->ordre],
             ['Actif', $module->est_actif ? 'Oui' : 'Non'],
             ['Nb leçons', $module->lessons->count()],
@@ -235,6 +236,7 @@ class CoursesManageCommand extends Command
             ['Type', $lesson->type],
             ['Ordre', $lesson->ordre],
             ['Actif', $lesson->est_actif ? 'Oui' : 'Non'],
+            ['Page liée', $lesson->page_key ?? '-'],
             ['Statut', $lesson->is_draft ? 'Brouillon' : 'Publié'],
             ['Publié le', $lesson->published_at?->format('d/m/Y H:i') ?? '-'],
             ['Points quiz', $lesson->points_quiz],
@@ -334,7 +336,8 @@ class CoursesManageCommand extends Command
             $pipe = $isLast ? '   ' : '│  ';
 
             $icon = $module->est_actif ? '<fg=green>●</>' : '<fg=red>○</>';
-            $this->line("  {$connector} {$icon} <fg=cyan>M:{$module->id}</> <options=bold>{$module->titre}</> <fg=gray>({$module->lessons->count()} leçons)</>") ;
+            $pageInfo = $module->page_key ? " <fg=blue>[→ {$module->page_key}]</>" : '';
+            $this->line("  {$connector} {$icon} <fg=cyan>M:{$module->id}</> <options=bold>{$module->titre}</> <fg=gray>({$module->lessons->count()} leçons)</>{$pageInfo}") ;
 
             $lessons = $module->lessons;
             if ($this->option('drafts')) {

@@ -1,13 +1,16 @@
 {{-- Onglet Entreprises --}}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
-            @if($user->est_gerant)
-                Mes Entreprises
-            @else
-                Créer mon entreprise
-            @endif
-        </h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+                @if($user->est_gerant)
+                    Mes Entreprises
+                @else
+                    Créer mon entreprise
+                @endif
+            </h2>
+            <x-course-link-badge page-key="dashboard.entreprises" :course-links="$courseLinks ?? []" />
+        </div>
         <div class="flex gap-3">
             @if($entreprisesAutres && $entreprisesAutres->count() > 0)
                 <a href="{{ route('dashboard.entreprises-autres') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm">

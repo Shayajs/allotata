@@ -4,6 +4,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
         </svg>
         Abonnements et options
+        <x-course-link-badge page-key="entreprise.abonnements" :course-links="$courseLinks ?? []" />
     </h2>
     @if($entreprise->user_id === auth()->id() && !request()->routeIs('entreprise.subscriptions.modal'))
         <a href="{{ route('settings.index', ['tab' => 'subscription']) }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition text-sm flex items-center gap-2">

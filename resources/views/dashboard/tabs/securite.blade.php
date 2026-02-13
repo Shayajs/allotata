@@ -5,7 +5,10 @@
 @endphp
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Sécurité</h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Sécurité</h2>
+            <x-course-link-badge page-key="dashboard.securite" :course-links="$courseLinks ?? []" />
+        </div>
         @if($hasSuspiciousActivity)
             <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>

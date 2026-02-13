@@ -1015,6 +1015,7 @@ class CourseLessonEditor {
             titre: document.getElementById('lesson-title')?.value || '',
             description: document.getElementById('lesson-description')?.value || '',
             type: document.getElementById('lesson-type')?.value || 'course',
+            page_key: document.getElementById('lesson-page-key')?.value || '',
             ordre: parseInt(document.getElementById('lesson-ordre')?.value || 0),
             points_quiz: parseInt(document.getElementById('lesson-points')?.value || 0),
             est_actif: document.getElementById('lesson-actif')?.checked || false,

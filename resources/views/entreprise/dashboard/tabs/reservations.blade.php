@@ -1,6 +1,9 @@
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Réservations</h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Réservations</h2>
+            <x-course-link-badge page-key="entreprise.reservations" :course-links="$courseLinks ?? []" />
+        </div>
         <button 
             onclick="openCreateReservationModal()"
             class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all flex items-center gap-2"

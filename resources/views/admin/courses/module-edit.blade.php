@@ -77,6 +77,40 @@
                 </div>
                 
                 <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Page liée</label>
+                    <select name="page_key"
+                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <option value="">— Aucune —</option>
+                        <optgroup label="Dashboard utilisateur">
+                            <option value="dashboard.accueil" {{ old('page_key', $module->page_key) === 'dashboard.accueil' ? 'selected' : '' }}>Accueil</option>
+                            <option value="dashboard.entreprises" {{ old('page_key', $module->page_key) === 'dashboard.entreprises' ? 'selected' : '' }}>Mes entreprises</option>
+                            <option value="dashboard.abonnements" {{ old('page_key', $module->page_key) === 'dashboard.abonnements' ? 'selected' : '' }}>Abonnements</option>
+                            <option value="dashboard.reservations" {{ old('page_key', $module->page_key) === 'dashboard.reservations' ? 'selected' : '' }}>Réservations</option>
+                            <option value="dashboard.factures" {{ old('page_key', $module->page_key) === 'dashboard.factures' ? 'selected' : '' }}>Factures</option>
+                            <option value="dashboard.messagerie" {{ old('page_key', $module->page_key) === 'dashboard.messagerie' ? 'selected' : '' }}>Messagerie</option>
+                            <option value="dashboard.securite" {{ old('page_key', $module->page_key) === 'dashboard.securite' ? 'selected' : '' }}>Sécurité</option>
+                        </optgroup>
+                        <optgroup label="Dashboard entreprise">
+                            <option value="entreprise.accueil" {{ old('page_key', $module->page_key) === 'entreprise.accueil' ? 'selected' : '' }}>Accueil entreprise</option>
+                            <option value="entreprise.agenda" {{ old('page_key', $module->page_key) === 'entreprise.agenda' ? 'selected' : '' }}>Agenda</option>
+                            <option value="entreprise.mes-services" {{ old('page_key', $module->page_key) === 'entreprise.mes-services' ? 'selected' : '' }}>Services</option>
+                            <option value="entreprise.stock" {{ old('page_key', $module->page_key) === 'entreprise.stock' ? 'selected' : '' }}>Stock</option>
+                            <option value="entreprise.commandes" {{ old('page_key', $module->page_key) === 'entreprise.commandes' ? 'selected' : '' }}>Commandes</option>
+                            <option value="entreprise.equipe" {{ old('page_key', $module->page_key) === 'entreprise.equipe' ? 'selected' : '' }}>Équipe</option>
+                            <option value="entreprise.reservations" {{ old('page_key', $module->page_key) === 'entreprise.reservations' ? 'selected' : '' }}>Réservations</option>
+                            <option value="entreprise.factures" {{ old('page_key', $module->page_key) === 'entreprise.factures' ? 'selected' : '' }}>Factures</option>
+                            <option value="entreprise.finances" {{ old('page_key', $module->page_key) === 'entreprise.finances' ? 'selected' : '' }}>Finances</option>
+                            <option value="entreprise.statistiques" {{ old('page_key', $module->page_key) === 'entreprise.statistiques' ? 'selected' : '' }}>Statistiques</option>
+                            <option value="entreprise.outils" {{ old('page_key', $module->page_key) === 'entreprise.outils' ? 'selected' : '' }}>Outils</option>
+                            <option value="entreprise.messagerie" {{ old('page_key', $module->page_key) === 'entreprise.messagerie' ? 'selected' : '' }}>Messagerie</option>
+                            <option value="entreprise.fidelisation" {{ old('page_key', $module->page_key) === 'entreprise.fidelisation' ? 'selected' : '' }}>Fidélisation</option>
+                            <option value="entreprise.abonnements" {{ old('page_key', $module->page_key) === 'entreprise.abonnements' ? 'selected' : '' }}>Abonnements</option>
+                            <option value="entreprise.parametres" {{ old('page_key', $module->page_key) === 'entreprise.parametres' ? 'selected' : '' }}>Paramètres</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div>
                     <label class="flex items-center gap-3 mt-8">
                         <input type="checkbox" name="est_actif" value="1" {{ $module->est_actif ? 'checked' : '' }}
                             class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-green-600 focus:ring-green-500">

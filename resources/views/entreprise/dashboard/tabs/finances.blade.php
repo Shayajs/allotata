@@ -5,6 +5,11 @@
 @endphp
 
 <div class="space-y-8">
+    <!-- Badge cours lié -->
+    <div class="flex items-center gap-3">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Recettes</h2>
+        <x-course-link-badge page-key="entreprise.finances" :course-links="$courseLinks ?? []" />
+    </div>
     <!-- En-tête avec Totaux -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">

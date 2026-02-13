@@ -1,7 +1,10 @@
 <div>
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Messagerie</h2>
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Messagerie</h2>
+                <x-course-link-badge page-key="entreprise.messagerie" :course-links="$courseLinks ?? []" />
+            </div>
             <p class="text-slate-600 dark:text-slate-400">Conversations avec vos clients</p>
         </div>
     </div>

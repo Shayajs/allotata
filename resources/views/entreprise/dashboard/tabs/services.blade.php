@@ -1,5 +1,8 @@
 <div>
-    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Services</h2>
+    <div class="flex items-center gap-3 mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Services</h2>
+        <x-course-link-badge page-key="entreprise.mes-services" :course-links="$courseLinks ?? []" />
+    </div>
 
     @if(session('success'))
         <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">

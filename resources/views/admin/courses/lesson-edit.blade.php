@@ -394,6 +394,38 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Page liée</label>
+                    <select id="lesson-page-key"
+                        class="w-full px-3 py-1.5 text-sm border border-slate-600 rounded-lg bg-slate-700 text-white focus:ring-green-500 focus:border-green-500">
+                        <option value="">— Aucune —</option>
+                        <optgroup label="Dashboard utilisateur">
+                            <option value="dashboard.accueil" {{ $lesson->page_key === 'dashboard.accueil' ? 'selected' : '' }}>Accueil</option>
+                            <option value="dashboard.entreprises" {{ $lesson->page_key === 'dashboard.entreprises' ? 'selected' : '' }}>Mes entreprises</option>
+                            <option value="dashboard.reservations" {{ $lesson->page_key === 'dashboard.reservations' ? 'selected' : '' }}>Réservations</option>
+                            <option value="dashboard.factures" {{ $lesson->page_key === 'dashboard.factures' ? 'selected' : '' }}>Factures</option>
+                            <option value="dashboard.messagerie" {{ $lesson->page_key === 'dashboard.messagerie' ? 'selected' : '' }}>Messagerie</option>
+                            <option value="dashboard.securite" {{ $lesson->page_key === 'dashboard.securite' ? 'selected' : '' }}>Sécurité</option>
+                        </optgroup>
+                        <optgroup label="Dashboard entreprise">
+                            <option value="entreprise.accueil" {{ $lesson->page_key === 'entreprise.accueil' ? 'selected' : '' }}>Accueil</option>
+                            <option value="entreprise.agenda" {{ $lesson->page_key === 'entreprise.agenda' ? 'selected' : '' }}>Agenda</option>
+                            <option value="entreprise.mes-services" {{ $lesson->page_key === 'entreprise.mes-services' ? 'selected' : '' }}>Services</option>
+                            <option value="entreprise.stock" {{ $lesson->page_key === 'entreprise.stock' ? 'selected' : '' }}>Stock</option>
+                            <option value="entreprise.commandes" {{ $lesson->page_key === 'entreprise.commandes' ? 'selected' : '' }}>Commandes</option>
+                            <option value="entreprise.equipe" {{ $lesson->page_key === 'entreprise.equipe' ? 'selected' : '' }}>Équipe</option>
+                            <option value="entreprise.reservations" {{ $lesson->page_key === 'entreprise.reservations' ? 'selected' : '' }}>Réservations</option>
+                            <option value="entreprise.factures" {{ $lesson->page_key === 'entreprise.factures' ? 'selected' : '' }}>Factures</option>
+                            <option value="entreprise.finances" {{ $lesson->page_key === 'entreprise.finances' ? 'selected' : '' }}>Finances</option>
+                            <option value="entreprise.statistiques" {{ $lesson->page_key === 'entreprise.statistiques' ? 'selected' : '' }}>Statistiques</option>
+                            <option value="entreprise.outils" {{ $lesson->page_key === 'entreprise.outils' ? 'selected' : '' }}>Outils</option>
+                            <option value="entreprise.messagerie" {{ $lesson->page_key === 'entreprise.messagerie' ? 'selected' : '' }}>Messagerie</option>
+                            <option value="entreprise.fidelisation" {{ $lesson->page_key === 'entreprise.fidelisation' ? 'selected' : '' }}>Fidélisation</option>
+                            <option value="entreprise.parametres" {{ $lesson->page_key === 'entreprise.parametres' ? 'selected' : '' }}>Paramètres</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input 
                             type="checkbox" 

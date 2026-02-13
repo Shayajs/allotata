@@ -1,5 +1,8 @@
 <div>
-    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Outils administratifs</h2>
+    <div class="flex items-center gap-3 mb-2">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Outils administratifs</h2>
+        <x-course-link-badge page-key="entreprise.outils" :course-links="$courseLinks ?? []" />
+    </div>
     <p class="text-slate-600 dark:text-slate-400 mb-8">Des outils pratiques pour gérer votre micro-entreprise au quotidien.</p>
 
     @php

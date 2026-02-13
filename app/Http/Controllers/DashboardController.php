@@ -10,6 +10,8 @@ use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
 use App\Models\UserIpHistory;
 use App\Models\AccountLockout;
+use App\Models\CourseModule;
+use App\Models\CourseLesson;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -309,6 +311,8 @@ class DashboardController extends Controller
             // Variables pour l'onglet Apprendre
             'courseModules' => $courseModules,
             'courseProgress' => $courseProgress,
+            // Cours liés aux pages
+            'courseLinks' => $this->loadCourseLinks(),
             // Navigation
             'navItems' => $navItems,
         ]);
@@ -504,5 +508,48 @@ class DashboardController extends Controller
             'user' => $user,
             'entreprisesAvecStats' => $entreprisesAvecStats,
         ]);
+    }
+
+    /**
+     * Charger les liens cours <-> pages pour le badge discret
+     */
+    private function loadCourseLinks(): array
+    {
+        $links = [];
+
+        $modules = CourseModule::whereNotNull('page_key')
+            ->where('est_actif', true)
+            ->select('id', 'titre', 'page_key')
+            ->get();
+
+        foreach ($modules as $module) {
+            $links[$module->page_key] = [
+                'module_id' => $module->id,
+                'module_titre' => $module->titre,
+                'lesson_id' => null,
+                'lesson_titre' => null,
+            ];
+        }
+
+        $lessons = CourseLesson::whereNotNull('page_key')
+            ->where('est_actif', true)
+            ->select('id', 'module_id', 'titre', 'page_key')
+            ->get();
+
+        foreach ($lessons as $lesson) {
+            if (isset($links[$lesson->page_key])) {
+                $links[$lesson->page_key]['lesson_id'] = $lesson->id;
+                $links[$lesson->page_key]['lesson_titre'] = $lesson->titre;
+            } else {
+                $links[$lesson->page_key] = [
+                    'module_id' => $lesson->module_id,
+                    'module_titre' => null,
+                    'lesson_id' => $lesson->id,
+                    'lesson_titre' => $lesson->titre,
+                ];
+            }
+        }
+
+        return $links;
     }
 }

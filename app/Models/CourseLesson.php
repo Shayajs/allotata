@@ -17,6 +17,7 @@ class CourseLesson extends Model
         'ordre',
         'points_quiz',
         'est_actif',
+        'page_key',
         'is_draft',
         'published_at',
     ];
@@ -417,6 +418,14 @@ class CourseLesson extends Model
         }
         
         return $blocks;
+    }
+
+    /**
+     * Scope : filtrer par page_key
+     */
+    public function scopeForPage($query, string $pageKey)
+    {
+        return $query->where('page_key', $pageKey)->where('est_actif', true);
     }
 
     /**

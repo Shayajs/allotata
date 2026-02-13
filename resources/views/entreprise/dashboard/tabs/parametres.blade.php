@@ -1,5 +1,8 @@
 <div>
-    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Paramètres de l'entreprise</h2>
+    <div class="flex items-center gap-3 mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Paramètres de l'entreprise</h2>
+        <x-course-link-badge page-key="entreprise.parametres" :course-links="$courseLinks ?? []" />
+    </div>
 
     <!-- Logo et Image de fond (en dehors du formulaire principal) -->
     <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">

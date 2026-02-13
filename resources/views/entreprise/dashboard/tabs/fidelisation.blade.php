@@ -1,6 +1,9 @@
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Fidélisation</h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Fidélisation</h2>
+            <x-course-link-badge page-key="entreprise.fidelisation" :course-links="$courseLinks ?? []" />
+        </div>
     </div>
 
     <!-- Sous-onglets -->
