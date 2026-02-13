@@ -488,6 +488,102 @@ class CourseLessonEditor {
         this.selectBlock(blockId);
     }
 
+    // ============================
+    // Méthodes utilitaires : Steps
+    // ============================
+
+    addStepToBlock(blockId) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'steps') return;
+        if (!block.content.steps) block.content.steps = [];
+        block.content.steps.push({ title: `Étape ${block.content.steps.length + 1}`, content: '<p>Description...</p>' });
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    removeStepFromBlock(blockId, index) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'steps' || !block.content.steps) return;
+        block.content.steps.splice(index, 1);
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    moveStepInBlock(blockId, fromIndex, direction) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'steps' || !block.content.steps) return;
+        const toIndex = fromIndex + direction;
+        if (toIndex < 0 || toIndex >= block.content.steps.length) return;
+        const [step] = block.content.steps.splice(fromIndex, 1);
+        block.content.steps.splice(toIndex, 0, step);
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    updateStepField(blockId, stepIndex, field, value) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || !block.content.steps || !block.content.steps[stepIndex]) return;
+        block.content.steps[stepIndex][field] = value;
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+    }
+
+    // =================================
+    // Méthodes utilitaires : Checklist
+    // =================================
+
+    addChecklistItem(blockId) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'checklist') return;
+        if (!block.content.items) block.content.items = [];
+        block.content.items.push({ text: `Item ${block.content.items.length + 1}` });
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    removeChecklistItem(blockId, index) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'checklist' || !block.content.items) return;
+        block.content.items.splice(index, 1);
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    moveChecklistItem(blockId, fromIndex, direction) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || block.type !== 'checklist' || !block.content.items) return;
+        const toIndex = fromIndex + direction;
+        if (toIndex < 0 || toIndex >= block.content.items.length) return;
+        const [item] = block.content.items.splice(fromIndex, 1);
+        block.content.items.splice(toIndex, 0, item);
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
+    updateChecklistItemText(blockId, index, value) {
+        const block = this.blocks.find(b => b.id === blockId);
+        if (!block || !block.content.items || !block.content.items[index]) return;
+        block.content.items[index].text = value;
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+    }
+
+    // ============================
+    // Méthode utilitaire : re-render complet d'un bloc avec refresh panel
+    // ============================
+
+    refreshBlockAndPanel(blockId) {
+        this.renderBlock(blockId);
+        this.scheduleAutoSave();
+        setTimeout(() => this.updatePropertiesPanel(), 300);
+    }
+
     /**
      * Réordonner les blocs après drag & drop
      */
@@ -558,7 +654,7 @@ class CourseLessonEditor {
         block.content[field] = value;
 
         // Re-render le bloc si c'est un champ qui affecte l'affichage
-        if (field === 'type' || field === 'url' || field === 'file') {
+        if (['type', 'url', 'file', 'level', 'text', 'title', 'code', 'language', 'src'].includes(field)) {
             this.renderBlock(blockId);
         }
         this.scheduleAutoSave();
@@ -575,7 +671,7 @@ class CourseLessonEditor {
         block.settings[setting] = value;
 
         // Re-render le bloc si c'est un setting qui affecte l'affichage
-        if (setting === 'pinned' || setting === 'aspectRatio') {
+        if (['pinned', 'aspectRatio', 'layout', 'style', 'spacing', 'size', 'showSolution', 'showLineNumbers', 'height'].includes(setting)) {
             this.renderBlock(blockId);
         }
         this.scheduleAutoSave();
@@ -860,7 +956,298 @@ class CourseLessonEditor {
                     }
                 }, 100);
                 break;
-            // Ajouter d'autres types...
+
+            case 'steps':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Titre (optionnel)</label>
+                    <input type="text" data-content="title" value="${this.escapeHtml(block.content?.title || '')}"
+                           placeholder="Titre des étapes..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    <label class="block text-sm text-slate-300 mb-2">Disposition</label>
+                    <select data-setting="layout" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-4">
+                        <option value="vertical" ${(block.settings?.layout || 'vertical') === 'vertical' ? 'selected' : ''}>Verticale</option>
+                        <option value="horizontal" ${block.settings?.layout === 'horizontal' ? 'selected' : ''}>Horizontale</option>
+                    </select>
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-slate-300 font-medium">Étapes</label>
+                        <button type="button" onclick="window.courseEditor.addStepToBlock('${block.id}')"
+                                class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Ajouter
+                        </button>
+                    </div>
+                    <div class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                `;
+                (block.content?.steps || []).forEach((step, i) => {
+                    const totalSteps = block.content.steps.length;
+                    html += `
+                        <div class="bg-slate-800 rounded-lg p-3 border border-slate-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-green-400 flex items-center gap-1.5">
+                                    <span class="w-5 h-5 rounded-full bg-green-600 text-white text-xs flex items-center justify-center">${i + 1}</span>
+                                    Étape ${i + 1}
+                                </span>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="window.courseEditor.moveStepInBlock('${block.id}', ${i}, -1)" ${i === 0 ? 'disabled' : ''}
+                                            class="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition" title="Monter">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                                    </button>
+                                    <button type="button" onclick="window.courseEditor.moveStepInBlock('${block.id}', ${i}, 1)" ${i === totalSteps - 1 ? 'disabled' : ''}
+                                            class="p-1 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition" title="Descendre">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <button type="button" onclick="window.courseEditor.removeStepFromBlock('${block.id}', ${i})"
+                                            class="p-1 text-red-400 hover:text-red-300 transition" title="Supprimer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="text" value="${this.escapeHtml(step.title || '')}" placeholder="Titre de l'étape"
+                                   onchange="window.courseEditor.updateStepField('${block.id}', ${i}, 'title', this.value)"
+                                   class="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-xs mb-2">
+                            <textarea onchange="window.courseEditor.updateStepField('${block.id}', ${i}, 'content', this.value)"
+                                      placeholder="Contenu de l'étape (HTML accepté)..."
+                                      class="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-xs resize-y" rows="2">${this.escapeHtml(step.content || '')}</textarea>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                if (!block.content?.steps?.length) {
+                    html += `<p class="text-slate-500 text-xs text-center py-3">Aucune étape. Cliquez "Ajouter" pour commencer.</p>`;
+                }
+                break;
+
+            case 'exercise':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Titre</label>
+                    <input type="text" data-content="title" value="${this.escapeHtml(block.content?.title || 'Exercice pratique')}"
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    
+                    <label class="block text-sm text-slate-300 mb-2">Instructions</label>
+                    <div id="quill-exercise-instructions-${block.id}" class="bg-slate-700 rounded mb-1" style="min-height: 120px;"></div>
+                    <input type="hidden" id="exercise-instructions-content-${block.id}" value="${(block.content?.instructions || '').replace(/"/g, '&quot;')}">
+                    <p class="text-xs text-slate-500 mb-4">Décrivez ce que l'apprenant doit faire.</p>
+
+                    <label class="block text-sm text-slate-300 mb-2">Solution</label>
+                    <div id="quill-exercise-solution-${block.id}" class="bg-slate-700 rounded mb-1" style="min-height: 120px;"></div>
+                    <input type="hidden" id="exercise-solution-content-${block.id}" value="${(block.content?.solution || '').replace(/"/g, '&quot;')}">
+                    <p class="text-xs text-slate-500 mb-4">La solution sera masquée pour l'apprenant par défaut.</p>
+
+                    <div class="space-y-3 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" data-content="responseArea" ${block.content?.responseArea ? 'checked' : ''}
+                                   class="w-4 h-4 rounded border-slate-600 text-green-600 focus:ring-green-500 bg-slate-700"
+                                   onchange="window.courseEditor.updateBlockContent('${block.id}', 'responseArea', this.checked); window.courseEditor.renderBlock('${block.id}');">
+                            <span class="text-sm text-slate-300">Zone de réponse (textarea pour l'apprenant)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" data-setting="showSolution" ${block.settings?.showSolution ? 'checked' : ''}
+                                   class="w-4 h-4 rounded border-slate-600 text-green-600 focus:ring-green-500 bg-slate-700">
+                            <span class="text-sm text-slate-300">Afficher la solution aux apprenants</span>
+                        </label>
+                    </div>
+                `;
+                // Initialiser les 2 éditeurs Quill pour instructions et solution
+                setTimeout(() => {
+                    this.initQuillForField(block.id, 'exercise-instructions', block.content?.instructions || '', (val) => {
+                        block.content.instructions = val;
+                        this.renderBlock(block.id);
+                        this.scheduleAutoSave();
+                    });
+                    this.initQuillForField(block.id, 'exercise-solution', block.content?.solution || '', (val) => {
+                        block.content.solution = val;
+                        this.renderBlock(block.id);
+                        this.scheduleAutoSave();
+                    });
+                }, 200);
+                break;
+
+            case 'callout':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Type d'encadré</label>
+                    <select id="callout-type-${block.id}" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                        <option value="info" ${(block.content?.type || 'info') === 'info' ? 'selected' : ''}>ℹ️ Information</option>
+                        <option value="tip" ${block.content?.type === 'tip' ? 'selected' : ''}>💡 Astuce</option>
+                        <option value="warning" ${block.content?.type === 'warning' ? 'selected' : ''}>⚠️ Attention</option>
+                        <option value="danger" ${block.content?.type === 'danger' ? 'selected' : ''}>🔴 Danger</option>
+                    </select>
+                    
+                    <label class="block text-sm text-slate-300 mb-2">Titre</label>
+                    <input type="text" data-content="title" value="${this.escapeHtml(block.content?.title || '')}"
+                           placeholder="Titre de l'encadré..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    
+                    <label class="block text-sm text-slate-300 mb-2">Contenu</label>
+                    <div id="quill-callout-${block.id}" class="bg-slate-700 rounded" style="min-height: 150px;"></div>
+                    <input type="hidden" id="callout-content-${block.id}" value="${(block.content?.html || '').replace(/"/g, '&quot;')}">
+                `;
+                setTimeout(() => {
+                    // Callout type change
+                    const calloutType = document.getElementById(`callout-type-${block.id}`);
+                    if (calloutType) {
+                        calloutType.addEventListener('change', (e) => {
+                            this.updateBlockContent(block.id, 'type', e.target.value);
+                            this.renderBlock(block.id);
+                        });
+                    }
+                    // Quill pour le contenu
+                    this.initQuillForField(block.id, 'callout', block.content?.html || '', (val) => {
+                        block.content.html = val;
+                        this.renderBlock(block.id);
+                        this.scheduleAutoSave();
+                    });
+                }, 200);
+                break;
+
+            case 'checklist':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Titre (optionnel)</label>
+                    <input type="text" data-content="title" value="${this.escapeHtml(block.content?.title || '')}"
+                           placeholder="Titre de la checklist..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm text-slate-300 font-medium">Items</label>
+                        <button type="button" onclick="window.courseEditor.addChecklistItem('${block.id}')"
+                                class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Ajouter
+                        </button>
+                    </div>
+                    <div class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                `;
+                (block.content?.items || []).forEach((item, i) => {
+                    const totalItems = block.content.items.length;
+                    html += `
+                        <div class="flex items-center gap-2 bg-slate-800 rounded-lg p-2 border border-slate-600">
+                            <div class="w-4 h-4 rounded border-2 border-green-500 flex-shrink-0"></div>
+                            <input type="text" value="${this.escapeHtml(item.text || '')}" placeholder="Texte de l'item..."
+                                   onchange="window.courseEditor.updateChecklistItemText('${block.id}', ${i}, this.value)"
+                                   class="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-xs">
+                            <div class="flex items-center gap-0.5 flex-shrink-0">
+                                <button type="button" onclick="window.courseEditor.moveChecklistItem('${block.id}', ${i}, -1)" ${i === 0 ? 'disabled' : ''}
+                                        class="p-0.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                                </button>
+                                <button type="button" onclick="window.courseEditor.moveChecklistItem('${block.id}', ${i}, 1)" ${i === totalItems - 1 ? 'disabled' : ''}
+                                        class="p-0.5 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                                <button type="button" onclick="window.courseEditor.removeChecklistItem('${block.id}', ${i})"
+                                        class="p-0.5 text-red-400 hover:text-red-300 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                if (!block.content?.items?.length) {
+                    html += `<p class="text-slate-500 text-xs text-center py-3">Aucun item. Cliquez "Ajouter" pour commencer.</p>`;
+                }
+                break;
+
+            case 'code':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Langage</label>
+                    <select data-content="language" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                        <option value="javascript" ${(block.content?.language || 'javascript') === 'javascript' ? 'selected' : ''}>JavaScript</option>
+                        <option value="php" ${block.content?.language === 'php' ? 'selected' : ''}>PHP</option>
+                        <option value="python" ${block.content?.language === 'python' ? 'selected' : ''}>Python</option>
+                        <option value="html" ${block.content?.language === 'html' ? 'selected' : ''}>HTML</option>
+                        <option value="css" ${block.content?.language === 'css' ? 'selected' : ''}>CSS</option>
+                        <option value="bash" ${block.content?.language === 'bash' ? 'selected' : ''}>Bash / Terminal</option>
+                        <option value="sql" ${block.content?.language === 'sql' ? 'selected' : ''}>SQL</option>
+                        <option value="json" ${block.content?.language === 'json' ? 'selected' : ''}>JSON</option>
+                        <option value="xml" ${block.content?.language === 'xml' ? 'selected' : ''}>XML</option>
+                        <option value="text" ${block.content?.language === 'text' ? 'selected' : ''}>Texte brut</option>
+                    </select>
+
+                    <label class="block text-sm text-slate-300 mb-2">Code</label>
+                    <textarea data-content="code" rows="10" spellcheck="false"
+                              class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-green-400 text-sm font-mono resize-y">${this.escapeHtml(block.content?.code || '')}</textarea>
+
+                    <label class="flex items-center gap-2 cursor-pointer mt-3">
+                        <input type="checkbox" data-setting="showLineNumbers" ${block.settings?.showLineNumbers !== false ? 'checked' : ''}
+                               class="w-4 h-4 rounded border-slate-600 text-green-600 focus:ring-green-500 bg-slate-700">
+                        <span class="text-sm text-slate-300">Afficher les numéros de ligne</span>
+                    </label>
+                `;
+                break;
+
+            case 'image':
+                const imgSrc = block.content?.src || '';
+                const imgAlt = block.content?.alt || '';
+                const imgCaption = block.content?.caption || '';
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Image</label>
+                    ${imgSrc ? `
+                        <div class="mb-3 rounded overflow-hidden border border-slate-600">
+                            <img src="${this.escapeHtml(imgSrc)}" class="w-full h-auto" alt="Aperçu">
+                        </div>
+                    ` : '<p class="text-xs text-slate-400 mb-3">Aucune image sélectionnée</p>'}
+                    <button type="button" onclick="window.courseEditor.openMediaSelectorForBlock('${block.id}')"
+                            class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition mb-3">
+                        ${imgSrc ? 'Changer l\'image' : 'Sélectionner une image'}
+                    </button>
+                    <label class="block text-sm text-slate-300 mb-2">Texte alternatif</label>
+                    <input type="text" data-content="alt" value="${this.escapeHtml(imgAlt)}" placeholder="Description de l'image..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    <label class="block text-sm text-slate-300 mb-2">Légende (optionnel)</label>
+                    <input type="text" data-content="caption" value="${this.escapeHtml(imgCaption)}" placeholder="Légende..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    <label class="block text-sm text-slate-300 mb-2">Taille</label>
+                    <select data-setting="size" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                        <option value="small" ${block.settings?.size === 'small' ? 'selected' : ''}>Petite</option>
+                        <option value="medium" ${(block.settings?.size || 'medium') === 'medium' ? 'selected' : ''}>Moyenne</option>
+                        <option value="large" ${block.settings?.size === 'large' ? 'selected' : ''}>Grande</option>
+                        <option value="full" ${block.settings?.size === 'full' ? 'selected' : ''}>Pleine largeur</option>
+                    </select>
+                `;
+                break;
+
+            case 'divider':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Style de séparateur</label>
+                    <select data-setting="style" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                        <option value="solid" ${(block.settings?.style || 'solid') === 'solid' ? 'selected' : ''}>Ligne pleine</option>
+                        <option value="dashed" ${block.settings?.style === 'dashed' ? 'selected' : ''}>Tirets</option>
+                        <option value="dotted" ${block.settings?.style === 'dotted' ? 'selected' : ''}>Points</option>
+                    </select>
+                    <label class="block text-sm text-slate-300 mb-2">Espacement</label>
+                    <select data-setting="spacing" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm">
+                        <option value="small" ${block.settings?.spacing === 'small' ? 'selected' : ''}>Petit</option>
+                        <option value="medium" ${(block.settings?.spacing || 'medium') === 'medium' ? 'selected' : ''}>Moyen</option>
+                        <option value="large" ${block.settings?.spacing === 'large' ? 'selected' : ''}>Grand</option>
+                    </select>
+                `;
+                break;
+
+            case 'iframe':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">URL de l'iframe</label>
+                    <input type="url" data-content="src" value="${this.escapeHtml(block.content?.src || '')}" placeholder="https://..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    <label class="block text-sm text-slate-300 mb-2">Hauteur (px)</label>
+                    <input type="number" data-setting="height" min="100" max="1200" value="${block.settings?.height || 400}"
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm">
+                `;
+                break;
+
+            case 'embed':
+                html += `
+                    <label class="block text-sm text-slate-300 mb-2">Type de document</label>
+                    <select data-setting="type" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                        <option value="pdf" ${(block.settings?.type || 'pdf') === 'pdf' ? 'selected' : ''}>PDF</option>
+                        <option value="doc" ${block.settings?.type === 'doc' ? 'selected' : ''}>Document</option>
+                    </select>
+                    <label class="block text-sm text-slate-300 mb-2">URL du document</label>
+                    <input type="url" data-content="url" value="${this.escapeHtml(block.content?.url || '')}" placeholder="https://..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm mb-3">
+                    <label class="block text-sm text-slate-300 mb-2">Titre (optionnel)</label>
+                    <input type="text" data-content="title" value="${this.escapeHtml(block.content?.title || '')}" placeholder="Titre du document..."
+                           class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm">
+                `;
+                break;
         }
 
         html += '</div>';
@@ -1256,6 +1643,49 @@ class CourseLessonEditor {
         // Stocker la référence Quill
         if (!this.quillInstances) this.quillInstances = {};
         this.quillInstances[blockId] = quill;
+    }
+
+    /**
+     * Initialiser un éditeur Quill simplifié pour un champ arbitraire (exercise, callout, etc.)
+     */
+    initQuillForField(blockId, fieldPrefix, initialContent, onChangeCallback) {
+        const editorEl = document.getElementById(`quill-${fieldPrefix}-${blockId}`);
+        if (!editorEl || !window.Quill) return;
+
+        const quillKey = `${fieldPrefix}-${blockId}`;
+        if (this.quillInstances && this.quillInstances[quillKey]) return;
+
+        const quill = new Quill(editorEl, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Écrivez ici...',
+            formats: ['bold', 'italic', 'underline', 'link', 'header', 'list', 'align']
+        });
+
+        if (initialContent) {
+            quill.clipboard.dangerouslyPasteHTML(initialContent);
+        }
+
+        // Debounce pour éviter de re-render à chaque frappe
+        let debounceTimer = null;
+        quill.on('text-change', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const html = quill.root.innerHTML;
+                if (onChangeCallback) onChangeCallback(html);
+            }, 500);
+        });
+
+        if (!this.quillInstances) this.quillInstances = {};
+        this.quillInstances[quillKey] = quill;
     }
 
     /**
