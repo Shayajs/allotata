@@ -228,6 +228,15 @@ input.flatpickr-input {
 .pwa-bottom-bar { display: none; }
 .pwa-header { display: none; }
 
+/* Stabilisation position fixe bottom bar sur mobile (évite disparition au scroll) */
+.pwa-bottom-bar {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
 /* PWA mobile : bottom bar + header contextuel, cacher sidebar/burger/tabs */
 @media (display-mode: standalone) and (max-width: 768px) {
     .nav-sidebar,
@@ -241,6 +250,11 @@ input.flatpickr-input {
     .pwa-flex-layout { gap: 0 !important; }
     .pwa-hide-mobile { display: none !important; }
     main { padding-bottom: 5rem; } /* espace pour la bottom bar */
+    /* Stabiliser le viewport pour éviter le bounce scroll */
+    html, body {
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 /* PWA desktop/tablette : garder la sidebar, cacher la bottom bar */
@@ -262,6 +276,10 @@ input.flatpickr-input {
     .is-pwa .pwa-flex-layout { gap: 0 !important; }
     .is-pwa .pwa-hide-mobile { display: none !important; }
     .is-pwa main { padding-bottom: 5rem; }
+    html.is-pwa, html.is-pwa body {
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 @media (min-width: 769px) {
     .is-pwa .pwa-bottom-bar { display: none !important; }
