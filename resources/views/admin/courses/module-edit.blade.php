@@ -463,5 +463,26 @@
         }
     }
 
+    // Toggle des champs vidéo (externe / interne / aucune)
+    function toggleVideoType(type) {
+        const externalField = document.getElementById('video-external-field');
+        const internalField = document.getElementById('video-internal-field');
+        const urlInput = document.getElementById('video-url-input');
+
+        externalField.classList.add('hidden');
+        internalField.classList.add('hidden');
+
+        if (type === 'external') {
+            externalField.classList.remove('hidden');
+        } else if (type === 'internal') {
+            internalField.classList.remove('hidden');
+            // Vider l'URL externe si on passe en interne
+            if (urlInput) urlInput.value = '';
+        } else {
+            // Aucune vidéo : vider l'URL
+            if (urlInput) urlInput.value = '';
+        }
+    }
+
 </script>
 @endpush

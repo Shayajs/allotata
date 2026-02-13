@@ -61,7 +61,9 @@ class CourseController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'video_type' => 'nullable|in:none,external,internal',
             'video_url' => 'nullable|url|max:500',
+            'video_file' => 'nullable|file|mimes:mp4,webm,ogv,ogg|max:102400', // 100 Mo
             'page_key' => 'nullable|string|max:100',
             'ordre' => 'nullable|integer|min:0',
             'est_actif' => 'nullable|boolean',
@@ -76,11 +78,38 @@ class CourseController extends Controller
             $validated['image_path'] = $request->file('image')->store('courses/modules', 'public');
         }
 
+        // Gestion de la vidéo selon le type choisi
+        $videoType = $validated['video_type'] ?? 'none';
+        $videoUrl = $module->video_url; // Garder la valeur actuelle par défaut
+
+        if ($videoType === 'none') {
+            // Supprimer l'ancienne vidéo interne si elle existe
+            if ($module->video_url && !str_starts_with($module->video_url, 'http')) {
+                Storage::disk('public')->delete($module->video_url);
+            }
+            $videoUrl = null;
+        } elseif ($videoType === 'external') {
+            // Supprimer l'ancienne vidéo interne si on passe en externe
+            if ($module->video_url && !str_starts_with($module->video_url, 'http')) {
+                Storage::disk('public')->delete($module->video_url);
+            }
+            $videoUrl = $validated['video_url'] ?? null;
+        } elseif ($videoType === 'internal') {
+            if ($request->hasFile('video_file')) {
+                // Supprimer l'ancienne vidéo interne
+                if ($module->video_url && !str_starts_with($module->video_url, 'http')) {
+                    Storage::disk('public')->delete($module->video_url);
+                }
+                $videoUrl = $request->file('video_file')->store('courses/videos', 'public');
+            }
+            // Si pas de nouveau fichier, on garde l'existant (interne ou null)
+        }
+
         $module->update([
             'titre' => $validated['titre'],
             'description' => $validated['description'] ?? null,
             'image_path' => $validated['image_path'] ?? $module->image_path,
-            'video_url' => array_key_exists('video_url', $validated) ? $validated['video_url'] : $module->video_url,
+            'video_url' => $videoUrl,
             'page_key' => $validated['page_key'] ?: null,
             'ordre' => $validated['ordre'] ?? $module->ordre,
             'est_actif' => $validated['est_actif'] ?? $module->est_actif,

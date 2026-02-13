@@ -104,10 +104,14 @@
     {{-- Vidéo de présentation avec tracking --}}
     @if($module->video_url)
         @php
-            $videoUrl = $module->video_url;
-            $isYoutube = preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $videoUrl, $ytMatch);
-            $isDailymotion = preg_match('/(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/', $videoUrl, $dmMatch);
-            $isVimeo = preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vimeoMatch);
+            $rawVideoUrl = $module->video_url;
+            // Résoudre le chemin : si ce n'est pas une URL complète, c'est un fichier interne
+            $isInternalFile = !str_starts_with($rawVideoUrl, 'http');
+            $videoUrl = $isInternalFile ? asset('storage/' . $rawVideoUrl) : $rawVideoUrl;
+
+            $isYoutube = !$isInternalFile && preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $videoUrl, $ytMatch);
+            $isDailymotion = !$isInternalFile && preg_match('/(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/', $videoUrl, $dmMatch);
+            $isVimeo = !$isInternalFile && preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vimeoMatch);
             $isExternal = $isYoutube || $isDailymotion || $isVimeo;
             $alreadyWatched = $videoWatched ?? false;
         @endphp
