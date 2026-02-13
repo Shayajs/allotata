@@ -190,6 +190,9 @@ class GoogleCalendarController extends Controller
         }
 
         try {
+            // Réinitialiser le syncToken pour forcer une sync complète
+            $entreprise->update(['google_sync_token' => null]);
+
             $this->googleCalendarService->syncIncrementalChanges($entreprise);
 
             return response()->json([

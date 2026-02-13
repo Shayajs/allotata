@@ -191,10 +191,13 @@ class EmploiDuTempsService
         // Extraire le Google Event ID de la raison
         $googleEventId = str_replace('google:', '', $indispo->raison ?? '');
 
+        // Titre : utiliser le titre stocké, sinon fallback
+        $titre = $indispo->titre ?: ($indispo->raison ? 'Google Calendar' : 'Indisponibilité');
+
         return [
             'id' => 'google_' . $indispo->id,
             'type' => 'google',
-            'title' => $indispo->raison ? 'Google Calendar' : 'Indisponibilité',
+            'title' => $titre,
             'start' => $debut->toIso8601String(),
             'end' => $fin->toIso8601String(),
             'status' => null,

@@ -480,26 +480,37 @@ class GoogleCalendarService
             if ($entreprise->google_sync_token) {
                 $params['syncToken'] = $entreprise->google_sync_token;
             } else {
-                // Première sync : ne récupérer que les événements futurs
-                $params['timeMin'] = now()->toRfc3339String();
+                // Première sync : récupérer les événements passés récents + futurs
+                $params['timeMin'] = now()->subMonths(1)->toRfc3339String();
                 $params['timeMax'] = now()->addMonths(3)->toRfc3339String();
             }
 
-            $events = $calendar->events->listEvents($calendarId, $params);
+            // Gérer la pagination (Google renvoie max 250 événements par page)
+            $pageToken = null;
+            do {
+                if ($pageToken) {
+                    $params['pageToken'] = $pageToken;
+                }
 
-            foreach ($events->getItems() as $event) {
-                $this->processGoogleEvent($event, $entreprise);
-            }
+                $events = $calendar->events->listEvents($calendarId, $params);
+
+                foreach ($events->getItems() as $event) {
+                    $this->processGoogleEvent($event, $entreprise);
+                }
+
+                $pageToken = $events->getNextPageToken();
+            } while ($pageToken);
 
             // Stocker le syncToken pour la prochaine itération
             if ($events->getNextSyncToken()) {
                 $entreprise->update(['google_sync_token' => $events->getNextSyncToken()]);
             }
         } catch (\Google\Service\Exception $e) {
-            // 410 Gone = syncToken invalide, on reset
+            // 410 Gone = syncToken invalide, on reset et relancer
             if ($e->getCode() === 410) {
                 $entreprise->update(['google_sync_token' => null]);
-                Log::info('SyncToken Google invalide pour entreprise #' . $entreprise->id . ', reset effectué.');
+                Log::info('SyncToken Google invalide pour entreprise #' . $entreprise->id . ', reset et re-sync.');
+                $this->syncIncrementalChanges($entreprise);
                 return;
             }
             Log::error('Erreur sync incrémentale Google pour entreprise #' . $entreprise->id . ': ' . $e->getMessage());
@@ -516,16 +527,18 @@ class GoogleCalendarService
      */
     protected function processGoogleEvent(GoogleEvent $event, Entreprise $entreprise): void
     {
+        $googleEventId = $event->getId();
+
         // Ignorer les événements créés par Allotata (réservation ou sous-rendez-vous)
         $existingReservation = Reservation::where('entreprise_id', $entreprise->id)
-            ->where('google_event_id', $event->getId())
+            ->where('google_event_id', $googleEventId)
             ->exists();
 
         if ($existingReservation) {
             return;
         }
 
-        $existingRdv = RendezVous::where('google_event_id', $event->getId())
+        $existingRdv = RendezVous::where('google_event_id', $googleEventId)
             ->whereHas('reservation', function ($q) use ($entreprise) {
                 $q->where('entreprise_id', $entreprise->id);
             })
@@ -535,8 +548,17 @@ class GoogleCalendarService
             return;
         }
 
-        // Ignorer les événements annulés
+        // Récupérer le premier membre (gérant) pour l'indisponibilité
+        $membre = $entreprise->membres()->first();
+        if (!$membre) {
+            return;
+        }
+
+        // Événement annulé → supprimer l'indisponibilité correspondante si elle existe
         if ($event->getStatus() === 'cancelled') {
+            MembreIndisponibilite::where('membre_id', $membre->id)
+                ->where('raison', 'google:' . $googleEventId)
+                ->delete();
             return;
         }
 
@@ -544,36 +566,34 @@ class GoogleCalendarService
         $start = $event->getStart();
         $end = $event->getEnd();
 
-        if (!$start || !$end) {
+        if (!$start) {
             return;
         }
 
         $dateDebut = $start->getDateTime() ? new \DateTime($start->getDateTime()) : null;
-        $dateFin = $end->getDateTime() ? new \DateTime($end->getDateTime()) : null;
+        $dateFin = $end && $end->getDateTime() ? new \DateTime($end->getDateTime()) : null;
 
         // Événements journée entière
         if (!$dateDebut && $start->getDate()) {
             $dateDebut = new \DateTime($start->getDate());
-            $dateFin = $end->getDate() ? new \DateTime($end->getDate()) : (clone $dateDebut)->modify('+1 day');
+            $dateFin = ($end && $end->getDate()) ? new \DateTime($end->getDate()) : (clone $dateDebut)->modify('+1 day');
         }
 
         if (!$dateDebut) {
             return;
         }
 
-        // Récupérer le premier membre (gérant) pour l'indisponibilité
-        $membre = $entreprise->membres()->first();
-        if (!$membre) {
-            return;
-        }
+        // Titre de l'événement Google
+        $titre = $event->getSummary() ?: 'Événement Google';
 
         // Créer ou mettre à jour l'indisponibilité
         MembreIndisponibilite::updateOrCreate(
             [
                 'membre_id' => $membre->id,
-                'raison' => 'google:' . $event->getId(),
+                'raison' => 'google:' . $googleEventId,
             ],
             [
+                'titre' => $titre,
                 'date_debut' => $dateDebut->format('Y-m-d'),
                 'date_fin' => $dateFin ? $dateFin->format('Y-m-d') : $dateDebut->format('Y-m-d'),
                 'heure_debut' => $dateDebut->format('H:i') !== '00:00' ? $dateDebut->format('H:i') : null,

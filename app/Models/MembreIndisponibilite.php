@@ -20,6 +20,7 @@ class MembreIndisponibilite extends Model
         'heure_debut',
         'heure_fin',
         'raison',
+        'titre',
     ];
 
     protected function casts(): array
