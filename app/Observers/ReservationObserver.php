@@ -81,6 +81,9 @@ class ReservationObserver
         if ($reservation->isDirty(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service'])) {
             if ($reservation->statut === 'annulee') {
                 $this->syncToGoogle($reservation, 'delete');
+            } elseif (empty($reservation->google_event_id)) {
+                // Pas encore d'événement Google → le créer (ex: acceptation d'une réservation en attente)
+                $this->syncToGoogle($reservation, 'create');
             } else {
                 $this->syncToGoogle($reservation, 'update');
             }
