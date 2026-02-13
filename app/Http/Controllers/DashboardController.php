@@ -392,6 +392,7 @@ class DashboardController extends Controller
             $updateData['date_reservation'] = $dateReservation;
         } else {
             $updateData['date_reservation'] = $dateReservation;
+            $updateData['date_fin'] = $dateReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 60));
         }
         $reservation->update($updateData);
 

@@ -373,8 +373,8 @@
                 </div>
             </div>
 
-            <!-- Date et heure -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Date et heure (masqués si date butoire) -->
+            <div id="date-heure-wrapper-manual" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Date <span class="text-red-500">*</span>
@@ -401,6 +401,23 @@
                 </div>
             </div>
 
+            <!-- Date butoire (visible uniquement pour services à date butoire) -->
+            <div id="date-butoire-wrapper-manual" class="hidden">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Date butoire souhaitée <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="date" 
+                    name="date_butoire" 
+                    id="date_butoire_manual"
+                    disabled
+                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                >
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Pour ce type de service, seule une date butoire est demandée (pas de créneau horaire).
+                </p>
+            </div>
+
             <!-- Type de service -->
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -415,8 +432,8 @@
                     <option value="">Sélectionner un service ou saisir manuellement</option>
                     @if(isset($typesServices))
                         @foreach($typesServices as $typeService)
-                            <option value="{{ $typeService->id }}" data-prix="{{ $typeService->prix }}" data-duree="{{ $typeService->duree_minutes }}">
-                                {{ $typeService->nom }} - {{ number_format($typeService->prix, 2, ',', ' ') }} € ({{ $typeService->duree_minutes }} min)
+                            <option value="{{ $typeService->id }}" data-prix="{{ $typeService->prix }}" data-duree="{{ $typeService->duree_minutes }}" data-type-structure="{{ $typeService->type_structure ?? 'ponctuel' }}">
+                                {{ $typeService->nom }} - {{ number_format($typeService->prix, 2, ',', ' ') }} € ({{ $typeService->duree_formatee }})
                             </option>
                         @endforeach
                     @endif
@@ -446,8 +463,8 @@
                         class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <div id="duree-wrapper-manual">
+                    <label id="duree-label-manual" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Durée (minutes) <span class="text-red-500">*</span>
                     </label>
                     <input 
@@ -602,6 +619,25 @@
         nomClient.required = true;
         emailClient.required = true;
         telClient.required = true;
+
+        // Réinitialiser les champs conditionnels (type_structure)
+        const dateHeureWrapper = document.getElementById('date-heure-wrapper-manual');
+        const dateButoireWrapper = document.getElementById('date-butoire-wrapper-manual');
+        const dateButoireInput = document.getElementById('date_butoire_manual');
+        const dateInput = document.getElementById('date_reservation');
+        const heureInput = document.getElementById('heure_reservation');
+        const dureeWrapper = document.getElementById('duree-wrapper-manual');
+        const dureeInput = document.getElementById('duree_minutes');
+        const dureeLabel = document.getElementById('duree-label-manual');
+
+        if (dateHeureWrapper) dateHeureWrapper.classList.remove('hidden');
+        if (dateInput) { dateInput.required = true; dateInput.disabled = false; }
+        if (heureInput) { heureInput.required = true; heureInput.disabled = false; }
+        if (dateButoireWrapper) dateButoireWrapper.classList.add('hidden');
+        if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.disabled = true; dateButoireInput.value = ''; }
+        if (dureeWrapper) dureeWrapper.classList.remove('hidden');
+        if (dureeInput) { dureeInput.required = true; dureeInput.disabled = false; }
+        if (dureeLabel) { dureeLabel.innerHTML = 'Durée (minutes) <span class="text-red-500">*</span>'; }
     }
 
     function toggleDatePaiement() {
@@ -620,10 +656,67 @@
     function updateServiceInfo() {
         const select = document.getElementById('type_service_id');
         const selectedOption = select.options[select.selectedIndex];
-        if (selectedOption.value) {
+
+        const dateHeureWrapper = document.getElementById('date-heure-wrapper-manual');
+        const dateButoireWrapper = document.getElementById('date-butoire-wrapper-manual');
+        const dateButoireInput = document.getElementById('date_butoire_manual');
+        const dateInput = document.getElementById('date_reservation');
+        const heureInput = document.getElementById('heure_reservation');
+        const dureeWrapper = document.getElementById('duree-wrapper-manual');
+        const dureeInput = document.getElementById('duree_minutes');
+        const dureeLabel = document.getElementById('duree-label-manual');
+
+        if (selectedOption && selectedOption.value) {
+            const typeStructure = selectedOption.dataset.typeStructure || 'ponctuel';
+
             document.getElementById('prix').value = selectedOption.dataset.prix;
-            document.getElementById('duree_minutes').value = selectedOption.dataset.duree;
-            document.getElementById('type_service').value = selectedOption.text.split(' - ')[0];
+            document.getElementById('type_service').value = selectedOption.text.split(' - ')[0].trim();
+
+            if (typeStructure === 'date_butoire') {
+                // Masquer date+heure et durée, afficher date butoire
+                dateHeureWrapper.classList.add('hidden');
+                if (dateInput) { dateInput.required = false; dateInput.disabled = true; }
+                if (heureInput) { heureInput.required = false; heureInput.disabled = true; }
+
+                dateButoireWrapper.classList.remove('hidden');
+                if (dateButoireInput) { dateButoireInput.required = true; dateButoireInput.disabled = false; }
+
+                dureeWrapper.classList.add('hidden');
+                if (dureeInput) { dureeInput.required = false; dureeInput.disabled = true; dureeInput.value = selectedOption.dataset.duree; }
+            } else {
+                // Afficher date+heure et durée
+                dateHeureWrapper.classList.remove('hidden');
+                if (dateInput) { dateInput.required = true; dateInput.disabled = false; }
+                if (heureInput) { heureInput.required = true; heureInput.disabled = false; }
+
+                dateButoireWrapper.classList.add('hidden');
+                if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.disabled = true; dateButoireInput.value = ''; }
+
+                dureeWrapper.classList.remove('hidden');
+                if (dureeInput) { dureeInput.required = true; dureeInput.disabled = false; dureeInput.value = selectedOption.dataset.duree; }
+
+                // Adapter le label de la durée selon le type
+                const labelMap = {
+                    'ponctuel': 'Durée (minutes)',
+                    'multi_jours': 'Durée par session (min)',
+                    'multi_rendez_vous': 'Durée par RDV (min)',
+                };
+                if (dureeLabel) {
+                    dureeLabel.innerHTML = (labelMap[typeStructure] || 'Durée (minutes)') + ' <span class="text-red-500">*</span>';
+                }
+            }
+        } else {
+            // Aucun service sélectionné : réinitialiser tout
+            dateHeureWrapper.classList.remove('hidden');
+            if (dateInput) { dateInput.required = true; dateInput.disabled = false; }
+            if (heureInput) { heureInput.required = true; heureInput.disabled = false; }
+
+            dateButoireWrapper.classList.add('hidden');
+            if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.disabled = true; dateButoireInput.value = ''; }
+
+            dureeWrapper.classList.remove('hidden');
+            if (dureeInput) { dureeInput.required = true; dureeInput.disabled = false; }
+            if (dureeLabel) { dureeLabel.innerHTML = 'Durée (minutes) <span class="text-red-500">*</span>'; }
         }
     }
 

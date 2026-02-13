@@ -379,8 +379,10 @@ class ReservationController extends Controller
             ]);
         } else {
             $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $debutUpdate = \Carbon\Carbon::parse($dateTime);
             $reservation->update([
                 'date_reservation' => $dateTime,
+                'date_fin' => $debutUpdate->copy()->addMinutes((int) ($reservation->duree_minutes ?? 60)),
                 'lieu' => $validated['lieu'] ?? null,
                 'notes' => $validated['notes'] ?? $reservation->notes,
             ]);
@@ -570,27 +572,55 @@ class ReservationController extends Controller
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
-        $validated = $request->validate([
+        // Déterminer le type de structure du service sélectionné
+        $typeService = null;
+        $isDateButoire = false;
+        if ($request->filled('type_service_id')) {
+            $typeService = \App\Models\TypeService::where('id', $request->input('type_service_id'))
+                ->where('entreprise_id', $entreprise->id)
+                ->where('est_actif', true)
+                ->first();
+
+            if (!$typeService) {
+                return back()->withErrors(['type_service_id' => 'Type de service invalide.']);
+            }
+
+            $isDateButoire = $typeService->estDateButoire();
+        }
+
+        // Règles de validation conditionnelles selon le type de structure
+        $rules = [
             'user_id' => 'nullable|exists:users,id',
             'nom_client' => 'required_if:user_id,null|string|max:255',
             'email_client' => 'nullable|email|max:255',
             'telephone_client_non_inscrit' => 'required_if:user_id,null|string|max:20',
-            'date_reservation' => 'required|date',
-            'heure_reservation' => 'required|date_format:H:i',
             'type_service_id' => 'nullable|exists:types_services,id',
             'type_service' => 'required_without:type_service_id|string|max:255',
             'membre_id' => 'nullable|exists:entreprise_membres,id',
             'lieu' => 'nullable|string|max:255',
             'prix' => 'required|numeric|min:0',
-            'duree_minutes' => 'required|integer|min:1',
             'notes' => 'nullable|string',
             'statut' => 'required|in:en_attente,confirmee,terminee',
             'est_paye' => 'boolean',
             'date_paiement' => 'nullable|date',
-        ]);
+        ];
+
+        if ($isDateButoire) {
+            $rules['date_butoire'] = 'required|date|after_or_equal:today';
+            // date_reservation et heure_reservation ne sont pas requis pour date_butoire
+            $rules['date_reservation'] = 'nullable|date';
+            $rules['heure_reservation'] = 'nullable|date_format:H:i';
+            $rules['duree_minutes'] = 'nullable|integer|min:1';
+        } else {
+            $rules['date_reservation'] = 'required|date';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+            $rules['duree_minutes'] = 'required|integer|min:1';
+        }
+
+        $validated = $request->validate($rules);
 
         // Si user_id est fourni, vérifier que c'est bien un client
-        if ($validated['user_id']) {
+        if ($validated['user_id'] ?? null) {
             $client = User::where('id', $validated['user_id'])
                 ->where('est_client', true)
                 ->first();
@@ -600,22 +630,17 @@ class ReservationController extends Controller
             }
         }
 
-        // Vérifier le type de service si type_service_id est fourni
-        $typeService = null;
-        if ($validated['type_service_id']) {
-            $typeService = \App\Models\TypeService::where('id', $validated['type_service_id'])
-                ->where('entreprise_id', $entreprise->id)
-                ->where('est_actif', true)
-                ->first();
-            
-            if (!$typeService) {
-                return back()->withErrors(['type_service_id' => 'Type de service invalide.']);
-            }
+        // Construire date/heure selon le type de structure
+        if ($isDateButoire) {
+            $dateButoire = $validated['date_butoire'];
+            $dateTime = $dateButoire . ' 00:00:00';
+            $debutReservation = \Carbon\Carbon::parse($dateTime);
+            $dureeMinutes = $typeService->duree_minutes;
+        } else {
+            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $debutReservation = \Carbon\Carbon::parse($dateTime);
+            $dureeMinutes = (int) $validated['duree_minutes'];
         }
-
-        // Combiner date et heure
-        $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
-        $debutReservation = \Carbon\Carbon::parse($dateTime);
 
         // Gérer la sélection du membre
         $membreId = null;
@@ -638,18 +663,23 @@ class ReservationController extends Controller
             'entreprise_id' => $entreprise->id,
             'membre_id' => $membreId,
             'date_reservation' => $dateTime,
+            'date_fin' => $isDateButoire ? null : $debutReservation->copy()->addMinutes($dureeMinutes),
             'lieu' => $validated['lieu'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'prix' => $validated['prix'],
-            'duree_minutes' => $validated['duree_minutes'],
+            'duree_minutes' => $dureeMinutes,
             'statut' => $validated['statut'],
             'creee_manuellement' => true,
             'est_paye' => $validated['est_paye'] ?? false,
             'date_paiement' => ($validated['est_paye'] ?? false) ? ($validated['date_paiement'] ?? now()) : null,
         ];
 
+        if ($isDateButoire) {
+            $reservationData['date_butoire'] = $validated['date_butoire'];
+        }
+
         // Si cliente non inscrite, ajouter les informations
-        if (!$validated['user_id']) {
+        if (!($validated['user_id'] ?? null)) {
             $reservationData['nom_client'] = $validated['nom_client'];
             $reservationData['email_client'] = $validated['email_client'] ?? null;
             $reservationData['telephone_client_non_inscrit'] = $validated['telephone_client_non_inscrit'];
@@ -670,14 +700,14 @@ class ReservationController extends Controller
         }
 
         // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
-        // On ne vérifie le chevauchement que pour les dates futures
-        $skipCheck = !$debutReservation->isFuture();
+        // On ne vérifie le chevauchement que pour les dates futures, et on skip pour date_butoire
+        $skipCheck = $isDateButoire || !$debutReservation->isFuture();
 
         $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
             $entreprise->id,
             $membreId,
             $debutReservation,
-            (int) $validated['duree_minutes'],
+            $dureeMinutes,
             fn () => Reservation::create($reservationData),
             $skipCheck
         );
