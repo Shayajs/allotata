@@ -202,23 +202,41 @@
                     content.classList.add('hidden');
                 });
 
-                // Réinitialiser tous les boutons de la sidebar
-                document.querySelectorAll('.sidebar-tab').forEach(button => {
-                    button.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
-                    button.classList.add('text-slate-600', 'dark:text-slate-400');
-                });
-
                 // Afficher le contenu sélectionné
                 const tabContent = document.getElementById('tab-' + tabName);
                 if (tabContent) {
                     tabContent.classList.remove('hidden');
                 }
 
-                // Activer le bouton sélectionné
-                const activeButtons = document.querySelectorAll(`[data-tab="${tabName}"]`);
-                activeButtons.forEach(button => {
-                    button.classList.remove('text-slate-600', 'dark:text-slate-400');
-                    button.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
+                // --- Sidebar & mobile tabs ---
+                document.querySelectorAll('.sidebar-tab').forEach(btn => {
+                    btn.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-400');
+                });
+                document.querySelectorAll(`.sidebar-tab[data-tab="${tabName}"]`).forEach(btn => {
+                    btn.classList.remove('text-slate-600', 'dark:text-slate-400');
+                    btn.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
+                });
+
+                // --- PWA Bottom Bar ---
+                document.querySelectorAll('.pwa-tab-btn[data-tab]').forEach(btn => {
+                    btn.classList.remove('text-green-600', 'dark:text-green-400');
+                    btn.classList.add('text-slate-400', 'dark:text-slate-500');
+                    const ind = btn.querySelector('.pwa-active-indicator');
+                    if (ind) ind.remove();
+                    const svg = btn.querySelector('svg');
+                    if (svg) svg.setAttribute('stroke-width', '1.5');
+                });
+                document.querySelectorAll(`.pwa-tab-btn[data-tab="${tabName}"]`).forEach(btn => {
+                    btn.classList.remove('text-slate-400', 'dark:text-slate-500');
+                    btn.classList.add('text-green-600', 'dark:text-green-400');
+                    if (!btn.querySelector('.pwa-active-indicator')) {
+                        const ind = document.createElement('span');
+                        ind.className = 'pwa-active-indicator absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-500 rounded-full';
+                        btn.insertBefore(ind, btn.firstChild);
+                    }
+                    const svg = btn.querySelector('svg');
+                    if (svg) svg.setAttribute('stroke-width', '2.5');
                 });
 
                 // Mettre à jour l'URL sans recharger la page

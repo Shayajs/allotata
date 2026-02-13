@@ -10,7 +10,7 @@
 @endphp
 
 <div class="pwa-bottom-bar fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-[0_-2px_10px_rgba(0,0,0,0.08)]" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
-    <nav class="flex items-stretch justify-around h-16 max-w-lg mx-auto px-1" aria-label="Navigation principale">
+    <nav class="flex items-stretch justify-around h-16 w-full px-2" aria-label="Navigation principale">
         @foreach($bottomItems as $bItem)
             @php
                 $isActive = $activeTab === ($bItem['tab'] ?? $bItem['key']);
@@ -24,7 +24,7 @@
                 data-tab="{{ $bItem['tab'] ?? $bItem['key'] }}"
             >
                 @if($isActive)
-                    <span class="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-500 rounded-full"></span>
+                    <span class="pwa-active-indicator absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-500 rounded-full"></span>
                 @endif
                 <span class="relative">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="{{ $isActive ? '2.5' : '1.5' }}"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconPath }}"></path></svg>
@@ -32,7 +32,7 @@
                         <span class="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-{{ $badgeColor }}-500 text-white rounded-full flex items-center justify-center">{{ $badge }}</span>
                     @endif
                 </span>
-                <span class="text-[10px] font-medium leading-tight truncate max-w-[64px]">{{ $bItem['short_label'] ?? $bItem['label'] }}</span>
+                <span class="text-[10px] font-medium leading-tight text-center">{{ $bItem['short_label'] ?? $bItem['label'] }}</span>
             </button>
         @endforeach
 
@@ -42,7 +42,7 @@
             class="pwa-tab-btn flex flex-col items-center justify-center flex-1 gap-0.5 text-slate-400 dark:text-slate-500"
         >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="{{ NavigationService::getIconPath('dots-h') }}"></path></svg>
-            <span class="text-[10px] font-medium leading-tight">Plus</span>
+            <span class="text-[10px] font-medium leading-tight text-center">Plus</span>
         </button>
     </nav>
 </div>
