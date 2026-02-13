@@ -15,13 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->text('endpoint');
+            $table->string('endpoint_hash', 64); // SHA-256 de l'endpoint pour l'index unique
             $table->string('p256dh_key');
             $table->string('auth_token');
             $table->string('content_encoding')->default('aesgcm');
             $table->timestamps();
 
             // Éviter les doublons (un même navigateur ne s'inscrit qu'une fois par user)
-            $table->unique(['user_id', 'endpoint']);
+            $table->unique(['user_id', 'endpoint_hash']);
         });
     }
 

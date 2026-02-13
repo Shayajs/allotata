@@ -26,9 +26,10 @@ class PushSubscriptionController extends Controller
         PushSubscription::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'endpoint' => $validated['endpoint'],
+                'endpoint_hash' => hash('sha256', $validated['endpoint']),
             ],
             [
+                'endpoint' => $validated['endpoint'],
                 'p256dh_key' => $validated['keys']['p256dh'],
                 'auth_token' => $validated['keys']['auth'],
                 'content_encoding' => $validated['content_encoding'] ?? 'aesgcm',
@@ -73,7 +74,7 @@ class PushSubscriptionController extends Controller
         $user = Auth::user();
 
         PushSubscription::where('user_id', $user->id)
-            ->where('endpoint', $validated['endpoint'])
+            ->where('endpoint_hash', hash('sha256', $validated['endpoint']))
             ->delete();
 
         return response()->json(['success' => true, 'message' => 'Souscription push supprimée.']);
