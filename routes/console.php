@@ -158,6 +158,14 @@ scheduleWithLogging('google:generate-merchant-feed', 'Génération feed RwG Merc
     ->dailyAt('04:00')->withoutOverlapping();
 
 // =============================================
+// RGPD
+// =============================================
+
+// Traiter les demandes RGPD (suppressions après délai de grâce + nettoyage exports)
+scheduleWithLogging('gdpr:process-requests', 'Traitement demandes RGPD')
+    ->dailyAt('07:00')->withoutOverlapping();
+
+// =============================================
 // NETTOYAGE & MAINTENANCE
 // =============================================
 

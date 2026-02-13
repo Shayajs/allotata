@@ -1120,63 +1120,253 @@
 
                     <!-- Onglet Confidentialité -->
                     <div id="tab-confidentialite" class="tab-content hidden">
-                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Confidentialité</h2>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Confidentialité & RGPD</h2>
                         
-                        <form action="{{ route('settings.confidentialite.update') }}" method="POST" class="space-y-6">
-                            @csrf
-                            
+                        <div class="space-y-6">
                             <!-- Consentement aux trackers -->
-                            <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                                <div class="flex items-start justify-between gap-4 mb-4">
-                                    <div class="flex-1">
-                                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                                            Tracker de visites
-                                        </h3>
-                                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                                            En acceptant les trackers, vous aidez les professionnels (Tata) à améliorer et simplifier leurs activités. 
-                                            Ces statistiques anonymisées leur permettent de mieux comprendre les besoins de leurs clients et d'optimiser leurs services.
-                                        </p>
-                                        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
-                                            <p class="text-sm text-blue-800 dark:text-blue-400">
-                                                <strong>🔒 Données collectées :</strong> Les trackers enregistrent uniquement des données anonymes (durée de visite, pages consultées, services/produits cliqués). 
-                                                Aucune donnée personnelle identifiable n'est collectée sans votre consentement explicite.
+                            <form action="{{ route('settings.confidentialite.update') }}" method="POST" class="space-y-6">
+                                @csrf
+                                <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                    <div class="flex items-start justify-between gap-4 mb-4">
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                                Tracker de visites
+                                            </h3>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                                En acceptant les trackers, vous aidez les professionnels (Tata) à améliorer et simplifier leurs activités. 
+                                                Ces statistiques anonymisées leur permettent de mieux comprendre les besoins de leurs clients et d'optimiser leurs services.
+                                            </p>
+                                            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+                                                <p class="text-sm text-blue-800 dark:text-blue-400">
+                                                    <strong>Données collectées :</strong> Les trackers enregistrent uniquement des données anonymes (durée de visite, pages consultées, services/produits cliqués). 
+                                                    Aucune donnée personnelle identifiable n'est collectée sans votre consentement explicite.
+                                                </p>
+                                            </div>
+                                            <p class="text-xs text-slate-500 dark:text-slate-500 mb-4">
+                                                En conformité avec le RGPD, vous pouvez à tout moment modifier votre préférence. 
+                                                <a href="{{ route('legal.confidentialite') }}" class="text-green-600 dark:text-green-400 hover:underline">En savoir plus sur notre politique de confidentialité</a>.
                                             </p>
                                         </div>
-                                        <p class="text-xs text-slate-500 dark:text-slate-500 mb-4">
-                                            En conformité avec le RGPD, vous pouvez à tout moment modifier votre préférence. 
-                                            <a href="{{ route('legal.confidentialite') }}" class="text-green-600 dark:text-green-400 hover:underline">En savoir plus sur notre politique de confidentialité</a>.
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                        <div class="flex-1">
+                                            <label class="text-base font-medium text-slate-900 dark:text-white cursor-pointer" for="tracking-consent">
+                                                Autoriser le tracking des visites pour améliorer les services des Tata
+                                            </label>
+                                        </div>
+                                        <div class="ml-4">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="tracking-consent"
+                                                    name="tracking_consent" 
+                                                    value="1"
+                                                    {{ old('tracking_consent', $user->tracking_consent ?? true) ? 'checked' : '' }}
+                                                    class="sr-only peer"
+                                                >
+                                                <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-end mt-4">
+                                        <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
+                                            Enregistrer
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Droit d'accès : Télécharger mes données -->
+                            <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                    Télécharger mes données
+                                </h3>
+                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                    Conformément au RGPD (articles 15 et 20), vous avez le droit d'obtenir une copie de toutes les données personnelles que nous détenons vous concernant. 
+                                    L'export sera un fichier ZIP contenant vos données au format JSON, un récapitulatif PDF lisible, ainsi que vos fichiers (photos, etc.).
+                                </p>
+
+                                @if(isset($gdprData['pendingExport']) && $gdprData['pendingExport'])
+                                    <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
+                                        <p class="text-sm text-yellow-800 dark:text-yellow-400">
+                                            Un export est en cours de génération. Veuillez patienter...
                                         </p>
                                     </div>
-                                </div>
-                                
-                                <div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                                    <div class="flex-1">
-                                        <label class="text-base font-medium text-slate-900 dark:text-white cursor-pointer" for="tracking-consent">
-                                            Autoriser le tracking des visites pour améliorer les services des Tata
-                                        </label>
+                                @endif
+
+                                @if(isset($gdprData['lastExport']) && $gdprData['lastExport'] && $gdprData['lastExport']->isDownloadAvailable())
+                                    <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm text-green-800 dark:text-green-400 font-medium">
+                                                    Votre dernier export est prêt
+                                                </p>
+                                                <p class="text-xs text-green-600 dark:text-green-500 mt-1">
+                                                    Généré le {{ $gdprData['lastExport']->processed_at->format('d/m/Y à H:i') }} 
+                                                    — Expire le {{ $gdprData['lastExport']->expires_at->format('d/m/Y') }}
+                                                    @if($gdprData['lastExport']->metadata && isset($gdprData['lastExport']->metadata['file_size']))
+                                                        — {{ number_format($gdprData['lastExport']->metadata['file_size'] / 1024, 0) }} Ko
+                                                    @endif
+                                                </p>
+                                            </div>
+                                            <a href="{{ route('gdpr.download', $gdprData['lastExport']) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                                                Télécharger
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div class="ml-4">
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                id="tracking-consent"
-                                                name="tracking_consent" 
-                                                value="1"
-                                                {{ old('tracking_consent', $user->tracking_consent ?? true) ? 'checked' : '' }}
-                                                class="sr-only peer"
-                                            >
-                                            <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
-                                        </label>
+                                @endif
+
+                                <form action="{{ route('gdpr.export') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
+                                        Générer un nouvel export de mes données
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Droit à l'effacement : Suppression du compte -->
+                            <div class="p-6 border border-red-200 dark:border-red-800 rounded-lg bg-red-50/50 dark:bg-red-900/10">
+                                <h3 class="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">
+                                    Suppression du compte
+                                </h3>
+                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                                    Conformément au RGPD (article 17), vous pouvez demander la suppression de votre compte et de vos données personnelles.
+                                </p>
+
+                                @if(isset($gdprData['pendingDeletion']) && $gdprData['pendingDeletion'])
+                                    {{-- Demande de suppression en cours --}}
+                                    <div class="p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg mb-4">
+                                        <div class="flex items-start gap-3">
+                                            <svg class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                            </svg>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-red-800 dark:text-red-300">
+                                                    Demande de suppression en cours
+                                                </p>
+                                                <p class="text-sm text-red-700 dark:text-red-400 mt-1">
+                                                    Votre compte sera définitivement supprimé le <strong>{{ $gdprData['pendingDeletion']->scheduled_at->format('d/m/Y') }}</strong>
+                                                    (dans {{ $gdprData['pendingDeletion']->daysUntilExecution() }} jour(s)).
+                                                </p>
+                                                @if($gdprData['pendingDeletion']->reason)
+                                                    <p class="text-xs text-red-600 dark:text-red-500 mt-1">Raison : {{ $gdprData['pendingDeletion']->reason }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <form action="{{ route('gdpr.cancel-deletion', $gdprData['pendingDeletion']) }}" method="POST" class="mt-4">
+                                            @csrf
+                                            <button type="submit" class="px-4 py-2 bg-white dark:bg-slate-800 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                                                Annuler la demande de suppression
+                                            </button>
+                                        </form>
+                                    </div>
+                                @else
+                                    {{-- Formulaire de demande de suppression --}}
+                                    <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-4">
+                                        <p class="text-sm text-amber-800 dark:text-amber-400">
+                                            <strong>Attention :</strong> Cette action est irréversible une fois le délai de grâce écoulé. Vos données personnelles seront anonymisées. 
+                                            Les factures seront conservées conformément à la législation française (10 ans). 
+                                            Nous vous recommandons de télécharger vos données avant de procéder.
+                                        </p>
+                                    </div>
+
+                                    <form action="{{ route('gdpr.request-deletion') }}" method="POST" id="deletion-form" class="space-y-4">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Raison (facultatif)
+                                            </label>
+                                            <textarea name="reason" rows="2" maxlength="1000" placeholder="Pourquoi souhaitez-vous supprimer votre compte ?" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-red-500 focus:border-red-500"></textarea>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                                Confirmez votre mot de passe
+                                            </label>
+                                            <input type="password" name="password" required class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-red-500 focus:border-red-500" placeholder="Votre mot de passe actuel">
+                                        </div>
+
+                                        <div class="flex items-start gap-2">
+                                            <input type="checkbox" name="confirm_deletion" id="confirm-deletion" value="1" required class="mt-1 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500">
+                                            <label for="confirm-deletion" class="text-sm text-slate-600 dark:text-slate-400">
+                                                Je comprends que cette action supprimera définitivement mes données personnelles après le délai de grâce et qu'elle est irréversible.
+                                            </label>
+                                        </div>
+
+                                        <button type="submit" onclick="return confirm('Êtes-vous absolument sûr(e) de vouloir demander la suppression de votre compte ?')" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
+                                            Demander la suppression de mon compte
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+
+                            <!-- Historique des demandes RGPD -->
+                            @if(isset($gdprData['history']) && $gdprData['history']->count() > 0)
+                                <div class="p-6 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                        Historique de vos demandes RGPD
+                                    </h3>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm text-left">
+                                            <thead class="text-xs text-slate-500 dark:text-slate-400 uppercase border-b border-slate-200 dark:border-slate-700">
+                                                <tr>
+                                                    <th class="py-2 pr-4">Type</th>
+                                                    <th class="py-2 pr-4">Statut</th>
+                                                    <th class="py-2 pr-4">Date</th>
+                                                    <th class="py-2">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                                @foreach($gdprData['history'] as $req)
+                                                    <tr>
+                                                        <td class="py-2 pr-4">
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $req->isExport() ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' }}">
+                                                                {{ $req->type_label }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2 pr-4">
+                                                            @php
+                                                                $statusColors = [
+                                                                    'pending' => 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+                                                                    'processing' => 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
+                                                                    'completed' => 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+                                                                    'cancelled' => 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400',
+                                                                    'failed' => 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
+                                                                ];
+                                                            @endphp
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColors[$req->status] ?? '' }}">
+                                                                {{ $req->status_label }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2 pr-4 text-slate-600 dark:text-slate-400">
+                                                            {{ $req->created_at->format('d/m/Y H:i') }}
+                                                        </td>
+                                                        <td class="py-2">
+                                                            @if($req->isDownloadAvailable())
+                                                                <a href="{{ route('gdpr.download', $req) }}" class="text-green-600 dark:text-green-400 hover:underline text-xs font-medium">
+                                                                    Télécharger
+                                                                </a>
+                                                            @elseif($req->isDeletion() && $req->canBeCancelled())
+                                                                <form action="{{ route('gdpr.cancel-deletion', $req) }}" method="POST" class="inline">
+                                                                    @csrf
+                                                                    <button type="submit" class="text-red-600 dark:text-red-400 hover:underline text-xs font-medium">
+                                                                        Annuler
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <span class="text-xs text-slate-400">—</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="flex justify-end">
-                                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
-                                    Enregistrer les modifications
-                                </button>
-                            </div>
-                        </form>
+                            @endif
+                        </div>
                     </div>
 
                     <!-- Onglet Préférences -->

@@ -103,6 +103,9 @@ class SettingsController extends Controller
             ->orderBy('periode_fin')
             ->get();
 
+        // Données RGPD pour l'onglet Confidentialité
+        $gdprData = \App\Http\Controllers\GdprController::getGdprDataForUser($user->id);
+
         return view('settings.index', [
             'user' => $user,
             'entreprises' => $entreprises,
@@ -111,6 +114,7 @@ class SettingsController extends Controller
             'invoices' => $invoices,
             'lastPayments' => $lastPayments,
             'upcomingEcheances' => $upcomingEcheances,
+            'gdprData' => $gdprData,
         ]);
     }
 
