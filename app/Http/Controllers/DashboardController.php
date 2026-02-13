@@ -298,6 +298,18 @@ class DashboardController extends Controller
     }
 
     /**
+     * Masquer le guide client pour l'utilisateur connecté.
+     */
+    public function dismissGuide(Request $request)
+    {
+        $user = Auth::user();
+        $user->client_guide_dismissed_at = now();
+        $user->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Annuler une réservation (côté client)
      */
     public function cancel(Reservation $reservation)

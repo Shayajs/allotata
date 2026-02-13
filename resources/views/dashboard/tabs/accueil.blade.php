@@ -1,5 +1,8 @@
 {{-- Onglet Accueil - Résumé global --}}
 <div class="flex flex-col">
+    <!-- Guide client pour les nouveaux utilisateurs -->
+    <x-client-guide />
+
     <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Vue d'ensemble</h2>
 
     <!-- Statut des rôles -->

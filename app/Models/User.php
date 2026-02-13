@@ -58,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // 'stripe_id' — EXCLUS : géré par Cashier (forceFill) ou assignation explicite
         'pm_type',
         'pm_last_four',
+        'client_guide_dismissed_at',
     ];
 
     /**
@@ -98,7 +99,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'a2f_enabled' => 'boolean',
             'google2fa_enabled' => 'boolean',
             'google2fa_recovery_codes' => 'array',
+            'client_guide_dismissed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Vérifie si l'utilisateur a déjà masqué le guide client.
+     */
+    public function hasSeenClientGuide(): bool
+    {
+        return $this->client_guide_dismissed_at !== null;
     }
 
     /**

@@ -44,19 +44,14 @@
                 
                 <form action="{{ route('settings.entreprise.logo.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="logo-form">
                     @csrf
-                    <input 
-                        type="file" 
+                    <x-file-upload 
                         name="logo" 
                         id="logo-input"
-                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                        required
-                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
-                        onchange="document.getElementById('logo-form').submit()"
-                    >
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" 
+                        :required="true"
+                        maxSize="2 Mo"
+                    />
                 </form>
-                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Format recommandé : PNG ou JPG, max 2MB. Le logo sera affiché sur votre page publique.
-                </p>
             </div>
 
             <!-- Image de fond -->
@@ -92,19 +87,14 @@
                 
                 <form action="{{ route('settings.entreprise.image-fond.upload', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="image-fond-form">
                     @csrf
-                    <input 
-                        type="file" 
+                    <x-file-upload 
                         name="image_fond" 
                         id="image-fond-input"
-                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                        required
-                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400"
-                        onchange="document.getElementById('image-fond-form').submit()"
-                    >
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" 
+                        :required="true"
+                        maxSize="2 Mo"
+                    />
                 </form>
-                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Format recommandé : JPG ou PNG, max 2MB. L'image sera affichée en arrière-plan de votre page publique.
-                </p>
             </div>
         </div>
     </div>

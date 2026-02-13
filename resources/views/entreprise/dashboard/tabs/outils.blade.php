@@ -76,7 +76,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Calculateur URSSAF</h3>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Calculateur <x-tooltip term="URSSAF" position="bottom">L'Union de Recouvrement des cotisations de Sécurité Sociale. C'est l'organisme qui collecte vos charges sociales (maladie, retraite, etc.).</x-tooltip></h3>
                     <p class="text-sm text-slate-600 dark:text-slate-400">Estimez vos cotisations</p>
                 </div>
             </div>
@@ -430,7 +430,7 @@
                 </div>
                 
                 <div class="mention">
-                    TVA non applicable, article 293 B du CGI (micro-entreprise)
+                    <x-tooltip term="TVA" position="top">Taxe sur la Valeur Ajoutée. En micro-entreprise, vous en êtes exempté en dessous d'un certain seuil de chiffre d'affaires.</x-tooltip> non applicable, article 293 B du CGI (micro-entreprise)
                 </div>
                 
                 <div class="footer">
