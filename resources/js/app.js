@@ -126,13 +126,18 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
 });
 
 // ========================================
-// Désinscription forcée des Service Workers (Fix Network Error)
+// Détection PWA (display-mode: standalone)
 // ========================================
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-        for (let registration of registrations) {
-            console.log('Unregistering Service Worker:', registration);
-            registration.unregister();
-        }
-    });
+const isPwa = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+if (isPwa) {
+    document.documentElement.classList.add('is-pwa');
 }
+// Réagir aux changements de mode d'affichage (ex: ajout au home screen)
+window.matchMedia('(display-mode: standalone)').addEventListener('change', function (e) {
+    if (e.matches) {
+        document.documentElement.classList.add('is-pwa');
+    } else {
+        document.documentElement.classList.remove('is-pwa');
+    }
+});

@@ -10,6 +10,7 @@ use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
 use App\Models\UserIpHistory;
 use App\Models\AccountLockout;
+use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -271,6 +272,20 @@ class DashboardController extends Controller
                 ->keyBy('module_id');
         }
 
+        // Navigation items centralisés
+        $navItems = NavigationService::getDashboardItems($user, [
+            'entreprises_count' => $entreprises->count(),
+            'reservations_en_attente' => $entrepriseStats['reservations_en_attente'] ?? 0,
+            'non_lus' => \App\Models\Conversation::where(function($q) use ($user, $entreprises) {
+                $q->where('user_id', $user->id);
+                if ($user->est_gerant) {
+                    $q->orWhereIn('entreprise_id', $entreprises->pluck('id'));
+                }
+            })->where('est_archivee', false)->get()->sum(fn($c) => $c->messagesNonLus($user->id)),
+            'notifications_non_lues' => $user->nombre_notifications_non_lues ?? 0,
+            'has_suspicious' => $hasSuspiciousActivity,
+        ]);
+
         return view('dashboard.index', [
             'user' => $user,
             'entreprises' => $entreprises,
@@ -294,6 +309,8 @@ class DashboardController extends Controller
             // Variables pour l'onglet Apprendre
             'courseModules' => $courseModules,
             'courseProgress' => $courseProgress,
+            // Navigation
+            'navItems' => $navItems,
         ]);
     }
 

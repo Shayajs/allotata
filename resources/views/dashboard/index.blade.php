@@ -91,24 +91,6 @@
 
         @php
             $activeTab = request('tab', 'accueil');
-            $nonLus = 0;
-            if ($user->est_client) {
-                $nonLus = \App\Models\Conversation::where('user_id', $user->id)
-                    ->where('est_archivee', false)
-                    ->get()
-                    ->sum(function($c) use ($user) {
-                        return $c->messagesNonLus($user->id);
-                    });
-            }
-            if ($user->est_gerant) {
-                $entreprisesIds = $user->entreprises()->pluck('id');
-                $nonLus += \App\Models\Conversation::whereIn('entreprise_id', $entreprisesIds)
-                    ->where('est_archivee', false)
-                    ->get()
-                    ->sum(function($c) use ($user) {
-                        return $c->messagesNonLus($user->id);
-                    });
-            }
         @endphp
 
         <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
@@ -140,240 +122,16 @@
 
             <!-- Layout avec Sidebar -->
             <div class="flex gap-6">
-                <!-- Sidebar Navigation (hidden on mobile, icons only on tablet, full on desktop) -->
-                <aside class="hidden md:flex flex-col w-16 xl:w-64 flex-shrink-0 sticky top-20 self-start h-[calc(100vh-6rem)] overflow-y-auto">
-                    <nav class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 xl:p-3 space-y-1">
-                        <!-- Accueil -->
-                        <button 
-                            onclick="showTab('accueil')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'accueil' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="accueil"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Accueil</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Accueil</span>
-                        </button>
+                {{-- Sidebar (composant centralisé) --}}
+                <x-nav.sidebar :items="$navItems" :active-tab="$activeTab" context="dashboard" />
 
-                        <!-- Apprendre -->
-                        <button 
-                            onclick="showTab('apprendre')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'apprendre' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="apprendre"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Apprendre</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Apprendre</span>
-                        </button>
-
-                        <!-- Mes Entreprises -->
-                        @if($user->est_gerant || $entreprises->count() > 0)
-                        <button 
-                            onclick="showTab('entreprises')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'entreprises' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="entreprises"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Mes entreprises</span>
-                            @php
-                                $entrepriseStats = $stats ?? null;
-                            @endphp
-                            @if(isset($entrepriseStats['reservations_en_attente']) && $entrepriseStats['reservations_en_attente'] > 0)
-                                <span class="xl:ml-auto px-2 py-0.5 text-xs bg-yellow-500 text-white rounded-full">{{ $entrepriseStats['reservations_en_attente'] }}</span>
-                            @endif
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes entreprises</span>
-                        </button>
-
-                        <!-- Mes Abonnements -->
-                        <button 
-                            onclick="showTab('abonnements')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'abonnements' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="abonnements"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Mes abonnements</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes abonnements</span>
-                        </button>
-                        @endif
-
-                        <!-- Réservations -->
-                        @if($user->est_client)
-                        <button 
-                            onclick="showTab('reservations')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'reservations' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="reservations"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Mes réservations</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes réservations</span>
-                        </button>
-                        @endif
-
-                        <!-- Factures -->
-                        <button 
-                            onclick="showTab('factures')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'factures' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="factures"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Mes factures</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Mes factures</span>
-                        </button>
-
-                        <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
-
-                        <!-- Messagerie -->
-                        <button 
-                            onclick="showTab('messagerie')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'messagerie' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="messagerie"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Messagerie</span>
-                            @if($nonLus > 0)
-                                <span class="xl:ml-auto px-2 py-0.5 text-xs bg-green-500 text-white rounded-full">{{ $nonLus }}</span>
-                            @endif
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Messagerie</span>
-                        </button>
-
-                        <!-- Notifications -->
-                        <button 
-                            onclick="showTab('notifications')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'notifications' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="notifications"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Notifications</span>
-                            @if($user->nombre_notifications_non_lues > 0)
-                                <span class="xl:ml-auto px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full">{{ $user->nombre_notifications_non_lues }}</span>
-                            @endif
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Notifications</span>
-                        </button>
-
-                        <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
-
-                        <!-- Sécurité -->
-                        @php
-                            $hasSuspiciousActivity = \App\Models\SecurityLog::where('user_id', $user->id)
-                                ->where('is_suspicious', true)
-                                ->where('created_at', '>=', now()->subDays(7))
-                                ->exists();
-                        @endphp
-                        <button 
-                            onclick="showTab('securite')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'securite' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="securite"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Sécurité</span>
-                            @if($hasSuspiciousActivity)
-                                <span class="w-2 h-2 bg-red-500 rounded-full xl:ml-auto"></span>
-                            @endif
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Sécurité</span>
-                        </button>
-
-                        <!-- Support -->
-                        <button 
-                            onclick="showTab('support')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'support' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="support"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Support</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Support</span>
-                        </button>
-
-                        <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>
-
-                        <!-- Installer (Nouveau) -->
-                        <button 
-                            onclick="showTab('installer')"
-                            class="sidebar-tab w-full flex items-center justify-center xl:justify-start gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all group relative {{ $activeTab === 'installer' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white' }}"
-                            data-tab="installer"
-                        >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                            </svg>
-                            <span class="hidden xl:inline">Installer</span>
-                            <span class="xl:hidden absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">Installer</span>
-                        </button>
-                    </nav>
-                </aside>
+                {{-- Header PWA (visible uniquement en PWA mobile) --}}
+                <x-nav.pwa-header :title="'Dashboard'" />
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">
-                    {{-- Barre onglets mobile (masquée à partir de md) --}}
-                    <nav class="md:hidden mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide" aria-label="Onglets dashboard">
-                        <div class="flex gap-2 pb-2 min-w-0">
-                            <button type="button" onclick="showTab('accueil')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="accueil">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                                Accueil
-                            </button>
-                            <button type="button" onclick="showTab('apprendre')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="apprendre">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                                Apprendre
-                            </button>
-                            @if($user->est_gerant || $entreprises->count() > 0)
-                            <button type="button" onclick="showTab('entreprises')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="entreprises">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                Entreprises
-                            </button>
-                            <button type="button" onclick="showTab('abonnements')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="abonnements">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                                Abonnements
-                            </button>
-                            @endif
-                            @if($user->est_client)
-                            <button type="button" onclick="showTab('reservations')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="reservations">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                Réservations
-                            </button>
-                            @endif
-                            <button type="button" onclick="showTab('factures')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="factures">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                Factures
-                            </button>
-                            <button type="button" onclick="showTab('messagerie')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="messagerie">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                                Messagerie
-                            </button>
-                            <button type="button" onclick="showTab('notifications')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="notifications">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                Notifs
-                            </button>
-                            <button type="button" onclick="showTab('securite')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="securite">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                Sécurité
-                            </button>
-                            <button type="button" onclick="showTab('support')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="support">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                Support
-                            </button>
-                            <button type="button" onclick="showTab('installer')" class="sidebar-tab flex items-center gap-2 flex-shrink-0 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" data-tab="installer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                Installer
-                            </button>
-                        </div>
-                    </nav>
+                    {{-- Barre onglets mobile (composant centralisé) --}}
+                    <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
@@ -609,6 +367,8 @@
             });
         </script>
     @stack('scripts')
+    {{-- Bottom Bar PWA (visible uniquement en PWA mobile) --}}
+    <x-nav.pwa-bottom-bar :items="$navItems" :active-tab="$activeTab" context="dashboard" />
     @include('partials.footer')
     @include('partials.pwa-install-banner')
     @include('partials.cookie-banner')

@@ -219,3 +219,47 @@ input.flatpickr-input {
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
+
+/* ========================================
+   PWA – Détection et adaptations
+   ======================================== */
+
+/* Par défaut : composants PWA cachés */
+.pwa-bottom-bar { display: none; }
+.pwa-header { display: none; }
+
+/* PWA mobile : bottom bar + header contextuel, cacher sidebar/burger/tabs */
+@media (display-mode: standalone) and (max-width: 768px) {
+    .nav-sidebar,
+    .nav-mobile-tabs,
+    .mobile-nav-burger,
+    .burger-drawer,
+    .burger-overlay { display: none !important; }
+    .pwa-bottom-bar { display: block !important; }
+    .pwa-header { display: flex !important; }
+    .pwa-desktop-header { display: none !important; }
+    main { padding-bottom: 5rem; } /* espace pour la bottom bar */
+}
+
+/* PWA desktop/tablette : garder la sidebar, cacher la bottom bar */
+@media (display-mode: standalone) and (min-width: 769px) {
+    .pwa-bottom-bar { display: none !important; }
+    .pwa-header { display: none !important; }
+}
+
+/* Fallback JS : classe is-pwa ajoutée par app.js */
+.is-pwa .pwa-bottom-bar { display: block; }
+.is-pwa .pwa-header { display: flex; }
+@media (min-width: 769px) {
+    .is-pwa .pwa-bottom-bar { display: none !important; }
+    .is-pwa .pwa-header { display: none !important; }
+}
+@media (max-width: 768px) {
+    .is-pwa .nav-sidebar,
+    .is-pwa .nav-mobile-tabs,
+    .is-pwa .mobile-nav-burger,
+    .is-pwa .burger-drawer,
+    .is-pwa .burger-overlay { display: none !important; }
+    .is-pwa .pwa-desktop-header { display: none !important; }
+    .is-pwa main { padding-bottom: 5rem; }
+}
