@@ -159,7 +159,8 @@ class ReservationObserver
             $reservation->loadMissing('entreprise');
 
             if ($reservation->entreprise?->aGoogleCalendar()) {
-                \App\Jobs\SyncReservationToGoogle::dispatch($reservation->id, $action);
+                $reservationId = $reservation->id;
+                defer(fn () => \App\Jobs\SyncReservationToGoogle::dispatchSync($reservationId, $action));
             }
         } catch (\Exception $e) {
             \Log::error('Erreur dispatch SyncReservationToGoogle pour réservation #' . $reservation->id . ': ' . $e->getMessage());
