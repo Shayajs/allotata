@@ -199,6 +199,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MembreGestionController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\GdprController;
 
 
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
@@ -525,6 +526,13 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/security/google2fa/enable', [SecurityController::class, 'enableGoogle2fa'])->name('security.google2fa.enable');
     Route::post('/security/google2fa/disable', [SecurityController::class, 'disableGoogle2fa'])->name('security.google2fa.disable');
     Route::post('/security/google2fa/recovery-codes', [SecurityController::class, 'regenerateRecoveryCodes'])->name('security.google2fa.recovery-codes');
+
+    // RGPD — Droits des utilisateurs (export, suppression)
+    Route::post('/gdpr/export', [GdprController::class, 'requestExport'])->name('gdpr.export');
+    Route::get('/gdpr/download/{gdprRequest}', [GdprController::class, 'downloadExport'])->name('gdpr.download');
+    Route::post('/gdpr/request-deletion', [GdprController::class, 'requestDeletion'])->name('gdpr.request-deletion');
+    Route::post('/gdpr/cancel-deletion/{gdprRequest}', [GdprController::class, 'cancelDeletion'])->name('gdpr.cancel-deletion');
+
     Route::post('/settings/entreprise/{slug}', [SettingsController::class, 'updateEntreprise'])->name('settings.entreprise.update');
     Route::post('/settings/entreprise/{slug}/logo/upload', [SettingsController::class, 'uploadLogo'])->name('settings.entreprise.logo.upload');
     Route::post('/settings/entreprise/{slug}/image-fond/upload', [SettingsController::class, 'uploadImageFond'])->name('settings.entreprise.image-fond.upload');
@@ -840,6 +848,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Recherche globale
     Route::get('/search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');
     
+    // RGPD — Gestion des demandes
+    Route::get('/gdpr', [\App\Http\Controllers\Admin\GdprController::class, 'index'])->name('gdpr.index');
+    Route::post('/gdpr/generate-export', [\App\Http\Controllers\Admin\GdprController::class, 'generateExport'])->name('gdpr.generate-export');
+    Route::post('/gdpr/request-deletion', [\App\Http\Controllers\Admin\GdprController::class, 'requestDeletion'])->name('gdpr.request-deletion');
+    Route::post('/gdpr/{gdprRequest}/execute-now', [\App\Http\Controllers\Admin\GdprController::class, 'executeNow'])->name('gdpr.execute-now');
+    Route::post('/gdpr/{gdprRequest}/cancel', [\App\Http\Controllers\Admin\GdprController::class, 'cancel'])->name('gdpr.cancel');
+    Route::get('/gdpr/{gdprRequest}/download', [\App\Http\Controllers\Admin\GdprController::class, 'downloadExport'])->name('gdpr.download-export');
+    Route::post('/gdpr/update-delay', [\App\Http\Controllers\Admin\GdprController::class, 'updateDelay'])->name('gdpr.update-delay');
+    Route::get('/gdpr/search-users', [\App\Http\Controllers\Admin\GdprController::class, 'searchUsers'])->name('gdpr.search-users');
+
     // Logs d'activité
     Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity-logs.index');
     // Route de secours pour l'erreur bizarre
