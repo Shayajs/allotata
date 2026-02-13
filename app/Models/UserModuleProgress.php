@@ -15,6 +15,8 @@ class UserModuleProgress extends Model
         'lessons_completed',
         'total_lessons',
         'points_total',
+        'video_watched_at',
+        'video_points_earned',
         'last_accessed_at',
     ];
 
@@ -23,6 +25,8 @@ class UserModuleProgress extends Model
         'lessons_completed' => 'integer',
         'total_lessons' => 'integer',
         'points_total' => 'integer',
+        'video_watched_at' => 'datetime',
+        'video_points_earned' => 'integer',
         'last_accessed_at' => 'datetime',
     ];
 

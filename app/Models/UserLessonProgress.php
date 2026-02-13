@@ -86,8 +86,8 @@ class UserLessonProgress extends Model
             ? round(($lessonsCompleted / $totalLessons) * 100, 2) 
             : 0;
 
-        // Calculer les points totaux
-        $pointsTotal = $module->lessons()
+        // Calculer les points des leçons
+        $lessonPoints = $module->lessons()
             ->whereHas('userProgress', function ($query) use ($user) {
                 $query->where('user_id', $user->id)
                     ->whereNotNull('completed_at');
@@ -97,6 +97,15 @@ class UserLessonProgress extends Model
                     ->where('user_lesson_progress.user_id', '=', $user->id);
             })
             ->sum('user_lesson_progress.points_earned');
+
+        // Récupérer les points vidéo existants
+        $existingProgress = UserModuleProgress::where('user_id', $user->id)
+            ->where('module_id', $module->id)
+            ->first();
+        $videoPoints = $existingProgress->video_points_earned ?? 0;
+
+        // Points total = leçons + vidéo
+        $pointsTotal = $lessonPoints + $videoPoints;
 
         // Créer ou mettre à jour la progression du module
         UserModuleProgress::updateOrCreate(

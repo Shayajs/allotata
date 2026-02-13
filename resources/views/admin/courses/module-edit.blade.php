@@ -75,6 +75,69 @@
                         <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Image actuelle: <a href="{{ asset('storage/' . $module->image_path) }}" target="_blank" class="text-green-600 hover:underline">Voir</a></p>
                     @endif
                 </div>
+
+                @php
+                    $currentVideoUrl = old('video_url', $module->video_url);
+                    $hasVideo = !empty($currentVideoUrl);
+                    $isInternalVideo = $hasVideo && !str_starts_with($currentVideoUrl, 'http');
+                    $currentVideoType = $isInternalVideo ? 'internal' : 'external';
+                @endphp
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Vidéo de présentation</label>
+                    
+                    {{-- Type selector --}}
+                    <div class="flex items-center gap-4 mb-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="video_type" value="none" {{ !$hasVideo ? 'checked' : '' }}
+                                class="w-4 h-4 text-green-600 focus:ring-green-500 border-slate-300 dark:border-slate-600"
+                                onchange="toggleVideoType('none')">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Aucune</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="video_type" value="external" {{ $hasVideo && !$isInternalVideo ? 'checked' : '' }}
+                                class="w-4 h-4 text-green-600 focus:ring-green-500 border-slate-300 dark:border-slate-600"
+                                onchange="toggleVideoType('external')">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">URL externe</span>
+                            <span class="text-xs text-slate-400">(YouTube, Dailymotion, Vimeo...)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="video_type" value="internal" {{ $isInternalVideo ? 'checked' : '' }}
+                                class="w-4 h-4 text-green-600 focus:ring-green-500 border-slate-300 dark:border-slate-600"
+                                onchange="toggleVideoType('internal')">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Fichier interne</span>
+                            <span class="text-xs text-slate-400">(lecteur Allotata)</span>
+                        </label>
+                    </div>
+
+                    {{-- External URL input --}}
+                    <div id="video-external-field" class="{{ ($hasVideo && !$isInternalVideo) ? '' : 'hidden' }}">
+                        <input type="text" name="video_url" id="video-url-input" value="{{ !$isInternalVideo ? $currentVideoUrl : '' }}"
+                            placeholder="https://youtube.com/watch?v=... ou https://dailymotion.com/video/..."
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            YouTube, Dailymotion, Vimeo (iframe auto) ou URL directe vers un fichier vidéo.
+                        </p>
+                    </div>
+
+                    {{-- Internal upload input --}}
+                    <div id="video-internal-field" class="{{ $isInternalVideo ? '' : 'hidden' }}">
+                        <input type="file" name="video_file" accept="video/mp4,video/webm,video/ogg"
+                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Formats acceptés : MP4, WebM, OGG. Max 100 Mo. Sera lu avec le lecteur Allotata personnalisé.
+                        </p>
+                        @if($isInternalVideo)
+                            <div class="mt-2 flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/50">
+                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-sm text-green-700 dark:text-green-400">Vidéo actuelle :</span>
+                                <a href="{{ asset('storage/' . $currentVideoUrl) }}" target="_blank" class="text-sm text-green-600 hover:underline truncate">{{ basename($currentVideoUrl) }}</a>
+                                <span class="text-xs text-slate-500 dark:text-slate-400 ml-auto whitespace-nowrap">Uploadez un nouveau fichier pour remplacer</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Page liée</label>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CourseModule;
 use App\Models\CourseLesson;
+use App\Models\UserModuleProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,9 +34,13 @@ class CourseController extends Controller
                 ->get()
                 ->keyBy('module_id');
 
-            $totalPoints = \App\Models\UserLessonProgress::where('user_id', $user->id)
+            // Points des leçons + points des vidéos
+            $lessonPoints = \App\Models\UserLessonProgress::where('user_id', $user->id)
                 ->whereNotNull('completed_at')
                 ->sum('points_earned');
+            $videoPoints = UserModuleProgress::where('user_id', $user->id)
+                ->sum('video_points_earned');
+            $totalPoints = $lessonPoints + $videoPoints;
         }
 
         return view('courses.index', compact('modules', 'user', 'userProgress', 'totalPoints'));
@@ -90,12 +95,16 @@ class CourseController extends Controller
             }
         }
 
+        // Vérifier si la vidéo de présentation a déjà été regardée
+        $videoWatched = $moduleProgress && $moduleProgress->video_watched_at !== null;
+
         return view('courses.module', compact(
             'module',
             'lessons',
             'user',
             'moduleProgress',
-            'lessonProgress'
+            'lessonProgress',
+            'videoWatched'
         ));
     }
 
@@ -204,8 +213,8 @@ class CourseController extends Controller
             ]);
         }
 
-        // Marquer comme complétée (cours = 100 points par défaut, points_earned = 0 si cours)
-        $pointsEarned = $lesson->isQuiz() ? 0 : 0; // Les points viennent du quiz
+        // Points : 3 pts par leçon régulière, 0 pour quiz (les quiz utilisent points_quiz via submitQuiz)
+        $pointsEarned = $lesson->isQuiz() ? 0 : 3;
         $progress->markAsCompleted(null, $pointsEarned);
 
         return response()->json([
@@ -286,6 +295,67 @@ class CourseController extends Controller
             'total_questions' => $totalQuestions,
             'points_earned' => $pointsEarned,
             'progress' => $lesson->module->getUserProgress($user),
+        ]);
+    }
+
+    /**
+     * Marquer la vidéo de présentation d'un module comme regardée (API)
+     */
+    public function completeVideo(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Non authentifié'], 401);
+        }
+
+        $validated = $request->validate([
+            'module_id' => 'required|exists:course_modules,id',
+        ]);
+
+        $module = CourseModule::findOrFail($validated['module_id']);
+
+        // Vérifier que le module a une vidéo
+        if (!$module->video_url) {
+            return response()->json(['error' => 'Ce module n\'a pas de vidéo'], 400);
+        }
+
+        // Récupérer ou créer la progression du module
+        $moduleProgress = UserModuleProgress::firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'module_id' => $module->id,
+            ],
+            [
+                'progress_percentage' => 0,
+                'lessons_completed' => 0,
+                'total_lessons' => $module->activeLessons->count(),
+                'points_total' => 0,
+                'last_accessed_at' => now(),
+            ]
+        );
+
+        // Vérifier si la vidéo a déjà été regardée
+        if ($moduleProgress->video_watched_at) {
+            return response()->json([
+                'success' => true,
+                'already_watched' => true,
+                'message' => 'Vidéo déjà regardée',
+            ]);
+        }
+
+        // Marquer la vidéo comme regardée et attribuer les points
+        $videoPoints = 5;
+        $moduleProgress->video_watched_at = now();
+        $moduleProgress->video_points_earned = $videoPoints;
+        $moduleProgress->points_total += $videoPoints;
+        $moduleProgress->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vidéo complétée ! +5 points',
+            'points_earned' => $videoPoints,
+            'points_total' => $moduleProgress->points_total,
         ]);
     }
 }

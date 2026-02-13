@@ -404,6 +404,7 @@ Route::middleware('auth')->group(function () {
     // Routes API pour la progression des cours
     Route::post('/api/courses/complete-lesson', [CourseController::class, 'completeLesson'])->name('api.courses.complete-lesson');
     Route::post('/api/courses/quiz-submit', [CourseController::class, 'submitQuiz'])->name('api.courses.quiz-submit');
+    Route::post('/api/courses/complete-video', [CourseController::class, 'completeVideo'])->name('api.courses.complete-video');
     
     // Routes API pour la présence
     Route::post('/api/presence/heartbeat', [\App\Http\Controllers\PresenceController::class, 'heartbeat'])->name('api.presence.heartbeat');

@@ -101,32 +101,60 @@
         </div>
     </section>
 
-    {{-- Vidéo de présentation --}}
+    {{-- Vidéo de présentation avec tracking --}}
     @if($module->video_url)
-        <section class="px-4 sm:px-6 lg:px-8 2xl:px-12 pb-4 sm:pb-6">
-            <div class="max-w-6xl xl:max-w-7xl 2xl:max-w-[1400px] mx-auto">
-                <div class="rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700 bg-black">
-                    @php
-                        $videoUrl = $module->video_url;
-                        $isYoutube = preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $videoUrl, $ytMatch);
-                        $isVimeo = preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vimeoMatch);
-                    @endphp
+        @php
+            $videoUrl = $module->video_url;
+            $isYoutube = preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $videoUrl, $ytMatch);
+            $isDailymotion = preg_match('/(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/', $videoUrl, $dmMatch);
+            $isVimeo = preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vimeoMatch);
+            $isExternal = $isYoutube || $isDailymotion || $isVimeo;
+            $alreadyWatched = $videoWatched ?? false;
+        @endphp
 
+        <section class="px-4 sm:px-6 lg:px-8 2xl:px-12 pb-4 sm:pb-6" id="video-section" data-module-id="{{ $module->id }}" data-already-watched="{{ $alreadyWatched ? '1' : '0' }}">
+            <div class="max-w-6xl xl:max-w-7xl 2xl:max-w-[1400px] mx-auto">
+
+                {{-- Header vidéo avec badge points --}}
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+                        </svg>
+                        Vidéo de présentation
+                    </h2>
+                    <div id="video-points-badge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 {{ $alreadyWatched ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' }}">
+                        @if($alreadyWatched)
+                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>5 pts gagnés</span>
+                        @else
+                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>5 pts à gagner</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700 bg-black relative">
                     @if($isYoutube)
+                        {{-- YouTube : iframe avec API pour tracking fin --}}
                         <div class="aspect-video">
-                            <iframe 
-                                src="https://www.youtube.com/embed/{{ $ytMatch[1] }}?rel=0" 
-                                class="w-full h-full"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen
-                                loading="lazy"
-                            ></iframe>
+                            <div id="yt-player" data-video-id="{{ $ytMatch[1] }}"></div>
+                        </div>
+                    @elseif($isDailymotion)
+                        {{-- Dailymotion : iframe avec API pour tracking fin --}}
+                        <div class="aspect-video">
+                            <div id="dm-player" data-video-id="{{ $dmMatch[1] }}"></div>
                         </div>
                     @elseif($isVimeo)
+                        {{-- Vimeo : iframe avec API pour tracking fin --}}
                         <div class="aspect-video">
                             <iframe 
-                                src="https://player.vimeo.com/video/{{ $vimeoMatch[1] }}"
+                                id="vimeo-player"
+                                src="https://player.vimeo.com/video/{{ $vimeoMatch[1] }}?title=0&byline=0&portrait=0"
                                 class="w-full h-full"
                                 frameborder="0"
                                 allow="autoplay; fullscreen; picture-in-picture"
@@ -135,18 +163,338 @@
                             ></iframe>
                         </div>
                     @else
-                        <div class="aspect-video">
+                        {{-- Vidéo interne : lecteur custom Allotata --}}
+                        <div class="aspect-video relative group" id="allotata-player-container">
                             <video 
-                                src="{{ $videoUrl }}" 
-                                controls 
-                                class="w-full h-full"
+                                id="allotata-video"
+                                class="w-full h-full object-contain bg-black"
                                 preload="metadata"
-                            ></video>
+                                playsinline
+                            >
+                                <source src="{{ $videoUrl }}" type="video/mp4">
+                                <source src="{{ $videoUrl }}" type="video/webm">
+                                Votre navigateur ne supporte pas la lecture vidéo.
+                            </video>
+
+                            {{-- Overlay play central --}}
+                            <div id="play-overlay" class="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer transition-opacity duration-300">
+                                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-500/90 hover:bg-green-500 flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg shadow-green-500/30">
+                                    <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {{-- Contrôles custom --}}
+                            <div id="custom-controls" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 sm:px-4 pb-3 pt-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {{-- Barre de progression --}}
+                                <div class="relative w-full h-1.5 bg-white/20 rounded-full cursor-pointer mb-3 group/progress" id="progress-bar-container">
+                                    <div id="progress-buffered" class="absolute top-0 left-0 h-full bg-white/30 rounded-full transition-all"></div>
+                                    <div id="progress-bar" class="absolute top-0 left-0 h-full bg-green-500 rounded-full transition-all">
+                                        <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-green-400 rounded-full shadow-md opacity-0 group-hover/progress:opacity-100 transition-opacity"></div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        {{-- Play/Pause --}}
+                                        <button id="btn-play-pause" class="text-white hover:text-green-400 transition-colors" title="Lecture/Pause">
+                                            <svg id="icon-play" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <svg id="icon-pause" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                                        </button>
+
+                                        {{-- Volume --}}
+                                        <div class="flex items-center gap-1.5 group/vol">
+                                            <button id="btn-mute" class="text-white hover:text-green-400 transition-colors" title="Muet">
+                                                <svg id="icon-vol-on" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                                <svg id="icon-vol-off" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                                            </button>
+                                            <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1"
+                                                class="w-0 group-hover/vol:w-16 transition-all duration-200 accent-green-500 h-1 cursor-pointer opacity-0 group-hover/vol:opacity-100">
+                                        </div>
+
+                                        {{-- Temps --}}
+                                        <span class="text-white/80 text-xs font-mono">
+                                            <span id="time-current">0:00</span> / <span id="time-total">0:00</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        {{-- Plein écran --}}
+                                        <button id="btn-fullscreen" class="text-white hover:text-green-400 transition-colors" title="Plein écran">
+                                            <svg id="icon-fs-enter" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                            <svg id="icon-fs-exit" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4H4m0 0l5 5m6-5h5v5m0 0l-5-5M9 15v5H4m0 0l5-5m6 5h5v-5m0 0l-5 5"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>
             </div>
         </section>
+
+        {{-- Toast de points vidéo --}}
+        <div id="video-points-toast" class="fixed top-20 right-4 z-50 transform translate-x-full transition-transform duration-500 ease-out">
+            <div class="bg-green-600 text-white px-5 py-3 rounded-xl shadow-2xl shadow-green-600/30 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-bold text-sm">+5 points !</p>
+                    <p class="text-xs text-green-100">Vidéo de présentation terminée</p>
+                </div>
+            </div>
+        </div>
+
+        @push('scripts')
+        <script>
+        (function() {
+            const section = document.getElementById('video-section');
+            if (!section) return;
+
+            const moduleId = section.dataset.moduleId;
+            const alreadyWatched = section.dataset.alreadyWatched === '1';
+            let videoCompleted = alreadyWatched;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            // --- Fonction commune : envoyer completion vidéo ---
+            function sendVideoCompletion() {
+                if (videoCompleted || !csrfToken) return;
+                videoCompleted = true;
+
+                fetch('{{ route("api.courses.complete-video") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ module_id: moduleId })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && !data.already_watched) {
+                        showPointsToast();
+                        updateBadge();
+                    }
+                })
+                .catch(err => console.error('Erreur completion vidéo:', err));
+            }
+
+            function showPointsToast() {
+                const toast = document.getElementById('video-points-toast');
+                if (!toast) return;
+                toast.classList.remove('translate-x-full');
+                toast.classList.add('translate-x-0');
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-0');
+                    toast.classList.add('translate-x-full');
+                }, 4000);
+            }
+
+            function updateBadge() {
+                const badge = document.getElementById('video-points-badge');
+                if (!badge) return;
+                badge.className = badge.className
+                    .replace(/bg-amber-100|dark:bg-amber-900\/30|text-amber-700|dark:text-amber-400/g, '')
+                    + ' bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+                badge.innerHTML = `
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>5 pts gagnés</span>`;
+            }
+
+            @if($isYoutube)
+            // --- YOUTUBE ---
+            (function() {
+                const videoId = '{{ $ytMatch[1] }}';
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(tag);
+
+                window.onYouTubeIframeAPIReady = function() {
+                    new YT.Player('yt-player', {
+                        videoId: videoId,
+                        width: '100%',
+                        height: '100%',
+                        playerVars: { rel: 0, modestbranding: 1 },
+                        events: {
+                            onStateChange: function(event) {
+                                if (event.data === YT.PlayerState.ENDED) {
+                                    sendVideoCompletion();
+                                }
+                            }
+                        }
+                    });
+                };
+            })();
+            @elseif($isDailymotion)
+            // --- DAILYMOTION ---
+            (function() {
+                const videoId = '{{ $dmMatch[1] }}';
+                const tag = document.createElement('script');
+                tag.src = 'https://api.dmcdn.net/all.js';
+                tag.onload = function() {
+                    DM.player(document.getElementById('dm-player'), {
+                        video: videoId,
+                        width: '100%',
+                        height: '100%',
+                        params: { autoplay: false, mute: false, 'ui-logo': false }
+                    }).addEventListener('video_end', function() {
+                        sendVideoCompletion();
+                    });
+                };
+                document.head.appendChild(tag);
+            })();
+            @elseif($isVimeo)
+            // --- VIMEO ---
+            (function() {
+                const tag = document.createElement('script');
+                tag.src = 'https://player.vimeo.com/api/player.js';
+                tag.onload = function() {
+                    const player = new Vimeo.Player(document.getElementById('vimeo-player'));
+                    player.on('ended', function() {
+                        sendVideoCompletion();
+                    });
+                };
+                document.head.appendChild(tag);
+            })();
+            @else
+            // --- LECTEUR CUSTOM ALLOTATA ---
+            (function() {
+                const video = document.getElementById('allotata-video');
+                const container = document.getElementById('allotata-player-container');
+                const playOverlay = document.getElementById('play-overlay');
+                const btnPlayPause = document.getElementById('btn-play-pause');
+                const iconPlay = document.getElementById('icon-play');
+                const iconPause = document.getElementById('icon-pause');
+                const btnMute = document.getElementById('btn-mute');
+                const iconVolOn = document.getElementById('icon-vol-on');
+                const iconVolOff = document.getElementById('icon-vol-off');
+                const volumeSlider = document.getElementById('volume-slider');
+                const progressContainer = document.getElementById('progress-bar-container');
+                const progressBar = document.getElementById('progress-bar');
+                const progressBuffered = document.getElementById('progress-buffered');
+                const timeCurrent = document.getElementById('time-current');
+                const timeTotal = document.getElementById('time-total');
+                const btnFullscreen = document.getElementById('btn-fullscreen');
+                const iconFsEnter = document.getElementById('icon-fs-enter');
+                const iconFsExit = document.getElementById('icon-fs-exit');
+                const controls = document.getElementById('custom-controls');
+
+                if (!video) return;
+
+                function formatTime(s) {
+                    const m = Math.floor(s / 60);
+                    const sec = Math.floor(s % 60);
+                    return m + ':' + (sec < 10 ? '0' : '') + sec;
+                }
+
+                function updatePlayState() {
+                    if (video.paused) {
+                        iconPlay.classList.remove('hidden');
+                        iconPause.classList.add('hidden');
+                        playOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                    } else {
+                        iconPlay.classList.add('hidden');
+                        iconPause.classList.remove('hidden');
+                        playOverlay.classList.add('opacity-0', 'pointer-events-none');
+                    }
+                }
+
+                // Play / Pause
+                playOverlay.addEventListener('click', () => { video.play(); });
+                btnPlayPause.addEventListener('click', () => { video.paused ? video.play() : video.pause(); });
+                video.addEventListener('play', updatePlayState);
+                video.addEventListener('pause', updatePlayState);
+                video.addEventListener('click', () => { video.paused ? video.play() : video.pause(); });
+
+                // Temps et progression
+                video.addEventListener('loadedmetadata', () => { timeTotal.textContent = formatTime(video.duration); });
+                video.addEventListener('timeupdate', () => {
+                    if (video.duration) {
+                        const pct = (video.currentTime / video.duration) * 100;
+                        progressBar.style.width = pct + '%';
+                        timeCurrent.textContent = formatTime(video.currentTime);
+                    }
+                });
+                video.addEventListener('progress', () => {
+                    if (video.buffered.length > 0 && video.duration) {
+                        const buffered = video.buffered.end(video.buffered.length - 1);
+                        progressBuffered.style.width = (buffered / video.duration) * 100 + '%';
+                    }
+                });
+
+                // Clic sur la barre de progression
+                progressContainer.addEventListener('click', (e) => {
+                    const rect = progressContainer.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    video.currentTime = pct * video.duration;
+                });
+
+                // Volume
+                volumeSlider.addEventListener('input', () => {
+                    video.volume = volumeSlider.value;
+                    video.muted = false;
+                    updateVolumeIcon();
+                });
+                btnMute.addEventListener('click', () => {
+                    video.muted = !video.muted;
+                    updateVolumeIcon();
+                });
+                function updateVolumeIcon() {
+                    if (video.muted || video.volume === 0) {
+                        iconVolOn.classList.add('hidden');
+                        iconVolOff.classList.remove('hidden');
+                    } else {
+                        iconVolOn.classList.remove('hidden');
+                        iconVolOff.classList.add('hidden');
+                    }
+                }
+
+                // Plein écran
+                btnFullscreen.addEventListener('click', () => {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        container.requestFullscreen().catch(() => {});
+                    }
+                });
+                document.addEventListener('fullscreenchange', () => {
+                    if (document.fullscreenElement) {
+                        iconFsEnter.classList.add('hidden');
+                        iconFsExit.classList.remove('hidden');
+                        controls.classList.add('opacity-100');
+                    } else {
+                        iconFsEnter.classList.remove('hidden');
+                        iconFsExit.classList.add('hidden');
+                    }
+                });
+
+                // Raccourcis clavier
+                container.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); video.paused ? video.play() : video.pause(); }
+                    if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.currentTime + 10, video.duration); }
+                    if (e.key === 'ArrowLeft') { video.currentTime = Math.max(video.currentTime - 10, 0); }
+                    if (e.key === 'm') { video.muted = !video.muted; updateVolumeIcon(); }
+                    if (e.key === 'f') { btnFullscreen.click(); }
+                });
+                container.setAttribute('tabindex', '0');
+
+                // Fin de vidéo : envoyer la complétion
+                video.addEventListener('ended', () => {
+                    sendVideoCompletion();
+                    playOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                });
+            })();
+            @endif
+        })();
+        </script>
+        @endpush
     @endif
 
     {{-- Liste des leçons : grid de cards --}}

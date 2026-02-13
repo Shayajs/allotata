@@ -111,9 +111,19 @@
                                     @endif
 
                                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 text-xs sm:text-sm mt-auto">
-                                        <span class="text-slate-500 dark:text-slate-400">
-                                            {{ $lessonsCount }} {{ $lessonsCount > 1 ? 'leçons' : 'leçon' }}
-                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-slate-500 dark:text-slate-400">
+                                                {{ $lessonsCount }} {{ $lessonsCount > 1 ? 'leçons' : 'leçon' }}
+                                            </span>
+                                            @if($user && $progress && $progress->points_total > 0)
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 1l2.928 6.472L20 8.347l-5 5.22L16.18 20 10 16.472 3.82 20 5 13.567 0 8.347l7.072-.875L10 1z"/>
+                                                    </svg>
+                                                    {{ $progress->points_total }} pts
+                                                </span>
+                                            @endif
+                                        </div>
                                         
                                         @if($user && $progress)
                                             <div class="flex items-center gap-2 w-full sm:w-auto">
