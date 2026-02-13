@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Entreprise;
 use App\Models\Reservation;
+use App\Models\RendezVous;
 use App\Services\GoogleCalendarService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +27,7 @@ class SyncGoogleCalendarAll extends Command
         }
 
         $syncedUp = 0;
+        $syncedRdv = 0;
         $syncedDown = 0;
         $errors = 0;
 
@@ -63,7 +65,43 @@ class SyncGoogleCalendarAll extends Command
             }
 
             // ================================================
-            // 2. Google → Allotata : récupérer les changements (sync incrémentale)
+            // 2. Allotata → Google : pousser les sous-rendez-vous (multi_rendez_vous) sans google_event_id
+            // ================================================
+            try {
+                $rdvsSansSyncGoogle = RendezVous::whereNull('google_event_id')
+                    ->whereHas('reservation', function ($query) use ($entreprise) {
+                        $query->where('entreprise_id', $entreprise->id)
+                            ->whereIn('statut', ['confirmee', 'en_attente'])
+                            ->whereHas('typeService', function ($q) {
+                                $q->where('type_structure', 'multi_rendez_vous');
+                            });
+                    })
+                    ->whereNotIn('statut', ['annulee'])
+                    ->whereNotNull('date_heure')
+                    ->where('date_heure', '>=', now()->subDays(7))
+                    ->get();
+
+                foreach ($rdvsSansSyncGoogle as $rdv) {
+                    try {
+                        $eventId = $service->createEventForRendezVous($rdv);
+                        if ($eventId) {
+                            $syncedRdv++;
+                            $this->line("  [↑] RDV #{$rdv->id} (réservation #{$rdv->reservation_id}) → Google (event: {$eventId})");
+                        }
+                    } catch (\Throwable $e) {
+                        $errors++;
+                        $this->error("  [ERREUR ↑] RDV #{$rdv->id} : {$e->getMessage()}");
+                        Log::error("google-calendar:sync-all push RDV #{$rdv->id} : {$e->getMessage()}");
+                    }
+                }
+            } catch (\Throwable $e) {
+                $errors++;
+                $this->error("  [ERREUR] Requête RDV entreprise #{$entreprise->id} : {$e->getMessage()}");
+                Log::error("google-calendar:sync-all push RDV entreprise #{$entreprise->id} : {$e->getMessage()}");
+            }
+
+            // ================================================
+            // 3. Google → Allotata : récupérer les changements (sync incrémentale)
             // ================================================
             try {
                 $service->syncIncrementalChanges($entreprise);
@@ -77,7 +115,7 @@ class SyncGoogleCalendarAll extends Command
         }
 
         $this->newLine();
-        $this->info("Terminé : {$syncedUp} réservations poussées, {$syncedDown} entreprises synchronisées (pull), {$errors} erreurs.");
+        $this->info("Terminé : {$syncedUp} réservations poussées, {$syncedRdv} sous-RDV poussés, {$syncedDown} entreprises synchronisées (pull), {$errors} erreurs.");
 
         return $errors > 0 ? self::FAILURE : self::SUCCESS;
     }

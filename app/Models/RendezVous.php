@@ -21,6 +21,7 @@ class RendezVous extends Model
         'statut',
         'membre_id',
         'lieu',
+        'google_event_id',
     ];
 
     protected function casts(): array

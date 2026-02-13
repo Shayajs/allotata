@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Reservation;
+use App\Models\RendezVous;
 use App\Models\User;
 use App\Models\Entreprise;
 use App\Observers\ReservationObserver;
+use App\Observers\RendezVousObserver;
 use App\Observers\UserObserver;
 use App\Observers\EntrepriseObserver;
 use App\Listeners\LogEmailSent;
@@ -42,9 +44,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Reservation::observe(ReservationObserver::class);
+        RendezVous::observe(RendezVousObserver::class);
         User::observe(UserObserver::class);
         Entreprise::observe(EntrepriseObserver::class);
-        Reservation::observe(ReservationObserver::class);
 
         // Enregistrer les policies
         Gate::policy(\App\Models\CourseLesson::class, \App\Policies\CourseLessonPolicy::class);
