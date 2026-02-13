@@ -272,6 +272,12 @@ Route::post('/signup', [AuthController::class, 'register'])->name('register');
 // Push Notifications (guest — pour le wizard d'inscription)
 Route::post('/push-subscription/guest', [\App\Http\Controllers\PushSubscriptionController::class, 'storeGuest'])->name('push-subscription.store-guest');
 
+// Vérification code parrainage (guest — pour le wizard d'inscription)
+Route::get('/api/check-parrainage/{code}', function (string $code) {
+    $exists = \App\Models\User::where('code_parrain', strtoupper($code))->exists();
+    return response()->json(['valid' => $exists]);
+})->name('api.check-parrainage');
+
 // Connexion (Signin)
 Route::get('/signin', [AuthController::class, 'showSignin'])->name('login');
 Route::post('/signin', [AuthController::class, 'login']);
@@ -541,6 +547,11 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/settings/confidentialite', [SettingsController::class, 'updateConfidentialite'])->name('settings.confidentialite.update');
     Route::post('/settings/interblocage', [SettingsController::class, 'updateInterblocage'])->name('settings.interblocage.update');
     Route::post('/settings/notifications', [SettingsController::class, 'updateNotificationPreferences'])->name('settings.notifications.update');
+
+    // CRUD Enfants
+    Route::post('/settings/enfants', [SettingsController::class, 'storeEnfant'])->name('settings.enfants.store');
+    Route::put('/settings/enfants/{id}', [SettingsController::class, 'updateEnfant'])->name('settings.enfants.update');
+    Route::delete('/settings/enfants/{id}', [SettingsController::class, 'destroyEnfant'])->name('settings.enfants.destroy');
 
     // Push Notifications (authentifié)
     Route::post('/push-subscription', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->name('push-subscription.store');

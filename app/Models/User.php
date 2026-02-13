@@ -74,6 +74,23 @@ class User extends Authenticatable implements MustVerifyEmail
         'notifications_promotions',
         'notifications_mises_a_jour',
         'push_banner_dismissed_at',
+        // Enrichissement profil
+        'genre',
+        'langue_preferee',
+        'source_inscription',
+        'code_parrain',
+        'parrain_id',
+        'derniere_connexion_at',
+        'pref_horaire_matin',
+        'pref_horaire_apres_midi',
+        'pref_horaire_soir',
+        'pref_horaire_weekend',
+        'urgence_nom',
+        'urgence_telephone',
+        'allergies_notes',
+        'pref_prestataire_genre',
+        'pref_prestataire_experience_min',
+        'notes_prestataires',
     ];
 
     /**
@@ -128,6 +145,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'notifications_promotions' => 'boolean',
             'notifications_mises_a_jour' => 'boolean',
             'push_banner_dismissed_at' => 'datetime',
+            'derniere_connexion_at' => 'datetime',
+            'pref_horaire_matin' => 'boolean',
+            'pref_horaire_apres_midi' => 'boolean',
+            'pref_horaire_soir' => 'boolean',
+            'pref_horaire_weekend' => 'boolean',
         ];
     }
 
@@ -337,6 +359,42 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ipHistory()
     {
         return $this->hasMany(UserIpHistory::class);
+    }
+
+    /**
+     * Relation : Un utilisateur peut avoir plusieurs enfants
+     */
+    public function enfants()
+    {
+        return $this->hasMany(Enfant::class)->orderBy('date_naissance', 'asc');
+    }
+
+    /**
+     * Relation : Le parrain qui a invité cet utilisateur
+     */
+    public function parrain()
+    {
+        return $this->belongsTo(User::class, 'parrain_id');
+    }
+
+    /**
+     * Relation : Les filleuls invités par cet utilisateur
+     */
+    public function filleuls()
+    {
+        return $this->hasMany(User::class, 'parrain_id');
+    }
+
+    /**
+     * Générer un code parrain unique à 8 caractères
+     */
+    public static function generateCodeParrain(): string
+    {
+        do {
+            $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+        } while (self::where('code_parrain', $code)->exists());
+
+        return $code;
     }
 
     /**

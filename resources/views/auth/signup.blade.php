@@ -40,26 +40,31 @@
                 </p>
             </div>
 
-            <!-- Stepper horizontal -->
-            <div class="flex items-center justify-between px-2" id="stepper">
+            <!-- Stepper horizontal (5 étapes) -->
+            <div class="flex items-center justify-between px-1" id="stepper">
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle active" data-step="1">1</div>
-                    <span class="text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Infos</span>
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle active" data-step="1">1</div>
+                    <span class="text-[10px] sm:text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Infos</span>
                 </div>
                 <div class="flex-1 h-0.5 bg-slate-200 dark:bg-slate-700 step-bar" data-bar="1"></div>
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="2">2</div>
-                    <span class="text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Notifications</span>
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="2">2</div>
+                    <span class="text-[10px] sm:text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Profil</span>
                 </div>
                 <div class="flex-1 h-0.5 bg-slate-200 dark:bg-slate-700 step-bar" data-bar="2"></div>
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="3">3</div>
-                    <span class="text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">CGU</span>
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="3">3</div>
+                    <span class="text-[10px] sm:text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Notifs</span>
                 </div>
                 <div class="flex-1 h-0.5 bg-slate-200 dark:bg-slate-700 step-bar" data-bar="3"></div>
                 <div class="flex flex-col items-center flex-1">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="4">4</div>
-                    <span class="text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Email</span>
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="4">4</div>
+                    <span class="text-[10px] sm:text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">CGU</span>
+                </div>
+                <div class="flex-1 h-0.5 bg-slate-200 dark:bg-slate-700 step-bar" data-bar="4"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 step-circle" data-step="5">5</div>
+                    <span class="text-[10px] sm:text-xs mt-1 text-slate-500 dark:text-slate-400 hidden sm:block">Email</span>
                 </div>
             </div>
 
@@ -211,9 +216,89 @@
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════ -->
-                <!--  ÉTAPE 2 : Notifications                          -->
+                <!--  ÉTAPE 2 : Votre profil                           -->
                 <!-- ═══════════════════════════════════════════════════ -->
                 <div id="step-2" class="wizard-step hidden">
+                    <div class="space-y-4">
+                        <div class="text-center mb-4">
+                            <div class="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Votre profil</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Quelques informations pour personnaliser votre expérience.</p>
+                        </div>
+
+                        <!-- Genre -->
+                        <div>
+                            <label for="genre" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Genre</label>
+                            <select id="genre" name="genre"
+                                class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800">
+                                <option value="non_precise" {{ old('genre') == 'non_precise' ? 'selected' : '' }}>Ne souhaite pas préciser</option>
+                                <option value="homme" {{ old('genre') == 'homme' ? 'selected' : '' }}>Homme</option>
+                                <option value="femme" {{ old('genre') == 'femme' ? 'selected' : '' }}>Femme</option>
+                            </select>
+                        </div>
+
+                        <!-- Source d'inscription -->
+                        <div>
+                            <label for="source_inscription" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Comment avez-vous connu {{ $siteName }} ?</label>
+                            <select id="source_inscription" name="source_inscription"
+                                class="appearance-none relative block w-full px-3 py-3 text-base border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800">
+                                <option value="">-- Sélectionnez --</option>
+                                <option value="google" {{ old('source_inscription') == 'google' ? 'selected' : '' }}>Recherche Google</option>
+                                <option value="bouche_a_oreille" {{ old('source_inscription') == 'bouche_a_oreille' ? 'selected' : '' }}>Bouche à oreille</option>
+                                <option value="reseaux_sociaux" {{ old('source_inscription') == 'reseaux_sociaux' ? 'selected' : '' }}>Réseaux sociaux</option>
+                                <option value="publicite" {{ old('source_inscription') == 'publicite' ? 'selected' : '' }}>Publicité</option>
+                                <option value="parrainage" {{ old('source_inscription') == 'parrainage' ? 'selected' : '' }}>Parrainage d'un ami</option>
+                                <option value="autre" {{ old('source_inscription') == 'autre' ? 'selected' : '' }}>Autre</option>
+                            </select>
+                        </div>
+
+                        <!-- Code parrainage -->
+                        <div>
+                            <label for="code_parrainage" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Code de parrainage <span class="text-slate-400 font-normal">(optionnel)</span>
+                            </label>
+                            <div class="relative">
+                                <input id="code_parrainage" name="code_parrainage" type="text" value="{{ old('code_parrainage') }}"
+                                    class="appearance-none relative block w-full px-3 py-3 pr-10 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800 uppercase"
+                                    placeholder="Ex: A1B2C3D4" maxlength="10">
+                                <div id="parrainage-status" class="absolute inset-y-0 right-0 flex items-center pr-3 hidden">
+                                    <svg id="parrainage-valid" class="w-5 h-5 text-green-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <svg id="parrainage-invalid" class="w-5 h-5 text-red-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    <svg id="parrainage-loading" class="w-5 h-5 text-slate-400 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Si un ami vous a invité, entrez son code pour le remercier.</p>
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" data-error="code_parrainage"></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex gap-3">
+                        <button type="button" onclick="goToStep(1)"
+                            class="flex-1 flex justify-center py-3 px-4 border border-slate-300 dark:border-slate-600 text-base font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
+                            Précédent
+                        </button>
+                        <button type="button" onclick="goToStep(3)"
+                            class="flex-1 flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
+                            Suivant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════ -->
+                <!--  ÉTAPE 3 : Notifications                          -->
+                <!-- ═══════════════════════════════════════════════════ -->
+                <div id="step-3" class="wizard-step hidden">
                     <div class="space-y-4">
                         <div class="text-center mb-4">
                             <div class="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
@@ -281,11 +366,11 @@
                     </div>
 
                     <div class="mt-6 flex gap-3">
-                        <button type="button" onclick="goToStep(1)"
+                        <button type="button" onclick="goToStep(2)"
                             class="flex-1 flex justify-center py-3 px-4 border border-slate-300 dark:border-slate-600 text-base font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
                             Précédent
                         </button>
-                        <button type="button" onclick="goToStep(3)"
+                        <button type="button" onclick="goToStep(4)"
                             class="flex-1 flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
                             Suivant
                         </button>
@@ -293,9 +378,9 @@
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════ -->
-                <!--  ÉTAPE 3 : CGU / CGV / Confidentialité            -->
+                <!--  ÉTAPE 4 : CGU / CGV / Confidentialité            -->
                 <!-- ═══════════════════════════════════════════════════ -->
-                <div id="step-3" class="wizard-step hidden">
+                <div id="step-4" class="wizard-step hidden">
                     <div class="space-y-4">
                         <div class="text-center mb-4">
                             <div class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-3">
@@ -338,7 +423,7 @@
                     </div>
 
                     <div class="mt-6 flex gap-3">
-                        <button type="button" onclick="goToStep(2)"
+                        <button type="button" onclick="goToStep(3)"
                             class="flex-1 flex justify-center py-3 px-4 border border-slate-300 dark:border-slate-600 text-base font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
                             Précédent
                         </button>
@@ -351,9 +436,9 @@
             </form>
 
             <!-- ═══════════════════════════════════════════════════ -->
-            <!--  ÉTAPE 4 : Vérification email (post-soumission)   -->
+            <!--  ÉTAPE 5 : Vérification email (post-soumission)   -->
             <!-- ═══════════════════════════════════════════════════ -->
-            <div id="step-4" class="wizard-step hidden">
+            <div id="step-5" class="wizard-step hidden">
                 <div class="text-center space-y-4">
                     <div class="mx-auto w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                         <svg class="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +474,7 @@
 
         <script>
             let currentStep = 1;
-            const totalSteps = 4;
+            const totalSteps = 5;
 
             // ── Stepper ──
             function updateStepper(step) {
@@ -487,7 +572,7 @@
                 return valid;
             }
 
-            function validateStep3() {
+            function validateStep4() {
                 clearErrors();
                 let valid = true;
                 const checks = [
@@ -512,12 +597,13 @@
                 // Validation avant d'avancer
                 if (step > currentStep) {
                     if (currentStep === 1 && !validateStep1()) return;
-                    if (currentStep === 3 && !validateStep3()) return;
+                    // Pas de validation bloquante pour étape 2 (profil) et 3 (notifications)
+                    if (currentStep === 4 && !validateStep4()) return;
                 }
                 showStep(step);
 
-                // Initialiser les push notifications à l'étape 2
-                if (step === 2) initPushStep();
+                // Initialiser les push notifications à l'étape 3
+                if (step === 3) initPushStep();
             }
 
             // ── Push notifications (étape 2) ──
@@ -604,7 +690,7 @@
 
             // ── Soumission du formulaire ──
             document.getElementById('signup-form').addEventListener('submit', function(e) {
-                if (!validateStep3()) {
+                if (!validateStep4()) {
                     e.preventDefault();
                     return;
                 }
@@ -613,9 +699,9 @@
                 // L'étape 4 sera affichée après la redirection serveur vers verification.required
             });
 
-            // ── Étape 4 : détection du fournisseur email ──
-            function showStep4WithEmail(email) {
-                showStep(4);
+            // ── Étape 5 : détection du fournisseur email ──
+            function showStep5WithEmail(email) {
+                showStep(5);
                 document.getElementById('email-display').textContent = email;
 
                 const domain = email.split('@')[1]?.toLowerCase() || '';
@@ -656,6 +742,62 @@
                 btn.querySelector('.eye-off').classList.toggle('hidden', isPassword);
                 btn.querySelector('.eye-on').classList.toggle('hidden', !isPassword);
             }
+
+            // ── Validation code parrainage en temps réel ──
+            document.addEventListener('DOMContentLoaded', function() {
+                const codeInput = document.getElementById('code_parrainage');
+                if (!codeInput) return;
+
+                let debounceTimer;
+                codeInput.addEventListener('input', function() {
+                    const code = this.value.trim().toUpperCase();
+                    this.value = code;
+
+                    const statusDiv = document.getElementById('parrainage-status');
+                    const validIcon = document.getElementById('parrainage-valid');
+                    const invalidIcon = document.getElementById('parrainage-invalid');
+                    const loadingIcon = document.getElementById('parrainage-loading');
+
+                    if (code.length === 0) {
+                        statusDiv.classList.add('hidden');
+                        return;
+                    }
+
+                    if (code.length < 3) {
+                        statusDiv.classList.remove('hidden');
+                        validIcon.classList.add('hidden');
+                        invalidIcon.classList.add('hidden');
+                        loadingIcon.classList.add('hidden');
+                        return;
+                    }
+
+                    clearTimeout(debounceTimer);
+                    statusDiv.classList.remove('hidden');
+                    validIcon.classList.add('hidden');
+                    invalidIcon.classList.add('hidden');
+                    loadingIcon.classList.remove('hidden');
+
+                    debounceTimer = setTimeout(async () => {
+                        try {
+                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                            const response = await fetch('/api/check-parrainage/' + encodeURIComponent(code), {
+                                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            });
+                            const data = await response.json();
+                            loadingIcon.classList.add('hidden');
+                            if (data.valid) {
+                                validIcon.classList.remove('hidden');
+                                invalidIcon.classList.add('hidden');
+                            } else {
+                                validIcon.classList.add('hidden');
+                                invalidIcon.classList.remove('hidden');
+                            }
+                        } catch (e) {
+                            loadingIcon.classList.add('hidden');
+                        }
+                    }, 500);
+                });
+            });
 
             // ── Service Worker registration ──
             if ('serviceWorker' in navigator) {

@@ -56,7 +56,12 @@ class AuthController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'invitation_token' => ['nullable', 'string'],
 
-            // Étape 2 : Préférences de notifications
+            // Étape 2 : Profil
+            'genre' => ['nullable', 'in:homme,femme,non_precise'],
+            'source_inscription' => ['nullable', 'in:google,bouche_a_oreille,reseaux_sociaux,publicite,parrainage,autre'],
+            'code_parrainage' => ['nullable', 'string', 'max:10'],
+
+            // Étape 3 : Préférences de notifications
             'notifications_reservations' => ['nullable'],
             'notifications_paiements' => ['nullable'],
             'notifications_messages' => ['nullable'],
@@ -64,7 +69,7 @@ class AuthController extends Controller
             'notifications_promotions' => ['nullable'],
             'notifications_mises_a_jour' => ['nullable'],
 
-            // Étape 3 : CGU / CGV / Confidentialité
+            // Étape 4 : CGU / CGV / Confidentialité
             'cgu_accepted' => ['required', 'accepted'],
             'cgv_accepted' => ['required', 'accepted'],
             'confidentialite_accepted' => ['required', 'accepted'],
@@ -86,6 +91,15 @@ class AuthController extends Controller
         // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
         $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
 
+        // Résoudre le parrain si un code de parrainage est fourni
+        $parrainId = null;
+        if (!empty($validated['code_parrainage'])) {
+            $parrain = User::where('code_parrain', strtoupper($validated['code_parrainage']))->first();
+            if ($parrain) {
+                $parrainId = $parrain->id;
+            }
+        }
+
         // Créer un membre (par défaut client uniquement)
         $user = User::create([
             'name' => $fullName,
@@ -103,6 +117,11 @@ class AuthController extends Controller
             'code_postal' => $validated['code_postal'],
             'latitude' => $validated['latitude'] ?? null,
             'longitude' => $validated['longitude'] ?? null,
+            // Profil
+            'genre' => $validated['genre'] ?? 'non_precise',
+            'source_inscription' => $validated['source_inscription'] ?? null,
+            'code_parrain' => User::generateCodeParrain(),
+            'parrain_id' => $parrainId,
             // Acceptation CGU / CGV / Confidentialité
             'cgu_accepted_at' => now(),
             'cgv_accepted_at' => now(),
@@ -415,6 +434,9 @@ class AuthController extends Controller
                     'last_failed_attempt' => null,
                 ]);
             }
+
+            // Mettre à jour la date de dernière connexion
+            $user->update(['derniere_connexion_at' => now()]);
 
             // Enregistrer la connexion réussie dans les logs de sécurité
             $securityService = app(SecurityService::class);

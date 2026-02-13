@@ -22,6 +22,7 @@ class SettingsController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $user->load(['enfants', 'filleuls']);
         $entreprises = $user->entreprises()->with(['realisationPhotos', 'abonnements'])->get();
 
         // Récupérer les informations d'abonnement Stripe
@@ -140,7 +141,22 @@ class SettingsController extends Controller
             'adresse' => ['nullable', 'string', 'max:255'],
             'ville' => ['nullable', 'string', 'max:255'],
             'code_postal' => ['nullable', 'string', 'max:10'],
+            // Enrichissement profil
+            'genre' => ['nullable', 'in:homme,femme,non_precise'],
+            'langue_preferee' => ['nullable', 'string', 'max:5'],
+            'urgence_nom' => ['nullable', 'string', 'max:255'],
+            'urgence_telephone' => ['nullable', 'string', 'max:20'],
+            'allergies_notes' => ['nullable', 'string', 'max:2000'],
+            'notes_prestataires' => ['nullable', 'string', 'max:2000'],
+            'pref_prestataire_genre' => ['nullable', 'in:homme,femme,indifferent'],
+            'pref_prestataire_experience_min' => ['nullable', 'integer', 'min:0', 'max:50'],
         ]);
+
+        // Gérer les checkboxes de préférences horaires (absent = false)
+        $validated['pref_horaire_matin'] = $request->has('pref_horaire_matin');
+        $validated['pref_horaire_apres_midi'] = $request->has('pref_horaire_apres_midi');
+        $validated['pref_horaire_soir'] = $request->has('pref_horaire_soir');
+        $validated['pref_horaire_weekend'] = $request->has('pref_horaire_weekend');
 
         // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
         $fullName = trim($validated['name']);
@@ -720,6 +736,58 @@ class SettingsController extends Controller
 
         return redirect()->route('settings.index', ['tab' => 'notifications'])
             ->with('success', 'Préférences de notifications mises à jour.');
+    }
+
+    /**
+     * Ajouter un enfant
+     */
+    public function storeEnfant(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'prenom' => ['required', 'string', 'max:255'],
+            'date_naissance' => ['nullable', 'date', 'before_or_equal:today'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user->enfants()->create($validated);
+
+        return redirect()->route('settings.index', ['tab' => 'account'])
+            ->with('success', 'Enfant ajouté avec succès.');
+    }
+
+    /**
+     * Mettre à jour un enfant
+     */
+    public function updateEnfant(Request $request, int $id)
+    {
+        $user = Auth::user();
+        $enfant = $user->enfants()->findOrFail($id);
+
+        $validated = $request->validate([
+            'prenom' => ['required', 'string', 'max:255'],
+            'date_naissance' => ['nullable', 'date', 'before_or_equal:today'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $enfant->update($validated);
+
+        return redirect()->route('settings.index', ['tab' => 'account'])
+            ->with('success', 'Informations de l\'enfant mises à jour.');
+    }
+
+    /**
+     * Supprimer un enfant
+     */
+    public function destroyEnfant(int $id)
+    {
+        $user = Auth::user();
+        $enfant = $user->enfants()->findOrFail($id);
+        $enfant->delete();
+
+        return redirect()->route('settings.index', ['tab' => 'account'])
+            ->with('success', 'Enfant supprimé.');
     }
 
     /**
