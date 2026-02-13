@@ -30,3 +30,8 @@ docker-compose.yaml
 vite.config.js
 npm/env.txt
 env.txt
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*.php
+/storage/logs/*.log
+.env
