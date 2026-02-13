@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Supprimer la table orpheline si elle existe (tentative précédente échouée)
+        Schema::dropIfExists('push_subscriptions');
+
         Schema::create('push_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
