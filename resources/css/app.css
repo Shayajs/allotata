@@ -239,6 +239,7 @@ input.flatpickr-input {
     .pwa-header { display: flex !important; }
     .pwa-desktop-header { display: none !important; }
     .pwa-flex-layout { gap: 0 !important; }
+    .pwa-hide-mobile { display: none !important; }
     main { padding-bottom: 5rem; } /* espace pour la bottom bar */
 }
 
@@ -259,6 +260,7 @@ input.flatpickr-input {
     .is-pwa .pwa-header { display: flex !important; }
     .is-pwa .pwa-desktop-header { display: none !important; }
     .is-pwa .pwa-flex-layout { gap: 0 !important; }
+    .is-pwa .pwa-hide-mobile { display: none !important; }
     .is-pwa main { padding-bottom: 5rem; }
 }
 @media (min-width: 769px) {

@@ -1,4 +1,4 @@
-<footer class="bg-slate-900 dark:bg-slate-950 text-slate-400 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
+<footer class="pwa-hide-mobile bg-slate-900 dark:bg-slate-950 text-slate-400 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
     <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
