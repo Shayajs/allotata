@@ -38,6 +38,7 @@ class Reservation extends Model
         'creee_manuellement',
         'hash',
         'google_event_id',
+        'recurrence_id',
     ];
 
     protected function casts(): array
@@ -129,6 +130,22 @@ class Reservation extends Model
     }
 
     /**
+     * Relation : Une réservation peut appartenir à une récurrence
+     */
+    public function recurrence(): BelongsTo
+    {
+        return $this->belongsTo(Recurrence::class);
+    }
+
+    /**
+     * Relation : Une réservation peut avoir un devis associé
+     */
+    public function devis()
+    {
+        return $this->hasOne(Devis::class);
+    }
+
+    /**
      * Vérifie si la réservation est de type multi-rendez-vous
      */
     public function estMultiRendezVous(): bool
@@ -158,6 +175,22 @@ class Reservation extends Model
     public function estDateButoire(): bool
     {
         return $this->typeService && $this->typeService->type_structure === 'date_butoire';
+    }
+
+    /**
+     * Vérifie si la réservation fait partie d'une récurrence
+     */
+    public function estRecurrente(): bool
+    {
+        return !is_null($this->recurrence_id);
+    }
+
+    /**
+     * Vérifie si la réservation est de type événement
+     */
+    public function estEvenement(): bool
+    {
+        return $this->typeService && $this->typeService->type_structure === 'evenement';
     }
 
     /**

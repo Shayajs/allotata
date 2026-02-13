@@ -77,8 +77,8 @@ class ReservationObserver
             }
         }
 
-        // Synchroniser les changements vers Google Calendar (date, statut, etc.)
-        if ($reservation->isDirty(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service'])) {
+        // Synchroniser les changements vers Google Calendar (date, statut, type, etc.)
+        if ($reservation->isDirty(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service', 'type_service_id', 'recurrence_id'])) {
             if ($reservation->statut === 'annulee') {
                 $this->syncToGoogle($reservation, 'delete');
             } elseif (empty($reservation->google_event_id)) {

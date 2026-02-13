@@ -23,6 +23,11 @@ class TypeService extends Model
         'est_actif',
         'type_structure',
         'ordre_affichage',
+        'frequence_recurrence',
+        'intervalle_jours',
+        'capacite_max',
+        'seuil_minimum',
+        'est_prix_par_personne',
     ];
 
     protected function casts(): array
@@ -32,6 +37,10 @@ class TypeService extends Model
             'prix' => 'decimal:2',
             'est_actif' => 'boolean',
             'type_structure' => 'string',
+            'intervalle_jours' => 'integer',
+            'capacite_max' => 'integer',
+            'seuil_minimum' => 'integer',
+            'est_prix_par_personne' => 'boolean',
         ];
     }
 
@@ -153,6 +162,30 @@ class TypeService extends Model
     }
 
     /**
+     * Vérifie si le service est de type récurrent
+     */
+    public function estRecurrent(): bool
+    {
+        return $this->type_structure === 'recurrent';
+    }
+
+    /**
+     * Vérifie si le service est de type événement (plusieurs participants)
+     */
+    public function estEvenement(): bool
+    {
+        return $this->type_structure === 'evenement';
+    }
+
+    /**
+     * Vérifie si le service est sur devis
+     */
+    public function estSurDevis(): bool
+    {
+        return $this->type_structure === 'sur_devis';
+    }
+
+    /**
      * Retourne la durée formatée avec l'unité correcte selon le type de structure
      * Ex: "30 min", "7 jours de délai", "60 min/session", "45 min/RDV"
      */
@@ -162,6 +195,9 @@ class TypeService extends Model
             'date_butoire' => $this->duree_minutes . ' jour' . ($this->duree_minutes > 1 ? 's' : '') . ' de délai',
             'multi_jours' => $this->duree_minutes . ' min/session',
             'multi_rendez_vous' => $this->duree_minutes . ' min/RDV',
+            'recurrent' => $this->duree_minutes . ' min/séance',
+            'evenement' => $this->duree_minutes . ' min' . ($this->capacite_max ? ' · ' . $this->capacite_max . ' places' : ''),
+            'sur_devis' => 'Sur devis',
             default => $this->duree_minutes . ' min',
         };
     }
@@ -172,5 +208,21 @@ class TypeService extends Model
     public function options(): HasMany
     {
         return $this->hasMany(ServiceOption::class);
+    }
+
+    /**
+     * Relation : Un type de service peut avoir plusieurs récurrences
+     */
+    public function recurrences(): HasMany
+    {
+        return $this->hasMany(Recurrence::class);
+    }
+
+    /**
+     * Relation : Un type de service peut avoir plusieurs devis
+     */
+    public function devis(): HasMany
+    {
+        return $this->hasMany(Devis::class);
     }
 }

@@ -532,8 +532,15 @@ class AgendaController extends Controller
             'description' => 'nullable|string',
             'duree_minutes' => 'required|integer|min:1',
             'prix' => 'required|numeric|min:0',
-            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire',
+            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire,recurrent,evenement,sur_devis',
             'est_actif' => 'nullable|boolean',
+            // Champs récurrent
+            'frequence_recurrence' => 'nullable|required_if:type_structure,recurrent|in:hebdomadaire,bimensuel,mensuel,personnalise',
+            'intervalle_jours' => 'nullable|integer|min:1',
+            // Champs événement
+            'capacite_max' => 'nullable|required_if:type_structure,evenement|integer|min:1',
+            'seuil_minimum' => 'nullable|integer|min:0',
+            'est_prix_par_personne' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'options' => 'nullable|array',
             'options.*.nom' => 'required|string|max:255',
@@ -547,6 +554,22 @@ class AgendaController extends Controller
 
         // Gérer le champ est_actif (checkbox : si présent = true, sinon = false)
         $validated['est_actif'] = $request->has('est_actif') && $request->est_actif == '1';
+
+        // Gérer le champ est_prix_par_personne (checkbox)
+        if ($validated['type_structure'] === 'evenement') {
+            $validated['est_prix_par_personne'] = $request->has('est_prix_par_personne') && $request->est_prix_par_personne == '1';
+        }
+
+        // Nettoyer les champs conditionnels si le type ne les utilise pas
+        if ($validated['type_structure'] !== 'recurrent') {
+            $validated['frequence_recurrence'] = null;
+            $validated['intervalle_jours'] = null;
+        }
+        if ($validated['type_structure'] !== 'evenement') {
+            $validated['capacite_max'] = null;
+            $validated['seuil_minimum'] = null;
+            $validated['est_prix_par_personne'] = true;
+        }
 
         try {
             $imageService = app(ImageService::class);

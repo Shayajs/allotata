@@ -67,10 +67,17 @@
                                 data-duree="{{ $service->duree_minutes }}"
                                 data-prix="{{ $service->prix }}"
                                 data-type-structure="{{ $service->type_structure ?? 'ponctuel' }}"
+                                data-capacite-max="{{ $service->capacite_max ?? '' }}"
                                 data-options="{{ base64_encode(json_encode($optionsData)) }}"
                                 {{ request('service') == $service->id ? 'selected' : '' }}>
-                            {{ $service->nom }} &bull; {{ number_format($service->prix, 0, ',', ' ') }}&euro;
-                            @if(($service->type_structure ?? '') !== 'date_butoire') &bull; {{ $service->duree_minutes }}min @endif
+                            {{ $service->nom }}
+                            @if(($service->type_structure ?? '') === 'sur_devis')
+                                &bull; Sur devis
+                            @else
+                                &bull; {{ number_format($service->prix, 0, ',', ' ') }}&euro;
+                            @endif
+                            @if(!in_array($service->type_structure ?? '', ['date_butoire', 'sur_devis'])) &bull; {{ $service->duree_minutes }}min @endif
+                            @if(($service->type_structure ?? '') === 'evenement' && $service->capacite_max) &bull; {{ $service->capacite_max }} places @endif
                         </option>
                     @endforeach
                 </select>
@@ -85,6 +92,51 @@
                 <input type="date" name="date_butoire" min="{{ date('Y-m-d') }}" disabled
                        class="w-full px-4 py-3 text-sm border-2 rounded-xl"
                        style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);">
+            </div>
+
+            {{-- Champs RÉCURRENT --}}
+            <div id="sw-recurrent-wrapper" class="hidden space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold mb-1.5" style="color: var(--site-text);">Fréquence</label>
+                    <select name="frequence" disabled
+                            class="w-full px-4 py-3 text-sm border-2 rounded-xl"
+                            style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);"
+                            onchange="document.getElementById('sw-intervalle-jours')?.parentElement.classList.toggle('hidden', this.value !== 'personnalise')">
+                        <option value="hebdomadaire">Chaque semaine</option>
+                        <option value="bimensuel">Toutes les 2 semaines</option>
+                        <option value="mensuel">Chaque mois</option>
+                        <option value="personnalise">Personnalisé</option>
+                    </select>
+                </div>
+                <div class="hidden">
+                    <label class="block text-sm font-semibold mb-1.5" style="color: var(--site-text);">Tous les X jours</label>
+                    <input type="number" name="intervalle_jours" id="sw-intervalle-jours" min="1" value="7" disabled
+                           class="w-full px-4 py-3 text-sm border-2 rounded-xl"
+                           style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1.5" style="color: var(--site-text);">Date de début</label>
+                        <input type="date" name="date_debut" min="{{ date('Y-m-d') }}" disabled
+                               class="w-full px-4 py-3 text-sm border-2 rounded-xl"
+                               style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1.5" style="color: var(--site-text);">Date de fin</label>
+                        <input type="date" name="date_fin" min="{{ date('Y-m-d') }}" disabled
+                               class="w-full px-4 py-3 text-sm border-2 rounded-xl"
+                               style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Champs SUR DEVIS --}}
+            <div id="sw-sur-devis-wrapper" class="hidden">
+                <label class="block text-sm font-semibold mb-1.5" style="color: var(--site-text);">Décrivez votre besoin *</label>
+                <textarea name="description_besoin" rows="4" disabled
+                          placeholder="Décrivez ce que vous souhaitez en détail..."
+                          class="w-full px-4 py-3 text-sm border-2 rounded-xl resize-none"
+                          style="border-color: color-mix(in srgb, var(--site-text) 15%, transparent); background: var(--site-background); color: var(--site-text);"></textarea>
             </div>
 
             {{-- Membre --}}
@@ -187,25 +239,55 @@ window.__openAuthPopup = function() {
 // Gestion changement de service
 window.__swHandleServiceChange = function(select) {
     const opt = select.options[select.selectedIndex];
-    const isDateButoire = opt && (opt.dataset.typeStructure || 'ponctuel') === 'date_butoire';
+    const typeStructure = opt ? (opt.dataset.typeStructure || 'ponctuel') : 'ponctuel';
+    const isDateButoire = typeStructure === 'date_butoire';
+    const isRecurrent = typeStructure === 'recurrent';
+    const isSurDevis = typeStructure === 'sur_devis';
+    const isEvenement = typeStructure === 'evenement';
     
     const dbWrapper = document.getElementById('sw-date-butoire-wrapper');
     const dtWrapper = document.getElementById('sw-datetime-wrapper');
+    const recWrapper = document.getElementById('sw-recurrent-wrapper');
+    const devisWrapper = document.getElementById('sw-sur-devis-wrapper');
     const dbInput = dbWrapper?.querySelector('input[name="date_butoire"]');
     const dateInput = dtWrapper?.querySelector('input[name="date_reservation"]');
     const heureInput = dtWrapper?.querySelector('input[name="heure_reservation"]');
 
+    // Masquer tout d'abord
+    dbWrapper?.classList.add('hidden');
+    dtWrapper?.classList.add('hidden');
+    recWrapper?.classList.add('hidden');
+    devisWrapper?.classList.add('hidden');
+
+    // Désactiver tous les inputs conditionnels
+    if (dbInput) { dbInput.required = false; dbInput.disabled = true; dbInput.value = ''; }
+    if (dateInput) { dateInput.required = false; dateInput.disabled = true; }
+    if (heureInput) { heureInput.required = false; heureInput.disabled = true; }
+    recWrapper?.querySelectorAll('input, select').forEach(el => { el.disabled = true; el.required = false; });
+    devisWrapper?.querySelectorAll('textarea').forEach(el => { el.disabled = true; el.required = false; });
+
     if (isDateButoire) {
         dbWrapper?.classList.remove('hidden');
-        dtWrapper?.classList.add('hidden');
         if (dbInput) { dbInput.required = true; dbInput.disabled = false; }
-        if (dateInput) { dateInput.required = false; dateInput.disabled = true; }
-        if (heureInput) { heureInput.required = false; heureInput.disabled = true; }
-    } else {
-        dbWrapper?.classList.add('hidden');
+    } else if (isRecurrent) {
+        // Récurrent : montrer heure + champs récurrence
         dtWrapper?.classList.remove('hidden');
-        if (dbInput) { dbInput.required = false; dbInput.disabled = true; dbInput.value = ''; }
-        if (dateInput) { dateInput.required = true; dateInput.disabled = false; }
+        recWrapper?.classList.remove('hidden');
+        if (heureInput) { heureInput.required = true; heureInput.disabled = false; }
+        // Pas besoin de date_reservation, mais on laisse le wrapper visible pour l'heure
+        if (dateInput) { dateInput.required = false; dateInput.disabled = true; dateInput.parentElement.classList.add('hidden'); }
+        recWrapper?.querySelectorAll('input, select').forEach(el => { el.disabled = false; });
+        recWrapper?.querySelector('input[name="date_debut"]').required = true;
+        recWrapper?.querySelector('input[name="date_fin"]').required = true;
+        recWrapper?.querySelector('select[name="frequence"]').required = true;
+    } else if (isSurDevis) {
+        devisWrapper?.classList.remove('hidden');
+        devisWrapper?.querySelector('textarea[name="description_besoin"]').disabled = false;
+        devisWrapper?.querySelector('textarea[name="description_besoin"]').required = true;
+    } else {
+        // Ponctuel, multi_jours, multi_rendez_vous, evenement
+        dtWrapper?.classList.remove('hidden');
+        if (dateInput) { dateInput.required = true; dateInput.disabled = false; dateInput.parentElement.classList.remove('hidden'); }
         if (heureInput) { heureInput.required = true; heureInput.disabled = false; }
     }
 

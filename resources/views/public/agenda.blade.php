@@ -688,12 +688,15 @@
             const recapContainerMobile = document.getElementById('recap-container-mobile');
             const serviceOptionsContainerMobile = document.getElementById('service-options-container-mobile');
 
-            // Afficher/masquer date butoire vs date+heure selon le type de service
+            // Afficher/masquer les champs selon le type de service
             function toggleDateButoireFields(selectElement) {
                 const isMobile = selectElement && selectElement.id.includes('mobile');
                 const select = selectElement || serviceSelect;
                 const opt = select && select.options[select.selectedIndex];
-                const isDateButoire = opt && (opt.dataset.typeStructure || 'ponctuel') === 'date_butoire';
+                const typeStructure = opt ? (opt.dataset.typeStructure || 'ponctuel') : 'ponctuel';
+                const isDateButoire = typeStructure === 'date_butoire';
+                const isRecurrent = typeStructure === 'recurrent';
+                const isSurDevis = typeStructure === 'sur_devis';
 
                 const dateButoireWrapper = document.getElementById(isMobile ? 'date-butoire-wrapper-mobile' : 'date-butoire-wrapper');
                 const dateHeureWrapper = document.getElementById(isMobile ? 'date-heure-wrapper-mobile' : 'date-heure-wrapper');
@@ -703,16 +706,27 @@
 
                 if (!dateButoireWrapper || !dateHeureWrapper) return;
 
+                // Masquer tout par défaut
+                dateButoireWrapper.classList.add('hidden');
+                dateHeureWrapper.classList.add('hidden');
+                if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.setAttribute('disabled', 'disabled'); dateButoireInput.value = ''; }
+                if (dateInput) { dateInput.required = false; dateInput.setAttribute('disabled', 'disabled'); }
+                if (heureInput) { heureInput.required = false; heureInput.setAttribute('disabled', 'disabled'); }
+
                 if (isDateButoire) {
                     dateButoireWrapper.classList.remove('hidden');
-                    dateHeureWrapper.classList.add('hidden');
                     if (dateButoireInput) { dateButoireInput.required = true; dateButoireInput.removeAttribute('disabled'); }
-                    if (dateInput) { dateInput.required = false; dateInput.setAttribute('disabled', 'disabled'); }
-                    if (heureInput) { heureInput.required = false; heureInput.setAttribute('disabled', 'disabled'); }
-                } else {
-                    dateButoireWrapper.classList.add('hidden');
+                } else if (isSurDevis) {
+                    // Sur devis : pas de date/heure (le formulaire de devis sera dans le site-web form)
+                    // Rien de visible
+                } else if (isRecurrent) {
+                    // Récurrent : afficher l'heure mais pas la date (gérée par les champs récurrence)
                     dateHeureWrapper.classList.remove('hidden');
-                    if (dateButoireInput) { dateButoireInput.required = false; dateButoireInput.setAttribute('disabled', 'disabled'); dateButoireInput.value = ''; }
+                    if (heureInput) { heureInput.required = true; heureInput.removeAttribute('disabled'); }
+                    // date_reservation pas requise pour le récurrent
+                } else {
+                    // Ponctuel, multi_jours, multi_rendez_vous, evenement
+                    dateHeureWrapper.classList.remove('hidden');
                     if (dateInput) { dateInput.required = true; dateInput.removeAttribute('disabled'); }
                     if (heureInput) { heureInput.required = true; heureInput.removeAttribute('disabled'); }
                 }

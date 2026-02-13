@@ -648,7 +648,10 @@ class GoogleCalendarService
 
     /**
      * Construit un ou plusieurs objets GoogleEvent à partir d'une Reservation,
-     * en fonction du type_structure du service (ponctuel, multi_jours, date_butoire, multi_rendez_vous).
+     * en fonction du type_structure du service.
+     *
+     * Types supportés : ponctuel, multi_jours, date_butoire, multi_rendez_vous,
+     *                    recurrent, evenement, sur_devis.
      *
      * @return GoogleEvent|GoogleEvent[] Un seul événement ou un tableau d'événements (multi_rendez_vous)
      */
@@ -667,6 +670,21 @@ class GoogleCalendarService
 
         if ($reservation->estMultiRendezVous()) {
             return $this->buildMultiRendezVousEvents($reservation);
+        }
+
+        // Récurrent : séance individuelle d'une série
+        if ($reservation->estRecurrente() || ($reservation->typeService && $reservation->typeService->estRecurrent())) {
+            return $this->buildRecurrentEvent($reservation);
+        }
+
+        // Événement collectif (cours, atelier, formation)
+        if ($reservation->estEvenement()) {
+            return $this->buildEvenementEvent($reservation);
+        }
+
+        // Sur devis : réservation issue d'un devis accepté
+        if ($reservation->typeService && $reservation->typeService->estSurDevis()) {
+            return $this->buildSurDevisEvent($reservation);
         }
 
         // Par défaut : ponctuel
@@ -921,6 +939,162 @@ class GoogleCalendarService
         }
 
         return $events;
+    }
+
+    /**
+     * Événement récurrent : créneau classique enrichi avec les infos de la récurrence.
+     * Chaque occurrence est une réservation indépendante, mais le titre et la description
+     * mentionnent la série récurrente (fréquence, numéro de séance).
+     */
+    protected function buildRecurrentEvent(Reservation $reservation): GoogleEvent
+    {
+        $reservation->loadMissing('recurrence');
+        $recurrence = $reservation->recurrence;
+
+        $descParts = [];
+
+        if ($recurrence) {
+            // Numéroter la séance
+            $allOccurrences = $recurrence->reservations()
+                ->orderBy('date_reservation')
+                ->pluck('id')
+                ->toArray();
+            $position = array_search($reservation->id, $allOccurrences);
+            $numero = $position !== false ? $position + 1 : '?';
+            $total = count($allOccurrences);
+
+            $frequenceLabel = $recurrence->frequence_libelle ?? $recurrence->frequence;
+            $descParts[] = "🔁 Séance {$numero}/{$total} — {$frequenceLabel}";
+
+            if ($recurrence->date_debut && $recurrence->date_fin) {
+                $descParts[] = "Période : du " . $recurrence->date_debut->format('d/m/Y') . " au " . $recurrence->date_fin->format('d/m/Y');
+            }
+        } else {
+            $descParts[] = "🔁 Séance récurrente";
+        }
+
+        $descExtra = implode("\n", $descParts);
+
+        // Le titre garde le format standard, pas de numérotation dans le summary
+        // car c'est une séance individuelle dans le calendrier
+        $event = $this->buildBaseEvent($reservation, null, $descExtra);
+
+        // Dates : identique à ponctuel
+        $tz = config('app.timezone', 'Europe/Paris');
+        $startDateTime = new EventDateTime();
+        $endDateTime = new EventDateTime();
+
+        if ($reservation->date_reservation) {
+            $startDateTime->setDateTime($reservation->date_reservation->toRfc3339String());
+            $startDateTime->setTimeZone($tz);
+
+            $endDate = $reservation->date_fin ?? $reservation->date_reservation->copy()->addMinutes($reservation->duree_minutes ?? 60);
+            $endDateTime->setDateTime($endDate->toRfc3339String());
+            $endDateTime->setTimeZone($tz);
+        }
+
+        $event->setStart($startDateTime);
+        $event->setEnd($endDateTime);
+
+        return $event;
+    }
+
+    /**
+     * Événement de type "événement" (cours, atelier, formation).
+     * Plusieurs participants peuvent réserver le même créneau.
+     * L'événement Google affiche le nombre de participants inscrits / capacité max.
+     */
+    protected function buildEvenementEvent(Reservation $reservation): GoogleEvent
+    {
+        $reservation->loadMissing('typeService');
+        $typeService = $reservation->typeService;
+
+        $descParts = [];
+        $descParts[] = "👥 Événement collectif";
+
+        if ($typeService && $reservation->date_reservation) {
+            // Compter les participants sur le même créneau et même service
+            $nbParticipants = Reservation::where('entreprise_id', $reservation->entreprise_id)
+                ->where('type_service_id', $reservation->type_service_id)
+                ->where('date_reservation', $reservation->date_reservation)
+                ->whereNotIn('statut', ['annulee'])
+                ->count();
+
+            $capaciteMax = $typeService->capacite_max;
+            if ($capaciteMax) {
+                $descParts[] = "Participants : {$nbParticipants}/{$capaciteMax}";
+            } else {
+                $descParts[] = "Participants : {$nbParticipants}";
+            }
+
+            if ($typeService->seuil_minimum) {
+                $descParts[] = "Minimum requis : {$typeService->seuil_minimum}";
+            }
+        }
+
+        $descExtra = implode("\n", $descParts);
+        $event = $this->buildBaseEvent($reservation, null, $descExtra);
+
+        // Dates : identique à ponctuel
+        $tz = config('app.timezone', 'Europe/Paris');
+        $startDateTime = new EventDateTime();
+        $endDateTime = new EventDateTime();
+
+        if ($reservation->date_reservation) {
+            $startDateTime->setDateTime($reservation->date_reservation->toRfc3339String());
+            $startDateTime->setTimeZone($tz);
+
+            $endDate = $reservation->date_fin ?? $reservation->date_reservation->copy()->addMinutes($reservation->duree_minutes ?? 60);
+            $endDateTime->setDateTime($endDate->toRfc3339String());
+            $endDateTime->setTimeZone($tz);
+        }
+
+        $event->setStart($startDateTime);
+        $event->setEnd($endDateTime);
+
+        return $event;
+    }
+
+    /**
+     * Événement sur devis : créneau classique enrichi avec la mention du devis d'origine.
+     * L'événement n'est créé que lorsque le devis est accepté et la réservation générée.
+     */
+    protected function buildSurDevisEvent(Reservation $reservation): GoogleEvent
+    {
+        $reservation->loadMissing('devis');
+        $devis = $reservation->devis;
+
+        $descParts = [];
+        $descParts[] = "📝 Issu d'un devis";
+
+        if ($devis) {
+            $descParts[] = "Devis #{$devis->id}";
+            if ($devis->description_besoin) {
+                $descParts[] = "Besoin : " . \Illuminate\Support\Str::limit($devis->description_besoin, 200);
+            }
+        }
+
+        $descExtra = implode("\n", $descParts);
+        $event = $this->buildBaseEvent($reservation, null, $descExtra);
+
+        // Dates : identique à ponctuel
+        $tz = config('app.timezone', 'Europe/Paris');
+        $startDateTime = new EventDateTime();
+        $endDateTime = new EventDateTime();
+
+        if ($reservation->date_reservation) {
+            $startDateTime->setDateTime($reservation->date_reservation->toRfc3339String());
+            $startDateTime->setTimeZone($tz);
+
+            $endDate = $reservation->date_fin ?? $reservation->date_reservation->copy()->addMinutes($reservation->duree_minutes ?? 60);
+            $endDateTime->setDateTime($endDate->toRfc3339String());
+            $endDateTime->setTimeZone($tz);
+        }
+
+        $event->setStart($startDateTime);
+        $event->setEnd($endDateTime);
+
+        return $event;
     }
 
     /**

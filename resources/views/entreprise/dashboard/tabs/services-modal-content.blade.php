@@ -92,15 +92,74 @@
                                     <option value="multi_jours">Multi-jours (s'étend sur plusieurs jours)</option>
                                     <option value="multi_rendez_vous">Multi-rendez-vous (plusieurs rendez-vous liés)</option>
                                     <option value="date_butoire">À date butoire (jour demandé, pas de créneau)</option>
+                                    <option value="recurrent">Récurrent (rendez-vous qui se répète)</option>
+                                    <option value="evenement">Événement / Atelier (plusieurs participants)</option>
+                                    <option value="sur_devis">Sur devis (le client décrit son besoin)</option>
                                 </select>
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     <span id="structure-help-ponctuel" class="structure-help">Service classique qui prend du temps dans une journée (ex: coiffure, massage)</span>
                                     <span id="structure-help-multi_jours" class="structure-help hidden">Service qui s'étend sur plusieurs jours (ex: photographie de mariage, tournage)</span>
                                     <span id="structure-help-multi_rendez_vous" class="structure-help hidden">Service avec plusieurs rendez-vous pour la même commande (ex: création de site web, suivi personnalisé)</span>
                                     <span id="structure-help-date_butoire" class="structure-help hidden">Le client choisit une date butoire ; l'entreprise gère la préparation et peut proposer une autre date si besoin.</span>
+                                    <span id="structure-help-recurrent" class="structure-help hidden">Le client réserve un rendez-vous qui se répète automatiquement (ex: ménage hebdo, coaching mensuel)</span>
+                                    <span id="structure-help-evenement" class="structure-help hidden">Plusieurs clients peuvent réserver le même créneau (ex: cours de yoga, atelier cuisine, formation)</span>
+                                    <span id="structure-help-sur_devis" class="structure-help hidden">Le client décrit son besoin, vous proposez un prix et une date (ex: déménagement, rénovation)</span>
                                 </p>
                             </div>
-                            
+
+                            {{-- Champs conditionnels RÉCURRENT --}}
+                            <div id="recurrent-fields" class="hidden space-y-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                <h5 class="text-sm font-semibold text-blue-700 dark:text-blue-300">Configuration de la récurrence</h5>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fréquence *</label>
+                                    <select name="frequence_recurrence" id="service_frequence_recurrence"
+                                            class="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
+                                            onchange="toggleIntervalleJours()">
+                                        <option value="hebdomadaire">Chaque semaine</option>
+                                        <option value="bimensuel">Toutes les 2 semaines</option>
+                                        <option value="mensuel">Chaque mois</option>
+                                        <option value="personnalise">Personnalisé (tous les X jours)</option>
+                                    </select>
+                                </div>
+                                <div id="intervalle-jours-field" class="hidden">
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Intervalle (jours) *</label>
+                                    <input type="number" name="intervalle_jours" id="service_intervalle_jours" min="1" value="7"
+                                           class="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                </div>
+                            </div>
+
+                            {{-- Champs conditionnels ÉVÉNEMENT --}}
+                            <div id="evenement-fields" class="hidden space-y-4 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                                <h5 class="text-sm font-semibold text-purple-700 dark:text-purple-300">Configuration de l'événement</h5>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Capacité max *</label>
+                                        <input type="number" name="capacite_max" id="service_capacite_max" min="1" value="10"
+                                               class="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Seuil minimum</label>
+                                        <input type="number" name="seuil_minimum" id="service_seuil_minimum" min="0" value="0"
+                                               class="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                        <p class="mt-1 text-xs text-slate-400">0 = pas de minimum</p>
+                                    </div>
+                                </div>
+                                <label class="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-700 cursor-pointer">
+                                    <input type="checkbox" name="est_prix_par_personne" id="service_est_prix_par_personne" value="1" checked
+                                           class="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500">
+                                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Prix par personne</span>
+                                    <span class="text-xs text-slate-400">(si décoché = prix unique pour tout l'événement)</span>
+                                </label>
+                            </div>
+
+                            {{-- Info SUR DEVIS --}}
+                            <div id="sur-devis-info" class="hidden p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                <p class="text-sm text-amber-700 dark:text-amber-300">
+                                    <strong>Mode "Sur devis" :</strong> Le client décrira son besoin au lieu de choisir une date.
+                                    Vous proposerez ensuite un prix et une date. Le prix ci-dessus sert uniquement d'indication.
+                                </p>
+                            </div>
+
                             <!-- Upload d'images -->
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -345,6 +404,30 @@
             prixHint: '',
             tempsOptionLabel: 'jour(s) supp.',
         },
+        recurrent: {
+            dureeLabel: 'Durée par séance (min) *',
+            dureeDefault: 60,
+            dureeMin: 10,
+            dureeHint: 'Durée de chaque séance récurrente',
+            prixHint: 'Prix par séance',
+            tempsOptionLabel: 'min supp.',
+        },
+        evenement: {
+            dureeLabel: 'Durée de l\'événement (min) *',
+            dureeDefault: 90,
+            dureeMin: 15,
+            dureeHint: 'Durée totale de l\'événement ou de l\'atelier',
+            prixHint: 'Prix par personne (ou prix unique si décoché)',
+            tempsOptionLabel: 'min supp.',
+        },
+        sur_devis: {
+            dureeLabel: 'Durée estimée (min)',
+            dureeDefault: 60,
+            dureeMin: 1,
+            dureeHint: 'Estimation indicative, la durée réelle sera définie dans le devis',
+            prixHint: 'Prix indicatif, le montant réel sera proposé dans le devis',
+            tempsOptionLabel: 'min supp.',
+        },
     };
 
     function toggleStructureFields(preserveValues = false) {
@@ -392,6 +475,15 @@
         document.querySelectorAll('.option-temps-label').forEach(el => {
             el.textContent = config.tempsOptionLabel;
         });
+
+        // Afficher/masquer les champs conditionnels des nouveaux types
+        const recurrentFields = document.getElementById('recurrent-fields');
+        const evenementFields = document.getElementById('evenement-fields');
+        const surDevisInfo = document.getElementById('sur-devis-info');
+
+        if (recurrentFields) recurrentFields.classList.toggle('hidden', typeStructure !== 'recurrent');
+        if (evenementFields) evenementFields.classList.toggle('hidden', typeStructure !== 'evenement');
+        if (surDevisInfo) surDevisInfo.classList.toggle('hidden', typeStructure !== 'sur_devis');
     }
 
     function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel', options = []) {
@@ -440,6 +532,14 @@
         }
         
         updateImagesDisplay();
+    }
+
+    function toggleIntervalleJours() {
+        const freq = document.getElementById('service_frequence_recurrence');
+        const field = document.getElementById('intervalle-jours-field');
+        if (freq && field) {
+            field.classList.toggle('hidden', freq.value !== 'personnalise');
+        }
     }
 
     function toggleOptions(skipDefaultRow = false) {

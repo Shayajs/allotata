@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Reservation;
+use App\Models\TypeService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +66,36 @@ class ReservationSlotService
         }
 
         return !$conflit;
+    }
+
+    /**
+     * Vérifie la capacité restante pour un événement (plusieurs participants sur le même créneau).
+     *
+     * @param  int         $entrepriseId
+     * @param  int         $typeServiceId
+     * @param  Carbon      $debut
+     * @param  int         $dureeMinutes
+     * @param  int         $capaciteMax
+     * @return bool        true s'il reste de la place
+     */
+    public static function estEvenementDisponible(
+        int $entrepriseId,
+        int $typeServiceId,
+        Carbon $debut,
+        int $dureeMinutes,
+        int $capaciteMax
+    ): bool {
+        $fin = $debut->copy()->addMinutes($dureeMinutes);
+
+        $nbInscrits = Reservation::where('entreprise_id', $entrepriseId)
+            ->where('type_service_id', $typeServiceId)
+            ->whereIn('statut', ['en_attente', 'confirmee'])
+            ->where('date_reservation', '>=', $debut->copy()->startOfDay())
+            ->where('date_reservation', '<=', $fin)
+            ->lockForUpdate()
+            ->count();
+
+        return $nbInscrits < $capaciteMax;
     }
 
     /**

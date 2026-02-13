@@ -245,6 +245,14 @@ class SiteWebController extends Controller
             ->firstOrFail();
 
         $isDateButoire = $typeService->estDateButoire();
+        $isRecurrent = $typeService->estRecurrent();
+        $isEvenement = $typeService->estEvenement();
+        $isSurDevis = $typeService->estSurDevis();
+
+        // Sur devis : rediriger vers DevisController
+        if ($isSurDevis) {
+            return app(\App\Http\Controllers\DevisController::class)->store($request, $slug);
+        }
 
         $rules = [
             'type_service_id'    => 'required|exists:types_services,id',
@@ -258,7 +266,13 @@ class SiteWebController extends Controller
             'email_client'       => 'nullable|email|max:255',
         ];
 
-        if ($isDateButoire) {
+        if ($isRecurrent) {
+            $rules['frequence'] = 'required|in:hebdomadaire,bimensuel,mensuel,personnalise';
+            $rules['intervalle_jours'] = 'nullable|integer|min:1';
+            $rules['date_debut'] = 'required|date|after_or_equal:today';
+            $rules['date_fin'] = 'required|date|after:date_debut';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+        } elseif ($isDateButoire) {
             $rules['date_butoire'] = 'required|date|after_or_equal:today';
         } else {
             $rules['date_reservation'] = 'required|date|after:now';
@@ -268,7 +282,9 @@ class SiteWebController extends Controller
         $validated = $request->validate($rules);
 
         // Calculer la date de début
-        if ($isDateButoire) {
+        if ($isRecurrent) {
+            $debutReservation = Carbon::parse($validated['date_debut'] . ' ' . $validated['heure_reservation']);
+        } elseif ($isDateButoire) {
             $debutReservation = Carbon::parse($validated['date_butoire'] . ' 00:00:00');
         } else {
             $debutReservation = Carbon::parse($validated['date_reservation'] . ' ' . $validated['heure_reservation']);
@@ -302,7 +318,61 @@ class SiteWebController extends Controller
             }
         }
 
+        $statutInitial = $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente';
+        $redirectUrl = route('site-web.show', ['slug' => $slug]) . '?tab=reservation';
+
+        // ── Branche RÉCURRENT ──
+        if ($isRecurrent) {
+            $recurrence = \App\Models\Recurrence::create([
+                'entreprise_id' => $entreprise->id,
+                'user_id' => $userId,
+                'type_service_id' => $typeService->id,
+                'membre_id' => $membreId,
+                'frequence' => $validated['frequence'],
+                'intervalle_jours' => $validated['intervalle_jours'] ?? null,
+                'date_debut' => $validated['date_debut'],
+                'date_fin' => $validated['date_fin'],
+                'heure' => $validated['heure_reservation'],
+                'lieu' => $validated['lieu'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'prix_par_occurrence' => $prixTotal,
+                'telephone_client' => $validated['telephone_client'],
+                'nom_client' => !$userId ? ($validated['nom_client'] ?? null) : null,
+                'email_client' => !$userId ? ($validated['email_client'] ?? null) : null,
+            ]);
+
+            $recurrenceService = app(\App\Services\RecurrenceService::class);
+            $reservations = $recurrenceService->genererOccurrences($recurrence, $statutInitial);
+
+            if (empty($reservations)) {
+                $recurrence->delete();
+                return back()->withErrors(['error' => 'Aucun créneau disponible n\'a pu être réservé.']);
+            }
+
+            return redirect($redirectUrl)
+                ->with('success', count($reservations) . ' séances récurrentes ont été réservées !');
+        }
+
+        // ── Branche ÉVÉNEMENT (vérifier capacité) ──
+        if ($isEvenement && $typeService->capacite_max) {
+            $disponible = \Illuminate\Support\Facades\DB::transaction(function () use ($entreprise, $typeService, $debutReservation, $dureeTotal) {
+                return \App\Services\ReservationSlotService::estEvenementDisponible(
+                    $entreprise->id,
+                    $typeService->id,
+                    $debutReservation,
+                    $dureeTotal,
+                    $typeService->capacite_max
+                );
+            });
+
+            if (!$disponible) {
+                return back()->withErrors(['error' => 'Cet événement est complet.']);
+            }
+        }
+
         // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
+        $skipSlotCheck = $isDateButoire || $isEvenement;
+
         $reservationData = [
             'user_id'                     => $userId,
             'entreprise_id'               => $entreprise->id,
@@ -318,9 +388,9 @@ class SiteWebController extends Controller
             'notes'                       => $validated['notes'] ?? null,
             'nom_client'                  => !$userId ? ($validated['nom_client'] ?? null) : null,
             'email_client'                => !$userId ? ($validated['email_client'] ?? null) : null,
-            'prix'                        => $prixTotal,
+            'prix'                        => $isEvenement && !$typeService->est_prix_par_personne ? 0 : $prixTotal,
             'duree_minutes'               => $dureeTotal,
-            'statut'                      => $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente',
+            'statut'                      => $statutInitial,
             'hash'                        => Str::random(64),
         ];
 
@@ -330,14 +400,12 @@ class SiteWebController extends Controller
             $debutReservation,
             $dureeTotal,
             fn () => Reservation::create($reservationData),
-            $isDateButoire
+            $skipSlotCheck
         );
 
         if (!$reservation) {
             return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
         }
-
-        $redirectUrl = route('site-web.show', ['slug' => $slug]) . '?tab=reservation';
 
         return redirect($redirectUrl)
             ->with('success', 'Votre réservation a bien été enregistrée !');

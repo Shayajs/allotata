@@ -1135,5 +1135,593 @@ class CourseController extends Controller
             ]);
         }
     }
+
+    // =====================================================================
+    // COMMANDES IA BULK (UPDATE / DELETE / TOGGLE / REORDER)
+    // =====================================================================
+
+    /**
+     * Valider une commande bulk (dry-run)
+     */
+    public function bulkActionValidate(Request $request)
+    {
+        $request->validate([
+            'json_data' => 'required|string',
+            'action' => 'required|in:update,delete,toggle,reorder',
+        ]);
+
+        $data = json_decode($request->input('json_data'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'success' => false,
+                'error' => 'JSON invalide : ' . json_last_error_msg(),
+                'errors' => [],
+                'summary' => null,
+            ]);
+        }
+
+        $action = $request->input('action');
+        $errors = [];
+        $summary = [];
+
+        switch ($action) {
+            case 'update':
+                $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+                $this->validateBulkUpdate($data, $errors, $summary);
+                break;
+            case 'delete':
+                $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+                $this->validateBulkDelete($data, $errors, $summary);
+                break;
+            case 'toggle':
+                $summary = ['activations' => 0, 'desactivations' => 0, 'publications' => 0, 'depublications' => 0];
+                $this->validateBulkToggle($data, $errors, $summary);
+                break;
+            case 'reorder':
+                $summary = ['modules' => 0, 'lessons' => 0];
+                $this->validateBulkReorder($data, $errors, $summary);
+                break;
+        }
+
+        return response()->json([
+            'success' => empty($errors),
+            'errors' => $errors,
+            'summary' => $summary,
+        ]);
+    }
+
+    /**
+     * Exécuter une commande bulk
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'json_data' => 'required|string',
+            'action' => 'required|in:update,delete,toggle,reorder',
+        ]);
+
+        $data = json_decode($request->input('json_data'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'success' => false,
+                'error' => 'JSON invalide : ' . json_last_error_msg(),
+            ], 422);
+        }
+
+        $action = $request->input('action');
+
+        // Pré-validation
+        $errors = [];
+        $summary = [];
+
+        switch ($action) {
+            case 'update':
+                $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+                $this->validateBulkUpdate($data, $errors, $summary);
+                break;
+            case 'delete':
+                $summary = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+                $this->validateBulkDelete($data, $errors, $summary);
+                break;
+            case 'toggle':
+                $summary = ['activations' => 0, 'desactivations' => 0, 'publications' => 0, 'depublications' => 0];
+                $this->validateBulkToggle($data, $errors, $summary);
+                break;
+            case 'reorder':
+                $summary = ['modules' => 0, 'lessons' => 0];
+                $this->validateBulkReorder($data, $errors, $summary);
+                break;
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreurs de validation détectées.',
+                'errors' => $errors,
+            ], 422);
+        }
+
+        try {
+            $result = DB::transaction(function () use ($data, $action) {
+                $affected = [];
+
+                switch ($action) {
+                    case 'update':
+                        $affected = $this->executeBulkUpdate($data);
+                        break;
+                    case 'delete':
+                        $affected = $this->executeBulkDelete($data);
+                        break;
+                    case 'toggle':
+                        $affected = $this->executeBulkToggle($data);
+                        break;
+                    case 'reorder':
+                        $affected = $this->executeBulkReorder($data);
+                        break;
+                }
+
+                return $affected;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Commande exécutée avec succès !',
+                'affected' => $result,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la commande bulk', [
+                'action' => $action,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors de l\'exécution : ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ----- Validation des commandes bulk -----
+
+    private function validateBulkUpdate(array $data, array &$errors, array &$summary): void
+    {
+        // Modules
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $i => $mod) {
+                $prefix = "Module #" . ($i + 1);
+                if (empty($mod['id'])) {
+                    $errors[] = "{$prefix} : champ \"id\" requis.";
+                    continue;
+                }
+                $existing = CourseModule::find($mod['id']);
+                if (!$existing) {
+                    $errors[] = "{$prefix} : module ID {$mod['id']} introuvable.";
+                    continue;
+                }
+                // Valider les champs modifiables
+                if (isset($mod['titre']) && empty($mod['titre'])) {
+                    $errors[] = "{$prefix} : le titre ne peut pas être vide.";
+                }
+                if (isset($mod['est_actif']) && !is_bool($mod['est_actif'])) {
+                    $errors[] = "{$prefix} : \"est_actif\" doit être true ou false.";
+                }
+                if (isset($mod['video_url']) && !empty($mod['video_url']) && !filter_var($mod['video_url'], FILTER_VALIDATE_URL)) {
+                    $errors[] = "{$prefix} : \"video_url\" invalide.";
+                }
+                $summary['modules']++;
+            }
+        }
+
+        // Leçons
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $i => $les) {
+                $prefix = "Leçon #" . ($i + 1);
+                if (empty($les['id'])) {
+                    $errors[] = "{$prefix} : champ \"id\" requis.";
+                    continue;
+                }
+                $existing = CourseLesson::find($les['id']);
+                if (!$existing) {
+                    $errors[] = "{$prefix} : leçon ID {$les['id']} introuvable.";
+                    continue;
+                }
+                if (isset($les['titre']) && empty($les['titre'])) {
+                    $errors[] = "{$prefix} : le titre ne peut pas être vide.";
+                }
+                if (isset($les['type']) && !in_array($les['type'], ['course', 'quiz'])) {
+                    $errors[] = "{$prefix} : type invalide (course ou quiz).";
+                }
+                $summary['lessons']++;
+            }
+        }
+
+        // Questions
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $i => $q) {
+                $prefix = "Question #" . ($i + 1);
+                if (empty($q['id'])) {
+                    $errors[] = "{$prefix} : champ \"id\" requis.";
+                    continue;
+                }
+                $existing = QuizQuestion::find($q['id']);
+                if (!$existing) {
+                    $errors[] = "{$prefix} : question ID {$q['id']} introuvable.";
+                    continue;
+                }
+                if (isset($q['type']) && !in_array($q['type'], ['multiple_choice', 'true_false', 'text'])) {
+                    $errors[] = "{$prefix} : type invalide.";
+                }
+                if (isset($q['options']) && $q['type'] === 'multiple_choice' && count($q['options']) < 2) {
+                    $errors[] = "{$prefix} : au moins 2 options requises pour un QCM.";
+                }
+                $summary['questions']++;
+            }
+        }
+
+        if ($summary['modules'] === 0 && $summary['lessons'] === 0 && $summary['questions'] === 0) {
+            $errors[] = 'Aucun élément à modifier. Ajoutez au moins un tableau "modules", "lessons" ou "questions".';
+        }
+    }
+
+    private function validateBulkDelete(array $data, array &$errors, array &$summary): void
+    {
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $i => $id) {
+                if (!is_int($id)) {
+                    $errors[] = "modules[{$i}] : ID invalide (entier attendu).";
+                    continue;
+                }
+                if (!CourseModule::find($id)) {
+                    $errors[] = "Module ID {$id} introuvable.";
+                    continue;
+                }
+                $summary['modules']++;
+            }
+        }
+
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $i => $id) {
+                if (!is_int($id)) {
+                    $errors[] = "lessons[{$i}] : ID invalide (entier attendu).";
+                    continue;
+                }
+                if (!CourseLesson::find($id)) {
+                    $errors[] = "Leçon ID {$id} introuvable.";
+                    continue;
+                }
+                $summary['lessons']++;
+            }
+        }
+
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $i => $id) {
+                if (!is_int($id)) {
+                    $errors[] = "questions[{$i}] : ID invalide (entier attendu).";
+                    continue;
+                }
+                if (!QuizQuestion::find($id)) {
+                    $errors[] = "Question ID {$id} introuvable.";
+                    continue;
+                }
+                $summary['questions']++;
+            }
+        }
+
+        if ($summary['modules'] === 0 && $summary['lessons'] === 0 && $summary['questions'] === 0) {
+            $errors[] = 'Aucun élément à supprimer. Ajoutez au moins un tableau "modules", "lessons" ou "questions" avec des IDs.';
+        }
+    }
+
+    private function validateBulkToggle(array $data, array &$errors, array &$summary): void
+    {
+        $validKeys = ['activer_modules', 'desactiver_modules', 'activer_lecons', 'desactiver_lecons', 'publier_lecons', 'depublier_lecons'];
+        $hasData = false;
+
+        foreach ($validKeys as $key) {
+            if (isset($data[$key]) && is_array($data[$key])) {
+                $hasData = true;
+                foreach ($data[$key] as $i => $id) {
+                    if (!is_int($id)) {
+                        $errors[] = "{$key}[{$i}] : ID invalide (entier attendu).";
+                        continue;
+                    }
+
+                    if (str_contains($key, 'modules')) {
+                        if (!CourseModule::find($id)) {
+                            $errors[] = "{$key} : Module ID {$id} introuvable.";
+                        }
+                    } else {
+                        if (!CourseLesson::find($id)) {
+                            $errors[] = "{$key} : Leçon ID {$id} introuvable.";
+                        }
+                    }
+                }
+
+                // Comptage pour le résumé
+                $count = count($data[$key]);
+                if (str_contains($key, 'activer')) $summary['activations'] += $count;
+                if (str_contains($key, 'desactiver')) $summary['desactivations'] += $count;
+                if ($key === 'publier_lecons') $summary['publications'] += $count;
+                if ($key === 'depublier_lecons') $summary['depublications'] += $count;
+            }
+        }
+
+        if (!$hasData) {
+            $errors[] = 'Aucune opération de bascule trouvée. Clés acceptées : ' . implode(', ', $validKeys);
+        }
+    }
+
+    private function validateBulkReorder(array $data, array &$errors, array &$summary): void
+    {
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $i => $id) {
+                if (!is_int($id)) {
+                    $errors[] = "modules[{$i}] : ID invalide.";
+                    continue;
+                }
+                if (!CourseModule::find($id)) {
+                    $errors[] = "Module ID {$id} introuvable.";
+                    continue;
+                }
+            }
+            $summary['modules'] = count($data['modules']);
+        }
+
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $moduleId => $lessonIds) {
+                if (!CourseModule::find($moduleId)) {
+                    $errors[] = "Module parent ID {$moduleId} introuvable pour le réordonnancement des leçons.";
+                    continue;
+                }
+                if (!is_array($lessonIds)) {
+                    $errors[] = "lessons[{$moduleId}] : tableau d'IDs attendu.";
+                    continue;
+                }
+                foreach ($lessonIds as $i => $lid) {
+                    if (!is_int($lid)) {
+                        $errors[] = "lessons[{$moduleId}][{$i}] : ID invalide.";
+                        continue;
+                    }
+                    $lesson = CourseLesson::find($lid);
+                    if (!$lesson) {
+                        $errors[] = "Leçon ID {$lid} introuvable.";
+                    } elseif ($lesson->module_id != $moduleId) {
+                        $errors[] = "Leçon ID {$lid} n'appartient pas au module {$moduleId}.";
+                    }
+                }
+                $summary['lessons'] += count($lessonIds);
+            }
+        }
+
+        if ($summary['modules'] === 0 && $summary['lessons'] === 0) {
+            $errors[] = 'Aucun élément à réordonner. Ajoutez "modules" (tableau d\'IDs) ou "lessons" (objet module_id → tableau d\'IDs).';
+        }
+    }
+
+    // ----- Exécution des commandes bulk -----
+
+    private function executeBulkUpdate(array $data): array
+    {
+        $affected = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $mod) {
+                $module = CourseModule::find($mod['id']);
+                if (!$module) continue;
+
+                $updateData = [];
+                if (isset($mod['titre'])) $updateData['titre'] = $mod['titre'];
+                if (isset($mod['description'])) $updateData['description'] = $mod['description'];
+                if (isset($mod['video_url'])) $updateData['video_url'] = $mod['video_url'] ?: null;
+                if (isset($mod['ordre'])) $updateData['ordre'] = (int) $mod['ordre'];
+                if (isset($mod['est_actif'])) $updateData['est_actif'] = (bool) $mod['est_actif'];
+
+                if (!empty($updateData)) {
+                    $module->update($updateData);
+                    $affected['modules']++;
+                }
+            }
+        }
+
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $les) {
+                $lesson = CourseLesson::find($les['id']);
+                if (!$lesson) continue;
+
+                $updateData = [];
+                if (isset($les['titre'])) $updateData['titre'] = $les['titre'];
+                if (isset($les['description'])) $updateData['description'] = $les['description'];
+                if (isset($les['type'])) $updateData['type'] = $les['type'];
+                if (isset($les['ordre'])) $updateData['ordre'] = (int) $les['ordre'];
+                if (isset($les['points_quiz'])) $updateData['points_quiz'] = (int) $les['points_quiz'];
+                if (isset($les['est_actif'])) $updateData['est_actif'] = (bool) $les['est_actif'];
+
+                // Mise à jour des blocs si fournis
+                if (isset($les['blocks']) && is_array($les['blocks'])) {
+                    $blocks = [];
+                    foreach ($les['blocks'] as $block) {
+                        $blocks[] = [
+                            'id' => $block['id'] ?? 'block-' . uniqid(),
+                            'type' => $block['type'],
+                            'content' => $block['content'] ?? [],
+                            'settings' => $block['settings'] ?? [],
+                        ];
+                    }
+                    $updateData['contenu_blocks_json'] = $blocks;
+                    $updateData['is_draft'] = true;
+                }
+
+                if (!empty($updateData)) {
+                    $lesson->update($updateData);
+
+                    // Régénérer le HTML si les blocs ont changé
+                    if (isset($updateData['contenu_blocks_json'])) {
+                        try {
+                            $lesson->refresh();
+                            $html = $lesson->generateHtmlFromBlocks();
+                            $lesson->update(['contenu_rich_html' => $html]);
+                        } catch (\Exception $e) {
+                            \Log::warning('Bulk update: impossible de générer le HTML pour la leçon ' . $lesson->id);
+                        }
+                    }
+
+                    $affected['lessons']++;
+                }
+            }
+        }
+
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $q) {
+                $question = QuizQuestion::find($q['id']);
+                if (!$question) continue;
+
+                $updateData = [];
+                if (isset($q['question'])) $updateData['question'] = $q['question'];
+                if (isset($q['type'])) $updateData['type'] = $q['type'];
+                if (isset($q['options'])) $updateData['options_json'] = $q['options'];
+                if (isset($q['bonne_reponse'])) $updateData['bonne_reponse'] = (string) $q['bonne_reponse'];
+                if (isset($q['points'])) $updateData['points'] = (int) $q['points'];
+                if (isset($q['ordre'])) $updateData['ordre'] = (int) $q['ordre'];
+
+                if (!empty($updateData)) {
+                    $question->update($updateData);
+                    $affected['questions']++;
+                }
+            }
+        }
+
+        return $affected;
+    }
+
+    private function executeBulkDelete(array $data): array
+    {
+        $affected = ['modules' => 0, 'lessons' => 0, 'questions' => 0];
+
+        // Supprimer les questions d'abord (enfants)
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $id) {
+                $question = QuizQuestion::find($id);
+                if ($question) {
+                    $question->delete();
+                    $affected['questions']++;
+                }
+            }
+        }
+
+        // Supprimer les leçons (supprime aussi les questions en cascade)
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $id) {
+                $lesson = CourseLesson::find($id);
+                if ($lesson) {
+                    if ($lesson->image_path) {
+                        Storage::disk('public')->delete($lesson->image_path);
+                    }
+                    $lesson->delete();
+                    $affected['lessons']++;
+                }
+            }
+        }
+
+        // Supprimer les modules (supprime aussi les leçons et questions en cascade)
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $id) {
+                $module = CourseModule::find($id);
+                if ($module) {
+                    if ($module->image_path) {
+                        Storage::disk('public')->delete($module->image_path);
+                    }
+                    $module->delete();
+                    $affected['modules']++;
+                }
+            }
+        }
+
+        return $affected;
+    }
+
+    private function executeBulkToggle(array $data): array
+    {
+        $affected = ['activations' => 0, 'desactivations' => 0, 'publications' => 0, 'depublications' => 0];
+
+        if (isset($data['activer_modules'])) {
+            foreach ($data['activer_modules'] as $id) {
+                CourseModule::where('id', $id)->update(['est_actif' => true]);
+                $affected['activations']++;
+            }
+        }
+
+        if (isset($data['desactiver_modules'])) {
+            foreach ($data['desactiver_modules'] as $id) {
+                CourseModule::where('id', $id)->update(['est_actif' => false]);
+                $affected['desactivations']++;
+            }
+        }
+
+        if (isset($data['activer_lecons'])) {
+            foreach ($data['activer_lecons'] as $id) {
+                CourseLesson::where('id', $id)->update(['est_actif' => true]);
+                $affected['activations']++;
+            }
+        }
+
+        if (isset($data['desactiver_lecons'])) {
+            foreach ($data['desactiver_lecons'] as $id) {
+                CourseLesson::where('id', $id)->update(['est_actif' => false]);
+                $affected['desactivations']++;
+            }
+        }
+
+        if (isset($data['publier_lecons'])) {
+            foreach ($data['publier_lecons'] as $id) {
+                $lesson = CourseLesson::find($id);
+                if ($lesson) {
+                    $updateData = ['is_draft' => false];
+                    if ($lesson->published_at === null) {
+                        $updateData['published_at'] = now();
+                    }
+                    $lesson->update($updateData);
+                    $affected['publications']++;
+                }
+            }
+        }
+
+        if (isset($data['depublier_lecons'])) {
+            foreach ($data['depublier_lecons'] as $id) {
+                CourseLesson::where('id', $id)->update(['is_draft' => true]);
+                $affected['depublications']++;
+            }
+        }
+
+        return $affected;
+    }
+
+    private function executeBulkReorder(array $data): array
+    {
+        $affected = ['modules' => 0, 'lessons' => 0];
+
+        if (isset($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $index => $id) {
+                CourseModule::where('id', $id)->update(['ordre' => $index]);
+                $affected['modules']++;
+            }
+        }
+
+        if (isset($data['lessons']) && is_array($data['lessons'])) {
+            foreach ($data['lessons'] as $moduleId => $lessonIds) {
+                foreach ($lessonIds as $index => $lid) {
+                    CourseLesson::where('id', $lid)
+                        ->where('module_id', $moduleId)
+                        ->update(['ordre' => $index]);
+                    $affected['lessons']++;
+                }
+            }
+        }
+
+        return $affected;
+    }
 }
 

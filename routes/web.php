@@ -200,6 +200,8 @@ use App\Http\Controllers\MembreGestionController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\GdprController;
+use App\Http\Controllers\RecurrenceController;
+use App\Http\Controllers\DevisController;
 
 
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
@@ -307,6 +309,9 @@ Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entrepr
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');
 Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation'])->name('public.reservation.store');
+Route::post("/p/{slug}/devis", [DevisController::class, 'store'])->name('public.devis.store');
+Route::post("/p/{slug}/devis/{id}/accepter", [DevisController::class, 'accepter'])->name('public.devis.accepter');
+Route::post("/p/{slug}/devis/{id}/refuser", [DevisController::class, 'refuser'])->name('public.devis.refuser');
 Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
 Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
 Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
@@ -495,6 +500,16 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/m/{slug}/reservations/{id}/notes', [ReservationController::class, 'addNotes'])->name('reservations.notes');
     Route::post('/m/{slug}/reservations/{id}/marquer-payee', [ReservationController::class, 'marquerPayee'])->name('reservations.marquer-payee');
     
+    // Récurrences (prestataire)
+    Route::get('/m/{slug}/recurrences', [RecurrenceController::class, 'index'])->name('recurrences.index');
+    Route::get('/m/{slug}/recurrences/{id}', [RecurrenceController::class, 'show'])->name('recurrences.show');
+    Route::delete('/m/{slug}/recurrences/{id}', [RecurrenceController::class, 'destroy'])->name('recurrences.destroy');
+
+    // Devis (prestataire)
+    Route::get('/m/{slug}/devis', [DevisController::class, 'index'])->name('devis.index');
+    Route::get('/m/{slug}/devis/{id}', [DevisController::class, 'show'])->name('devis.show');
+    Route::post('/m/{slug}/devis/{id}/proposer', [DevisController::class, 'proposer'])->name('devis.proposer');
+
     // Export de rapports
     Route::get('/m/{slug}/reports/reservations', [\App\Http\Controllers\ReportController::class, 'exportReservations'])->name('reports.export-reservations');
     Route::get('/m/{slug}/reports/financial', [\App\Http\Controllers\ReportController::class, 'exportFinancialReport'])->name('reports.export-financial');
@@ -845,6 +860,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Remplissage IA (Bulk Fill)
     Route::post('/courses/bulk-fill/validate', [\App\Http\Controllers\Admin\CourseController::class, 'bulkFillValidate'])->name('courses.bulk-fill.validate');
     Route::post('/courses/bulk-fill', [\App\Http\Controllers\Admin\CourseController::class, 'bulkFill'])->name('courses.bulk-fill');
+    
+    // Commandes IA Bulk (Update / Delete / Toggle / Reorder)
+    Route::post('/courses/bulk-action/validate', [\App\Http\Controllers\Admin\CourseController::class, 'bulkActionValidate'])->name('courses.bulk-action.validate');
+    Route::post('/courses/bulk-action', [\App\Http\Controllers\Admin\CourseController::class, 'bulkAction'])->name('courses.bulk-action');
     
     // Recherche globale
     Route::get('/search', [\App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');

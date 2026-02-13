@@ -575,6 +575,7 @@ class ReservationController extends Controller
         // Déterminer le type de structure du service sélectionné
         $typeService = null;
         $isDateButoire = false;
+        $isEvenement = false;
         if ($request->filled('type_service_id')) {
             $typeService = \App\Models\TypeService::where('id', $request->input('type_service_id'))
                 ->where('entreprise_id', $entreprise->id)
@@ -586,6 +587,7 @@ class ReservationController extends Controller
             }
 
             $isDateButoire = $typeService->estDateButoire();
+            $isEvenement = $typeService->estEvenement();
         }
 
         // Règles de validation conditionnelles selon le type de structure
@@ -700,8 +702,25 @@ class ReservationController extends Controller
         }
 
         // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
-        // On ne vérifie le chevauchement que pour les dates futures, et on skip pour date_butoire
-        $skipCheck = $isDateButoire || !$debutReservation->isFuture();
+        // On ne vérifie le chevauchement que pour les dates futures, et on skip pour date_butoire et événements
+        $skipCheck = $isDateButoire || $isEvenement || !$debutReservation->isFuture();
+
+        // Pour les événements, vérifier la capacité
+        if ($isEvenement && $typeService && $typeService->capacite_max) {
+            $disponible = \Illuminate\Support\Facades\DB::transaction(function () use ($entreprise, $typeService, $debutReservation) {
+                return \App\Services\ReservationSlotService::estEvenementDisponible(
+                    $entreprise->id,
+                    $typeService->id,
+                    $debutReservation,
+                    $typeService->duree_minutes,
+                    $typeService->capacite_max
+                );
+            });
+
+            if (!$disponible) {
+                return back()->withErrors(['error' => 'Cet événement est complet.']);
+            }
+        }
 
         $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
             $entreprise->id,

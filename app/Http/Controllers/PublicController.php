@@ -711,6 +711,15 @@ class PublicController extends Controller
             ->firstOrFail();
 
         $isDateButoire = $typeService->estDateButoire();
+        $isRecurrent = $typeService->estRecurrent();
+        $isEvenement = $typeService->estEvenement();
+        $isSurDevis = $typeService->estSurDevis();
+
+        // Sur devis : rediriger vers le contrôleur DevisController
+        if ($isSurDevis) {
+            return app(\App\Http\Controllers\DevisController::class)->store($request, $slug);
+        }
+
         $rules = [
             'type_service_id' => 'required|exists:types_services,id',
             'membre_id' => 'nullable|exists:entreprise_membres,id',
@@ -719,7 +728,14 @@ class PublicController extends Controller
             'telephone_cache' => 'boolean',
             'notes' => 'nullable|string',
         ];
-        if ($isDateButoire) {
+
+        if ($isRecurrent) {
+            $rules['frequence'] = 'required|in:hebdomadaire,bimensuel,mensuel,personnalise';
+            $rules['intervalle_jours'] = 'nullable|integer|min:1';
+            $rules['date_debut'] = 'required|date|after_or_equal:today';
+            $rules['date_fin'] = 'required|date|after:date_debut';
+            $rules['heure_reservation'] = 'required|date_format:H:i';
+        } elseif ($isDateButoire) {
             $rules['date_butoire'] = 'required|date|after_or_equal:today';
         } else {
             $rules['date_reservation'] = 'required|date|after:now';
@@ -727,7 +743,11 @@ class PublicController extends Controller
         }
         $validated = $request->validate($rules);
 
-        if ($isDateButoire) {
+        if ($isRecurrent) {
+            $dateTime = $validated['date_debut'] . ' ' . $validated['heure_reservation'];
+            $debutReservation = \Carbon\Carbon::parse($dateTime);
+            $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
+        } elseif ($isDateButoire) {
             $dateButoire = $validated['date_butoire'];
             $dateTime = $dateButoire . ' 00:00:00';
             $debutReservation = \Carbon\Carbon::parse($dateTime);
@@ -776,7 +796,86 @@ class PublicController extends Controller
 
         // Vérifier la disponibilité ET créer la réservation dans une transaction atomique (anti-doublon)
         $statutInitial = $entreprise->accepter_reservations_auto ? 'confirmee' : 'en_attente';
-        
+
+        // ── Branche RÉCURRENT ──
+        if ($isRecurrent) {
+            $recurrence = \App\Models\Recurrence::create([
+                'entreprise_id' => $entreprise->id,
+                'user_id' => $userId,
+                'type_service_id' => $typeService->id,
+                'membre_id' => $membreId,
+                'frequence' => $validated['frequence'],
+                'intervalle_jours' => $validated['intervalle_jours'] ?? null,
+                'date_debut' => $validated['date_debut'],
+                'date_fin' => $validated['date_fin'],
+                'heure' => $validated['heure_reservation'],
+                'lieu' => $validated['lieu'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'prix_par_occurrence' => $typeService->prix,
+                'telephone_client' => $validated['telephone_client'],
+            ]);
+
+            $recurrenceService = app(\App\Services\RecurrenceService::class);
+            $reservations = $recurrenceService->genererOccurrences($recurrence, $statutInitial);
+
+            if (empty($reservations)) {
+                $recurrence->delete();
+                return back()->withErrors(['error' => 'Aucun créneau disponible n\'a pu être réservé pour cette récurrence.']);
+            }
+
+            // On prend la première réservation pour les notifications
+            $reservation = $reservations[0];
+            $nbOccurrences = count($reservations);
+
+            // Notifications (similaires au flow normal, adaptées)
+            $gerant = $entreprise->user;
+            if ($gerant) {
+                $nomClient = Auth::user()->name;
+                \App\Models\Notification::creer(
+                    $gerant->id,
+                    'reservation',
+                    'Nouvelle récurrence de réservations',
+                    "{$nomClient} a réservé {$nbOccurrences} séances récurrentes pour {$typeService->nom}.",
+                    route('recurrences.show', [$entreprise->slug, $recurrence->id]),
+                    ['recurrence_id' => $recurrence->id]
+                );
+            }
+
+            if ($userId) {
+                \App\Models\Notification::creer(
+                    $userId,
+                    'reservation',
+                    'Réservations récurrentes créées',
+                    "{$nbOccurrences} séances ont été réservées pour {$entreprise->nom}.",
+                    route('dashboard'),
+                    ['recurrence_id' => $recurrence->id]
+                );
+            }
+
+            \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
+
+            return redirect()->route('public.entreprise', $slug)
+                ->with('success', "{$nbOccurrences} séances récurrentes ont été réservées avec succès !");
+        }
+
+        // ── Branche ÉVÉNEMENT (vérifier la capacité au lieu du slot) ──
+        if ($isEvenement) {
+            $capaciteMax = $typeService->capacite_max ?? 1;
+            $disponible = \Illuminate\Support\Facades\DB::transaction(function () use ($entreprise, $typeService, $debutReservation, $capaciteMax) {
+                return \App\Services\ReservationSlotService::estEvenementDisponible(
+                    $entreprise->id,
+                    $typeService->id,
+                    $debutReservation,
+                    $typeService->duree_minutes,
+                    $capaciteMax
+                );
+            });
+
+            if (!$disponible) {
+                return back()->withErrors(['error' => 'Cet événement est complet. Il n\'y a plus de places disponibles.']);
+            }
+        }
+
         $reservationData = [
             'user_id' => $userId,
             'entreprise_id' => $entreprise->id,
@@ -788,7 +887,7 @@ class PublicController extends Controller
             'telephone_client' => $validated['telephone_client'],
             'telephone_cache' => $validated['telephone_cache'] ?? false,
             'notes' => $validated['notes'] ?? null,
-            'prix' => $typeService->prix,
+            'prix' => $isEvenement && !$typeService->est_prix_par_personne ? 0 : $typeService->prix,
             'duree_minutes' => $typeService->duree_minutes,
             'type_service' => $typeService->nom,
             'statut' => $statutInitial,
@@ -797,13 +896,15 @@ class PublicController extends Controller
             $reservationData['date_butoire'] = $validated['date_butoire'];
         }
 
+        $skipSlotCheck = $isDateButoire || $isEvenement; // Les événements gèrent la capacité, pas le chevauchement individuel
+
         $reservation = \App\Services\ReservationSlotService::reserverSiDisponible(
             $entreprise->id,
             $membreId,
             $debutReservation,
             (int) $typeService->duree_minutes,
             fn () => Reservation::create($reservationData),
-            $isDateButoire
+            $skipSlotCheck
         );
 
         if (!$reservation) {
