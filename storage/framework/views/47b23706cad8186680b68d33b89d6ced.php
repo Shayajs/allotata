@@ -590,6 +590,7 @@
             </div>
 
 <script>
+(function() {
     // Gestion des sous-onglets Agenda
     function showAgendaSubTab(subtabName) {
         // Masquer tous les contenus de sous-onglets
@@ -1203,5 +1204,19 @@
 
     // Ne pas initialiser le calendrier au chargement, seulement quand on clique sur l'onglet Réservations
     // renderCalendar();
+
+    // Exposer les fonctions utilisées dans le HTML (onclick/onchange)
+    window.showAgendaSubTab = showAgendaSubTab;
+    window.toggleHorairesExceptionnel = toggleHorairesExceptionnel;
+    if (typeof onChangeTypeException === 'function') {
+        window.onChangeTypeException = onChangeTypeException;
+    }
+    if (typeof renderCalendar === 'function') {
+        window.renderCalendar = renderCalendar;
+    }
+    if (typeof loadReservations === 'function') {
+        window.loadReservations = loadReservations;
+    }
+})();
 </script>
 <?php /**PATH /var/www/html/resources/views/entreprise/dashboard/tabs/agenda.blade.php ENDPATH**/ ?>

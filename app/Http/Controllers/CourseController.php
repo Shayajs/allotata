@@ -25,15 +25,20 @@ class CourseController extends Controller
             ->get();
 
         $userProgress = null;
+        $totalPoints = null;
 
         if ($user) {
             $userProgress = \App\Models\UserModuleProgress::where('user_id', $user->id)
                 ->whereIn('module_id', $modules->pluck('id'))
                 ->get()
                 ->keyBy('module_id');
+
+            $totalPoints = \App\Models\UserLessonProgress::where('user_id', $user->id)
+                ->whereNotNull('completed_at')
+                ->sum('points_earned');
         }
 
-        return view('courses.index', compact('modules', 'user', 'userProgress'));
+        return view('courses.index', compact('modules', 'user', 'userProgress', 'totalPoints'));
     }
 
     /**

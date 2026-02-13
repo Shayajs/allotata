@@ -20,6 +20,40 @@
         </div>
     </section>
 
+    <!-- Bandeau profil utilisateur -->
+    @auth
+        <section class="px-4 sm:px-6 lg:px-8 pb-2">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 px-4 sm:px-6 py-4">
+                    <div class="flex items-center gap-4">
+                        {{-- Avatar --}}
+                        <x-avatar :user="$user" size="lg" />
+
+                        {{-- Nom --}}
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
+                                {{ $user->full_name }}
+                            </h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
+                                Votre progression d'apprentissage
+                            </p>
+                        </div>
+
+                        {{-- Points --}}
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-orange-50 dark:from-green-900/20 dark:to-orange-900/20 rounded-lg border border-green-200/50 dark:border-green-700/30">
+                            <svg class="w-5 h-5 text-orange-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 1l2.928 6.472L20 8.347l-5 5.22L16.18 20 10 16.472 3.82 20 5 13.567 0 8.347l7.072-.875L10 1z"/>
+                            </svg>
+                            <span class="text-lg sm:text-xl font-bold bg-gradient-to-r from-green-600 to-orange-500 bg-clip-text text-transparent whitespace-nowrap">
+                                {{ $totalPoints ?? 0 }} pts
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endauth
+
     <!-- Liste des modules -->
     <section class="py-8 sm:py-10 md:py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">

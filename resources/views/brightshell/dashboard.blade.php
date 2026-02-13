@@ -27,7 +27,7 @@
 <div class="grid grid-2 mb-4">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Seuil Franchise TVA</h3>
+            <h3 class="card-title">Seuil Franchise <x-tooltip term="TVA" position="bottom">Taxe sur la Valeur Ajoutée. En franchise de base, vous ne facturez pas la TVA tant que votre CA reste sous le seuil.</x-tooltip></h3>
             <span class="badge badge-info">{{ number_format($stats['seuil_tva'], 0, ',', ' ') }} €</span>
         </div>
         @php $progressTVA = $stats['seuil_tva'] > 0 ? min(100, ($stats['ca_annuel'] / $stats['seuil_tva']) * 100) : 0; @endphp
@@ -57,7 +57,7 @@
 <!-- Cotisations URSSAF -->
 <div class="card mb-4">
     <div class="card-header">
-        <h3 class="card-title">Cotisations URSSAF Estimées</h3>
+        <h3 class="card-title">Cotisations <x-tooltip term="URSSAF" position="bottom">L'organisme qui collecte vos charges sociales obligatoires (maladie, retraite, allocations familiales).</x-tooltip> Estimées</h3>
         <span class="badge badge-warning">{{ ($stats['taux_cotisations'] * 100) }}% en {{ date('Y') }}</span>
     </div>
     <div class="grid grid-3">

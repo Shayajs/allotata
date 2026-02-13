@@ -2,6 +2,35 @@ import './bootstrap';
 import './address-autocomplete';
 import './presence';
 
+// ========================================
+// Flatpickr — Dates en français
+// ========================================
+import flatpickr from 'flatpickr';
+import { French } from 'flatpickr/dist/l10n/fr.js';
+
+flatpickr.localize(French);
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[type="date"]').forEach(function (input) {
+        // Conserver la valeur existante
+        const currentValue = input.value;
+        // Changer le type pour éviter le picker natif
+        input.type = 'text';
+        input.setAttribute('autocomplete', 'off');
+        // Initialiser Flatpickr
+        flatpickr(input, {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd/m/Y',
+            allowInput: true,
+            defaultDate: currentValue || null,
+            // Respecter min/max natifs
+            minDate: input.getAttribute('min') || undefined,
+            maxDate: input.getAttribute('max') || undefined,
+        });
+    });
+});
+
 // Charger les scripts des blocs de cours uniquement sur les pages de cours
 // Doit être fait après le DOMContentLoaded car le contenu est généré dynamiquement
 document.addEventListener('DOMContentLoaded', function() {
@@ -56,9 +85,23 @@ function toggleTheme() {
     setCookie('theme', theme);
 }
 
+// ========================================
+// Toggle visibilité mot de passe
+// ========================================
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.querySelector('.eye-off').classList.toggle('hidden', isPassword);
+    btn.querySelector('.eye-on').classList.toggle('hidden', !isPassword);
+    btn.setAttribute('aria-label', isPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+}
+
 // Exposer les fonctions globalement
 window.toggleTheme = toggleTheme;
 window.applyTheme = applyTheme;
+window.togglePasswordVisibility = togglePasswordVisibility;
 
 // Attacher les événements aux boutons de thème après le chargement du DOM
 document.addEventListener('DOMContentLoaded', function () {

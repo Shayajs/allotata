@@ -357,32 +357,71 @@ class Entreprise extends Model
      */
     public function getCompletionStatus(): array
     {
-        $conditions = [
+        // Étapes essentielles (les 4 existantes)
+        $essential = [
             'image' => [
                 'label' => 'Ajouter une image d\'entreprise',
                 'completed' => !empty($this->logo) || !empty($this->image_fond),
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
+                'icon' => 'camera',
             ],
             'agenda' => [
                 'label' => 'Gérer l\'agenda',
                 'completed' => $this->aAgendaConfigure(),
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'agenda'],
+                'icon' => 'calendar',
             ],
             'description' => [
                 'label' => 'Mettre une description',
                 'completed' => !empty($this->description) && strlen(trim($this->description)) > 0,
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
+                'icon' => 'pencil',
             ],
             'service' => [
                 'label' => 'Ajouter un premier service',
                 'completed' => $this->typesServices()->where('est_actif', true)->count() > 0,
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'services'],
+                'icon' => 'briefcase',
             ],
         ];
+
+        // Étapes avancées (pour aller plus loin)
+        $advanced = [
+            'horaires_complets' => [
+                'label' => 'Définir vos horaires d\'ouverture complets',
+                'completed' => $this->aHorairesComplets(),
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'agenda'],
+                'icon' => 'clock',
+            ],
+            'site_web' => [
+                'label' => 'Publier votre page publique',
+                'completed' => $this->aSiteWebActif(),
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'installer'],
+                'icon' => 'globe',
+            ],
+            'equipe' => [
+                'label' => 'Inviter votre premier collaborateur',
+                'completed' => $this->invitations()->count() > 0 || $this->membres()->count() > 0,
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'equipe'],
+                'icon' => 'users',
+            ],
+            'siren' => [
+                'label' => 'Renseigner votre numéro SIREN',
+                'completed' => !empty($this->siren) && strlen(trim($this->siren)) === 9,
+                'route_key' => 'entreprise.dashboard',
+                'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
+                'icon' => 'document',
+            ],
+        ];
+
+        $conditions = array_merge($essential, $advanced);
 
         // Générer les routes
         foreach ($conditions as $key => &$condition) {
@@ -394,17 +433,50 @@ class Entreprise extends Model
             unset($condition['route_key'], $condition['route_params']);
         }
 
-        $completed = collect($conditions)->where('completed', true)->count();
+        // Aussi générer les routes pour les sous-tableaux
+        foreach ($essential as $key => &$cond) {
+            $cond['route'] = $conditions[$key]['route'];
+        }
+        foreach ($advanced as $key => &$cond) {
+            $cond['route'] = $conditions[$key]['route'];
+        }
+
+        $completedEssential = collect($essential)->where('completed', true)->count();
+        $completedAdvanced = collect($advanced)->where('completed', true)->count();
+        $completed = $completedEssential + $completedAdvanced;
         $total = count($conditions);
         $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
 
         return [
             'conditions' => $conditions,
+            'essential' => $essential,
+            'advanced' => $advanced,
             'completed' => $completed,
+            'completedEssential' => $completedEssential,
+            'totalEssential' => count($essential),
+            'completedAdvanced' => $completedAdvanced,
+            'totalAdvanced' => count($advanced),
             'total' => $total,
             'percentage' => $percentage,
-            'isComplete' => $completed === $total,
+            'isComplete' => $completedEssential === count($essential),
+            'isFullyComplete' => $completed === $total,
         ];
+    }
+
+    /**
+     * Vérifie si les horaires sont définis pour au moins 3 jours de la semaine.
+     */
+    public function aHorairesComplets(): bool
+    {
+        $horaires = $this->horairesOuverture()
+            ->where('est_exceptionnel', false)
+            ->get();
+
+        $joursConfigures = $horaires->filter(function ($horaire) {
+            return !empty($horaire->heure_ouverture) && !empty($horaire->heure_fermeture);
+        })->unique('jour_semaine')->count();
+
+        return $joursConfigures >= 3;
     }
 
     /**

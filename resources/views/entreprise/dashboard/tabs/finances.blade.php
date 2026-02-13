@@ -220,7 +220,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Colonne Gauche : URSSAF -->
                 <div class="space-y-4">
-                    <h4 class="font-bold text-slate-700 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">Cotisations sociales (URSSAF)</h4>
+                    <h4 class="font-bold text-slate-700 dark:text-white border-b border-slate-200 dark:border-slate-600 pb-2">Cotisations sociales (<x-tooltip term="URSSAF" position="bottom">L'organisme qui collecte vos charges sociales obligatoires (maladie, retraite, allocations familiales).</x-tooltip>)</h4>
                     <div class="flex justify-between py-2">
                         <span class="text-slate-600 dark:text-slate-300">Type d'activité</span>
                         <span class="font-medium text-slate-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $calculFiscal['type_activite'])) }}</span>

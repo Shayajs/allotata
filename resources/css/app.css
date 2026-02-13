@@ -2,6 +2,7 @@
 @import './mobile.css';
 @import './course-blocks.css';
 @import './dev-docs.css';
+@import 'flatpickr/dist/flatpickr.min.css';
 
 /* Configuration du mode sombre avec le sélecteur de classe (au lieu de media query) */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -103,6 +104,111 @@ html.dark * {
 .backdrop-blur-lg {
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
+}
+
+/* ========================================
+   Flatpickr — Dark mode override
+   ======================================== */
+.dark .flatpickr-calendar {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+.dark .flatpickr-months .flatpickr-month,
+.dark .flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+.dark .flatpickr-weekdays {
+    background: #1e293b;
+}
+.dark span.flatpickr-weekday {
+    color: #94a3b8;
+    background: #1e293b;
+}
+.dark .flatpickr-day {
+    color: #e2e8f0;
+}
+.dark .flatpickr-day:hover,
+.dark .flatpickr-day:focus {
+    background: #334155;
+    border-color: #334155;
+}
+.dark .flatpickr-day.today {
+    border-color: #3b82f6;
+}
+.dark .flatpickr-day.today:hover {
+    background: #3b82f6;
+    color: #fff;
+}
+.dark .flatpickr-day.selected {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+.dark .flatpickr-day.prevMonthDay,
+.dark .flatpickr-day.nextMonthDay {
+    color: #475569;
+}
+.dark .flatpickr-months .flatpickr-prev-month svg,
+.dark .flatpickr-months .flatpickr-next-month svg {
+    fill: #94a3b8;
+}
+.dark .flatpickr-months .flatpickr-prev-month:hover svg,
+.dark .flatpickr-months .flatpickr-next-month:hover svg {
+    fill: #e2e8f0;
+}
+.dark .flatpickr-current-month input.cur-year {
+    color: #e2e8f0;
+}
+/* Input alt Flatpickr — cohérence visuelle */
+.flatpickr-input.form-input,
+input.flatpickr-input {
+    cursor: pointer;
+}
+
+/* ========================================
+   Tooltips
+   ======================================== */
+.tooltip-top .tooltip-content,
+.tooltip-wrapper .tooltip-top {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+.tooltip-top .tooltip-arrow,
+.tooltip-wrapper .tooltip-top .tooltip-arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1e293b transparent transparent transparent;
+}
+.dark .tooltip-top .tooltip-arrow,
+.dark .tooltip-wrapper .tooltip-top .tooltip-arrow {
+    border-color: #475569 transparent transparent transparent;
+}
+.tooltip-bottom .tooltip-content,
+.tooltip-wrapper .tooltip-bottom {
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+.tooltip-bottom .tooltip-arrow,
+.tooltip-wrapper .tooltip-bottom .tooltip-arrow {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #1e293b transparent;
+}
+.dark .tooltip-bottom .tooltip-arrow,
+.dark .tooltip-wrapper .tooltip-bottom .tooltip-arrow {
+    border-color: transparent transparent #475569 transparent;
 }
 
 /* Masquer la scrollbar tout en gardant le défilement (barres onglets mobile) */

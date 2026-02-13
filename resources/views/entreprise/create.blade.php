@@ -195,26 +195,13 @@
                         </div>
 
                         <div>
-                            <label for="logo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Logo / Image de l'entreprise
-                            </label>
-                            <div class="flex items-center gap-4">
-                                <div class="flex-1">
-                                    <input 
-                                        type="file" 
-                                        id="logo" 
-                                        name="logo" 
-                                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
-                                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 dark:file:bg-green-900/20 file:text-green-700 dark:file:text-green-400 hover:file:bg-green-100 dark:hover:file:bg-green-900/30"
-                                    >
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                        Formats acceptés : JPEG, PNG, JPG, GIF, WEBP (max 2MB)
-                                    </p>
-                                </div>
-                                <div id="logo-preview" class="hidden w-24 h-24 rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-600">
-                                    <img id="logo-preview-img" src="" alt="Aperçu du logo" class="w-full h-full object-cover">
-                                </div>
-                            </div>
+                            <x-file-upload 
+                                name="logo" 
+                                id="logo"
+                                accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" 
+                                label="Logo / Image de l'entreprise"
+                                maxSize="2 Mo"
+                            />
                             @error('logo')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
@@ -417,7 +404,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="siren" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Numéro SIREN (9 chiffres)
+                                Numéro <x-tooltip term="SIREN" position="top">Identifiant unique à 9 chiffres attribué par l'INSEE lors de la création de votre entreprise. Vous le trouverez sur votre extrait Kbis ou votre avis de situation.</x-tooltip> (9 chiffres)
                             </label>
                             <input 
                                 type="text" 
@@ -436,7 +423,7 @@
 
                         <div>
                             <label for="status_juridique" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Statut juridique
+                                <x-tooltip term="Statut juridique" position="top">La forme légale de votre entreprise (auto-entrepreneur, SARL, SAS, etc.). Elle définit vos obligations fiscales et sociales.</x-tooltip>
                             </label>
                             <select 
                                 id="status_juridique" 

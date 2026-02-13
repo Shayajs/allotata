@@ -401,6 +401,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/entreprises-autres', [DashboardController::class, 'entreprisesAutres'])->name('dashboard.entreprises-autres');
+    Route::post('/dashboard/dismiss-guide', [DashboardController::class, 'dismissGuide'])->name('dashboard.dismiss-guide');
     Route::post('/dashboard/reservation/{reservation}/cancel', [DashboardController::class, 'cancel'])->name('dashboard.reservation.cancel');
     Route::patch('/dashboard/reservation/{reservation}/modify', [DashboardController::class, 'modify'])->name('dashboard.reservation.modify');
     Route::post('/stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('stop-impersonating');

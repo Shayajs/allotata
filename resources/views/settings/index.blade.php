@@ -221,21 +221,16 @@
                             
                             <!-- Photo de profil -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Photo de profil
-                                </label>
-                                <div class="flex items-center gap-4">
+                                <div class="flex items-start gap-4">
                                     <x-avatar :user="$user" size="2xl" />
                                     <div class="flex-1">
-                                        <input 
-                                            type="file" 
+                                        <x-file-upload 
                                             name="photo_profil" 
-                                            accept="image/*"
-                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        >
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                            Formats acceptés : JPEG, PNG, GIF, WebP (max 2MB)
-                                        </p>
+                                            accept="image/jpeg,image/png,image/gif,image/webp" 
+                                            label="Photo de profil"
+                                            maxSize="2 Mo"
+                                            :currentImage="$user->photo_profil ? asset('media/' . $user->photo_profil) : null"
+                                        />
                                     </div>
                                 </div>
                                 @error('photo_profil')
@@ -1028,12 +1023,19 @@
                                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                             Mot de passe actuel *
                                         </label>
-                                        <input 
-                                            type="password" 
-                                            name="current_password" 
-                                            required
-                                            class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                        >
+                                        <div class="relative">
+                                            <input 
+                                                id="settings-current-password"
+                                                type="password" 
+                                                name="current_password" 
+                                                required
+                                                class="w-full px-4 py-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                            >
+                                            <button type="button" onclick="togglePasswordVisibility('settings-current-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition" aria-label="Afficher le mot de passe">
+                                                <svg class="w-5 h-5 eye-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path></svg>
+                                                <svg class="w-5 h-5 eye-on hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                            </button>
+                                        </div>
                                         @error('current_password')
                                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                         @enderror
@@ -1044,13 +1046,20 @@
                                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                 Nouveau mot de passe *
                                             </label>
-                                            <input 
-                                                type="password" 
-                                                name="new_password" 
-                                                required
-                                                minlength="8"
-                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            >
+                                            <div class="relative">
+                                                <input 
+                                                    id="settings-new-password"
+                                                    type="password" 
+                                                    name="new_password" 
+                                                    required
+                                                    minlength="8"
+                                                    class="w-full px-4 py-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                >
+                                                <button type="button" onclick="togglePasswordVisibility('settings-new-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition" aria-label="Afficher le mot de passe">
+                                                    <svg class="w-5 h-5 eye-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path></svg>
+                                                    <svg class="w-5 h-5 eye-on hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                </button>
+                                            </div>
                                             @error('new_password')
                                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                             @enderror
@@ -1063,13 +1072,20 @@
                                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                 Confirmer le mot de passe *
                                             </label>
-                                            <input 
-                                                type="password" 
-                                                name="new_password_confirmation" 
-                                                required
-                                                minlength="8"
-                                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                            >
+                                            <div class="relative">
+                                                <input 
+                                                    id="settings-new-password-confirm"
+                                                    type="password" 
+                                                    name="new_password_confirmation" 
+                                                    required
+                                                    minlength="8"
+                                                    class="w-full px-4 py-3 pr-12 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                                >
+                                                <button type="button" onclick="togglePasswordVisibility('settings-new-password-confirm', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition" aria-label="Afficher le mot de passe">
+                                                    <svg class="w-5 h-5 eye-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path></svg>
+                                                    <svg class="w-5 h-5 eye-on hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
