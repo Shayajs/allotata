@@ -21,8 +21,8 @@ class EmploiDuTemps {
         this.googleConnectUrl = options.googleConnectUrl || '';
         this.csrfToken = options.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
         this.loading = false;
-        this.hourStart = 6;  // Afficher à partir de 6h
-        this.hourEnd = 22;   // Jusqu'à 22h
+        this.hourStart = 0;   // Journée complète depuis minuit
+        this.hourEnd = 24;    // Jusqu'à minuit
         this.pixelsPerHour = 60;
 
         this.joursSemaine = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -478,8 +478,9 @@ class EmploiDuTemps {
         // Axe des heures
         const timeAxis = document.createElement('div');
         timeAxis.className = 'edt-time-axis flex-shrink-0';
+        timeAxis.style.height = `${(this.hourEnd - this.hourStart) * this.pixelsPerHour}px`;
 
-        for (let h = this.hourStart; h <= this.hourEnd; h++) {
+        for (let h = this.hourStart; h < this.hourEnd; h++) {
             const label = document.createElement('div');
             label.className = 'edt-time-label';
             label.textContent = `${String(h).padStart(2, '0')}:00`;
@@ -501,19 +502,17 @@ class EmploiDuTemps {
             column.className = 'edt-day-column relative';
 
             // Lignes horizontales des heures
-            for (let h = this.hourStart; h <= this.hourEnd; h++) {
+            for (let h = this.hourStart; h < this.hourEnd; h++) {
                 const line = document.createElement('div');
                 line.className = 'edt-hour-line';
                 line.style.top = `${(h - this.hourStart) * this.pixelsPerHour}px`;
                 column.appendChild(line);
 
                 // Demi-heure
-                if (h < this.hourEnd) {
-                    const halfLine = document.createElement('div');
-                    halfLine.className = 'edt-hour-line edt-hour-line-half';
-                    halfLine.style.top = `${(h - this.hourStart) * this.pixelsPerHour + this.pixelsPerHour / 2}px`;
-                    column.appendChild(halfLine);
-                }
+                const halfLine = document.createElement('div');
+                halfLine.className = 'edt-hour-line edt-hour-line-half';
+                halfLine.style.top = `${(h - this.hourStart) * this.pixelsPerHour + this.pixelsPerHour / 2}px`;
+                column.appendChild(halfLine);
             }
 
             // Indicateur "maintenant"
@@ -542,9 +541,9 @@ class EmploiDuTemps {
         this.contentArea.innerHTML = '';
         this.contentArea.appendChild(wrapper);
 
-        // Scroller vers l'heure actuelle ou 8h
-        const scrollToHour = Math.max(this.hourStart, Math.min(now.getHours() - 1, this.hourEnd));
-        scrollContainer.scrollTop = (scrollToHour - this.hourStart) * this.pixelsPerHour;
+        // Scroller vers l'heure actuelle - 1h, ou 7h si avant
+        const targetHour = Math.max(7, Math.min(now.getHours() - 1, this.hourEnd - 2));
+        scrollContainer.scrollTop = (targetHour - this.hourStart) * this.pixelsPerHour;
     }
 
     renderDayEvents(column, events) {

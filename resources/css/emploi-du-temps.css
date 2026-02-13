@@ -26,7 +26,6 @@
 /* Colonnes jour (semaine/jour) */
 .edt-day-column {
     position: relative;
-    min-height: 1440px; /* 24h * 60px */
     border-left: 1px solid #e2e8f0;
 }
 
@@ -260,7 +259,7 @@
 /* Conteneur scrollable pour les vues semaine/jour */
 .edt-scroll-container {
     overflow-y: auto;
-    max-height: 700px;
+    max-height: 75vh;
     position: relative;
 }
 
@@ -323,6 +322,6 @@
     }
 
     .edt-scroll-container {
-        max-height: 500px;
+        max-height: 60vh;
     }
 }
