@@ -97,6 +97,12 @@
     </div>
 </div>
 
+@php
+    $autresEntreprisesData = Auth::user()->entreprises()
+        ->where('id', '!=', $entreprise->id)
+        ->select('id', 'nom', 'slug', 'logo')
+        ->get();
+@endphp
 <script>
 (function() {
     const entrepriseSlug = '{{ $entreprise->slug }}';
@@ -107,12 +113,7 @@
     const googleConnectUrl = '{{ route("google-calendar.redirect", $entreprise->slug) }}';
 
     // Autres entreprises de l'utilisateur pour la propagation
-    const autresEntreprises = @json(
-        Auth::user()->entreprises()
-            ->where('id', '!=', $entreprise->id)
-            ->select('id', 'nom', 'slug', 'logo')
-            ->get()
-    );
+    const autresEntreprises = @json($autresEntreprisesData);
 
     let calendarInstance = null;
 
