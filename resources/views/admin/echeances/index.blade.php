@@ -75,7 +75,7 @@
 
     {{-- Filtres --}}
     <form method="GET" action="{{ route('admin.echeances.index') }}" class="mb-6 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
             @foreach(request()->only(['statut']) as $k => $v)
                 @if($v)
                     <input type="hidden" name="{{ $k }}" value="{{ $v }}">
@@ -95,6 +95,31 @@
                 </select>
             </div>
             <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Origine</label>
+                <select name="payment_origin" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">Toutes</option>
+                    <option value="manual" {{ request('payment_origin') === 'manual' ? 'selected' : '' }}>Manuel</option>
+                    <option value="auto_card" {{ request('payment_origin') === 'auto_card' ? 'selected' : '' }}>Auto carte</option>
+                    <option value="provider_subscription" {{ request('payment_origin') === 'provider_subscription' ? 'selected' : '' }}>Provider abonnement</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Provider</label>
+                <select name="payment_provider" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">Tous</option>
+                    <option value="stripe" {{ request('payment_provider') === 'stripe' ? 'selected' : '' }}>Stripe</option>
+                    <option value="none" {{ request('payment_provider') === 'none' ? 'selected' : '' }}>Aucun</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Auto-prélèvement</label>
+                <select name="auto_charge_eligible" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                    <option value="">Tous</option>
+                    <option value="1" {{ request('auto_charge_eligible') === '1' ? 'selected' : '' }}>Oui</option>
+                    <option value="0" {{ request('auto_charge_eligible') === '0' ? 'selected' : '' }}>Non</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Période début</label>
                 <input type="date" name="date_debut" value="{{ request('date_debut') }}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
             </div>
@@ -109,6 +134,8 @@
         </div>
     </form>
 
+    @include('admin.echeances.partials._manual-create-form')
+
     <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div class="overflow-x-auto table-responsive-to-cards">
             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -120,6 +147,7 @@
                         <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Montant dû</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Réduc.</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Origine</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Payé le</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
                     </tr>
@@ -168,6 +196,14 @@
                                 @endphp
                                 <span class="text-xs px-2 py-1 rounded-full {{ $statutClass }}">{{ $e->statut }}</span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap" data-label="Origine">
+                                <div class="text-xs text-slate-700 dark:text-slate-300">
+                                    <span class="font-semibold">{{ $e->payment_origin ?? 'n/a' }}</span>
+                                    @if($e->payment_provider)
+                                        <span class="text-slate-500">/ {{ $e->payment_provider }}</span>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap" data-label="Payé le">
                                 @if($e->paye_at)
                                     <span class="text-sm text-slate-600 dark:text-slate-400">{{ $e->paye_at->format('d/m/Y H:i') }}</span>
@@ -190,6 +226,7 @@
                                     </span>
                                 @elseif(!$e->estPayee() && !$e->estArrete() && !$e->estRemboursee())
                                     <button type="button" onclick="document.getElementById('reduction-form-{{ $e->id }}').classList.toggle('hidden')" class="text-blue-600 dark:text-blue-400 hover:underline mr-2">Réduction</button>
+                                    <button type="button" onclick="document.getElementById('manual-pay-form-{{ $e->id }}').classList.toggle('hidden')" class="text-green-600 dark:text-green-400 hover:underline mr-2">Marquer payé</button>
                                     <form action="{{ route('admin.echeances.arrete', $e) }}" method="POST" class="inline" onsubmit="return confirm('Marquer cette échéance comme arrêtée ?');">
                                         @csrf
                                         <button type="submit" class="text-amber-600 dark:text-amber-400 hover:underline mr-2">Arrêter</button>
@@ -197,6 +234,16 @@
                                     <form action="{{ route('admin.echeances.annule', $e) }}" method="POST" class="inline" onsubmit="return confirm('Annuler cette échéance ?');">
                                         @csrf
                                         <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Annuler</button>
+                                    </form>
+                                    @if(($e->payment_provider === 'stripe' || $e->stripe_payment_intent_id || $e->stripe_checkout_session_id) && $e->payment_origin !== \App\Models\Echeance::ORIGIN_MANUAL)
+                                        <form action="{{ route('admin.echeances.convert-to-manual', $e) }}" method="POST" class="inline" onsubmit="return confirm('Convertir cette dette Stripe en dette manuelle (sans auto-prélèvement) ?');">
+                                            @csrf
+                                            <button type="submit" class="text-indigo-600 dark:text-indigo-400 hover:underline ml-2">Convertir manuel</button>
+                                        </form>
+                                    @endif
+                                    <form action="{{ route('admin.echeances.offline-settled', $e) }}" method="POST" class="inline" onsubmit="return confirm('Marquer cette dette comme réglée hors-ligne ?');">
+                                        @csrf
+                                        <button type="submit" class="text-emerald-600 dark:text-emerald-400 hover:underline ml-2">Réglé hors-ligne</button>
                                     </form>
                                 @else
                                     —
@@ -206,7 +253,7 @@
                         {{-- Formulaire de remboursement (échéances payées) --}}
                         @if(($e->estPayee() || $e->estPartielementRemboursee()) && $e->stripe_payment_intent_id && $e->statut !== 'rembourse')
                             <tr id="refund-form-{{ $e->id }}" class="hidden bg-purple-50 dark:bg-purple-900/10">
-                                <td colspan="8" class="px-6 py-4">
+                                <td colspan="9" class="px-6 py-4">
                                     <form action="{{ route('admin.echeances.refund', $e) }}" method="POST" x-data="{ refundType: 'total' }" onsubmit="return confirm('Confirmer le remboursement ? Cette action est irréversible.');">
                                         @csrf
                                         <div class="flex flex-wrap gap-4 items-end">
@@ -249,7 +296,7 @@
                         {{-- Formulaire de réduction (échéances non payées) --}}
                         @if(!$e->estPayee() && !$e->estArrete() && !$e->estRemboursee())
                             <tr id="reduction-form-{{ $e->id }}" class="hidden bg-slate-50 dark:bg-slate-800/80">
-                                <td colspan="8" class="px-6 py-4">
+                                <td colspan="9" class="px-6 py-4">
                                     <form action="{{ route('admin.echeances.reduction', $e) }}" method="POST" class="flex flex-wrap gap-4 items-end">
                                         @csrf
                                         <div>
@@ -265,9 +312,16 @@
                                 </td>
                             </tr>
                         @endif
+                        @if(!$e->estPayee() && !$e->estArrete() && !$e->estRemboursee())
+                            <tr id="manual-pay-form-{{ $e->id }}" class="hidden bg-green-50 dark:bg-green-900/10">
+                                <td colspan="9" class="px-6 py-4">
+                                    @include('admin.echeances.partials._manual-pay-form', ['echeance' => $e])
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                            <td colspan="9" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                                 Aucune échéance trouvée.
                             </td>
                         </tr>

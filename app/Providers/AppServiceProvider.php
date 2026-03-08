@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Payments\ProviderResolver;
+use App\Services\Payments\Providers\StripeProvider;
 use App\Models\Reservation;
 use App\Models\RendezVous;
 use App\Models\User;
@@ -26,7 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ProviderResolver::class, function () {
+            return new ProviderResolver([
+                new StripeProvider(),
+            ]);
+        });
     }
 
     /**

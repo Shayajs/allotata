@@ -3,13 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\MarkManualEcheancePaidRequest;
+use App\Http\Requests\Admin\StoreManualEcheanceRequest;
 use App\Models\Echeance;
 use App\Models\User;
+use App\Services\Payments\ManualDebtService;
 use App\Services\RefundService;
 use Illuminate\Http\Request;
 
 class EcheanceController extends Controller
 {
+    public function __construct(private readonly ManualDebtService $manualDebtService)
+    {
+    }
+
     public function index(Request $request)
     {
         $q = Echeance::query()->with(['user', 'entreprise', 'promoCode']);
@@ -25,6 +32,19 @@ class EcheanceController extends Controller
         }
         if ($request->filled('type')) {
             $q->where('subscription_type', $request->type);
+        }
+        if ($request->filled('payment_origin')) {
+            $q->where('payment_origin', $request->payment_origin);
+        }
+        if ($request->filled('payment_provider')) {
+            if ($request->payment_provider === 'none') {
+                $q->whereNull('payment_provider');
+            } else {
+                $q->where('payment_provider', $request->payment_provider);
+            }
+        }
+        if ($request->filled('auto_charge_eligible')) {
+            $q->where('auto_charge_eligible', $request->auto_charge_eligible === '1');
         }
         if ($request->filled('date_debut')) {
             $q->whereDate('periode_debut', '>=', $request->date_debut);
@@ -55,7 +75,76 @@ class EcheanceController extends Controller
         return view('admin.echeances.index', [
             'echeances' => $echeances,
             'stats' => $stats,
+            'users' => User::orderBy('name')->limit(500)->get(['id', 'name', 'email']),
         ]);
+    }
+
+    public function storeManual(StoreManualEcheanceRequest $request)
+    {
+        $echeance = $this->manualDebtService->createManualDebt($request->validated(), (int) auth()->id());
+
+        return back()->with('success', "Dette manuelle #{$echeance->id} créée.");
+    }
+
+    public function markPaidManual(MarkManualEcheancePaidRequest $request, Echeance $echeance)
+    {
+        if ($echeance->estPayee()) {
+            return back()->with('error', 'Cette échéance est déjà payée.');
+        }
+
+        $this->manualDebtService->markManualPaid($echeance, $request->validated(), (int) auth()->id());
+
+        return back()->with('success', "Échéance #{$echeance->id} marquée payée.");
+    }
+
+    public function convertStripeDebtToManual(Echeance $echeance)
+    {
+        if ($echeance->estPayee()) {
+            return back()->with('error', 'Impossible de convertir une échéance déjà payée.');
+        }
+        if ($echeance->payment_origin === Echeance::ORIGIN_MANUAL) {
+            return back()->with('error', 'Cette échéance est déjà manuelle.');
+        }
+
+        $metadata = $echeance->metadata ?? [];
+        $metadata['converted_to_manual_by_admin_id'] = auth()->id();
+        $metadata['converted_to_manual_at'] = now()->toIso8601String();
+
+        $echeance->update([
+            'payment_origin' => Echeance::ORIGIN_MANUAL,
+            'payment_provider' => null,
+            'auto_charge_eligible' => false,
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'Dette convertie en manuel (plus de prélèvement auto).');
+    }
+
+    public function markOfflineSettled(Echeance $echeance, Request $request)
+    {
+        $validated = $request->validate([
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        if ($echeance->estPayee()) {
+            return back()->with('error', 'Cette échéance est déjà payée.');
+        }
+
+        $metadata = $echeance->metadata ?? [];
+        $metadata['offline_settled_by_admin_id'] = auth()->id();
+        $metadata['offline_settled_at'] = now()->toIso8601String();
+        $metadata['offline_settled_note'] = $validated['note'] ?? null;
+
+        $echeance->update([
+            'statut' => Echeance::STATUT_PAYE,
+            'payment_origin' => Echeance::ORIGIN_MANUAL,
+            'payment_provider' => null,
+            'auto_charge_eligible' => false,
+            'paye_at' => now(),
+            'metadata' => $metadata,
+        ]);
+
+        return back()->with('success', 'Dette marquée réglée hors-ligne.');
     }
 
     public function updateReduction(Request $request, Echeance $echeance)

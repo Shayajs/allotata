@@ -17,6 +17,9 @@ class EntrepriseSubscription extends Model
         'stripe_id',
         'stripe_status',
         'stripe_price',
+        'payment_provider',
+        'provider_subscription_id',
+        'provider_payload',
         'est_manuel',
         'actif_jusqu',
         'notes_manuel',
@@ -35,6 +38,7 @@ class EntrepriseSubscription extends Model
             'actif_jusqu' => 'date',
             'date_debut' => 'date',
             'montant' => 'decimal:2',
+            'provider_payload' => 'array',
             'trial_ends_at' => 'datetime',
             'ends_at' => 'datetime',
         ];

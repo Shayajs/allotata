@@ -1,9 +1,12 @@
 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">💳 Gestion de l'abonnement</h2>
 
 @php
-    $echeancesAPayer = \App\Models\Echeance::where('user_id', $user->id)
-        ->whereIn('statut', [\App\Models\Echeance::STATUT_A_PAYER, \App\Models\Echeance::STATUT_EN_ATTENTE])
-        ->count();
+    $echeancesQuery = \App\Models\Echeance::where('user_id', $user->id)
+        ->whereIn('statut', [\App\Models\Echeance::STATUT_A_PAYER, \App\Models\Echeance::STATUT_EN_ATTENTE]);
+    if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+        $echeancesQuery->where('payment_origin', \App\Models\Echeance::ORIGIN_MANUAL);
+    }
+    $echeancesAPayer = $echeancesQuery->count();
 @endphp
 @if($echeancesAPayer > 0)
     <div class="mb-6 p-4 sm:p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">

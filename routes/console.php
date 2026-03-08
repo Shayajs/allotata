@@ -17,67 +17,69 @@ Artisan::command('inspire', function () {
 /**
  * Enregistre une tâche planifiée avec logging automatique (before/after/onFailure).
  */
-function scheduleWithLogging(string $command, string $description = ''): \Illuminate\Console\Scheduling\Event
-{
-    $event = Schedule::command($command);
+if (!function_exists('scheduleWithLogging')) {
+    function scheduleWithLogging(string $command, string $description = ''): \Illuminate\Console\Scheduling\Event
+    {
+        $event = Schedule::command($command);
 
-    $event->before(function () use ($command, $description) {
-        try {
-            ScheduledTaskLog::create([
-                'command' => $command,
-                'description' => $description,
-                'status' => 'running',
-                'started_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::warning("ScheduledTaskLog before error: {$e->getMessage()}");
-        }
-    });
-
-    $event->after(function () use ($command) {
-        try {
-            $log = ScheduledTaskLog::where('command', $command)
-                ->where('status', 'running')
-                ->latest()
-                ->first();
-
-            if ($log) {
-                $duration = $log->started_at ? now()->diffInMilliseconds($log->started_at) / 1000 : null;
-                $log->update([
-                    'status' => 'success',
-                    'exit_code' => 0,
-                    'finished_at' => now(),
-                    'duration_seconds' => $duration,
+        $event->before(function () use ($command, $description) {
+            try {
+                ScheduledTaskLog::create([
+                    'command' => $command,
+                    'description' => $description,
+                    'status' => 'running',
+                    'started_at' => now(),
                 ]);
+            } catch (\Throwable $e) {
+                Log::warning("ScheduledTaskLog before error: {$e->getMessage()}");
             }
-        } catch (\Throwable $e) {
-            Log::warning("ScheduledTaskLog after error: {$e->getMessage()}");
-        }
-    });
+        });
 
-    $event->onFailure(function () use ($command) {
-        try {
-            $log = ScheduledTaskLog::where('command', $command)
-                ->where('status', 'running')
-                ->latest()
-                ->first();
+        $event->after(function () use ($command) {
+            try {
+                $log = ScheduledTaskLog::where('command', $command)
+                    ->where('status', 'running')
+                    ->latest()
+                    ->first();
 
-            if ($log) {
-                $duration = $log->started_at ? now()->diffInMilliseconds($log->started_at) / 1000 : null;
-                $log->update([
-                    'status' => 'error',
-                    'exit_code' => 1,
-                    'finished_at' => now(),
-                    'duration_seconds' => $duration,
-                    'output' => 'La tâche a échoué. Consultez les logs Laravel pour plus de détails.',
-                ]);
+                if ($log) {
+                    $duration = $log->started_at ? now()->diffInMilliseconds($log->started_at) / 1000 : null;
+                    $log->update([
+                        'status' => 'success',
+                        'exit_code' => 0,
+                        'finished_at' => now(),
+                        'duration_seconds' => $duration,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("ScheduledTaskLog after error: {$e->getMessage()}");
             }
-        } catch (\Throwable $e) {
-            Log::warning("ScheduledTaskLog failure error: {$e->getMessage()}");
-        }
-    });
+        });
 
-    return $event;
+        $event->onFailure(function () use ($command) {
+            try {
+                $log = ScheduledTaskLog::where('command', $command)
+                    ->where('status', 'running')
+                    ->latest()
+                    ->first();
+
+                if ($log) {
+                    $duration = $log->started_at ? now()->diffInMilliseconds($log->started_at) / 1000 : null;
+                    $log->update([
+                        'status' => 'error',
+                        'exit_code' => 1,
+                        'finished_at' => now(),
+                        'duration_seconds' => $duration,
+                        'output' => 'La tâche a échoué. Consultez les logs Laravel pour plus de détails.',
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("ScheduledTaskLog failure error: {$e->getMessage()}");
+            }
+        });
+
+        return $event;
+    }
 }
 
 // =============================================

@@ -58,6 +58,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // 'google2fa_secret' — EXCLUS : assignation explicite uniquement (sécurité mass assignment)
         'google2fa_recovery_codes',
         'stripe_payment_method_id',
+        'payment_provider',
+        'provider_customer_id',
+        'provider_payment_method_id',
+        'provider_payload',
         // 'stripe_id' — EXCLUS : géré par Cashier (forceFill) ou assignation explicite
         'pm_type',
         'pm_last_four',
@@ -134,6 +138,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'a2f_enabled' => 'boolean',
             'google2fa_enabled' => 'boolean',
             'google2fa_recovery_codes' => 'array',
+            'provider_payload' => 'array',
             'client_guide_dismissed_at' => 'datetime',
             'cgu_accepted_at' => 'datetime',
             'cgv_accepted_at' => 'datetime',

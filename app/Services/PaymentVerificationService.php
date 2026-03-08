@@ -197,6 +197,7 @@ class PaymentVerificationService
 
             $echeanceLocked->update([
                 'statut' => Echeance::STATUT_PAYE,
+                'payment_provider' => $echeanceLocked->payment_provider ?: Echeance::PROVIDER_STRIPE,
                 'stripe_checkout_session_id' => $session->id,
                 'stripe_payment_intent_id' => $piId,
                 'paye_at' => now(),
@@ -375,6 +376,7 @@ class PaymentVerificationService
 
             $echeanceLocked->update([
                 'statut' => Echeance::STATUT_PAYE,
+                'payment_provider' => $echeanceLocked->payment_provider ?: Echeance::PROVIDER_STRIPE,
                 'stripe_checkout_session_id' => null,
                 'stripe_payment_intent_id' => $pi->id,
                 'paye_at' => now(),
@@ -453,7 +455,10 @@ class PaymentVerificationService
 
         if ($sub) {
             if ($sub->actif_jusqu && $echeance->periode_fin && $echeance->periode_fin->gt($sub->actif_jusqu)) {
-                $sub->update(['actif_jusqu' => $echeance->periode_fin]);
+                $sub->update([
+                    'actif_jusqu' => $echeance->periode_fin,
+                    'payment_provider' => $sub->payment_provider ?: Echeance::PROVIDER_STRIPE,
+                ]);
             }
             return;
         }
@@ -467,6 +472,7 @@ class PaymentVerificationService
                 'type' => $echeance->subscription_type,
                 'name' => 'echeance_' . $echeance->subscription_type . '_' . $echeance->entreprise_id,
                 'est_manuel' => false,
+                'payment_provider' => Echeance::PROVIDER_STRIPE,
                 'stripe_id' => null,
                 'stripe_status' => null,
                 'stripe_price' => null,

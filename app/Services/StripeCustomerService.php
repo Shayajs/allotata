@@ -28,6 +28,8 @@ class StripeCustomerService
 
         // stripe_id hors du $fillable : assignation explicite
         $user->stripe_id = $customer->id;
+        $user->payment_provider = \App\Models\Echeance::PROVIDER_STRIPE;
+        $user->provider_customer_id = $customer->id;
         $user->save();
         return $customer->id;
     }

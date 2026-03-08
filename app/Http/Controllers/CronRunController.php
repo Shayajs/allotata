@@ -46,6 +46,14 @@ class CronRunController extends Controller
         }
 
         try {
+            Artisan::call('subscriptions:process-payments');
+            $results['process_payments'] = ['exit' => 0, 'output' => trim(Artisan::output())];
+        } catch (\Throwable $e) {
+            Log::error('CronRun process-payments failed', ['error' => $e->getMessage()]);
+            $results['process_payments'] = ['exit' => 1, 'error' => $e->getMessage()];
+        }
+
+        try {
             Artisan::call('subscriptions:reconcile-echeances');
             $results['reconcile_echeances'] = ['exit' => 0, 'output' => trim(Artisan::output())];
         } catch (\Throwable $e) {

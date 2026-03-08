@@ -219,10 +219,13 @@ class DashboardController extends Controller
             ]);
         }
         $lastPayments = $lastPayments->sortByDesc(fn ($p) => $p->date)->take(15)->values();
-        $upcomingEcheances = Echeance::where('user_id', $user->id)
+        $upcomingQuery = Echeance::where('user_id', $user->id)
             ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
-            ->orderBy('periode_fin')
-            ->get();
+            ->orderBy('periode_fin');
+        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+            $upcomingQuery->where('payment_origin', Echeance::ORIGIN_MANUAL);
+        }
+        $upcomingEcheances = $upcomingQuery->get();
 
         // Variables pour l'onglet Sécurité
         $loginAttempts = LoginAttempt::where('user_id', $user->id)

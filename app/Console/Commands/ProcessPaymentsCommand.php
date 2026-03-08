@@ -5,13 +5,10 @@ namespace App\Console\Commands;
 use App\Models\Echeance;
 use App\Models\EntrepriseSubscription;
 use App\Models\PaymentAuditLog;
-use App\Services\PaymentVerificationService;
-use App\Services\StripeCustomerService;
+use App\Services\Payments\ProviderResolver;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Stripe\PaymentIntent;
-use Stripe\Stripe;
 
 /**
  * Auto-charge des échéances a_payer et retry des échecs.
@@ -26,6 +23,11 @@ use Stripe\Stripe;
  */
 class ProcessPaymentsCommand extends Command
 {
+    public function __construct(private readonly ProviderResolver $providerResolver)
+    {
+        parent::__construct();
+    }
+
     protected $signature = 'subscriptions:process-payments
                             {--dry-run : Simule sans débiter}';
 
@@ -38,8 +40,6 @@ class ProcessPaymentsCommand extends Command
             $this->warn('⚠ Mode dry-run : aucune charge Stripe ne sera effectuée.');
         }
 
-        Stripe::setApiKey(config('services.stripe.secret'));
-
         $charged = 0;
         $retried = 0;
         $cancelled = 0;
@@ -49,6 +49,8 @@ class ProcessPaymentsCommand extends Command
         // 1. Auto-charge des échéances « a_payer »
         // ═══════════════════════════════════════════════════════
         $aPayer = Echeance::where('statut', Echeance::STATUT_A_PAYER)
+            ->autoChargeEligible()
+            ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
             ->with(['user', 'entreprise'])
             ->get();
 
@@ -56,8 +58,13 @@ class ProcessPaymentsCommand extends Command
 
         foreach ($aPayer as $echeance) {
             $user = $echeance->user;
-            if (!$user || empty($user->stripe_payment_method_id)) {
+            if (!$user) {
                 $this->line("  #{$echeance->id} : pas de carte → ignoré.");
+                $skipped++;
+                continue;
+            }
+            if ($this->isManualManagedEcheance($echeance)) {
+                $this->line("  #{$echeance->id} : échéance manuelle → ignoré.");
                 $skipped++;
                 continue;
             }
@@ -82,6 +89,8 @@ class ProcessPaymentsCommand extends Command
         // 2. Retry des échéances « echec »
         // ═══════════════════════════════════════════════════════
         $echecs = Echeance::where('statut', Echeance::STATUT_ECHEC)
+            ->autoChargeEligible()
+            ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
             ->with(['user', 'entreprise'])
             ->get();
 
@@ -124,8 +133,13 @@ class ProcessPaymentsCommand extends Command
                 $skipped++;
                 continue;
             }
+            if ($this->isManualManagedEcheance($echeance)) {
+                $this->line("  #{$echeance->id} : échéance manuelle → ignoré.");
+                $skipped++;
+                continue;
+            }
 
-            if (!$user || empty($user->stripe_payment_method_id)) {
+            if (!$user) {
                 $this->line("  #{$echeance->id} : pas de carte → ignoré.");
                 $skipped++;
                 continue;
@@ -166,105 +180,43 @@ class ProcessPaymentsCommand extends Command
         }
 
         try {
-            $customerId = StripeCustomerService::ensureCustomer($user);
+            $provider = $this->providerResolver->resolve($echeance->payment_provider);
+            $charge = $provider->chargeOffSession($echeance, $user, $retryCount);
         } catch (\Throwable $e) {
-            Log::error('ProcessPayments: ensureCustomer failed', [
+            Log::error('ProcessPayments: provider charge failed', [
                 'echeance_id' => $echeance->id,
-                'user_id' => $user->id,
+                'provider' => $echeance->payment_provider,
                 'error' => $e->getMessage(),
             ]);
             return 'skip';
         }
 
-        $amountCents = (int) round($montant * 100);
-
-        try {
-            $pi = PaymentIntent::create([
-                'amount' => $amountCents,
-                'currency' => \App\Models\Tarif::currency(),
-                'customer' => $customerId,
-                'payment_method' => $user->stripe_payment_method_id,
-                'off_session' => true,
-                'confirm' => true,
-                'metadata' => [
-                    'user_id' => (string) $user->id,
-                    'echeance_id' => (string) $echeance->id,
-                    'auto_charge' => 'true',
-                    'retry_count' => (string) $retryCount,
-                ],
-            ]);
-        } catch (\Stripe\Exception\CardException $e) {
-            // Carte refusée → marquer en échec avec compteur de retry
+        if ($charge['status'] === 'failed') {
             $echeance->update([
                 'statut' => Echeance::STATUT_ECHEC,
                 'metadata' => array_merge($echeance->metadata ?? [], [
                     'retry_count' => $retryCount,
                     'last_retry_at' => now()->toIso8601String(),
-                    'last_error' => $e->getMessage(),
-                    'last_error_code' => $e->getError()->code ?? null,
+                    'last_error' => $charge['message'] ?? 'Provider charge failed',
                 ]),
             ]);
 
-            try {
-                PaymentAuditLog::log('auto_charge_fail', $echeance->user_id, [
-                    'echeance_id' => $echeance->id,
-                    'amount' => $montant,
-                    'retry_count' => $retryCount,
-                    'status' => 'card_error',
-                    'context' => [
-                        'code' => $e->getError()->code ?? null,
-                        'decline_code' => $e->getError()->decline_code ?? null,
-                    ],
-                    'message' => "Auto-charge échec (retry #{$retryCount}) : " . $e->getMessage(),
-                ]);
-            } catch (\Throwable $ae) {
-                Log::warning('ProcessPayments: audit log failed', ['error' => $ae->getMessage()]);
-            }
+            PaymentAuditLog::log('auto_charge_fail', $echeance->user_id, [
+                'echeance_id' => $echeance->id,
+                'amount' => $montant,
+                'retry_count' => $retryCount,
+                'status' => 'provider_charge_failed',
+                'context' => ['provider' => $provider->key()],
+                'message' => "Auto-charge échec (retry #{$retryCount}) : " . ($charge['message'] ?? 'échec'),
+            ]);
 
             return 'failed';
-        } catch (\Throwable $e) {
-            Log::error('ProcessPayments: unexpected error during charge', [
-                'echeance_id' => $echeance->id,
-                'error' => $e->getMessage(),
-            ]);
-            return 'skip';
         }
 
-        $status = $pi->status ?? '';
-
-        if ($status === 'succeeded') {
-            try {
-                $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($pi->id);
-                if ($result['ok']) {
-                    try {
-                        PaymentAuditLog::log('auto_charge_ok', $echeance->user_id, [
-                            'echeance_id' => $echeance->id,
-                            'stripe_payment_intent_id' => $pi->id,
-                            'amount' => $montant,
-                            'retry_count' => $retryCount,
-                            'status' => 'succeeded',
-                            'message' => 'Auto-charge réussi – ' . $echeance->libelle(),
-                        ]);
-                    } catch (\Throwable $ae) {
-                        Log::warning('ProcessPayments: audit log failed', ['error' => $ae->getMessage()]);
-                    }
-                    return 'ok';
-                }
-            } catch (\Throwable $e) {
-                Log::error('ProcessPayments: markPaid failed', [
-                    'echeance_id' => $echeance->id,
-                    'pi' => $pi->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-            return 'skip';
-        }
-
-        if ($status === 'requires_action') {
-            // 3DS requis en auto-charge → mettre en attente, l'utilisateur devra finaliser
+        if ($charge['status'] === 'requires_action') {
             $echeance->update([
                 'statut' => Echeance::STATUT_EN_ATTENTE,
-                'stripe_payment_intent_id' => $pi->id,
+                'stripe_payment_intent_id' => $charge['payment_intent_id'],
                 'metadata' => array_merge($echeance->metadata ?? [], [
                     'retry_count' => $retryCount,
                     'last_retry_at' => now()->toIso8601String(),
@@ -272,22 +224,35 @@ class ProcessPaymentsCommand extends Command
                 ]),
             ]);
 
-            // TODO : envoyer un email « Finalisez votre paiement (3DS) »
-            Log::info('ProcessPayments: 3DS required', [
+            Log::info('ProcessPayments: action required', [
                 'echeance_id' => $echeance->id,
-                'payment_intent_id' => $pi->id,
+                'provider' => $provider->key(),
+                'payment_intent_id' => $charge['payment_intent_id'],
             ]);
 
             return 'skip';
         }
 
-        // Statut inattendu
-        Log::warning('ProcessPayments: unexpected PI status', [
+        if ($charge['status'] !== 'ok' || empty($charge['payment_intent_id'])) {
+            return 'skip';
+        }
+
+        $result = $provider->verifyPaymentIntent($charge['payment_intent_id']);
+        if (!$result['ok']) {
+            return 'skip';
+        }
+
+        PaymentAuditLog::log('auto_charge_ok', $echeance->user_id, [
             'echeance_id' => $echeance->id,
-            'pi' => $pi->id,
-            'status' => $status,
+            'stripe_payment_intent_id' => $charge['payment_intent_id'],
+            'amount' => $montant,
+            'retry_count' => $retryCount,
+            'status' => 'succeeded',
+            'context' => ['provider' => $provider->key()],
+            'message' => 'Auto-charge réussi – ' . $echeance->libelle(),
         ]);
-        return 'skip';
+
+        return 'ok';
     }
 
     /**
@@ -331,5 +296,29 @@ class ProcessPaymentsCommand extends Command
                 }
             }
         }
+    }
+
+    protected function isManualManagedEcheance(Echeance $echeance): bool
+    {
+        if ($echeance->payment_origin === Echeance::ORIGIN_MANUAL || !$echeance->auto_charge_eligible) {
+            return true;
+        }
+
+        $user = $echeance->user;
+        if ($user && $user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+            return true;
+        }
+
+        if ($echeance->entreprise_id && $echeance->subscription_type) {
+            $sub = EntrepriseSubscription::where('entreprise_id', $echeance->entreprise_id)
+                ->where('type', $echeance->subscription_type)
+                ->orderByDesc('est_manuel')
+                ->first();
+            if ($sub && $sub->est_manuel && $sub->actif_jusqu && !$sub->actif_jusqu->isPast()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

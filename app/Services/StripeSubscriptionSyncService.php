@@ -266,6 +266,12 @@ class StripeSubscriptionSyncService
                         'entreprise_id' => $entreprise->id,
                         'type' => $subscriptionType,
                         'name' => $subscriptionName ?? $subscriptionType,
+                        'payment_provider' => \App\Models\Echeance::PROVIDER_STRIPE,
+                        'provider_subscription_id' => $stripeSubscription->id,
+                        'provider_payload' => [
+                            'metadata' => (array) ($stripeSubscription->metadata ?? []),
+                            'current_period_end' => $stripeSubscription->current_period_end ?? null,
+                        ],
                         'stripe_status' => $stripeSubscription->status,
                         'stripe_price' => $priceId,
                         'est_manuel' => false,

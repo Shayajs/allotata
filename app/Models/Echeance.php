@@ -22,11 +22,18 @@ class Echeance extends Model
     public const TYPE_DEFAULT = 'default';
     public const TYPE_SITE_WEB = 'site_web';
     public const TYPE_MULTI_PERSONNES = 'multi_personnes';
+    public const ORIGIN_MANUAL = 'manual';
+    public const ORIGIN_AUTO_CARD = 'auto_card';
+    public const ORIGIN_PROVIDER_SUBSCRIPTION = 'provider_subscription';
+    public const PROVIDER_STRIPE = 'stripe';
 
     protected $fillable = [
         'user_id',
         'entreprise_id',
         'subscription_type',
+        'payment_origin',
+        'payment_provider',
+        'auto_charge_eligible',
         'periode_debut',
         'periode_fin',
         'jour_facturation',
@@ -56,6 +63,7 @@ class Echeance extends Model
         return [
             'periode_debut' => 'date',
             'periode_fin' => 'date',
+            'auto_charge_eligible' => 'boolean',
             'montant_du' => 'decimal:2',
             'montant_final' => 'decimal:2',
             'reduction_promo' => 'decimal:2',
@@ -173,6 +181,16 @@ class Echeance extends Model
         return $this->estPayee()
             && $this->stripe_payment_intent_id
             && !$this->stripe_refund_id;
+    }
+
+    public function scopeAutoChargeEligible($query)
+    {
+        return $query->where('auto_charge_eligible', true);
+    }
+
+    public function scopeManualOrigin($query)
+    {
+        return $query->where('payment_origin', self::ORIGIN_MANUAL);
     }
 
     public function estPartielementRemboursee(): bool

@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Echeance;
-use App\Services\PaymentVerificationService;
+use App\Services\Payments\ProviderResolver;
 use Illuminate\Console\Command;
 
 /**
@@ -18,6 +18,11 @@ use Illuminate\Console\Command;
  */
 class ReconcileEcheancesCommand extends Command
 {
+    public function __construct(private readonly ProviderResolver $providerResolver)
+    {
+        parent::__construct();
+    }
+
     protected $signature = 'subscriptions:reconcile-echeances';
 
     protected $description = 'Réconcilie les échéances en_attente avec Stripe (vérification directe API)';
@@ -28,12 +33,16 @@ class ReconcileEcheancesCommand extends Command
 
         // 1. Échéances avec Checkout Session (flux legacy)
         $echeancesSession = Echeance::where('statut', Echeance::STATUT_EN_ATTENTE)
+            ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
+            ->autoChargeEligible()
             ->whereNotNull('stripe_checkout_session_id')
             ->whereNull('stripe_payment_intent_id')
             ->get();
 
         // 2. Échéances avec PaymentIntent uniquement (flux moderne off_session)
         $echeancesPaymentIntent = Echeance::where('statut', Echeance::STATUT_EN_ATTENTE)
+            ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
+            ->autoChargeEligible()
             ->whereNotNull('stripe_payment_intent_id')
             ->get();
 
@@ -52,7 +61,8 @@ class ReconcileEcheancesCommand extends Command
             if ($echeance->stripe_checkout_session_id && !$echeance->stripe_payment_intent_id) {
                 $sessionId = $echeance->stripe_checkout_session_id;
                 try {
-                    $result = PaymentVerificationService::verifyAndMarkPaid($sessionId);
+                    $provider = $this->providerResolver->resolve($echeance->payment_provider);
+                    $result = $provider->verifyCheckoutSession($sessionId);
                 } catch (\Throwable $e) {
                     $this->error("  Échéance #{$echeance->id} : erreur Stripe ({$e->getMessage()}). Réinitialisation pour retry.");
                     $echeance->update([
@@ -88,7 +98,8 @@ class ReconcileEcheancesCommand extends Command
             if ($echeance->stripe_payment_intent_id) {
                 $piId = $echeance->stripe_payment_intent_id;
                 try {
-                    $result = PaymentVerificationService::markEcheancePaidFromPaymentIntent($piId);
+                    $provider = $this->providerResolver->resolve($echeance->payment_provider);
+                    $result = $provider->verifyPaymentIntent($piId);
                 } catch (\Throwable $e) {
                     $this->error("  Échéance #{$echeance->id} : erreur Stripe PaymentIntent ({$e->getMessage()}). Réinitialisation pour retry.");
                     $echeance->update([

@@ -68,6 +68,9 @@ class CheckoutController extends Controller
             ->orderBy('periode_debut')
             ->with('entreprise')
             ->get();
+        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+            $echeances = $echeances->where('payment_origin', Echeance::ORIGIN_MANUAL)->values();
+        }
 
         // ── Catégoriser par état pour un affichage clair ──
         $echeancesEchec     = $echeances->where('statut', Echeance::STATUT_ECHEC)->values();
@@ -438,6 +441,9 @@ class CheckoutController extends Controller
 
         $user->update([
             'stripe_payment_method_id' => $pmId,
+            'payment_provider' => Echeance::PROVIDER_STRIPE,
+            'provider_customer_id' => $customerId,
+            'provider_payment_method_id' => $pmId,
             'pm_type' => $display['pm_type'],
             'pm_last_four' => $display['pm_last_four'],
         ]);
@@ -469,6 +475,9 @@ class CheckoutController extends Controller
         if (!$customerId) {
             $user->update([
                 'stripe_payment_method_id' => null,
+                'payment_provider' => null,
+                'provider_customer_id' => null,
+                'provider_payment_method_id' => null,
                 'pm_type' => null,
                 'pm_last_four' => null,
             ]);
@@ -584,6 +593,9 @@ class CheckoutController extends Controller
 
         $user->update([
             'stripe_payment_method_id' => null,
+            'payment_provider' => null,
+            'provider_customer_id' => null,
+            'provider_payment_method_id' => null,
             'pm_type' => null,
             'pm_last_four' => null,
         ]);
@@ -1266,6 +1278,9 @@ class CheckoutController extends Controller
                 'user_id'                  => $item['user_id'],
                 'entreprise_id'            => $item['entreprise_id'],
                 'subscription_type'        => $item['subscription_type'],
+                'payment_origin'           => Echeance::ORIGIN_PROVIDER_SUBSCRIPTION,
+                'payment_provider'         => Echeance::PROVIDER_STRIPE,
+                'auto_charge_eligible'     => true,
                 'periode_debut'            => $item['periode_debut'],
                 'periode_fin'              => $item['periode_fin'],
                 'jour_facturation'         => $item['jour_facturation'],

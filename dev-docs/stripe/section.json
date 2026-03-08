@@ -3,5 +3,5 @@
     "emoji": "💳",
     "color": "#635bff",
     "description": "Configuration Stripe, webhooks, paiements, abonnements.",
-    "admin_only": []
+    "admin_only": ["PAIEMENT_AUTO_ROBUSTE_PHASE1.md"]
 }

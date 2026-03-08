@@ -17,6 +17,12 @@ class PaymentVerificationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -39,14 +45,15 @@ class PaymentVerificationServiceTest extends TestCase
         ]);
 
         // Mock d'un PaymentIntent avec le bon montant
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 1500; // 15.00€ en centimes
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 1500, // 15.00€ en centimes
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         // Mock de PaymentIntent::retrieve
@@ -73,14 +80,15 @@ class PaymentVerificationServiceTest extends TestCase
         ]);
 
         // Mock d'un PaymentIntent avec un montant incorrect
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 2000; // 20.00€ au lieu de 15.00€
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 2000, // 20.00€ au lieu de 15.00€
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         $this->mockStripePaymentIntent($pi);
@@ -106,14 +114,15 @@ class PaymentVerificationServiceTest extends TestCase
             'montant_final' => 15.00,
         ]);
 
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 1500;
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 1500,
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         $this->mockStripePaymentIntent($pi);
@@ -138,14 +147,15 @@ class PaymentVerificationServiceTest extends TestCase
             'paye_at' => now(),
         ]);
 
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 1500;
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 1500,
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         $this->mockStripePaymentIntent($pi);
@@ -171,14 +181,15 @@ class PaymentVerificationServiceTest extends TestCase
         ]);
 
         // Montant débité : 15.01€ (différence de 0.01€ - toléré)
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 1501; // 15.01€
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 1501, // 15.01€
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         $this->mockStripePaymentIntent($pi);
@@ -202,14 +213,15 @@ class PaymentVerificationServiceTest extends TestCase
         ]);
 
         // Montant débité : 15.02€ (différence de 0.02€ - non toléré)
-        $pi = Mockery::mock('Stripe\PaymentIntent');
-        $pi->id = 'pi_test_123';
-        $pi->status = 'succeeded';
-        $pi->amount = 1502; // 15.02€
-        $pi->currency = 'eur';
-        $pi->metadata = [
+        $pi = (object) [
+            'id' => 'pi_test_123',
+            'status' => 'succeeded',
+            'amount' => 1502, // 15.02€
+            'currency' => 'eur',
+            'metadata' => [
             'user_id' => (string) $user->id,
             'echeance_id' => (string) $echeance->id,
+            ],
         ];
 
         $this->mockStripePaymentIntent($pi);
@@ -225,9 +237,10 @@ class PaymentVerificationServiceTest extends TestCase
      */
     private function mockStripePaymentIntent($pi): void
     {
-        // Note: En réalité, on devrait utiliser un vrai mock de Stripe
-        // Pour ces tests, on simule juste la logique de vérification
-        // sans appeler réellement Stripe
+        $mock = Mockery::mock('alias:Stripe\PaymentIntent');
+        $mock->shouldReceive('retrieve')
+            ->with('pi_test_123')
+            ->andReturn($pi);
     }
 
     /**
@@ -235,7 +248,6 @@ class PaymentVerificationServiceTest extends TestCase
      */
     private function withoutStripe(): void
     {
-        // En production, on utiliserait un service provider mock
-        // Pour ces tests, on teste juste la logique métier
+        // Les appels Stripe sont mockés via mockStripePaymentIntent().
     }
 }

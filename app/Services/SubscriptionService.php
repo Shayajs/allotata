@@ -35,7 +35,11 @@ class SubscriptionService
                 // On cherche d'abord s'il existe une entrée "manuel" explicitement dans la table abonnements
                 // Note : Le modèle actuel stocke tout dans EntrepriseSubscription, avec un flag 'est_manuel'
                 
-                $subscription = $entity->abonnements()->where('type', $type)->first();
+                $subscription = $entity->abonnements()
+                    ->where('type', $type)
+                    ->orderByDesc('est_manuel')
+                    ->orderByDesc('updated_at')
+                    ->first();
                 
                 if ($subscription && $subscription->est_manuel) {
                     if ($subscription->actif_jusqu && ($subscription->actif_jusqu->isFuture() || $subscription->actif_jusqu->isToday())) {
@@ -64,7 +68,11 @@ class SubscriptionService
                 }
             } elseif ($entity instanceof Entreprise) {
                 // On réutilise $subscription s'il a été fetché plus haut, sinon on le cherche
-                $subscription = $subscription ?? $entity->abonnements()->where('type', $type)->first();
+                $subscription = $subscription ?? $entity->abonnements()
+                    ->where('type', $type)
+                    ->orderByDesc('est_manuel')
+                    ->orderByDesc('updated_at')
+                    ->first();
                 
                 if ($subscription && !$subscription->est_manuel) {
                     // C'est un abonnement Stripe (ou vide/inconnu).

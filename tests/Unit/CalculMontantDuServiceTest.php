@@ -28,12 +28,10 @@ class CalculMontantDuServiceTest extends TestCase
         $user = User::factory()->create();
         
         // Créer un tarif par défaut
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 15.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 15.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $echeance = Echeance::factory()->create([
             'user_id' => $user->id,
@@ -55,12 +53,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 20.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 20.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $promo = PromoCode::create([
             'code' => 'TEST10',
@@ -91,12 +87,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 20.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 20.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $promo = PromoCode::create([
             'code' => 'REDUC5',
@@ -127,12 +121,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 20.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 20.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $echeance = Echeance::factory()->create([
             'user_id' => $user->id,
@@ -154,12 +146,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 10.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 10.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $echeance = Echeance::factory()->create([
             'user_id' => $user->id,
@@ -182,12 +172,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 20.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 20.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $promo = PromoCode::create([
             'code' => 'EXPIRE',
@@ -219,12 +207,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 20.00,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 20.00, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $promo = PromoCode::create([
             'code' => 'INACTIF',
@@ -254,12 +240,10 @@ class CalculMontantDuServiceTest extends TestCase
     {
         $user = User::factory()->create();
         
-        Tarif::create([
-            'type' => 'default',
-            'amount' => 19.99,
-            'currency' => 'eur',
-            'label' => 'Abonnement Premium',
-        ]);
+        Tarif::updateOrCreate(
+            ['type' => 'default'],
+            ['amount' => 19.99, 'currency' => 'eur', 'label' => 'Abonnement Premium']
+        );
 
         $promo = PromoCode::create([
             'code' => 'TEST33',

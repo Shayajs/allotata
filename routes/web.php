@@ -159,10 +159,12 @@ Route::get('/support/faq', function() {
 })->name('support.faq');
 
 // Documentation développeur (/dev)
-Route::get('/dev', [\App\Http\Controllers\DevDocsController::class, 'index'])->name('dev.index');
-Route::get('/dev/doc/{path}', [\App\Http\Controllers\DevDocsController::class, 'show'])
-    ->where('path', '.*')
-    ->name('dev.show');
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/dev', [\App\Http\Controllers\DevDocsController::class, 'index'])->name('dev.index');
+    Route::get('/dev/doc/{path}', [\App\Http\Controllers\DevDocsController::class, 'show'])
+        ->where('path', '.*')
+        ->name('dev.show');
+});
 
 Route::get('/a-propos', [\App\Http\Controllers\PageController::class, 'about'])->name('pages.about');
 Route::get('/fonctionnalites', [\App\Http\Controllers\PageController::class, 'fonctionnalites'])->name('pages.fonctionnalites');
@@ -1020,6 +1022,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/echeances/{echeance}/arrete', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerArrete'])->name('echeances.arrete');
     Route::post('/echeances/{echeance}/annule', [\App\Http\Controllers\Admin\EcheanceController::class, 'marquerAnnule'])->name('echeances.annule');
     Route::post('/echeances/{echeance}/refund', [\App\Http\Controllers\Admin\EcheanceController::class, 'refund'])->name('echeances.refund');
+    Route::post('/echeances/manual', [\App\Http\Controllers\Admin\EcheanceController::class, 'storeManual'])->name('echeances.manual.store');
+    Route::post('/echeances/{echeance}/manual-pay', [\App\Http\Controllers\Admin\EcheanceController::class, 'markPaidManual'])->name('echeances.manual.pay');
+    Route::post('/echeances/{echeance}/convert-to-manual', [\App\Http\Controllers\Admin\EcheanceController::class, 'convertStripeDebtToManual'])->name('echeances.convert-to-manual');
+    Route::post('/echeances/{echeance}/offline-settled', [\App\Http\Controllers\Admin\EcheanceController::class, 'markOfflineSettled'])->name('echeances.offline-settled');
     
     // Gestion des essais gratuits
     Route::get('/essais-gratuits', [\App\Http\Controllers\Admin\EssaiGratuitController::class, 'index'])->name('essais-gratuits.index');

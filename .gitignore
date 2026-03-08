@@ -37,3 +37,4 @@ env.txt
 /storage/framework/views/*.php
 /storage/logs/*.log
 .env
+docker/*
