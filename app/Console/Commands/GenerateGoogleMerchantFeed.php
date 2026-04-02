@@ -98,7 +98,7 @@ class GenerateGoogleMerchantFeed extends Command
             'merchant_id' => (string) $entreprise->id,
             'name' => $entreprise->nom,
             'telephone' => $entreprise->telephone,
-            'url' => route('public.show', $entreprise->slug),
+            'url' => route('public.entreprise', $entreprise->slug),
             'geo' => [
                 'latitude' => (float) $entreprise->latitude,
                 'longitude' => (float) $entreprise->longitude,
