@@ -28,6 +28,7 @@ Thumbs.db
 compose.yaml
 composer.*
 nginx.conf
+/npm_letsencrypt/
 docker-compose.yaml
 vite.config.js
 npm/env.txt
