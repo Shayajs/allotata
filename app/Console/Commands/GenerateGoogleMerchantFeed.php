@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Entreprise;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class GenerateGoogleMerchantFeed extends Command
 {
@@ -14,31 +16,39 @@ class GenerateGoogleMerchantFeed extends Command
 
     /**
      * Mapping type_activite Allotata → category_type Google RwG.
+     *
      * @see https://developers.google.com/maps-booking/reference/rest-api-v3/feed-spec#category
      */
     protected const CATEGORY_MAP = [
-        'coiffeuse'       => 'HAIR_CARE',
-        'coiffeur'        => 'HAIR_CARE',
-        'barbier'         => 'BARBER',
-        'estheticienne'   => 'BEAUTY_SALON',
-        'manucure'        => 'NAIL_SALON',
-        'massage'         => 'SPA',
-        'spa'             => 'SPA',
-        'bien-etre'       => 'SPA',
-        'fitness'         => 'GYM',
-        'coach'           => 'GYM',
-        'tatoueur'        => 'BEAUTY_SALON',
-        'maquilleuse'     => 'BEAUTY_SALON',
-        'cuisiniere'      => 'RESTAURANT',
-        'traiteur'        => 'RESTAURANT',
-        'photographe'     => 'PHOTOGRAPHER',
-        'nettoyage'       => 'HOUSE_CLEANING',
-        'menage'          => 'HOUSE_CLEANING',
+        'coiffeuse' => 'HAIR_CARE',
+        'coiffeur' => 'HAIR_CARE',
+        'barbier' => 'BARBER',
+        'estheticienne' => 'BEAUTY_SALON',
+        'manucure' => 'NAIL_SALON',
+        'massage' => 'SPA',
+        'spa' => 'SPA',
+        'bien-etre' => 'SPA',
+        'fitness' => 'GYM',
+        'coach' => 'GYM',
+        'tatoueur' => 'BEAUTY_SALON',
+        'maquilleuse' => 'BEAUTY_SALON',
+        'cuisiniere' => 'RESTAURANT',
+        'traiteur' => 'RESTAURANT',
+        'photographe' => 'PHOTOGRAPHER',
+        'nettoyage' => 'HOUSE_CLEANING',
+        'menage' => 'HOUSE_CLEANING',
     ];
 
     public function handle(): int
     {
         $this->info('Génération du feed Google Merchant (Maps Booking v3)…');
+
+        if (blank(config('app.url'))) {
+            $this->error('APP_URL doit être défini dans .env pour générer des URLs absolues (cron / artisan).');
+            Log::error('google:generate-merchant-feed: APP_URL vide');
+
+            return self::FAILURE;
+        }
 
         $entreprises = Entreprise::where('est_verifiee', true)
             ->whereNotNull('latitude')
@@ -54,9 +64,18 @@ class GenerateGoogleMerchantFeed extends Command
         $merchants = [];
 
         foreach ($entreprises as $entreprise) {
-            $merchant = $this->buildMerchant($entreprise);
-            if ($merchant) {
-                $merchants[] = $merchant;
+            try {
+                $merchant = $this->buildMerchant($entreprise);
+                if ($merchant) {
+                    $merchants[] = $merchant;
+                }
+            } catch (Throwable $e) {
+                Log::error('google:generate-merchant-feed: marchand ignoré', [
+                    'entreprise_id' => $entreprise->id,
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $this->warn("Marchand #{$entreprise->id} ignoré : {$e->getMessage()}");
             }
         }
 
@@ -72,11 +91,26 @@ class GenerateGoogleMerchantFeed extends Command
         ];
 
         $filename = $this->option('output');
-        Storage::disk('local')->put($filename, json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $json = json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($json === false) {
+            $this->error('Encodage JSON impossible : '.json_last_error_msg());
+            Log::error('google:generate-merchant-feed: json_encode failed', ['error' => json_last_error_msg()]);
+
+            return self::FAILURE;
+        }
+
+        try {
+            Storage::disk('local')->put($filename, $json);
+        } catch (Throwable $e) {
+            $this->error('Écriture du fichier impossible : '.$e->getMessage());
+            Log::error('google:generate-merchant-feed: Storage::put failed', ['message' => $e->getMessage()]);
+
+            return self::FAILURE;
+        }
 
         $path = Storage::disk('local')->path($filename);
         $this->info("Feed généré : {$path}");
-        $this->info("Marchands exportés : " . count($merchants));
+        $this->info('Marchands exportés : '.count($merchants));
 
         return self::SUCCESS;
     }
@@ -94,11 +128,15 @@ class GenerateGoogleMerchantFeed extends Command
             return null;
         }
 
+        if (blank($entreprise->slug)) {
+            return null;
+        }
+
         $merchant = [
             'merchant_id' => (string) $entreprise->id,
             'name' => $entreprise->nom,
             'telephone' => $entreprise->telephone,
-            'url' => route('public.entreprise', $entreprise->slug),
+            'url' => route('public.entreprise', $entreprise->slug, absolute: true),
             'geo' => [
                 'latitude' => (float) $entreprise->latitude,
                 'longitude' => (float) $entreprise->longitude,
@@ -169,8 +207,12 @@ class GenerateGoogleMerchantFeed extends Command
     /**
      * Résout la catégorie Google à partir du type_activite Allotata.
      */
-    protected function resolveCategory(string $typeActivite): string
+    protected function resolveCategory(?string $typeActivite): string
     {
+        if ($typeActivite === null || $typeActivite === '') {
+            return 'BEAUTY_SALON';
+        }
+
         $normalized = mb_strtolower(trim($typeActivite));
 
         // Chercher une correspondance directe

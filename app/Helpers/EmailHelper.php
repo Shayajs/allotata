@@ -2,13 +2,13 @@
 
 namespace App\Helpers;
 
-use App\Services\EmailTemplateService;
-use App\Models\Reservation;
-use App\Models\User;
-use App\Models\Entreprise;
-use App\Models\Message;
 use App\Models\Conversation;
 use App\Models\Echeance;
+use App\Models\Entreprise;
+use App\Models\Message;
+use App\Models\Reservation;
+use App\Models\User;
+use App\Services\EmailTemplateService;
 
 class EmailHelper
 {
@@ -29,7 +29,7 @@ class EmailHelper
     public static function sendReservationConfirmationClient(Reservation $reservation): bool
     {
         $client = $reservation->user;
-        if (!$client) {
+        if (! $client) {
             return false;
         }
 
@@ -45,21 +45,21 @@ class EmailHelper
 
         // Lieu (optionnel)
         if ($reservation->lieu) {
-            $data['lieu_html'] = '<p><strong>Lieu :</strong> ' . htmlspecialchars($reservation->lieu) . '</p>';
+            $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
         // Membre (optionnel)
         if ($reservation->membre && $reservation->membre->user) {
-            $data['membre_html'] = '<p><strong>Avec :</strong> ' . htmlspecialchars($reservation->membre->user->name) . '</p>';
+            $data['membre_html'] = '<p><strong>Avec :</strong> '.htmlspecialchars($reservation->membre->user->name).'</p>';
         } else {
             $data['membre_html'] = '';
         }
 
         // Notes (optionnel)
         if ($reservation->notes) {
-            $data['notes_html'] = '<p><strong>Notes :</strong> ' . nl2br(htmlspecialchars($reservation->notes)) . '</p>';
+            $data['notes_html'] = '<p><strong>Notes :</strong> '.nl2br(htmlspecialchars($reservation->notes)).'</p>';
         } else {
             $data['notes_html'] = '';
         }
@@ -73,7 +73,7 @@ class EmailHelper
     public static function sendReservationConfirmationGerant(Reservation $reservation): bool
     {
         $gerant = $reservation->entreprise->user;
-        if (!$gerant) {
+        if (! $gerant) {
             return false;
         }
 
@@ -93,14 +93,14 @@ class EmailHelper
 
         // Lieu (optionnel)
         if ($reservation->lieu) {
-            $data['lieu_html'] = '<p><strong>Lieu :</strong> ' . htmlspecialchars($reservation->lieu) . '</p>';
+            $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
         // Notes (optionnel)
         if ($reservation->notes) {
-            $data['notes_html'] = '<p><strong>Notes du client :</strong> ' . nl2br(htmlspecialchars($reservation->notes)) . '</p>';
+            $data['notes_html'] = '<p><strong>Notes du client :</strong> '.nl2br(htmlspecialchars($reservation->notes)).'</p>';
         } else {
             $data['notes_html'] = '';
         }
@@ -114,7 +114,7 @@ class EmailHelper
     public static function sendReservationReminder(Reservation $reservation, int $hoursBefore = 24): bool
     {
         $client = $reservation->user;
-        if (!$client) {
+        if (! $client) {
             return false;
         }
 
@@ -133,14 +133,14 @@ class EmailHelper
 
         // Lieu (optionnel)
         if ($reservation->lieu) {
-            $data['lieu_html'] = '<p><strong>Lieu :</strong> ' . htmlspecialchars($reservation->lieu) . '</p>';
+            $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
         // Membre (optionnel)
         if ($reservation->membre && $reservation->membre->user) {
-            $data['membre_html'] = '<p><strong>Avec :</strong> ' . htmlspecialchars($reservation->membre->user->name) . '</p>';
+            $data['membre_html'] = '<p><strong>Avec :</strong> '.htmlspecialchars($reservation->membre->user->name).'</p>';
         } else {
             $data['membre_html'] = '';
         }
@@ -154,7 +154,7 @@ class EmailHelper
     public static function sendPaymentReceived(Reservation $reservation): bool
     {
         $client = $reservation->user;
-        if (!$client) {
+        if (! $client) {
             return false;
         }
 
@@ -188,15 +188,23 @@ class EmailHelper
             $recipient = $conversation->entreprise->user;
         }
 
-        if (!$recipient) {
+        if (! $recipient) {
             return false;
+        }
+
+        $apercu = $message->contenuPourAffichage();
+        if ($apercu === null && $message->image) {
+            $apercu = '📷 Photo jointe';
+        }
+        if ($apercu === null) {
+            $apercu = 'Nouveau message';
         }
 
         $data = [
             'nom_client' => $nomClient,
             'nom_entreprise' => $conversation->entreprise->nom,
-            'contenu_message' => $message->contenu ?? 'Nouveau message',
-            'url_messagerie' => $conversation->user_id 
+            'contenu_message' => $apercu,
+            'url_messagerie' => $conversation->user_id
                 ? route('messagerie.show', $conversation->entreprise->slug)
                 : route('messagerie.show-gerant', [$conversation->entreprise->slug, $conversation->id]),
         ];
@@ -210,18 +218,18 @@ class EmailHelper
     public static function sendReservationCancelledClient(Reservation $reservation, string $cancelledBy = 'client'): bool
     {
         $client = $reservation->user;
-        if (!$client) {
+        if (! $client) {
             return false;
         }
 
         if ($cancelledBy === 'client') {
-            $messageAnnulation = '<p>Nous vous confirmons l\'annulation de votre réservation du <strong>' . $reservation->date_reservation->format('d/m/Y à H:i') . '</strong>.</p>';
+            $messageAnnulation = '<p>Nous vous confirmons l\'annulation de votre réservation du <strong>'.$reservation->date_reservation->format('d/m/Y à H:i').'</strong>.</p>';
         } else {
-            $messageAnnulation = '<p>Votre réservation du <strong>' . $reservation->date_reservation->format('d/m/Y à H:i') . '</strong> a été annulée par <strong>' . $reservation->entreprise->nom . '</strong>.</p>';
+            $messageAnnulation = '<p>Votre réservation du <strong>'.$reservation->date_reservation->format('d/m/Y à H:i').'</strong> a été annulée par <strong>'.$reservation->entreprise->nom.'</strong>.</p>';
         }
 
         $remboursementHtml = '';
-        if (!$reservation->est_paye) {
+        if (! $reservation->est_paye) {
             $remboursementHtml = '<p>Si un paiement avait été effectué, il sera remboursé selon nos conditions générales.</p>';
         }
 
@@ -264,7 +272,7 @@ class EmailHelper
     public static function sendEmailVerification(User $user, \App\Models\EmailVerification $emailVerification): bool
     {
         $verificationUrl = route('verification.verify', ['hash' => $emailVerification->hash]);
-        
+
         return EmailTemplateService::send('email_verification', $user->email, [
             'nom_client' => $user->name,
             'url_verification' => $verificationUrl,
@@ -273,19 +281,19 @@ class EmailHelper
 
     /**
      * Envoyer un email de récupération SCA (3D Secure requis)
-     * 
+     *
      * Quand la banque exige une authentification 3DS en mode off_session,
      * on envoie un email au client avec un lien pour finaliser le paiement.
      */
     public static function sendPaymentAuthenticationRequired(User $user, Echeance $echeance, string $paymentIntentId): bool
     {
         $authenticateUrl = route('payment.authenticate', ['payment_intent_id' => $paymentIntentId]);
-        
+
         $data = [
             'nom_client' => $user->name,
-            'montant' => number_format($echeance->montant_final ?? $echeance->montant_du ?? 0, 2, ',', ' ') . ' €',
+            'montant' => number_format($echeance->montant_final ?? $echeance->montant_du ?? 0, 2, ',', ' ').' €',
             'libelle_echeance' => $echeance->libelle(),
-            'periode' => $echeance->periode_debut->format('d/m/Y') . ' - ' . $echeance->periode_fin->format('d/m/Y'),
+            'periode' => $echeance->periode_debut->format('d/m/Y').' - '.$echeance->periode_fin->format('d/m/Y'),
             'url_authenticate' => $authenticateUrl,
             'url_checkout' => route('checkout.index'),
         ];

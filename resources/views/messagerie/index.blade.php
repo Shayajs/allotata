@@ -183,9 +183,9 @@
                                                 <div class="flex items-center gap-2">
                                                     <p class="text-sm text-slate-600 dark:text-slate-400 truncate flex-1">
                                                         @if($conversation->messagesNonLus(Auth::id()) > 0)
-                                                            <span class="font-semibold text-slate-900 dark:text-white">{{ $conversation->dernierMessage->contenu ?? '📷 Image' }}</span>
+                                                            <span class="font-semibold text-slate-900 dark:text-white">{{ $conversation->dernierMessage->apercuListeConversation() }}</span>
                                                         @else
-                                                            {{ $conversation->dernierMessage->contenu ?? '📷 Image' }}
+                                                            {{ $conversation->dernierMessage->apercuListeConversation() }}
                                                         @endif
                                                     </p>
                                                 </div>
@@ -255,9 +255,9 @@
                                                 <div class="flex items-center gap-2">
                                                     <p class="text-sm text-slate-600 dark:text-slate-400 truncate flex-1">
                                                         @if($conversation->messagesNonLus(Auth::id()) > 0)
-                                                            <span class="font-semibold text-slate-900 dark:text-white">{{ $conversation->dernierMessage->contenu ?? '📷 Image' }}</span>
+                                                            <span class="font-semibold text-slate-900 dark:text-white">{{ $conversation->dernierMessage->apercuListeConversation() }}</span>
                                                         @else
-                                                            {{ $conversation->dernierMessage->contenu ?? '📷 Image' }}
+                                                            {{ $conversation->dernierMessage->apercuListeConversation() }}
                                                         @endif
                                                     </p>
                                                 </div>

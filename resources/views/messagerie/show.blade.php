@@ -571,8 +571,11 @@
                                         @endif
                                     </div>
                                     <div class="px-4 py-3 rounded-2xl {{ $message->user_id === Auth::id() ? 'bg-gradient-to-r from-green-500 to-green-600 text-white rounded-tr-sm' : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-tl-sm border border-slate-200 dark:border-slate-600' }} shadow-md hover:shadow-lg transition-shadow">
-                                        @if($message->contenu)
-                                            <p class="whitespace-pre-wrap break-words">{{ $message->contenu }}</p>
+                                        @if($message->doitAfficherAideCollePhoto())
+                                            <p class="text-sm italic opacity-90 whitespace-normal">{{ $message->user_id === Auth::id() ? 'Vous avez' : 'Une image a été' }} collée dans le champ texte au lieu du bouton photo — ce n’est pas affiché comme image. {{ $message->user_id === Auth::id() ? 'Réessayez avec l’icône 📷 puis Envoyer.' : 'Demandez un renvoi avec le bouton photo.' }}</p>
+                                        @endif
+                                        @if(($texteBulle = $message->contenuPourAffichage()))
+                                            <p class="whitespace-pre-wrap break-words {{ $message->doitAfficherAideCollePhoto() ? 'mt-2' : '' }}">{{ $texteBulle }}</p>
                                         @endif
                                         @if($message->image)
                                             <div class="mt-3">
@@ -843,12 +846,24 @@
                 previewContainer.classList.add('hidden');
             }
 
-            // Auto-resize textarea
+            // Auto-resize textarea + collage d’image → fichier joint (évite data:image… en texte)
             const textarea = document.getElementById('message-contenu');
             if (textarea) {
                 textarea.addEventListener('input', function() {
                     this.style.height = 'auto';
                     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+                textarea.addEventListener('paste', function(e) {
+                    const files = e.clipboardData && e.clipboardData.files;
+                    if (files && files.length > 0 && files[0].type && files[0].type.startsWith('image/')) {
+                        e.preventDefault();
+                        const input = document.getElementById('message-image');
+                        if (!input) return;
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                        previewImage(input);
+                    }
                 });
             }
 

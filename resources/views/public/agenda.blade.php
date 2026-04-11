@@ -1155,7 +1155,14 @@
                 const heure = currentHeureInput.value;
                 
                 if (option && option.value && date && heure) {
-                    const dateObj = new Date(date);
+                    // new Date('YYYY-MM-DD') est interprété en UTC → jour/semaine faux hors UTC ; parser en date locale
+                    let dateObj;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                        const [yy, mm, dd] = date.split('-').map(Number);
+                        dateObj = new Date(yy, mm - 1, dd);
+                    } else {
+                        dateObj = new Date(date);
+                    }
                     const jourNom = joursComplets[dateObj.getDay()];
                     const jour = dateObj.getDate();
                     const moisNom = mois[dateObj.getMonth()];

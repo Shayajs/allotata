@@ -48,7 +48,72 @@ class Message extends Model
      */
     public function aImage(): bool
     {
-        return !empty($this->image);
+        return ! empty($this->image);
+    }
+
+    /**
+     * Nettoie le texte du message : retire les collages d'image (data:image…;base64,…)
+     * et le HTML, qui s'affichaient comme du « code » dans la bulle (échappement Blade).
+     */
+    public static function sanitizeContenuForStorage(?string $contenu): ?string
+    {
+        if ($contenu === null) {
+            return null;
+        }
+
+        $contenu = trim($contenu);
+        if ($contenu === '') {
+            return null;
+        }
+
+        // Collage navigateur / mobile dans le textarea → blob base64 illisible
+        $contenu = preg_replace('/data:image\/[\w.+-]+;base64,[\r\n\sA-Za-z0-9+\/=]*+/i', '', $contenu);
+        $contenu = strip_tags($contenu);
+        $contenu = trim(preg_replace('/\s+/u', ' ', $contenu));
+
+        return $contenu === '' ? null : $contenu;
+    }
+
+    /**
+     * Texte affichable dans la bulle (hors champ image joint).
+     */
+    public function contenuPourAffichage(): ?string
+    {
+        return self::sanitizeContenuForStorage($this->contenu);
+    }
+
+    /**
+     * Aperçu du dernier message dans la liste des conversations (pas de base64 / HTML brut).
+     */
+    public function apercuListeConversation(): string
+    {
+        $t = $this->contenuPourAffichage();
+        if ($t !== null && $t !== '') {
+            return $t;
+        }
+        if (! empty($this->image)) {
+            return '📷 Photo';
+        }
+        if ($this->doitAfficherAideCollePhoto()) {
+            return '📷 Photo (à renvoyer via le bouton image)';
+        }
+
+        return 'Message';
+    }
+
+    /**
+     * Message illisible : collage image en base64 ou HTML dans le texte, sans pièce jointe image.
+     */
+    public function doitAfficherAideCollePhoto(): bool
+    {
+        if (empty($this->contenu) || ! empty($this->image)) {
+            return false;
+        }
+        if (preg_match('/data:image\//i', $this->contenu)) {
+            return true;
+        }
+
+        return $this->contenuPourAffichage() === null && (bool) preg_match('/<[^>]+>/', $this->contenu);
     }
 
     /**
@@ -72,6 +137,6 @@ class Message extends Model
      */
     public function estPropositionRendezVous(): bool
     {
-        return $this->type_message === 'proposition_rdv' || !empty($this->proposition_rdv_id);
+        return $this->type_message === 'proposition_rdv' || ! empty($this->proposition_rdv_id);
     }
 }

@@ -3,17 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
-use App\Models\Message;
 use App\Models\Entreprise;
+use App\Models\Message;
+use App\Models\Notification;
 use App\Models\PropositionRendezVous;
 use App\Models\Reservation;
-use App\Models\Notification;
 use App\Models\TypeService;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 
 class MessagerieController extends Controller
 {
@@ -23,7 +22,7 @@ class MessagerieController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         // Récupérer les conversations de l'utilisateur (client)
         $conversationsClient = collect([]);
         if ($user->est_client) {
@@ -34,16 +33,16 @@ class MessagerieController extends Controller
             // Recherche
             if ($request->filled('search_client')) {
                 $search = $request->search_client;
-                $queryClient->whereHas('entreprise', function($q) use ($search) {
+                $queryClient->whereHas('entreprise', function ($q) use ($search) {
                     $q->where('nom', 'like', "%{$search}%")
-                      ->orWhere('type_activite', 'like', "%{$search}%")
-                      ->orWhere('ville', 'like', "%{$search}%");
+                        ->orWhere('type_activite', 'like', "%{$search}%")
+                        ->orWhere('ville', 'like', "%{$search}%");
                 });
             }
 
             $conversationsClient = $queryClient->orderBy('dernier_message_at', 'desc')->get();
         }
-        
+
         // Récupérer les conversations des entreprises du gérant
         $conversationsGerant = collect([]);
         if ($user->est_gerant) {
@@ -55,20 +54,20 @@ class MessagerieController extends Controller
             // Recherche
             if ($request->filled('search_gerant')) {
                 $search = $request->search_gerant;
-                $queryGerant->where(function($q) use ($search) {
-                    $q->whereHas('user', function($userQuery) use ($search) {
+                $queryGerant->where(function ($q) use ($search) {
+                    $q->whereHas('user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%")
-                                  ->orWhere('email', 'like', "%{$search}%");
+                            ->orWhere('email', 'like', "%{$search}%");
                     })
-                    ->orWhereHas('entreprise', function($entrepriseQuery) use ($search) {
-                        $entrepriseQuery->where('nom', 'like', "%{$search}%");
-                    });
+                        ->orWhereHas('entreprise', function ($entrepriseQuery) use ($search) {
+                            $entrepriseQuery->where('nom', 'like', "%{$search}%");
+                        });
                 });
             }
 
             $conversationsGerant = $queryGerant->orderBy('dernier_message_at', 'desc')->get();
         }
-        
+
         return view('messagerie.index', [
             'conversationsClient' => $conversationsClient,
             'conversationsGerant' => $conversationsGerant,
@@ -94,7 +93,7 @@ class MessagerieController extends Controller
             ->where('est_archivee', false)
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Archiver TOUTES les conversations actives entre cet utilisateur et cette entreprise
             Conversation::where('user_id', $user->id)
                 ->where('entreprise_id', $entreprise->id)
@@ -112,16 +111,16 @@ class MessagerieController extends Controller
             // Créer un message automatique pour informer de la demande
             $promotion = $produit->promotionActive()->first();
             $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
-            $prixTexte = $promotion 
-                ? number_format($produit->prix, 2, ',', ' ') . " € (Prix barré) " . number_format($prixActuel, 2, ',', ' ') . " € (PROMO)"
-                : number_format($prixActuel, 2, ',', ' ') . " €";
+            $prixTexte = $promotion
+                ? number_format($produit->prix, 2, ',', ' ').' € (Prix barré) '.number_format($prixActuel, 2, ',', ' ').' € (PROMO)'
+                : number_format($prixActuel, 2, ',', ' ').' €';
 
-            $messageContenu = "🛒 Bonjour, je souhaiterais commander : " . $produit->nom . "\n\n";
-            $messageContenu .= "Prix : " . $prixTexte . "\n\n";
+            $messageContenu = '🛒 Bonjour, je souhaiterais commander : '.$produit->nom."\n\n";
+            $messageContenu .= 'Prix : '.$prixTexte."\n\n";
             if ($produit->description) {
-                $messageContenu .= "Description : " . $produit->description . "\n\n";
+                $messageContenu .= 'Description : '.$produit->description."\n\n";
             }
-            $messageContenu .= "Merci de me confirmer la disponibilité et les modalités de commande.";
+            $messageContenu .= 'Merci de me confirmer la disponibilité et les modalités de commande.';
 
             \App\Models\Message::create([
                 'conversation_id' => $conversation->id,
@@ -155,7 +154,7 @@ class MessagerieController extends Controller
             ->where('est_archivee', false)
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Archiver TOUTES les conversations actives entre cet utilisateur et cette entreprise
             // (pas seulement celles avec le même type_service_id)
             Conversation::where('user_id', $user->id)
@@ -172,13 +171,13 @@ class MessagerieController extends Controller
             ]);
 
             // Créer un message automatique pour informer de la demande
-            $messageContenu = "📅 Bonjour, je souhaiterais réserver : " . $service->nom . "\n\n";
-            $messageContenu .= "Prix : " . number_format($service->prix, 2, ',', ' ') . " €\n";
-            $messageContenu .= ($service->estDateButoire() ? "Délai : " : "Durée : ") . $service->duree_formatee . "\n\n";
+            $messageContenu = '📅 Bonjour, je souhaiterais réserver : '.$service->nom."\n\n";
+            $messageContenu .= 'Prix : '.number_format($service->prix, 2, ',', ' ')." €\n";
+            $messageContenu .= ($service->estDateButoire() ? 'Délai : ' : 'Durée : ').$service->duree_formatee."\n\n";
             if ($service->description) {
-                $messageContenu .= "Description : " . $service->description . "\n\n";
+                $messageContenu .= 'Description : '.$service->description."\n\n";
             }
-            $messageContenu .= "Merci de me proposer des créneaux disponibles.";
+            $messageContenu .= 'Merci de me proposer des créneaux disponibles.';
 
             \App\Models\Message::create([
                 'conversation_id' => $conversation->id,
@@ -200,38 +199,38 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         // Vérifier si une conversation existe déjà (non archivée)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
             ->where('est_archivee', false)
             ->first();
-        
+
         // Créer la conversation si elle n'existe pas
-        if (!$conversation) {
+        if (! $conversation) {
             $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
         }
-        
+
         // Charger la réservation si la colonne existe
         if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
             $conversation->load(['reservation.typeService', 'reservation.user']);
         }
-        
+
         // Charger les messages avec leurs propositions
         $messages = $conversation->messages()
             ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
             ->orderBy('created_at', 'asc')
             ->get();
-        
+
         // Charger les propositions de rendez-vous actives avec les relations nécessaires
         $propositionActive = $conversation->propositionRendezVousActive();
         if ($propositionActive) {
             $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
         }
-        
+
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
             ->where('est_actif', true)
@@ -244,16 +243,16 @@ class MessagerieController extends Controller
             ->where('est_actif', true)
             ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
             ->get()
-            ->filter(function($produit) {
+            ->filter(function ($produit) {
                 return $produit->estDisponible();
             });
-        
+
         // Marquer les messages comme lus
         $conversation->messages()
             ->where('user_id', '!=', $user->id)
             ->where('est_lu', false)
             ->update(['est_lu' => true]);
-        
+
         return view('messagerie.show', [
             'conversation' => $conversation,
             'entreprise' => $entreprise,
@@ -272,17 +271,23 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         $validated = $request->validate([
             'contenu' => 'nullable|string|max:2000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
         ]);
-        
+
+        $contenu = Message::sanitizeContenuForStorage($validated['contenu'] ?? null);
+
         // Vérifier qu'il y a au moins du contenu ou une image
-        if (empty($validated['contenu']) && !$request->hasFile('image')) {
-            return back()->withErrors(['error' => 'Vous devez envoyer un message ou une image.']);
+        if ($contenu === null && ! $request->hasFile('image')) {
+            $err = (! empty($validated['contenu']) && str_contains($validated['contenu'], 'data:image'))
+                ? 'Coller une image dans le texte ne fonctionne pas. Utilisez le bouton photo à droite du champ, puis Envoyez.'
+                : 'Vous devez envoyer un message ou une image.';
+
+            return back()->withErrors(['error' => $err]);
         }
-        
+
         // Récupérer ou créer la conversation
         $conversation = Conversation::firstOrCreate(
             [
@@ -293,24 +298,24 @@ class MessagerieController extends Controller
                 'est_archivee' => false,
             ]
         );
-        
+
         $imagePath = null;
-        
+
         // Traiter l'image si présente
         if ($request->hasFile('image')) {
             $imageService = app(ImageService::class);
             $imagePath = $imageService->processAndStore($request->file('image'), 'messages');
         }
-        
+
         // Créer le message
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
-            'contenu' => $validated['contenu'] ?? null,
+            'contenu' => $contenu,
             'image' => $imagePath,
             'est_lu' => false,
         ]);
-        
+
         // Mettre à jour la date du dernier message
         $conversation->update([
             'dernier_message_at' => now(),
@@ -324,9 +329,9 @@ class MessagerieController extends Controller
                 \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
             }
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : ".$e->getMessage());
         }
-        
+
         return back()->with('success', 'Message envoyé !');
     }
 
@@ -338,17 +343,17 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
-        
+
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
             ->with(['user', 'entreprise'])
             ->firstOrFail();
-        
+
         // Charger les relations du contexte
         if ($conversation->reservation_id) {
             $conversation->load(['reservation.typeService', 'reservation.user']);
@@ -359,19 +364,19 @@ class MessagerieController extends Controller
         if ($conversation->type_service_id) {
             $conversation->load(['typeService.images', 'typeService.imageCouverture']);
         }
-        
+
         // Charger les messages avec leurs propositions
         $messages = $conversation->messages()
             ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
             ->orderBy('created_at', 'asc')
             ->get();
-        
+
         // Charger les propositions de rendez-vous actives avec les relations nécessaires
         $propositionActive = $conversation->propositionRendezVousActive();
         if ($propositionActive) {
             $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
         }
-        
+
         // Charger les prestations disponibles de l'entreprise
         $prestations = $entreprise->typesServices()
             ->where('est_actif', true)
@@ -384,16 +389,16 @@ class MessagerieController extends Controller
             ->where('est_actif', true)
             ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
             ->get()
-            ->filter(function($produit) {
+            ->filter(function ($produit) {
                 return $produit->estDisponible();
             });
-        
+
         // Marquer les messages comme lus
         $conversation->messages()
             ->where('user_id', '!=', $user->id)
             ->where('est_lu', false)
             ->update(['est_lu' => true]);
-        
+
         return view('messagerie.show', [
             'conversation' => $conversation,
             'entreprise' => $entreprise,
@@ -413,40 +418,46 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
-        
+
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
-        
+
         $validated = $request->validate([
             'contenu' => 'nullable|string|max:2000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
-        
-        if (empty($validated['contenu']) && !$request->hasFile('image')) {
-            return back()->withErrors(['error' => 'Vous devez envoyer un message ou une image.']);
+
+        $contenu = Message::sanitizeContenuForStorage($validated['contenu'] ?? null);
+
+        if ($contenu === null && ! $request->hasFile('image')) {
+            $err = (! empty($validated['contenu']) && str_contains($validated['contenu'], 'data:image'))
+                ? 'Coller une image dans le texte ne fonctionne pas. Utilisez le bouton photo à droite du champ, puis Envoyez.'
+                : 'Vous devez envoyer un message ou une image.';
+
+            return back()->withErrors(['error' => $err]);
         }
-        
+
         $imagePath = null;
-        
+
         if ($request->hasFile('image')) {
             $imageService = app(ImageService::class);
             $imagePath = $imageService->processAndStore($request->file('image'), 'messages');
         }
-        
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
-            'contenu' => $validated['contenu'] ?? null,
+            'contenu' => $contenu,
             'image' => $imagePath,
             'est_lu' => false,
         ]);
-        
+
         $conversation->update([
             'dernier_message_at' => now(),
         ]);
@@ -458,9 +469,9 @@ class MessagerieController extends Controller
                 \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
             }
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : ".$e->getMessage());
         }
-        
+
         return back()->with('success', 'Message envoyé !');
     }
 
@@ -471,20 +482,20 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         // Récupérer la conversation existante (archivée ou non)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
             ->first();
-        
-        if (!$conversation) {
+
+        if (! $conversation) {
             // Créer une nouvelle conversation si elle n'existe pas
             $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
                 'est_archivee' => false,
             ]);
-        } else if ($conversation->est_archivee) {
+        } elseif ($conversation->est_archivee) {
             // Si la conversation existe mais est archivée, la réactiver
             $conversation->update(['est_archivee' => false]);
         }
@@ -501,19 +512,19 @@ class MessagerieController extends Controller
 
         // Vérifier que le type de service appartient à l'entreprise si fourni
         $typeService = null;
-        if (!empty($validated['type_service_id'])) {
+        if (! empty($validated['type_service_id'])) {
             $typeService = TypeService::where('id', $validated['type_service_id'])
                 ->where('entreprise_id', $entreprise->id)
                 ->where('est_actif', true)
                 ->first();
-            
-            if (!$typeService) {
+
+            if (! $typeService) {
                 return back()->withErrors(['error' => 'La prestation sélectionnée n\'est pas valide.']);
             }
         }
 
         // Calculer l'heure de fin
-        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'].' '.$validated['heure_debut']);
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
@@ -522,7 +533,7 @@ class MessagerieController extends Controller
         if (\Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
             $reservationId = $conversation->reservation_id;
         }
-        
+
         $proposition = PropositionRendezVous::create([
             'conversation_id' => $conversation->id,
             'auteur_user_id' => $user->id,
@@ -543,10 +554,10 @@ class MessagerieController extends Controller
 
         // Créer le message associé
         $serviceNom = isset($typeService) ? $typeService->nom : 'Service personnalisé';
-        $messageContenu = $reservationId 
+        $messageContenu = $reservationId
             ? "📝 Proposition de modification pour la réservation #{$reservationId} : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €"
             : "Proposition de rendez-vous : {$serviceNom} pour le {$validated['date_rdv']} à {$validated['heure_debut']} - Prix : {$validated['prix']} €";
-        
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
@@ -582,17 +593,17 @@ class MessagerieController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
-        
+
         $conversation = Conversation::where('id', $conversationId)
             ->where('entreprise_id', $entreprise->id)
             ->with(['user', 'entreprise'])
             ->firstOrFail();
-        
+
         // Charger la réservation si la colonne existe
         if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
             $conversation->load(['reservation.typeService', 'reservation.user']);
@@ -608,7 +619,7 @@ class MessagerieController extends Controller
         ]);
 
         // Calculer l'heure de fin
-        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'].' '.$validated['heure_debut']);
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
@@ -676,20 +687,20 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         $proposition = PropositionRendezVous::where('id', $propositionId)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
-        
+
         // Vérifier que l'utilisateur fait partie de la conversation (client ou gérant)
         $estClient = $proposition->conversation->user_id === $user->id;
         $estGerant = $entreprise->user_id === $user->id;
-        
-        if (!$estClient && !$estGerant) {
+
+        if (! $estClient && ! $estGerant) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit de négocier cette proposition.']);
         }
 
-        if (!$proposition->peutEtreNegociee()) {
+        if (! $proposition->peutEtreNegociee()) {
             return back()->withErrors(['error' => 'Cette proposition ne peut pas être négociée.']);
         }
 
@@ -732,9 +743,9 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         // Vérifier que l'entreprise autorise les négociations
-        if (!$entreprise->prix_negociables) {
+        if (! $entreprise->prix_negociables) {
             return back()->withErrors(['error' => 'Cette entreprise n\'autorise pas les modifications de propositions par les clients.']);
         }
 
@@ -761,24 +772,24 @@ class MessagerieController extends Controller
             ->where('entreprise_id', $entreprise->id)
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Créer une nouvelle conversation si elle n'existe pas
             $conversation = Conversation::create([
                 'user_id' => $user->id,
                 'entreprise_id' => $entreprise->id,
             ]);
-        } else if ($conversation->est_archivee) {
+        } elseif ($conversation->est_archivee) {
             // Si la conversation existe mais est archivée, la réactiver
             $conversation->update(['est_archivee' => false]);
         }
 
         // Lier la conversation à la réservation si la colonne existe
-        if (Schema::hasColumn('conversations', 'reservation_id') && !$conversation->reservation_id) {
+        if (Schema::hasColumn('conversations', 'reservation_id') && ! $conversation->reservation_id) {
             $conversation->update(['reservation_id' => $reservation->id]);
         }
 
         // Calculer l'heure de fin
-        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'].' '.$validated['heure_debut']);
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
@@ -803,7 +814,7 @@ class MessagerieController extends Controller
 
         // Créer le message associé (message système pour la proposition)
         $messageContenu = "📝 Proposition de modification pour la réservation #{$reservation->id} : {$validated['date_rdv']} à {$validated['heure_debut']} - Durée : {$dureeMinutes} min - Prix : {$validated['prix']} €";
-        
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
@@ -861,7 +872,7 @@ class MessagerieController extends Controller
             ->firstOrFail();
 
         // Lier la conversation à la réservation si la colonne existe
-        if (Schema::hasColumn('conversations', 'reservation_id') && !$conversation->reservation_id) {
+        if (Schema::hasColumn('conversations', 'reservation_id') && ! $conversation->reservation_id) {
             $conversation->update(['reservation_id' => $reservation->id]);
         }
 
@@ -875,7 +886,7 @@ class MessagerieController extends Controller
         }
 
         // Calculer l'heure de fin
-        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'] . ' ' . $validated['heure_debut']);
+        $heureDebut = \Carbon\Carbon::parse($validated['date_rdv'].' '.$validated['heure_debut']);
         $dureeMinutes = (int) $validated['duree_minutes'];
         $heureFin = $heureDebut->copy()->addMinutes($dureeMinutes);
 
@@ -902,7 +913,7 @@ class MessagerieController extends Controller
         // Créer le message associé (message système pour la proposition)
         $serviceNom = $typeService ? $typeService->nom : ($reservation->type_service ?? 'Service');
         $messageContenu = "📝 Proposition de modification pour la réservation #{$reservation->id} : {$serviceNom} le {$validated['date_rdv']} à {$validated['heure_debut']} - Durée : {$dureeMinutes} min - Prix : {$validated['prix']} €";
-        
+
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'user_id' => $user->id,
@@ -935,7 +946,7 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         // Vérifier si c'est le client ou l'entreprise qui accepte
         $proposition = PropositionRendezVous::where('id', $propositionId)
             ->where('entreprise_id', $entreprise->id)
@@ -946,7 +957,7 @@ class MessagerieController extends Controller
             return back()->withErrors(['error' => 'Vous ne pouvez pas accepter votre propre proposition.']);
         }
 
-        if (!$proposition->estDestinatairePar($user)) {
+        if (! $proposition->estDestinatairePar($user)) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit d\'accepter cette proposition.']);
         }
 
@@ -957,7 +968,7 @@ class MessagerieController extends Controller
         // Formater la date et l'heure correctement
         // heure_debut est stocké comme time dans la DB mais casté en datetime dans le modèle
         $heureDebutCarbon = \Carbon\Carbon::parse($proposition->heure_debut);
-        $dateTime = $proposition->date_rdv->format('Y-m-d') . ' ' . $heureDebutCarbon->format('H:i:s');
+        $dateTime = $proposition->date_rdv->format('Y-m-d').' '.$heureDebutCarbon->format('H:i:s');
         $prixFinal = $proposition->prix_final ?? $proposition->prix_propose;
 
         // Si la proposition est liée à une réservation existante, la mettre à jour
@@ -965,7 +976,7 @@ class MessagerieController extends Controller
             $reservation = Reservation::where('id', $proposition->reservation_id)
                 ->where('entreprise_id', $entreprise->id)
                 ->firstOrFail();
-            
+
             // Mettre à jour la réservation existante
             $debutMsg = \Carbon\Carbon::parse($dateTime);
             $updateData = [
@@ -975,9 +986,9 @@ class MessagerieController extends Controller
                 'prix' => $prixFinal,
                 'duree_minutes' => $proposition->duree_minutes,
                 'statut' => 'confirmee', // Confirmer la réservation modifiée
-                'notes' => $proposition->notes ? ($reservation->notes ? $reservation->notes . "\n\n[Modifiée] " . $proposition->notes : $proposition->notes) : $reservation->notes,
+                'notes' => $proposition->notes ? ($reservation->notes ? $reservation->notes."\n\n[Modifiée] ".$proposition->notes : $proposition->notes) : $reservation->notes,
             ];
-            
+
             // Mettre à jour le type de service si spécifié dans la proposition
             if ($proposition->type_service_id) {
                 $updateData['type_service_id'] = $proposition->type_service_id;
@@ -987,7 +998,7 @@ class MessagerieController extends Controller
                     $updateData['type_service'] = $proposition->typeService->nom;
                 }
             }
-            
+
             $reservation->update($updateData);
         } else {
             // Créer une nouvelle réservation
@@ -1026,7 +1037,7 @@ class MessagerieController extends Controller
         // (plus de négociation active, la conversation n'apparaît plus dans les listes actives
         // mais reste accessible si on y accède directement - comme une conversation normale)
         $proposition->conversation->update(['est_archivee' => true]);
-        
+
         // Note: La réservation est déjà confirmée (statut 'confirmee') dans le code ci-dessus,
         // ce qui empêche la création de nouvelles propositions via les conditions dans les vues
         // qui vérifient $reservation->statut === 'en_attente'
@@ -1039,15 +1050,15 @@ class MessagerieController extends Controller
         $isModification = $proposition->reservation_id !== null;
         $heureDebutCarbon = \Carbon\Carbon::parse($proposition->heure_debut);
         $heureDebutFormatee = $heureDebutCarbon->format('H:i');
-        
+
         $messageContenu = $isModification
-            ? ($isClient 
+            ? ($isClient
                 ? "✓ Modification acceptée ! La réservation #{$reservation->id} a été mise à jour : {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €"
                 : "✓ J'ai accepté votre proposition de modification pour la réservation #{$reservation->id} : {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €")
-            : ($isClient 
+            : ($isClient
                 ? "✓ Rendez-vous accepté ! Le rendez-vous est confirmé pour le {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €"
                 : "✓ J'ai accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')} à {$heureDebutFormatee} - Prix : {$prixFinal} €");
-        
+
         $message = Message::create([
             'conversation_id' => $proposition->conversation_id,
             'user_id' => $user->id,
@@ -1061,13 +1072,13 @@ class MessagerieController extends Controller
         $autreUserId = $isClient ? $entreprise->user_id : ($proposition->auteur_user_id ?? $proposition->conversation->user_id);
         $notificationTitre = $isModification ? 'Modification de réservation acceptée' : 'Rendez-vous accepté';
         $notificationMessage = $isModification
-            ? ($isClient 
+            ? ($isClient
                 ? "{$user->name} a accepté votre proposition de modification pour la réservation #{$reservation->id}."
                 : "{$entreprise->nom} a accepté votre proposition de modification pour la réservation #{$reservation->id}.")
-            : ($isClient 
+            : ($isClient
                 ? "{$user->name} a accepté votre proposition de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}."
                 : "{$entreprise->nom} a accepté votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}.");
-        
+
         Notification::creer(
             $autreUserId,
             'reservation',
@@ -1077,10 +1088,10 @@ class MessagerieController extends Controller
             ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
         );
 
-        $successMessage = $isModification 
+        $successMessage = $isModification
             ? 'Modification acceptée ! La réservation a été mise à jour avec succès.'
             : 'Rendez-vous accepté et créé avec succès !';
-        
+
         return back()->with('success', $successMessage);
     }
 
@@ -1091,7 +1102,7 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         $proposition = PropositionRendezVous::where('id', $propositionId)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
@@ -1099,11 +1110,11 @@ class MessagerieController extends Controller
         // Vérifier que l'utilisateur fait partie de la conversation (client ou gérant)
         $estClient = $proposition->conversation->user_id === $user->id;
         $estGerant = $entreprise->user_id === $user->id;
-        
-        if (!$estClient && !$estGerant) {
+
+        if (! $estClient && ! $estGerant) {
             return back()->withErrors(['error' => 'Vous n\'avez pas le droit de refuser cette proposition.']);
         }
-        
+
         // On peut refuser même si on est l'auteur (cas où on change d'avis)
 
         if ($proposition->statut === 'refusee' || $proposition->statut === 'acceptee') {
@@ -1117,14 +1128,14 @@ class MessagerieController extends Controller
 
         $proposition->update([
             'statut' => 'refusee',
-            'notes' => ($proposition->notes ?? '') . ($validated['raison'] ? "\n\n[Raison du refus] " . $validated['raison'] : ''),
+            'notes' => ($proposition->notes ?? '').($validated['raison'] ? "\n\n[Raison du refus] ".$validated['raison'] : ''),
         ]);
 
         // Créer un message de refus
         $message = Message::create([
             'conversation_id' => $proposition->conversation_id,
             'user_id' => $user->id,
-            'contenu' => "✗ Proposition de rendez-vous refusée" . ($validated['raison'] ? " : {$validated['raison']}" : ''),
+            'contenu' => '✗ Proposition de rendez-vous refusée'.($validated['raison'] ? " : {$validated['raison']}" : ''),
             'est_lu' => false,
         ]);
 
@@ -1140,7 +1151,7 @@ class MessagerieController extends Controller
             $autreUserId,
             'reservation',
             'Proposition de rendez-vous refusée',
-            $isClient 
+            $isClient
                 ? "{$user->name} a refusé votre proposition de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}."
                 : "{$entreprise->nom} a refusé votre demande de rendez-vous pour le {$proposition->date_rdv->format('d/m/Y')}.",
             route($isClient ? 'messagerie.show-gerant' : 'messagerie.show', $isClient ? [$entreprise->slug, $proposition->conversation_id] : $entreprise->slug),
@@ -1154,13 +1165,13 @@ class MessagerieController extends Controller
                 // Préparer les données de la proposition pour pré-remplir le formulaire
                 // Utiliser les données de la proposition refusée (effet d'ancrage)
                 $heureDebut = \Carbon\Carbon::parse($proposition->heure_debut);
-                
+
                 // Nettoyer les notes : enlever la raison du refus si elle a été ajoutée
                 $notes = $proposition->notes ?? $reservation->notes ?? '';
                 if (strpos($notes, '[Raison du refus]') !== false) {
                     $notes = trim(explode('[Raison du refus]', $notes)[0]);
                 }
-                
+
                 return back()->with([
                     'success' => 'Proposition refusée.',
                     'open_contre_proposition' => true,
@@ -1173,7 +1184,7 @@ class MessagerieController extends Controller
                         'lieu' => $proposition->lieu ?? $reservation->lieu ?? '',
                         'notes' => $notes,
                         'type_service_id' => $proposition->type_service_id ?? $reservation->type_service_id,
-                    ]
+                    ],
                 ]);
             }
         }
@@ -1199,13 +1210,13 @@ class MessagerieController extends Controller
         $conversationId = $request->get('conversation_id');
         $lastMessageId = $request->get('last_id', 0);
 
-        if (!$conversationId) {
+        if (! $conversationId) {
             return response()->json(['has_new' => false]);
         }
 
         $conversation = Conversation::find($conversationId);
-        
-        if (!$conversation) {
+
+        if (! $conversation) {
             return response()->json(['has_new' => false]);
         }
 
@@ -1217,7 +1228,7 @@ class MessagerieController extends Controller
             $hasAccess = $user->entreprises()->where('id', $conversation->entreprise_id)->exists();
         }
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return response()->json(['has_new' => false]);
         }
 
@@ -1244,12 +1255,12 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         // Vérifier les permissions (client ou gérant)
-        $isClient = !$entreprise->peutEtreGereePar($user) && !$user->is_admin;
+        $isClient = ! $entreprise->peutEtreGereePar($user) && ! $user->is_admin;
         $isGerant = $entreprise->peutEtreGereePar($user) || $user->is_admin;
-        
-        if (!$isClient && !$isGerant) {
+
+        if (! $isClient && ! $isGerant) {
             return response()->json(['error' => 'Accès non autorisé'], 403);
         }
 
@@ -1259,7 +1270,7 @@ class MessagerieController extends Controller
         ]);
 
         $date = \Carbon\Carbon::parse($validated['date']);
-        
+
         // Utiliser le service ExceptionDateService pour récupérer les horaires applicables
         $exceptionDateService = app(\App\Services\ExceptionDateService::class);
         $horaires = $exceptionDateService->getHorairesForDate($entreprise, $date);
@@ -1269,19 +1280,19 @@ class MessagerieController extends Controller
         $reservations = Reservation::where('entreprise_id', $entreprise->id)
             ->whereDate('date_reservation', $date->format('Y-m-d'))
             ->whereIn('statut', ['en_attente', 'confirmee', 'terminee'])
-            ->when($validated['reservation_id'] ?? null, function($q, $reservationId) {
+            ->when($validated['reservation_id'] ?? null, function ($q, $reservationId) {
                 $q->where('id', '!=', $reservationId);
             })
             ->with(['user', 'typeService'])
             ->get()
-            ->map(function($reservation) {
+            ->map(function ($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
                 $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
-                
+
                 return [
                     'id' => $reservation->id,
-                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
-                              ($reservation->user ? ' - ' . $reservation->user->name : ''),
+                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')).
+                              ($reservation->user ? ' - '.$reservation->user->name : ''),
                     'start' => $debut->format('H:i'),
                     'end' => $fin->format('H:i'),
                     'start_datetime' => $debut->toIso8601String(),
@@ -1295,7 +1306,7 @@ class MessagerieController extends Controller
         $horaires = [
             'heure_ouverture' => $horaire && $horaire->heure_ouverture ? \Carbon\Carbon::parse($horaire->heure_ouverture)->format('H:i') : null,
             'heure_fermeture' => $horaire && $horaire->heure_fermeture ? \Carbon\Carbon::parse($horaire->heure_fermeture)->format('H:i') : null,
-            'est_ferme' => !$horaire || !$horaire->heure_ouverture || !$horaire->heure_fermeture,
+            'est_ferme' => ! $horaire || ! $horaire->heure_ouverture || ! $horaire->heure_fermeture,
         ];
 
         return response()->json([
@@ -1314,7 +1325,7 @@ class MessagerieController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        
+
         $validated = $request->validate([
             'date' => 'required|date',
             'heure_debut' => 'required|date_format:H:i',
@@ -1330,7 +1341,7 @@ class MessagerieController extends Controller
         $reservations = Reservation::where('entreprise_id', $entreprise->id)
             ->whereDate('date_reservation', $date->format('Y-m-d'))
             ->whereIn('statut', ['en_attente', 'confirmee'])
-            ->when($validated['reservation_id'] ?? null, function($q, $reservationId) {
+            ->when($validated['reservation_id'] ?? null, function ($q, $reservationId) {
                 $q->where('id', '!=', $reservationId);
             })
             ->get();
@@ -1339,13 +1350,13 @@ class MessagerieController extends Controller
         foreach ($reservations as $reservation) {
             $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
             $finReservation = $debutReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
-            
+
             // Vérifier le chevauchement
             if ($heureDebut->lt($finReservation) && $heureFin->gt($debutReservation)) {
                 $conflits[] = [
                     'id' => $reservation->id,
-                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')) . 
-                              ($reservation->user ? ' - ' . $reservation->user->name : ''),
+                    'title' => ($reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Réservation')).
+                              ($reservation->user ? ' - '.$reservation->user->name : ''),
                     'start' => $debutReservation->format('H:i'),
                     'end' => $finReservation->format('H:i'),
                     'statut' => $reservation->statut,
