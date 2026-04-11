@@ -65,9 +65,12 @@
 
                 @guest
                     <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <p class="text-sm text-slate-600 dark:text-slate-300">Vous avez un compte ? Connectez-vous pour pré-remplir vos infos.</p>
-                            <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition whitespace-nowrap">
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                <p class="font-semibold text-slate-800 dark:text-slate-100">Vous avez un compte ?</p>
+                                <p>Connectez-vous pour <strong class="text-slate-900 dark:text-white">pré-remplir</strong> vos coordonnées et accéder à votre <strong class="text-slate-900 dark:text-white">espace personnel</strong> : toutes vos réservations, leur statut et vos notifications au même endroit.</p>
+                            </div>
+                            <a href="{{ route('login') }}" class="inline-flex justify-center items-center shrink-0 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition whitespace-nowrap">
                                 Se connecter
                             </a>
                         </div>
@@ -76,6 +79,13 @@
                         </p>
                     </div>
                 @endguest
+
+                @auth
+                    <div class="mb-5 p-3 rounded-xl border border-green-200 dark:border-green-800/60 bg-green-50/90 dark:bg-green-900/20 text-sm text-slate-700 dark:text-slate-300">
+                        <p class="font-medium text-green-800 dark:text-green-300 mb-1">Votre espace client</p>
+                        <p class="text-xs sm:text-sm">Retrouvez l’historique et le suivi de vos rendez-vous sur votre <a href="{{ route('dashboard') }}" class="text-green-700 dark:text-green-400 font-semibold underline hover:no-underline">tableau de bord</a>.</p>
+                    </div>
+                @endauth
 
                 <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form-mobile">
                         @csrf
@@ -460,9 +470,12 @@
 
                     @guest
                         <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
-                            <div class="flex flex-col gap-2">
-                                <p class="text-sm text-slate-600 dark:text-slate-300">Vous avez un compte ? Connectez-vous pour pré-remplir vos infos.</p>
-                                <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition">
+                            <div class="flex flex-col gap-3">
+                                <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <p class="font-semibold text-slate-800 dark:text-slate-100">Vous avez un compte ?</p>
+                                    <p>Connectez-vous pour <strong class="text-slate-900 dark:text-white">pré-remplir</strong> vos coordonnées et accéder à votre <strong class="text-slate-900 dark:text-white">espace personnel</strong> : toutes vos réservations, leur statut et vos notifications au même endroit.</p>
+                                </div>
+                                <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition">
                                     Se connecter
                                 </a>
                             </div>
@@ -471,6 +484,13 @@
                             </p>
                         </div>
                     @endguest
+
+                    @auth
+                        <div class="mb-5 p-3 rounded-xl border border-green-200 dark:border-green-800/60 bg-green-50/90 dark:bg-green-900/20 text-sm text-slate-700 dark:text-slate-300">
+                            <p class="font-medium text-green-800 dark:text-green-300 mb-1">Votre espace client</p>
+                            <p class="text-xs sm:text-sm">Retrouvez l’historique et le suivi de vos rendez-vous sur votre <a href="{{ route('dashboard') }}" class="text-green-700 dark:text-green-400 font-semibold underline hover:no-underline">tableau de bord</a>.</p>
+                        </div>
+                    @endauth
 
                     <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form">
                             @csrf
