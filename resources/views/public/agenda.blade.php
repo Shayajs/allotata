@@ -386,7 +386,11 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                            <span class="text-slate-600 dark:text-slate-400">Sélectionné</span>
+                            <span class="text-slate-600 dark:text-slate-400">Début (sélection)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-200 dark:bg-amber-700/50 ring-1 ring-amber-300/80 dark:ring-amber-600/40"></span>
+                            <span class="text-slate-600 dark:text-slate-400">Durée de la prestation</span>
                         </div>
                     </div>
 
@@ -748,6 +752,9 @@
                 renderOptions(selectElement, container);
                 toggleDateButoireFields(selectElement);
                 updateRecap();
+                if (selectedSlot) {
+                    void renderCalendar();
+                }
             };
 
             // État initial : afficher date butoire ou date+heure selon le service sélectionné
@@ -824,6 +831,9 @@
                                     }
                                     
                                     updateRecap();
+                                    if (selectedSlot) {
+                                        void renderCalendar();
+                                    }
                                 });
                                 
                                 leftPart.appendChild(input);
@@ -916,6 +926,50 @@
                 }
             }
             
+            function parseTimeToMinutes(timeStr) {
+                const [h, m] = timeStr.split(':').map(Number);
+                return (h || 0) * 60 + (m || 0);
+            }
+
+            /** Select avec une valeur (desktop prioritaire si les deux sont synchronisés) */
+            function getActiveServiceSelect() {
+                if (serviceSelect && serviceSelect.value) return serviceSelect;
+                if (serviceSelectMobile && serviceSelectMobile.value) return serviceSelectMobile;
+                return serviceSelect || serviceSelectMobile;
+            }
+
+            /** Durée totale affichée : prestation + options cochées (min 30 si applicable) */
+            function getTotalDurationMinutes() {
+                const sel = getActiveServiceSelect();
+                if (!sel) return 0;
+                const opt = sel.options[sel.selectedIndex];
+                if (!opt || !opt.value) return 0;
+                const typeStructure = opt.dataset.typeStructure || 'ponctuel';
+                if (typeStructure === 'date_butoire' || typeStructure === 'sur_devis') return 0;
+
+                let base = parseInt(opt.dataset.duree, 10);
+                if (Number.isNaN(base) || base < 1) base = 30;
+
+                [serviceOptionsContainer, serviceOptionsContainerMobile].forEach(container => {
+                    if (!container) return;
+                    container.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                        base += parseInt(radio.dataset.temps, 10) || 0;
+                    });
+                });
+                return base;
+            }
+
+            /** Le créneau [slotTime, slotTime+30) chevauche l'intervalle de la réservation en cours (même jour) */
+            function isSlotInReservationSpan(dateStr, slotTime, sel, totalMinutes) {
+                if (!sel || totalMinutes < 1) return false;
+                if (sel.date !== dateStr) return false;
+                const startMin = parseTimeToMinutes(sel.time);
+                const endMin = startMin + totalMinutes;
+                const slotStart = parseTimeToMinutes(slotTime);
+                const slotEnd = slotStart + 30;
+                return slotStart < endMin && slotEnd > startMin;
+            }
+
             // Vérifier si un créneau est réservé
             function isSlotReserved(dateStr, time) {
                 const slotStart = new Date(dateStr + 'T' + time + ':00');
@@ -1101,9 +1155,21 @@
                             slotEl.className = 'w-full px-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ';
                             
                             const isSelected = selectedSlot && selectedSlot.date === dateStr && selectedSlot.time === slot.time;
-                            
+                            const totalDur = getTotalDurationMinutes();
+                            const inSpan = selectedSlot && totalDur > 0
+                                && isSlotInReservationSpan(dateStr, slot.time, selectedSlot, totalDur);
+                            const isDurationTail = inSpan && !isSelected;
+
                             if (isSelected) {
                                 slotEl.className += 'bg-amber-500 text-white shadow-md transform scale-105';
+                            } else if (isDurationTail) {
+                                slotEl.setAttribute('aria-label', slot.time + ' — suite de la prestation');
+                                slotEl.title = 'Suite du créneau réservé';
+                                if (slot.available) {
+                                    slotEl.className += 'bg-amber-100/90 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 ring-1 ring-inset ring-amber-200/90 dark:ring-amber-600/40 cursor-default';
+                                } else {
+                                    slotEl.className += 'bg-amber-50 dark:bg-amber-950/25 text-amber-800/70 dark:text-amber-200/60 ring-1 ring-inset ring-amber-200/60 dark:ring-amber-800/35 cursor-not-allowed opacity-85';
+                                }
                             } else if (slot.available) {
                                 slotEl.className += 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 hover:scale-105 cursor-pointer';
                             } else if (!slot.isInPlage) {
@@ -1116,7 +1182,7 @@
                             
                             slotEl.textContent = slot.time;
                             
-                            if (slot.available) {
+                            if (slot.available && !isDurationTail) {
                                 slotEl.addEventListener('click', () => selectSlot(dateStr, slot.time));
                             }
                             
