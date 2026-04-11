@@ -29,15 +29,23 @@ class EmailHelper
     public static function sendReservationConfirmationClient(Reservation $reservation): bool
     {
         $client = $reservation->user;
-        if (! $client) {
+        $emailTo = $client?->email ?? $reservation->email_client;
+        if (! $emailTo) {
             return false;
         }
 
+        $nomClient = $client?->name ?? ($reservation->nom_client ?? 'Client');
+        $dateReservationStr = $reservation->date_reservation
+            ? $reservation->date_reservation->format('d/m/Y à H:i')
+            : ($reservation->date_butoire
+                ? $reservation->date_butoire->format('d/m/Y').' (date butoire)'
+                : '—');
+
         $data = [
-            'nom_client' => $client->name,
+            'nom_client' => $nomClient,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
+            'date_reservation' => $dateReservationStr,
             'duree' => $reservation->duree_minutes ?? 30,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
             'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
@@ -64,7 +72,7 @@ class EmailHelper
             $data['notes_html'] = '';
         }
 
-        return EmailTemplateService::send('reservation_confirmation_client', $client->email, $data);
+        return EmailTemplateService::send('reservation_confirmation_client', $emailTo, $data);
     }
 
     /**
@@ -87,7 +95,9 @@ class EmailHelper
             'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
             'duree' => $reservation->duree_minutes ?? 30,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
-            'telephone' => $reservation->telephone_client ?? 'N/A',
+            'telephone' => $reservation->telephone_client
+                ?? $reservation->telephone_client_non_inscrit
+                ?? 'N/A',
             'url_reservation' => route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
         ];
 

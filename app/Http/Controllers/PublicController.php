@@ -727,6 +727,8 @@ class PublicController extends Controller
             'telephone_client' => 'required|string|max:20',
             'telephone_cache' => 'boolean',
             'notes' => 'nullable|string',
+            'nom_client' => Auth::check() ? 'nullable|string|max:255' : 'required|string|max:255',
+            'email_client' => Auth::check() ? 'nullable|email|max:255' : 'required|email|max:255',
         ];
 
         if ($isRecurrent) {
@@ -758,12 +760,7 @@ class PublicController extends Controller
             $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
         }
 
-        // Vérifier si l'utilisateur est connecté
         $userId = Auth::id();
-        if (!$userId) {
-            return redirect()->route('login')
-                ->with('error', 'Vous devez être connecté pour prendre un rendez-vous.');
-        }
 
         // Gérer la sélection du membre
         $membreId = null;
@@ -813,6 +810,8 @@ class PublicController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'prix_par_occurrence' => $typeService->prix,
                 'telephone_client' => $validated['telephone_client'],
+                'nom_client' => $userId ? null : ($validated['nom_client'] ?? null),
+                'email_client' => $userId ? null : ($validated['email_client'] ?? null),
             ]);
 
             $recurrenceService = app(\App\Services\RecurrenceService::class);
@@ -829,13 +828,13 @@ class PublicController extends Controller
 
             // Notifications (similaires au flow normal, adaptées)
             $gerant = $entreprise->user;
+            $nomClientRecurrence = Auth::user()?->name ?? ($validated['nom_client'] ?? 'Client');
             if ($gerant) {
-                $nomClient = Auth::user()->name;
                 \App\Models\Notification::creer(
                     $gerant->id,
                     'reservation',
                     'Nouvelle récurrence de réservations',
-                    "{$nomClient} a réservé {$nbOccurrences} séances récurrentes pour {$typeService->nom}.",
+                    "{$nomClientRecurrence} a réservé {$nbOccurrences} séances récurrentes pour {$typeService->nom}.",
                     route('recurrences.show', [$entreprise->slug, $recurrence->id]),
                     ['recurrence_id' => $recurrence->id]
                 );
@@ -850,6 +849,13 @@ class PublicController extends Controller
                     route('dashboard'),
                     ['recurrence_id' => $recurrence->id]
                 );
+            } elseif (! empty($validated['email_client'])) {
+                try {
+                    $reservation->refresh();
+                    \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+                } catch (\Exception $e) {
+                    \Log::error("Erreur lors de l'envoi de l'email de confirmation (récurrence invité) : " . $e->getMessage());
+                }
             }
 
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
@@ -884,9 +890,12 @@ class PublicController extends Controller
             'date_reservation' => $dateTime,
             'date_fin' => $isDateButoire ? null : $debutReservation->copy()->addMinutes((int) $typeService->duree_minutes),
             'lieu' => $validated['lieu'] ?? null,
-            'telephone_client' => $validated['telephone_client'],
+            'telephone_client' => $userId ? $validated['telephone_client'] : null,
+            'telephone_client_non_inscrit' => $userId ? null : $validated['telephone_client'],
             'telephone_cache' => $validated['telephone_cache'] ?? false,
             'notes' => $validated['notes'] ?? null,
+            'nom_client' => $userId ? null : ($validated['nom_client'] ?? null),
+            'email_client' => $userId ? null : ($validated['email_client'] ?? null),
             'prix' => $isEvenement && !$typeService->est_prix_par_personne ? 0 : $typeService->prix,
             'duree_minutes' => $typeService->duree_minutes,
             'type_service' => $typeService->nom,
@@ -986,10 +995,9 @@ class PublicController extends Controller
             }
         }
 
-        // Créer une notification pour le client (uniquement si inscrit)
+        // Notification + email client (inscrit ou invité avec email)
         if ($userId) {
             if ($statutInitial === 'confirmee') {
-                // Réservation confirmée automatiquement
                 Notification::creer(
                     $userId,
                     'reservation',
@@ -999,7 +1007,6 @@ class PublicController extends Controller
                     ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
                 );
 
-                // Envoyer un email de confirmation au client
                 try {
                     $reservation->refresh();
                     \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
@@ -1007,7 +1014,6 @@ class PublicController extends Controller
                     \Log::error("Erreur lors de l'envoi de l'email de confirmation : " . $e->getMessage());
                 }
             } else {
-                // Réservation en attente
                 Notification::creer(
                     $userId,
                     'reservation',
@@ -1016,6 +1022,13 @@ class PublicController extends Controller
                     route('dashboard'),
                     ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
                 );
+            }
+        } elseif (! empty($reservation->email_client)) {
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email de confirmation (invité) : " . $e->getMessage());
             }
         }
 

@@ -49,22 +49,35 @@
         </header>
 
         <!-- Formulaire mobile (visible en haut sur mobile uniquement) -->
-        @auth
-            <div class="xl:hidden mb-6">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Réserver</h2>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Sélectionnez un créneau</p>
-                        </div>
+        <div class="xl:hidden mb-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
                     </div>
-                    
-                    <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form-mobile">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Réserver</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Sélectionnez un créneau</p>
+                    </div>
+                </div>
+
+                @guest
+                    <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <p class="text-sm text-slate-600 dark:text-slate-300">Vous avez un compte ? Connectez-vous pour pré-remplir vos infos.</p>
+                            <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition whitespace-nowrap">
+                                Se connecter
+                            </a>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-600 pt-3">
+                            Pas le temps ? Réservez sans compte ci-dessous avec votre nom, e-mail et téléphone. La confirmation vous sera envoyée par e-mail.
+                        </p>
+                    </div>
+                @endguest
+
+                <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form-mobile">
                         @csrf
                         
                         <div class="space-y-5">
@@ -117,7 +130,7 @@
                             <!-- Date butoire (visible uniquement pour services à date butoire) -->
                             <div id="date-butoire-wrapper-mobile" class="hidden">
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date butoire souhaitée</label>
-                                <input type="date" name="date_butoire" id="date_butoire_mobile" min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                <input type="date" name="date_butoire" id="date_butoire_mobile" data-no-flatpickr min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
                                 @error('date_butoire')
                                     <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
@@ -159,6 +172,7 @@
                                             type="date" 
                                             name="date_reservation" 
                                             id="date_reservation_mobile"
+                                            data-no-flatpickr
                                             min="{{ date('Y-m-d') }}"
                                             class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                         >
@@ -181,31 +195,52 @@
                                 </div>
                             </div>
 
+                            @guest
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Votre nom</label>
+                                    <input type="text" name="nom_client" id="nom_client_mobile" required value="{{ old('nom_client') }}" placeholder="Jean Dupont" autocomplete="name" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                    @error('nom_client')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail</label>
+                                    <input type="email" name="email_client" id="email_client_mobile" required value="{{ old('email_client') }}" placeholder="vous@exemple.com" autocomplete="email" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                    @error('email_client')
+                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endguest
+
                             <!-- Téléphone -->
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                     Téléphone
-                                    @if(isset($userInfo) && !empty($userInfo['telephone']))
-                                        <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
-                                    @endif
+                                    @auth
+                                        @if(isset($userInfo) && !empty($userInfo['telephone']))
+                                            <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
+                                        @endif
+                                    @endauth
                                 </label>
                                 <input 
                                     type="tel" 
                                     name="telephone_client" 
                                     id="telephone_client_mobile"
                                     required
-                                    value="{{ old('telephone_client', $userInfo['telephone'] ?? '') }}"
+                                    value="{{ old('telephone_client', data_get($userInfo, 'telephone', '')) }}"
                                     placeholder="06 12 34 56 78"
                                     class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                 >
                                 @error('telephone_client')
                                     <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
-                                @if(!isset($userInfo) || empty($userInfo['telephone']))
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                        💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
-                                    </p>
-                                @endif
+                                @auth
+                                    @if(!isset($userInfo) || empty($userInfo['telephone']))
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                            💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
+                                        </p>
+                                    @endif
+                                @endauth
                             </div>
 
                             <!-- Option téléphone caché -->
@@ -262,21 +297,8 @@
                             </button>
                         </div>
                     </form>
-                </div>
             </div>
-        @else
-            <div class="xl:hidden mb-6 text-center py-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                    <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                </div>
-                <p class="text-slate-600 dark:text-slate-400 mb-4">Connectez-vous pour réserver</p>
-                <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl">
-                    Se connecter
-                </a>
-            </div>
-        @endauth
+        </div>
 
         <!-- Messages -->
         @if(session('success'))
@@ -358,9 +380,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
-                            <div class="text-center">
+                            <div class="text-center px-2">
                                 <h2 class="text-xl font-bold text-white" id="calendar-title">Chargement...</h2>
                                 <p class="text-sm text-white/80" id="calendar-subtitle"></p>
+                                <p id="calendar-week-hint" class="hidden text-xs text-white/95 mt-2 max-w-md mx-auto leading-snug" role="status"></p>
                             </div>
                             <button 
                                 type="button" 
@@ -434,9 +457,22 @@
                             <p class="text-sm text-slate-500 dark:text-slate-400">Sélectionnez un créneau</p>
                         </div>
                     </div>
-                    
-                    @auth
-                        <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form">
+
+                    @guest
+                        <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
+                            <div class="flex flex-col gap-2">
+                                <p class="text-sm text-slate-600 dark:text-slate-300">Vous avez un compte ? Connectez-vous pour pré-remplir vos infos.</p>
+                                <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition">
+                                    Se connecter
+                                </a>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-600 pt-3">
+                                Pas le temps ? Réservez sans compte avec nom, e-mail et téléphone. La confirmation vous sera envoyée par e-mail.
+                            </p>
+                        </div>
+                    @endguest
+
+                    <form action="{{ route('public.reservation.store', $entreprise->slug) }}" method="POST" id="reservation-form">
                             @csrf
                             
                             <div class="space-y-5">
@@ -489,7 +525,7 @@
                                 <!-- Date butoire (visible uniquement pour services à date butoire) -->
                                 <div id="date-butoire-wrapper" class="hidden">
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date butoire souhaitée</label>
-                                    <input type="date" name="date_butoire" id="date_butoire" min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                    <input type="date" name="date_butoire" id="date_butoire" data-no-flatpickr min="{{ date('Y-m-d') }}" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
                                     @error('date_butoire')
                                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
@@ -531,6 +567,7 @@
                                                 type="date" 
                                                 name="date_reservation" 
                                                 id="date_reservation"
+                                                data-no-flatpickr
                                                 min="{{ date('Y-m-d') }}"
                                                 class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                             >
@@ -553,31 +590,52 @@
                                     </div>
                                 </div>
 
+                                @guest
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Votre nom</label>
+                                        <input type="text" name="nom_client" id="nom_client" required value="{{ old('nom_client') }}" placeholder="Jean Dupont" autocomplete="name" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                        @error('nom_client')
+                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail</label>
+                                        <input type="email" name="email_client" id="email_client" required value="{{ old('email_client') }}" placeholder="vous@exemple.com" autocomplete="email" class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors">
+                                        @error('email_client')
+                                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endguest
+
                                 <!-- Téléphone -->
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                         Téléphone
-                                        @if(isset($userInfo) && !empty($userInfo['telephone']))
-                                            <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
-                                        @endif
+                                        @auth
+                                            @if(isset($userInfo) && !empty($userInfo['telephone']))
+                                                <span class="font-normal text-slate-500 text-xs">(pré-rempli depuis votre profil)</span>
+                                            @endif
+                                        @endauth
                                     </label>
                                     <input 
                                         type="tel" 
                                         name="telephone_client" 
                                         id="telephone_client"
                                         required
-                                        value="{{ old('telephone_client', $userInfo['telephone'] ?? '') }}"
+                                        value="{{ old('telephone_client', data_get($userInfo, 'telephone', '')) }}"
                                         placeholder="06 12 34 56 78"
                                         class="w-full px-4 py-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                                     >
                                     @error('telephone_client')
                                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                                     @enderror
-                                    @if(!isset($userInfo) || empty($userInfo['telephone']))
-                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                            💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
-                                        </p>
-                                    @endif
+                                    @auth
+                                        @if(!isset($userInfo) || empty($userInfo['telephone']))
+                                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                                💡 <a href="{{ route('settings.index', ['tab' => 'account']) }}" class="text-green-600 dark:text-green-400 hover:underline">Ajoutez votre téléphone dans vos paramètres</a> pour qu'il soit pré-rempli automatiquement.
+                                            </p>
+                                        @endif
+                                    @endauth
                                 </div>
 
                                 <!-- Option téléphone caché -->
@@ -634,19 +692,6 @@
                                 </button>
                             </div>
                         </form>
-                    @else
-                        <div class="text-center py-8">
-                            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                            </div>
-                            <p class="text-slate-600 dark:text-slate-400 mb-4">Connectez-vous pour réserver</p>
-                            <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl">
-                                Se connecter
-                            </a>
-                        </div>
-                    @endauth
                 </div>
             </div>
         </div>
@@ -659,7 +704,7 @@
             console.log('DOM pas encore chargé');
         };
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Données PHP
             const jours = @json($jours);
             const horaires = @json($horaires);
@@ -667,6 +712,8 @@
             
             // État du calendrier
             let currentWeekOffset = 0;
+            /** Si on a sauté des semaines au chargement, offset affiché où montrer le message explicatif */
+            let showAutoAdvanceHintOffset = null;
             let selectedSlot = null;
             let reservations = [];
             
@@ -691,6 +738,16 @@
             const serviceSelectMobile = document.getElementById('type_service_id_mobile');
             const recapContainerMobile = document.getElementById('recap-container-mobile');
             const serviceOptionsContainerMobile = document.getElementById('service-options-container-mobile');
+
+            /** Date native ou Flatpickr (app.js) : met à jour l'affichage correctement */
+            function setDateFieldValue(el, ymd) {
+                if (!el || !ymd) return;
+                if (el._flatpickr) {
+                    el._flatpickr.setDate(ymd, true);
+                } else {
+                    el.value = ymd;
+                }
+            }
 
             // Afficher/masquer les champs selon le type de service
             function toggleDateButoireFields(selectElement) {
@@ -1085,6 +1142,39 @@
                 
                 return slots;
             }
+
+            /** Nombre de créneaux cliquables (dans les plages, futurs, non réservés) pour une semaine donnée */
+            function countAvailableSlotsInWeek(weekOffset) {
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (weekOffset * 7));
+                let total = 0;
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(startOfWeek);
+                    date.setDate(startOfWeek.getDate() + i);
+                    const jourSemaine = date.getDay();
+                    const slots = generateSlots(date, jourSemaine);
+                    total += slots.filter(s => s.available).length;
+                }
+                return total;
+            }
+
+            /** Première semaine (0–8) avec au moins un créneau ; sinon reste 0 */
+            async function pickInitialWeekOffset() {
+                await loadReservations();
+                const MAX_WEEK = 8;
+                showAutoAdvanceHintOffset = null;
+                for (let o = 0; o <= MAX_WEEK; o++) {
+                    if (countAvailableSlotsInWeek(o) > 0) {
+                        currentWeekOffset = o;
+                        if (o > 0) {
+                            showAutoAdvanceHintOffset = o;
+                        }
+                        return;
+                    }
+                }
+                currentWeekOffset = 0;
+            }
             
             // Formater une date en ISO
             function formatDateISO(date) {
@@ -1112,6 +1202,17 @@
                     calendarTitle.textContent = `${startOfWeek.getDate()} ${mois[startOfWeek.getMonth()]} - ${endOfWeek.getDate()} ${mois[endOfWeek.getMonth()]}`;
                 }
                 calendarSubtitle.textContent = currentWeekOffset === 0 ? 'Cette semaine' : (currentWeekOffset > 0 ? `Dans ${currentWeekOffset} semaine(s)` : '');
+
+                const weekHintEl = document.getElementById('calendar-week-hint');
+                if (weekHintEl) {
+                    if (showAutoAdvanceHintOffset !== null && currentWeekOffset === showAutoAdvanceHintOffset) {
+                        weekHintEl.textContent = 'Il ne restait plus de créneau libre sur la semaine en cours — voici les prochaines disponibilités.';
+                        weekHintEl.classList.remove('hidden');
+                    } else {
+                        weekHintEl.textContent = '';
+                        weekHintEl.classList.add('hidden');
+                    }
+                }
                 
                 // Générer les en-têtes
                 calendarHeaders.innerHTML = '';
@@ -1199,8 +1300,8 @@
                 selectedSlot = { date, time };
                 
                 // Mettre à jour les deux formulaires (mobile et desktop)
-                if (dateInput) dateInput.value = date;
-                if (dateInputMobile) dateInputMobile.value = date;
+                setDateFieldValue(dateInput, date);
+                setDateFieldValue(dateInputMobile, date);
                 if (heureInput) heureInput.value = time;
                 if (heureInputMobile) heureInputMobile.value = time;
                 
@@ -1294,6 +1395,7 @@
             
             todayBtn?.addEventListener('click', () => {
                 currentWeekOffset = 0;
+                showAutoAdvanceHintOffset = null;
                 renderCalendar();
             });
             
@@ -1328,8 +1430,9 @@
                 }, 100);
             }
             
-            // Initialiser
-            renderCalendar();
+            // Charger la première semaine où il reste au moins un créneau (ex. samedi 20h → semaine suivante)
+            await pickInitialWeekOffset();
+            await renderCalendar();
         });
     </script>
 

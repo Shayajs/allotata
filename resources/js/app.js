@@ -12,6 +12,10 @@ flatpickr.localize(French);
 
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('input[type="date"]').forEach(function (input) {
+        // Remplissage programmatique (ex. agenda public) : garder le natif
+        if (input.hasAttribute('data-no-flatpickr')) {
+            return;
+        }
         // Conserver la valeur existante
         const currentValue = input.value;
         // Changer le type pour éviter le picker natif
