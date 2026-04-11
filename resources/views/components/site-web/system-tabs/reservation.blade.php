@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const horaires = @json($horaires);
     const reservationsUrl = '{{ $reservationsUrl }}';
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--site-primary').trim();
+    const INTERVALLE_CRENEAUX_MINUTES = {{ (int) ($intervalle_creneaux_minutes ?? 30) }};
 
     let currentWeekOffset = 0;
     let selectedSlot = null;
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function isSlotReserved(dateStr, time) {
         const s = new Date(dateStr + 'T' + time + ':00');
-        const e = new Date(s.getTime() + 30 * 60 * 1000);
+        const e = new Date(s.getTime() + INTERVALLE_CRENEAUX_MINUTES * 60 * 1000);
         return reservations.some(r => new Date(r.start) < e && new Date(r.end) > s);
     }
 
@@ -127,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!p.ouverture || !p.fermeture) return false;
             const [sh, sm] = p.ouverture.split(':').map(Number);
             const [eh, em] = p.fermeture.split(':').map(Number);
-            return t >= sh * 60 + sm && (t + 30) <= eh * 60 + em;
+            return t >= sh * 60 + sm && (t + INTERVALLE_CRENEAUX_MINUTES) <= eh * 60 + em;
         });
     }
 
@@ -149,16 +150,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-        for (let h = minH; h <= maxH; h++) {
-            for (let m = 0; m < 60; m += 30) {
-                if (h === maxH && m > 0) break;
-                const ts = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-                const ds = formatDateISO(date);
-                const isIn = isTimeInPlages(ts, plages);
-                const isPast = new Date(ds + 'T' + ts + ':00') <= new Date(Date.now() + 3600000);
-                const isRes = isSlotReserved(ds, ts);
-                slots.push({ time: ts, available: isIn && !isPast && !isRes, isInPlage: isIn });
-            }
+        for (let t = minH * 60; t <= maxH * 60; t += INTERVALLE_CRENEAUX_MINUTES) {
+            const h = Math.floor(t / 60);
+            const m = t % 60;
+            const ts = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+            const ds = formatDateISO(date);
+            const isIn = isTimeInPlages(ts, plages);
+            const isPast = new Date(ds + 'T' + ts + ':00') <= new Date(Date.now() + 3600000);
+            const isRes = isSlotReserved(ds, ts);
+            slots.push({ time: ts, available: isIn && !isPast && !isRes, isInPlage: isIn });
         }
         return slots;
     }

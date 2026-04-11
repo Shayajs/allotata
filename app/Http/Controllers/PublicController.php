@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommandeProduit;
 use App\Models\Entreprise;
+use App\Models\EntrepriseVisite;
+use App\Models\Notification;
+use App\Models\Produit;
 use App\Models\Reservation;
 use App\Models\TypeService;
-use App\Models\Produit;
-use App\Models\CommandeProduit;
-use App\Models\Notification;
-use App\Models\EntrepriseVisite;
-use App\Mail\ReservationConfirmationEmail;
-use App\Mail\ReservationCancelledEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class PublicController extends Controller
 {
@@ -28,7 +25,7 @@ class PublicController extends Controller
                 EntrepriseVisite::enregistrerVisite($entreprise, 'accueil', $user);
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du tracking de visite: '.$e->getMessage());
         }
 
         // Cache de 10 minutes pour les pages publiques d'entreprise
@@ -37,26 +34,26 @@ class PublicController extends Controller
             return Entreprise::where('slug', $slug)
                 ->with([
                     'user:id,name,email',
-                    'avis' => function($query) {
+                    'avis' => function ($query) {
                         $query->where('est_approuve', true)
-                              ->with(['user:id,name', 'photos'])
-                              ->latest()
-                              ->limit(5);
+                            ->with(['user:id,name', 'photos'])
+                            ->latest()
+                            ->limit(5);
                     },
                     'realisationPhotos:id,entreprise_id,photo_path,ordre',
-                    'typesServices' => function($query) {
+                    'typesServices' => function ($query) {
                         $query->where('est_actif', true)
-                              ->with(['images:id,type_service_id,image_path', 'imageCouverture:id,type_service_id,image_path']);
+                            ->with(['images:id,type_service_id,image_path', 'imageCouverture:id,type_service_id,image_path']);
                     },
-                    'produits' => function($query) {
+                    'produits' => function ($query) {
                         $query->where('est_actif', true)
-                              ->with([
-                                  'stock:id,produit_id,quantite_disponible',
-                                  'images:id,produit_id,image_path',
-                                  'imageCouverture:id,produit_id,image_path',
-                                  'promotionActive:id,produit_id,prix_promotion,date_debut,date_fin'
-                              ]);
-                    }
+                            ->with([
+                                'stock:id,produit_id,quantite_disponible',
+                                'images:id,produit_id,image_path',
+                                'imageCouverture:id,produit_id,image_path',
+                                'promotionActive:id,produit_id,prix_promotion,date_debut,date_fin',
+                            ]);
+                    },
                 ])
                 ->firstOrFail();
         });
@@ -73,8 +70,8 @@ class PublicController extends Controller
         // MAIS permettre au propriétaire de voir sa propre entreprise même sans abonnement
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
-        
-        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+
+        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -89,17 +86,17 @@ class PublicController extends Controller
         // Vérifier si l'utilisateur connecté peut laisser un avis
         $peutLaisserAvis = false;
         $userAvis = null;
-        
+
         if (Auth::check()) {
             $user = Auth::user();
-            
+
             // Vérifier si l'utilisateur a déjà laissé un avis
             $userAvis = \App\Models\Avis::where('user_id', $user->id)
                 ->where('entreprise_id', $entreprise->id)
                 ->first();
-            
+
             // Vérifier si l'utilisateur peut laisser un avis (réservation payée et terminée)
-            if (!$userAvis) {
+            if (! $userAvis) {
                 $peutLaisserAvis = \App\Models\Reservation::where('user_id', $user->id)
                     ->where('entreprise_id', $entreprise->id)
                     ->where('est_paye', true)
@@ -107,7 +104,7 @@ class PublicController extends Controller
                     ->exists();
             }
         }
-        
+
         // Charger les services actifs avec leurs images
         $services = $entreprise->typesServices()
             ->where('est_actif', true)
@@ -120,7 +117,7 @@ class PublicController extends Controller
             ->where('est_actif', true)
             ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
             ->get()
-            ->filter(function($produit) {
+            ->filter(function ($produit) {
                 return $produit->estDisponible();
             });
 
@@ -150,11 +147,11 @@ class PublicController extends Controller
                 EntrepriseVisite::enregistrerVisite($entreprise, 'agenda', $user);
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du tracking de visite: '.$e->getMessage());
         }
 
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['typesServices' => function($query) {
+            ->with(['typesServices' => function ($query) {
                 $query->where('est_actif', true)->with('options.choices');
             }])
             ->firstOrFail();
@@ -170,8 +167,8 @@ class PublicController extends Controller
         // MAIS permettre au propriétaire de voir sa propre entreprise même sans abonnement
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
-        
-        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+
+        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -196,7 +193,7 @@ class PublicController extends Controller
             ->get();
 
         // Formater les horaires pour le JSON (pour FullCalendar)
-        $horaires = $horairesRaw->map(function($horaire) {
+        $horaires = $horairesRaw->map(function ($horaire) {
             return [
                 'id' => $horaire->id,
                 'jour_semaine' => $horaire->jour_semaine,
@@ -207,76 +204,75 @@ class PublicController extends Controller
             ];
         });
 
+        $intervalleCreneaux = $entreprise->resolveIntervalleCreneauxMinutes();
+
         // Calculer les 7 prochains jours (de aujourd'hui à 7 jours plus tard)
         $jours = [];
         $aujourdhui = now();
-        
+
         for ($i = 0; $i < 7; $i++) {
             $date = $aujourdhui->copy()->addDays($i);
             $jourSemaine = $date->dayOfWeek; // 0 = dimanche, 1 = lundi, etc.
             $dateString = $date->format('Y-m-d');
-            
+
             // Utiliser le service ExceptionDateService pour récupérer les horaires applicables
             $exceptionDateService = app(\App\Services\ExceptionDateService::class);
             $plagesHoraires = $exceptionDateService->getHorairesForDate($entreprise, $date);
-            
+
             // Calculer les créneaux disponibles pour ce jour (pour toutes les plages)
             $creneaux = [];
-            
+
             if ($plagesHoraires->isNotEmpty()) {
-                // Trouver la durée minimale des services (pour calculer les créneaux)
-                $dureeMinimale = $entreprise->typesServices->min('duree_minutes') ?? 30;
-                
-                // Générer des créneaux basés sur la durée minimale (minimum 30 minutes)
-                $dureeCreneau = max(30, ceil($dureeMinimale / 30) * 30);
-                
+                $dureeMinimale = (int) ($entreprise->typesServices->min('duree_minutes') ?? 30);
+                $dureeCreneau = max($intervalleCreneaux, (int) ceil($dureeMinimale / $intervalleCreneaux) * $intervalleCreneaux);
+
                 // Récupérer toutes les réservations pour ce jour (y compris en attente pour bloquer le créneau)
                 $reservationsDuJour = Reservation::where('entreprise_id', $entreprise->id)
                     ->whereDate('date_reservation', $date->format('Y-m-d'))
                     ->whereIn('statut', ['en_attente', 'confirmee'])
                     ->get();
-                
+
                 // Pour chaque plage horaire du jour, générer les créneaux
                 foreach ($plagesHoraires as $plage) {
-                    if (!$plage->heure_ouverture || !$plage->heure_fermeture) {
+                    if (! $plage->heure_ouverture || ! $plage->heure_fermeture) {
                         continue; // Plage fermée, on passe à la suivante
                     }
-                    
+
                     $heureOuverture = \Carbon\Carbon::parse($plage->heure_ouverture);
                     $heureFermeture = \Carbon\Carbon::parse($plage->heure_fermeture);
-                    
+
                     $creneauActuel = $date->copy()->setTimeFromTimeString($heureOuverture->format('H:i'));
                     $fermeture = $date->copy()->setTimeFromTimeString($heureFermeture->format('H:i'));
-                    
+
                     // Si c'est aujourd'hui, commencer à partir de maintenant + 1 heure minimum
                     if ($i === 0) {
                         $creneauActuel = max($creneauActuel, now()->addHour()->startOfHour());
                     }
-                    
+
                     // Générer les créneaux pour cette plage
                     while ($creneauActuel->copy()->addMinutes($dureeCreneau)->lte($fermeture)) {
                         $debutCreneau = $creneauActuel->copy();
                         $finCreneau = $creneauActuel->copy()->addMinutes($dureeCreneau);
-                        
+
                         // Ne pas dépasser la fin de la plage
                         if ($finCreneau->gt($fermeture)) {
                             break;
                         }
-                        
+
                         // Vérifier si ce créneau chevauche avec une réservation existante
                         $estReserve = false;
                         foreach ($reservationsDuJour as $reservation) {
                             $debutReservation = \Carbon\Carbon::parse($reservation->date_reservation);
                             $finReservation = $debutReservation->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
-                            
+
                             // Vérifier le chevauchement
                             if ($debutCreneau->lt($finReservation) && $finCreneau->gt($debutReservation)) {
                                 $estReserve = true;
                                 break;
                             }
                         }
-                        
-                        if (!$estReserve) {
+
+                        if (! $estReserve) {
                             $creneaux[] = [
                                 'heure' => $creneauActuel->format('H:i'),
                                 'datetime' => $creneauActuel->format('Y-m-d H:i:s'),
@@ -284,23 +280,23 @@ class PublicController extends Controller
                                 'time' => $creneauActuel->format('H:i'),
                             ];
                         }
-                        
-                        $creneauActuel->addMinutes(30); // Incrémenter de 30 minutes pour plus de flexibilité
+
+                        $creneauActuel->addMinutes($intervalleCreneaux);
                     }
                 }
             }
-            
+
             // Trier les créneaux par heure pour avoir un ordre chronologique
-            usort($creneaux, function($a, $b) {
+            usort($creneaux, function ($a, $b) {
                 return strcmp($a['time'], $b['time']);
             });
-            
+
             // Déterminer si le jour est fermé (pas de plages ou toutes les plages sont fermées)
             $horaire = $plagesHoraires->first();
-            $estFerme = $plagesHoraires->isEmpty() || $plagesHoraires->every(function($p) {
-                return !$p->heure_ouverture || !$p->heure_fermeture;
+            $estFerme = $plagesHoraires->isEmpty() || $plagesHoraires->every(function ($p) {
+                return ! $p->heure_ouverture || ! $p->heure_fermeture;
             });
-            
+
             $jours[] = [
                 'date' => $date,
                 'jour_semaine' => $jourSemaine,
@@ -309,7 +305,7 @@ class PublicController extends Controller
                 'date_input' => $date->format('Y-m-d'),
                 'est_aujourdhui' => $i === 0,
                 'horaire' => $horaire,
-                'plages_horaires' => $plagesHoraires->map(function($p) {
+                'plages_horaires' => $plagesHoraires->map(function ($p) {
                     return [
                         'heure_ouverture' => $p->heure_ouverture ? \Carbon\Carbon::parse($p->heure_ouverture)->format('H:i') : null,
                         'heure_fermeture' => $p->heure_fermeture ? \Carbon\Carbon::parse($p->heure_fermeture)->format('H:i') : null,
@@ -332,7 +328,7 @@ class PublicController extends Controller
                 ];
             } catch (\Exception $e) {
                 // En cas d'erreur, on laisse userInfo à null
-                \Log::warning('Erreur lors de la récupération des informations utilisateur pour préchargement: ' . $e->getMessage());
+                \Log::warning('Erreur lors de la récupération des informations utilisateur pour préchargement: '.$e->getMessage());
                 $userInfo = null;
             }
         }
@@ -345,6 +341,7 @@ class PublicController extends Controller
             'membres' => $membres,
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
             'userInfo' => $userInfo,
+            'intervalle_creneaux_minutes' => $intervalleCreneaux,
         ]);
     }
 
@@ -361,13 +358,13 @@ class PublicController extends Controller
                 EntrepriseVisite::enregistrerVisite($entreprise, 'store', $user);
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du tracking de visite: '.$e->getMessage());
         }
 
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['produits' => function($query) {
+            ->with(['produits' => function ($query) {
                 $query->where('est_actif', true)
-                      ->with(['stock', 'images', 'imageCouverture', 'promotionActive']);
+                    ->with(['stock', 'images', 'imageCouverture', 'promotionActive']);
             }])
             ->firstOrFail();
 
@@ -381,13 +378,13 @@ class PublicController extends Controller
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
-        
-        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+
+        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
         // Filtrer uniquement les produits disponibles
-        $produits = $entreprise->produits->filter(function($produit) {
+        $produits = $entreprise->produits->filter(function ($produit) {
             return $produit->estDisponible();
         });
 
@@ -412,15 +409,15 @@ class PublicController extends Controller
                 EntrepriseVisite::enregistrerVisite($entreprise, 'services', $user);
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du tracking de visite: '.$e->getMessage());
         }
 
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['typesServices' => function($query) {
+            ->with(['typesServices' => function ($query) {
                 $query->where('est_actif', true)
-                      ->with(['images', 'imageCouverture', 'options.choices', 'serviceAvis' => function($q) {
-                          $q->with(['user:id,name', 'photos', 'reservation']);
-                      }]);
+                    ->with(['images', 'imageCouverture', 'options.choices', 'serviceAvis' => function ($q) {
+                        $q->with(['user:id,name', 'photos', 'reservation']);
+                    }]);
             }])
             ->with('realisationPhotos')
             ->firstOrFail();
@@ -434,8 +431,8 @@ class PublicController extends Controller
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
-        
-        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+
+        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -462,15 +459,15 @@ class PublicController extends Controller
                 EntrepriseVisite::enregistrerVisite($entreprise, 'produits', $user);
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du tracking de visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du tracking de visite: '.$e->getMessage());
         }
 
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['produits' => function($query) {
+            ->with(['produits' => function ($query) {
                 $query->where('est_actif', true)
-                      ->with(['stock', 'images', 'imageCouverture', 'promotionActive', 'produitAvis' => function($q) {
-                          $q->with(['user:id,name', 'photos', 'reservation']);
-                      }]);
+                    ->with(['stock', 'images', 'imageCouverture', 'promotionActive', 'produitAvis' => function ($q) {
+                        $q->with(['user:id,name', 'photos', 'reservation']);
+                    }]);
             }])
             ->with('realisationPhotos')
             ->firstOrFail();
@@ -484,8 +481,8 @@ class PublicController extends Controller
         // Vérifier si l'entreprise a un abonnement actif (via son gérant)
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
-        
-        if (!$entreprise->aAbonnementActif() && !$isOwner) {
+
+        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -495,7 +492,7 @@ class PublicController extends Controller
                 'sessionId' => 'debug-session',
                 'runId' => 'run1',
                 'hypothesisId' => 'B2',
-                'location' => 'PublicController.php:' . __LINE__,
+                'location' => 'PublicController.php:'.__LINE__,
                 'message' => 'Avant filtrage produits',
                 'data' => [
                     'slug' => $slug,
@@ -506,24 +503,25 @@ class PublicController extends Controller
             ];
             $logPath = base_path('.cursor/debug.log');
             $logDir = dirname($logPath);
-            if (!is_dir($logDir)) {
+            if (! is_dir($logDir)) {
                 @mkdir($logDir, 0755, true);
             }
-            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
-        } catch (\Exception $e) {}
+            @file_put_contents($logPath, json_encode($logData)."\n", FILE_APPEND);
+        } catch (\Exception $e) {
+        }
         // #endregion
 
         // Filtrer uniquement les produits disponibles
-        $produits = $entreprise->produits->filter(function($produit) {
+        $produits = $entreprise->produits->filter(function ($produit) {
             $estDisponible = $produit->estDisponible();
-            
+
             // #region agent log
-            if (!$estDisponible) {
+            if (! $estDisponible) {
                 $logData = [
                     'sessionId' => 'debug-session',
                     'runId' => 'run1',
                     'hypothesisId' => 'B2',
-                    'location' => 'PublicController.php:' . __LINE__,
+                    'location' => 'PublicController.php:'.__LINE__,
                     'message' => 'Produit filtré (non disponible)',
                     'data' => [
                         'produit_id' => $produit->id,
@@ -538,14 +536,15 @@ class PublicController extends Controller
                 try {
                     $logPath = base_path('.cursor/debug.log');
                     $logDir = dirname($logPath);
-                    if (!is_dir($logDir)) {
+                    if (! is_dir($logDir)) {
                         @mkdir($logDir, 0755, true);
                     }
-                    @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
-                } catch (\Exception $e) {}
+                    @file_put_contents($logPath, json_encode($logData)."\n", FILE_APPEND);
+                } catch (\Exception $e) {
+                }
             }
             // #endregion
-            
+
             return $estDisponible;
         });
 
@@ -558,7 +557,7 @@ class PublicController extends Controller
                 'sessionId' => 'debug-session',
                 'runId' => 'run1',
                 'hypothesisId' => 'B2',
-                'location' => 'PublicController.php:' . __LINE__,
+                'location' => 'PublicController.php:'.__LINE__,
                 'message' => 'Après filtrage produits',
                 'data' => [
                     'produits_disponibles' => $produits->count(),
@@ -567,11 +566,12 @@ class PublicController extends Controller
             ];
             $logPath = base_path('.cursor/debug.log');
             $logDir = dirname($logPath);
-            if (!is_dir($logDir)) {
+            if (! is_dir($logDir)) {
                 @mkdir($logDir, 0755, true);
             }
-            @file_put_contents($logPath, json_encode($logData) . "\n", FILE_APPEND);
-        } catch (\Exception $e) {}
+            @file_put_contents($logPath, json_encode($logData)."\n", FILE_APPEND);
+        } catch (\Exception $e) {
+        }
         // #endregion
 
         return view('public.produits', [
@@ -592,7 +592,7 @@ class PublicController extends Controller
             ->firstOrFail();
 
         // Vérifier si l'entreprise a un abonnement actif
-        if (!$entreprise->aAbonnementActif() && (!$user || $user->id !== $entreprise->user_id)) {
+        if (! $entreprise->aAbonnementActif() && (! $user || $user->id !== $entreprise->user_id)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -617,16 +617,16 @@ class PublicController extends Controller
             ->firstOrFail();
 
         // Vérifier la disponibilité
-        if (!$produit->estDisponible()) {
+        if (! $produit->estDisponible()) {
             return back()->withErrors(['error' => 'Ce produit n\'est plus disponible.']);
         }
 
         // Vérifier les options de livraison/vente
-        if ($validated['mode_livraison'] === 'livraison' && !$produit->livraisonDisponible()) {
+        if ($validated['mode_livraison'] === 'livraison' && ! $produit->livraisonDisponible()) {
             return back()->withErrors(['error' => 'La livraison n\'est pas disponible pour ce produit.']);
         }
 
-        if ($validated['mode_livraison'] === 'vente_sur_place' && !$produit->venteSurPlaceDisponible()) {
+        if ($validated['mode_livraison'] === 'vente_sur_place' && ! $produit->venteSurPlaceDisponible()) {
             return back()->withErrors(['error' => 'La vente sur place n\'est pas disponible pour ce produit.']);
         }
 
@@ -638,7 +638,7 @@ class PublicController extends Controller
         // Vérifier le stock si gestion immédiate
         if ($produit->gestion_stock === 'disponible_immediatement') {
             $stock = $produit->stock;
-            if (!$stock || $stock->quantite_disponible < $validated['quantite']) {
+            if (! $stock || $stock->quantite_disponible < $validated['quantite']) {
                 return back()->withErrors(['error' => 'Stock insuffisant pour cette quantité.']);
             }
         }
@@ -680,7 +680,7 @@ class PublicController extends Controller
             $entreprise->user_id,
             'commande',
             'Nouvelle commande',
-            "Nouvelle commande de {$validated['quantite']}x {$produit->nom} pour " . ($user ? $user->name : $validated['nom_client']),
+            "Nouvelle commande de {$validated['quantite']}x {$produit->nom} pour ".($user ? $user->name : $validated['nom_client']),
             route('commandes.show', [$slug, $commande->id]),
             ['commande_id' => $commande->id, 'entreprise_id' => $entreprise->id]
         );
@@ -689,7 +689,7 @@ class PublicController extends Controller
         try {
             // TODO: Créer EmailHelper::sendNouvelleCommandeEntreprise($commande);
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de nouvelle commande : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de nouvelle commande : ".$e->getMessage());
         }
 
         return redirect()->route('public.produits', $slug)
@@ -746,16 +746,16 @@ class PublicController extends Controller
         $validated = $request->validate($rules);
 
         if ($isRecurrent) {
-            $dateTime = $validated['date_debut'] . ' ' . $validated['heure_reservation'];
+            $dateTime = $validated['date_debut'].' '.$validated['heure_reservation'];
             $debutReservation = \Carbon\Carbon::parse($dateTime);
             $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
         } elseif ($isDateButoire) {
             $dateButoire = $validated['date_butoire'];
-            $dateTime = $dateButoire . ' 00:00:00';
+            $dateTime = $dateButoire.' 00:00:00';
             $debutReservation = \Carbon\Carbon::parse($dateTime);
             $heureReservation = \Carbon\Carbon::parse('09:00'); // fictif pour sélection membre si besoin
         } else {
-            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $dateTime = $validated['date_reservation'].' '.$validated['heure_reservation'];
             $debutReservation = \Carbon\Carbon::parse($dateTime);
             $heureReservation = \Carbon\Carbon::parse($validated['heure_reservation']);
         }
@@ -764,19 +764,19 @@ class PublicController extends Controller
 
         // Gérer la sélection du membre
         $membreId = null;
-        if (!empty($validated['membre_id'] ?? null)) {
+        if (! empty($validated['membre_id'] ?? null)) {
             // Membre spécifié par l'utilisateur
             $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
                 ->where('entreprise_id', $entreprise->id)
                 ->where('est_actif', true)
                 ->first();
-            
-            if (!$membre) {
+
+            if (! $membre) {
                 return back()->withErrors(['membre_id' => 'Membre invalide.']);
             }
-            
+
             $membreId = $membre->id;
-        } elseif ($entreprise->aGestionMultiPersonnes() && !$isDateButoire) {
+        } elseif ($entreprise->aGestionMultiPersonnes() && ! $isDateButoire) {
             // Sélection automatique si multi-personnes et aucun membre spécifié (hors date butoire)
             $selectionService = app(\App\Services\MembreSelectionService::class);
             $membreSelectionne = $selectionService->selectionnerMembre(
@@ -785,7 +785,7 @@ class PublicController extends Controller
                 $heureReservation,
                 $typeService->duree_minutes
             );
-            
+
             if ($membreSelectionne) {
                 $membreId = $membreSelectionne->id;
             }
@@ -819,6 +819,7 @@ class PublicController extends Controller
 
             if (empty($reservations)) {
                 $recurrence->delete();
+
                 return back()->withErrors(['error' => 'Aucun créneau disponible n\'a pu être réservé pour cette récurrence.']);
             }
 
@@ -854,7 +855,7 @@ class PublicController extends Controller
                     $reservation->refresh();
                     \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
                 } catch (\Exception $e) {
-                    \Log::error("Erreur lors de l'envoi de l'email de confirmation (récurrence invité) : " . $e->getMessage());
+                    \Log::error("Erreur lors de l'envoi de l'email de confirmation (récurrence invité) : ".$e->getMessage());
                 }
             }
 
@@ -877,7 +878,7 @@ class PublicController extends Controller
                 );
             });
 
-            if (!$disponible) {
+            if (! $disponible) {
                 return back()->withErrors(['error' => 'Cet événement est complet. Il n\'y a plus de places disponibles.']);
             }
         }
@@ -896,7 +897,7 @@ class PublicController extends Controller
             'notes' => $validated['notes'] ?? null,
             'nom_client' => $userId ? null : ($validated['nom_client'] ?? null),
             'email_client' => $userId ? null : ($validated['email_client'] ?? null),
-            'prix' => $isEvenement && !$typeService->est_prix_par_personne ? 0 : $typeService->prix,
+            'prix' => $isEvenement && ! $typeService->est_prix_par_personne ? 0 : $typeService->prix,
             'duree_minutes' => $typeService->duree_minutes,
             'type_service' => $typeService->nom,
             'statut' => $statutInitial,
@@ -916,7 +917,7 @@ class PublicController extends Controller
             $skipSlotCheck
         );
 
-        if (!$reservation) {
+        if (! $reservation) {
             return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
         }
 
@@ -931,15 +932,15 @@ class PublicController extends Controller
                 if ($choice) {
                     $totalPrixSupplementaire += $choice->prix_supplementaire;
                     $totalTempsSupplementaire += $choice->temps_supplementaire;
-                    $optionsLog[] = $choice->option->nom . ': ' . $choice->nom;
+                    $optionsLog[] = $choice->option->nom.': '.$choice->nom;
                 }
             }
 
-            if (!empty($optionsLog)) {
+            if (! empty($optionsLog)) {
                 $reservation->update([
                     'prix' => $reservation->prix + $totalPrixSupplementaire,
                     'duree_minutes' => $reservation->duree_minutes + $totalTempsSupplementaire,
-                    'notes' => ($reservation->notes ? $reservation->notes . "\n\n" : "") . "Options sélectionnées :\n- " . implode("\n- ", $optionsLog)
+                    'notes' => ($reservation->notes ? $reservation->notes."\n\n" : '')."Options sélectionnées :\n- ".implode("\n- ", $optionsLog),
                 ]);
             }
         }
@@ -954,13 +955,13 @@ class PublicController extends Controller
                     ->where('a_passe_commande', false)
                     ->latest()
                     ->first();
-                
+
                 if ($visite) {
                     $visite->marquerReservation();
                 }
             }
         } catch (\Exception $e) {
-            \Log::warning('Erreur lors du marquage de réservation dans visite: ' . $e->getMessage());
+            \Log::warning('Erreur lors du marquage de réservation dans visite: '.$e->getMessage());
         }
 
         // Invalider le cache des statistiques
@@ -970,13 +971,13 @@ class PublicController extends Controller
         $gerant = $entreprise->user;
         if ($gerant) {
             $nomClient = $reservation->user ? $reservation->user->name : ($reservation->nom_client ?? 'Client');
-            $titreNotification = $statutInitial === 'confirmee' 
+            $titreNotification = $statutInitial === 'confirmee'
                 ? 'Nouvelle réservation confirmée automatiquement'
                 : 'Nouvelle réservation';
             $messageNotification = $statutInitial === 'confirmee'
                 ? "Une nouvelle réservation a été automatiquement confirmée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}."
                 : "Une nouvelle réservation a été demandée pour le {$reservation->date_reservation->format('d/m/Y à H:i')} par {$nomClient}.";
-            
+
             Notification::creer(
                 $gerant->id,
                 'reservation',
@@ -991,7 +992,7 @@ class PublicController extends Controller
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationConfirmationGerant($reservation);
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email au gérant : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email au gérant : ".$e->getMessage());
             }
         }
 
@@ -1011,7 +1012,7 @@ class PublicController extends Controller
                     $reservation->refresh();
                     \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
                 } catch (\Exception $e) {
-                    \Log::error("Erreur lors de l'envoi de l'email de confirmation : " . $e->getMessage());
+                    \Log::error("Erreur lors de l'envoi de l'email de confirmation : ".$e->getMessage());
                 }
             } else {
                 Notification::creer(
@@ -1028,7 +1029,7 @@ class PublicController extends Controller
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de confirmation (invité) : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email de confirmation (invité) : ".$e->getMessage());
             }
         }
 
@@ -1055,17 +1056,17 @@ class PublicController extends Controller
         // Récupérer les réservations confirmées et en attente
         $query = Reservation::where('entreprise_id', $entreprise->id)
             ->whereIn('statut', ['en_attente', 'confirmee']);
-        
+
         // Filtrer par membre si spécifié
         if ($membreId && $entreprise->aGestionMultiPersonnes()) {
             $query->where('membre_id', $membreId);
         }
-        
+
         $reservations = $query->get()
-            ->map(function($reservation) {
+            ->map(function ($reservation) {
                 $debut = \Carbon\Carbon::parse($reservation->date_reservation);
                 $fin = $debut->copy()->addMinutes((int) ($reservation->duree_minutes ?? 30));
-                
+
                 return [
                     'id' => $reservation->id,
                     'title' => 'Indisponible', // Ne pas montrer les détails dans l'agenda public
@@ -1089,11 +1090,11 @@ class PublicController extends Controller
     public function showReservation($hash)
     {
         $reservation = Reservation::findByHash($hash);
-        
-        if (!$reservation) {
+
+        if (! $reservation) {
             abort(404, 'Réservation non trouvée.');
         }
-        
+
         // Charger les relations nécessaires
         $reservation->load(['user', 'entreprise.user', 'entreprise.avis', 'typeService', 'membre.user']);
 
@@ -1109,11 +1110,11 @@ class PublicController extends Controller
             // - Le client qui a fait la réservation
             // - Le propriétaire de l'entreprise
             // - Un membre assigné à la réservation
-            $peutVoir = $reservation->user_id === $user->id 
+            $peutVoir = $reservation->user_id === $user->id
                      || $entreprise->user_id === $user->id
                      || ($reservation->membre && $reservation->membre->user_id === $user->id)
                      || $user->is_admin;
-            
+
             // Peut annuler si :
             // - C'est le client qui a fait la réservation
             // - La réservation n'est pas passée
@@ -1121,15 +1122,15 @@ class PublicController extends Controller
             // - La réservation n'est pas déjà annulée ou terminée
             $peutAnnuler = $reservation->user_id === $user->id
                         && $reservation->date_reservation->isFuture()
-                        && !$reservation->est_paye
-                        && !in_array($reservation->statut, ['annulee', 'terminee']);
+                        && ! $reservation->est_paye
+                        && ! in_array($reservation->statut, ['annulee', 'terminee']);
         } else {
             // Un utilisateur non connecté peut voir les réservations créées manuellement pour des clients non inscrits
             // mais seulement si on a le bon email/téléphone (on ne vérifie pas pour simplifier, mais on pourrait ajouter un token)
-            $peutVoir = $reservation->creee_manuellement && !$reservation->user_id;
+            $peutVoir = $reservation->creee_manuellement && ! $reservation->user_id;
         }
 
-        if (!$peutVoir) {
+        if (! $peutVoir) {
             abort(403, 'Vous n\'êtes pas autorisé à voir cette réservation.');
         }
 
@@ -1153,22 +1154,22 @@ class PublicController extends Controller
     public function annulerReservation(Request $request, $hash)
     {
         $reservation = Reservation::findByHash($hash);
-        
-        if (!$reservation) {
+
+        if (! $reservation) {
             abort(404, 'Réservation non trouvée.');
         }
-        
+
         // Charger les relations nécessaires
         $reservation->load(['entreprise', 'user']);
 
         $user = Auth::user();
 
         // Vérifier les permissions
-        if (!$user) {
+        if (! $user) {
             abort(403, 'Vous devez être connecté pour annuler une réservation.');
         }
 
-        if ($reservation->user_id !== $user->id && !$user->is_admin) {
+        if ($reservation->user_id !== $user->id && ! $user->is_admin) {
             abort(403, 'Vous n\'êtes pas autorisé à annuler cette réservation.');
         }
 
@@ -1212,7 +1213,7 @@ class PublicController extends Controller
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'client');
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email d'annulation au client : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email d'annulation au client : ".$e->getMessage());
             }
         }
 
@@ -1262,7 +1263,7 @@ class PublicController extends Controller
     {
         return $services->sortBy([
             ['ordre_affichage', 'asc'],
-            ['nom', 'asc']
+            ['nom', 'asc'],
         ])->values();
     }
 
@@ -1273,7 +1274,7 @@ class PublicController extends Controller
     {
         return $produits->sortBy([
             ['ordre_affichage', 'asc'],
-            ['nom', 'asc']
+            ['nom', 'asc'],
         ])->values();
     }
 
@@ -1282,13 +1283,14 @@ class PublicController extends Controller
      */
     private function trierServicesParVentes($services)
     {
-        return $services->map(function($service) {
+        return $services->map(function ($service) {
             // Compter les réservations terminées (confirmées ou terminées)
             $nbVentes = Reservation::where('type_service_id', $service->id)
                 ->whereIn('statut', ['confirmee', 'terminee'])
                 ->count();
-            
+
             $service->nb_ventes = $nbVentes;
+
             return $service;
         })->sortByDesc('nb_ventes')->values();
     }
@@ -1298,13 +1300,14 @@ class PublicController extends Controller
      */
     private function trierProduitsParVentes($produits)
     {
-        return $produits->map(function($produit) {
+        return $produits->map(function ($produit) {
             // Compter les commandes terminées (statut = 'terminee')
             $nbVentes = CommandeProduit::where('produit_id', $produit->id)
                 ->where('statut', 'terminee')
                 ->count();
-            
+
             $produit->nb_ventes = $nbVentes;
+
             return $produit;
         })->sortByDesc('nb_ventes')->values();
     }
@@ -1314,17 +1317,18 @@ class PublicController extends Controller
      */
     private function trierServicesParStatistiques($services, Entreprise $entreprise)
     {
-        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController();
+        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController;
         $topServices = $statsController->getTopServices($entreprise->id, 365); // 1 an
-        
+
         // Créer un tableau de mapping id => nb_clics
         $clicsParService = [];
         foreach ($topServices as $top) {
             $clicsParService[$top['id']] = $top['nb_clics'];
         }
 
-        return $services->map(function($service) use ($clicsParService) {
+        return $services->map(function ($service) use ($clicsParService) {
             $service->nb_clics = $clicsParService[$service->id] ?? 0;
+
             return $service;
         })->sortByDesc('nb_clics')->values();
     }
@@ -1334,19 +1338,19 @@ class PublicController extends Controller
      */
     private function trierProduitsParStatistiques($produits, Entreprise $entreprise)
     {
-        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController();
+        $statsController = new \App\Http\Controllers\EntrepriseStatistiqueController;
         $topProduits = $statsController->getTopProduits($entreprise->id, 365); // 1 an
-        
+
         // Créer un tableau de mapping id => nb_clics
         $clicsParProduit = [];
         foreach ($topProduits as $top) {
             $clicsParProduit[$top['id']] = $top['nb_clics'];
         }
 
-        return $produits->map(function($produit) use ($clicsParProduit) {
+        return $produits->map(function ($produit) use ($clicsParProduit) {
             $produit->nb_clics = $clicsParProduit[$produit->id] ?? 0;
+
             return $produit;
         })->sortByDesc('nb_clics')->values();
     }
 }
-

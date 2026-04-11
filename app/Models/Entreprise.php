@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasEssaisGratuits;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\HasEssaisGratuits;
 
 class Entreprise extends Model
 {
-    use HasFactory, SoftDeletes, HasEssaisGratuits;
+    use HasEssaisGratuits, HasFactory, SoftDeletes;
 
     /**
      * Obtenir le nom de la clé de route (pour le route model binding)
@@ -60,6 +60,7 @@ class Entreprise extends Model
         'prix_negociables',
         'rdv_uniquement_messagerie',
         'accepter_reservations_auto',
+        'intervalle_creneaux_minutes',
         'prestation_libre_active',
         'tarif_horaire',
         'prestation_libre_description',
@@ -114,6 +115,7 @@ class Entreprise extends Model
             'vente_sur_place_disponible_par_defaut' => 'boolean',
             'afficher_video' => 'boolean',
             'rayon_deplacement' => 'integer',
+            'intervalle_creneaux_minutes' => 'integer',
             'options_supplementaires' => 'array', // Transforme le JSON en tableau PHP automatiquement
             'contenu_site_web' => 'array', // Structure JSON pour l'éditeur de site web
             // Google Calendar (tokens chiffrés)
@@ -132,6 +134,23 @@ class Entreprise extends Model
             'fiscal_invalidite_conjoint' => 'boolean',
             'fiscal_ancien_combattant' => 'boolean',
         ];
+    }
+
+    /**
+     * Écart entre deux débuts de créneau sur l'agenda public (minutes).
+     * Valeur stockée ou 30 par défaut ; bornée entre 5 et 180.
+     */
+    public function resolveIntervalleCreneauxMinutes(): int
+    {
+        $v = (int) ($this->intervalle_creneaux_minutes ?? 30);
+        if ($v < 5) {
+            return 5;
+        }
+        if ($v > 180) {
+            return 180;
+        }
+
+        return $v;
     }
 
     /**
@@ -205,6 +224,7 @@ class Entreprise extends Model
     public function getNoteMoyenneAttribute(): float
     {
         $noteMoyenne = $this->avis()->avg('note');
+
         return $noteMoyenne ? round($noteMoyenne, 1) : 0;
     }
 
@@ -229,7 +249,7 @@ class Entreprise extends Model
      */
     public function sirenEstVerifie(): bool
     {
-        return $this->siren_verifie === true && !empty($this->siren);
+        return $this->siren_verifie === true && ! empty($this->siren);
     }
 
     /**
@@ -336,6 +356,7 @@ class Entreprise extends Model
         if ($this->afficher_nom_gerant && $this->user) {
             return $this->user->name;
         }
+
         return null;
     }
 
@@ -361,7 +382,7 @@ class Entreprise extends Model
         $essential = [
             'image' => [
                 'label' => 'Ajouter une image d\'entreprise',
-                'completed' => !empty($this->logo) || !empty($this->image_fond),
+                'completed' => ! empty($this->logo) || ! empty($this->image_fond),
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
                 'icon' => 'camera',
@@ -375,7 +396,7 @@ class Entreprise extends Model
             ],
             'description' => [
                 'label' => 'Mettre une description',
-                'completed' => !empty($this->description) && strlen(trim($this->description)) > 0,
+                'completed' => ! empty($this->description) && strlen(trim($this->description)) > 0,
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
                 'icon' => 'pencil',
@@ -414,7 +435,7 @@ class Entreprise extends Model
             ],
             'siren' => [
                 'label' => 'Renseigner votre numéro SIREN',
-                'completed' => !empty($this->siren) && strlen(trim($this->siren)) === 9,
+                'completed' => ! empty($this->siren) && strlen(trim($this->siren)) === 9,
                 'route_key' => 'entreprise.dashboard',
                 'route_params' => ['slug' => $this->slug, 'tab' => 'parametres'],
                 'icon' => 'document',
@@ -473,7 +494,7 @@ class Entreprise extends Model
             ->get();
 
         $joursConfigures = $horaires->filter(function ($horaire) {
-            return !empty($horaire->heure_ouverture) && !empty($horaire->heure_fermeture);
+            return ! empty($horaire->heure_ouverture) && ! empty($horaire->heure_fermeture);
         })->unique('jour_semaine')->count();
 
         return $joursConfigures >= 3;
@@ -487,10 +508,10 @@ class Entreprise extends Model
         $horaires = $this->horairesOuverture()
             ->where('est_exceptionnel', false)
             ->get();
-        
+
         // Vérifier qu'au moins un jour a des horaires (n'est pas fermé)
-        return $horaires->contains(function($horaire) {
-            return !empty($horaire->heure_ouverture) && !empty($horaire->heure_fermeture);
+        return $horaires->contains(function ($horaire) {
+            return ! empty($horaire->heure_ouverture) && ! empty($horaire->heure_fermeture);
         });
     }
 
@@ -506,7 +527,7 @@ class Entreprise extends Model
 
         // Si un SIREN est fourni, il doit être explicitement validé (true)
         // Si pas de SIREN, on peut valider l'entreprise sans problème
-        if ($this->siren && !empty($this->siren)) {
+        if ($this->siren && ! empty($this->siren)) {
             // Si un SIREN est fourni, il doit être validé (true)
             if ($this->siren_valide !== true) {
                 return false;
@@ -570,12 +591,13 @@ class Entreprise extends Model
     public function aAdministrateur(User $user): bool
     {
         // Le propriétaire (user_id) est toujours administrateur
-        if ((int)$this->user_id === (int)$user->id) {
+        if ((int) $this->user_id === (int) $user->id) {
             return true;
         }
 
         // Vérifier si l'utilisateur est membre avec le rôle administrateur
         $membre = $this->membres()->where('user_id', $user->id)->first();
+
         return $membre && $membre->estAdministrateur();
     }
 
@@ -585,13 +607,13 @@ class Entreprise extends Model
     public function peutEtreGereePar(User $user): bool
     {
         // Comparaison stricte avec conversion de type pour éviter les problèmes de type
-        $estProprietaire = (int)$this->user_id === (int)$user->id;
-        
+        $estProprietaire = (int) $this->user_id === (int) $user->id;
+
         // Si c'est le propriétaire, retourner true directement
         if ($estProprietaire) {
             return true;
         }
-        
+
         // Sinon, vérifier si l'utilisateur est administrateur membre
         return $this->aAdministrateur($user);
     }
@@ -631,14 +653,14 @@ class Entreprise extends Model
     public function getSiteWebContentAttribute(): array
     {
         $content = $this->contenu_site_web;
-        
+
         if (empty($content)) {
             return self::getDefaultSiteWebContent();
         }
-        
+
         // Fusionner avec les valeurs par défaut pour s'assurer que toutes les clés existent
         $default = self::getDefaultSiteWebContent();
-        
+
         return array_replace_recursive($default, $content);
     }
 
@@ -648,6 +670,7 @@ class Entreprise extends Model
     public function getSiteWebBlocks(): array
     {
         $content = $this->site_web_content;
+
         return $content['blocks'] ?? [];
     }
 
@@ -657,6 +680,7 @@ class Entreprise extends Model
     public function getSiteWebTheme(): array
     {
         $content = $this->site_web_content;
+
         return $content['theme'] ?? self::getDefaultSiteWebContent()['theme'];
     }
 
@@ -668,7 +692,7 @@ class Entreprise extends Model
     public function canBeArchived(): bool
     {
         // Vérifier uniquement les abonnements liés à l'entreprise (site_web, multi_personnes)
-        return !$this->aSiteWebActif() && !$this->aGestionMultiPersonnes();
+        return ! $this->aSiteWebActif() && ! $this->aGestionMultiPersonnes();
     }
 
     /**
@@ -685,7 +709,7 @@ class Entreprise extends Model
      */
     public function canBeRestoredByUser(): bool
     {
-        if (!$this->isArchived()) {
+        if (! $this->isArchived()) {
             return false;
         }
 
@@ -698,28 +722,29 @@ class Entreprise extends Model
      */
     public function daysUntilPermanentDeletion(): int
     {
-        if (!$this->isArchived()) {
+        if (! $this->isArchived()) {
             return 30;
         }
 
         $remaining = now()->diffInDays($this->deleted_at->addDays(30), false);
-        return max(0, (int)$remaining);
+
+        return max(0, (int) $remaining);
     }
 
     /**
      * Scope pour rechercher des entreprises dans un rayon donné
      * Utilise la formule Haversine pour calculer la distance
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param float $latitude Latitude du point de recherche
-     * @param float $longitude Longitude du point de recherche
-     * @param float $radius Rayon en kilomètres
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  float  $latitude  Latitude du point de recherche
+     * @param  float  $longitude  Longitude du point de recherche
+     * @param  float  $radius  Rayon en kilomètres
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWithinRadius($query, float $latitude, float $longitude, float $radius = 10)
     {
         // Formule Haversine pour calculer la distance en km
-        $haversine = "(
+        $haversine = '(
             6371 * acos(
                 cos(radians(?)) 
                 * cos(radians(latitude)) 
@@ -727,7 +752,7 @@ class Entreprise extends Model
                 + sin(radians(?)) 
                 * sin(radians(latitude))
             )
-        )";
+        )';
 
         return $query
             ->whereNotNull('latitude')
@@ -742,7 +767,7 @@ class Entreprise extends Model
      */
     public function scopeByPostcode($query, string $postcode)
     {
-        return $query->where('code_postal', 'like', $postcode . '%');
+        return $query->where('code_postal', 'like', $postcode.'%');
     }
 
     /**
@@ -750,7 +775,7 @@ class Entreprise extends Model
      */
     public function scopeByCity($query, string $city)
     {
-        return $query->where('ville', 'like', '%' . $city . '%');
+        return $query->where('ville', 'like', '%'.$city.'%');
     }
 
     /**
@@ -764,6 +789,7 @@ class Entreprise extends Model
                 $this->code_postal,
                 $this->ville,
             ]);
+
             return implode(', ', $parts);
         }
 
@@ -780,6 +806,7 @@ class Entreprise extends Model
             $this->code_postal,
             $this->ville,
         ]);
+
         return implode(', ', $parts);
     }
 
@@ -788,7 +815,7 @@ class Entreprise extends Model
      */
     public function hasCoordinates(): bool
     {
-        return !is_null($this->latitude) && !is_null($this->longitude);
+        return ! is_null($this->latitude) && ! is_null($this->longitude);
     }
 
     /**
@@ -796,6 +823,6 @@ class Entreprise extends Model
      */
     public function aGoogleCalendar(): bool
     {
-        return !empty($this->google_refresh_token);
+        return ! empty($this->google_refresh_token);
     }
 }

@@ -534,6 +534,29 @@
                         </p>
                     </div>
                 </label>
+
+                <div class="p-4 border border-slate-200 dark:border-slate-600 rounded-lg">
+                    <label for="intervalle_creneaux_minutes" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">
+                        Intervalle entre les créneaux proposés (minutes)
+                    </label>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                        Écart entre deux heures proposées sur l'agenda public et le site (ex. 15, 30, 36). La valeur 30 conserve le comportement actuel par défaut.
+                    </p>
+                    <input
+                        id="intervalle_creneaux_minutes"
+                        type="number"
+                        name="intervalle_creneaux_minutes"
+                        min="5"
+                        max="180"
+                        step="1"
+                        required
+                        value="{{ old('intervalle_creneaux_minutes', $entreprise->intervalle_creneaux_minutes ?? 30) }}"
+                        class="w-full max-w-xs px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    >
+                    @error('intervalle_creneaux_minutes')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
         </div>
 

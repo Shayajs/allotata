@@ -31,13 +31,16 @@
                 </h2>
                 <p class="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
                     Ou
-                    <a href="{{ route('signup') }}" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400">
+                    <a href="{{ !empty($public_agenda_return) ? route('signup', ['return' => $public_agenda_return]) : route('signup') }}" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400">
                         créez un nouveau compte
                     </a>
                 </p>
             </div>
             <form class="mt-6 sm:mt-8 space-y-5 sm:space-y-6 mobile-form" action="{{ route('login') }}" method="POST">
                 @csrf
+                @if(!empty($public_agenda_return))
+                    <input type="hidden" name="return" value="{{ $public_agenda_return }}">
+                @endif
                 <div class="rounded-md shadow-sm space-y-4">
                     <div>
                         <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

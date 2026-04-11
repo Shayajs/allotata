@@ -29,7 +29,7 @@ class SettingsController extends Controller
         $subscription = $user->subscription('default');
         $stripeSubscription = null;
         $invoices = collect([]);
-        
+
         if ($subscription && $subscription->valid() && $user->stripe_id) {
             try {
                 $stripeSubscription = $subscription->asStripeSubscription();
@@ -103,7 +103,7 @@ class SettingsController extends Controller
         $upcomingQuery = Echeance::where('user_id', $user->id)
             ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
             ->orderBy('periode_fin');
-        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && ! $user->abonnement_manuel_actif_jusqu->isPast()) {
             $upcomingQuery->where('payment_origin', Echeance::ORIGIN_MANUAL);
         }
         $upcomingEcheances = $upcomingQuery->get();
@@ -136,7 +136,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'surname' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'photo_profil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'bio' => ['nullable', 'string', 'max:1000'],
@@ -163,30 +163,30 @@ class SettingsController extends Controller
 
         // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
         $fullName = trim($validated['name']);
-        if (!empty($validated['surname'])) {
-            $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
+        if (! empty($validated['surname'])) {
+            $fullName = trim($validated['name']).' '.trim($validated['surname']);
         }
         $validated['name'] = $fullName;
 
         // Gérer l'upload de la photo de profil (atomicité : upload d'abord, suppression ensuite)
         if ($request->hasFile('photo_profil')) {
             $photo = $request->file('photo_profil');
-            $photoName = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
-            
+            $photoName = time().'_'.Str::random(10).'.'.$photo->getClientOriginalExtension();
+
             // 1. Uploader la nouvelle photo d'abord
             $photoPath = $photo->storeAs('profils', $photoName, 'public');
-            
+
             // 2. Vérifier que l'upload a réussi
-            if (!Storage::disk('public')->exists($photoPath)) {
+            if (! Storage::disk('public')->exists($photoPath)) {
                 return back()->withErrors(['photo_profil' => 'Erreur lors de l\'upload de la photo.']);
             }
-            
+
             // 3. Sauvegarder l'ancien chemin pour suppression après mise à jour
             $oldPhotoPath = $user->photo_profil;
-            
+
             // 4. Mettre à jour avec le nouveau chemin
             $validated['photo_profil'] = $photoPath;
-            
+
             // 5. Supprimer l'ancienne photo APRÈS la mise à jour réussie
             // (on le fait après la mise à jour pour garantir l'atomicité)
             if ($oldPhotoPath && Storage::disk('public')->exists($oldPhotoPath)) {
@@ -221,7 +221,7 @@ class SettingsController extends Controller
         ]);
 
         // Vérifier le mot de passe actuel
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (! Hash::check($validated['current_password'], $user->password)) {
             return back()->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.']);
         }
 
@@ -283,6 +283,7 @@ class SettingsController extends Controller
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
             'accepter_reservations_auto' => ['nullable'],
+            'intervalle_creneaux_minutes' => ['required', 'integer', 'min:5', 'max:180'],
             'livraison_disponible_par_defaut' => ['nullable'],
             'vente_sur_place_disponible_par_defaut' => ['nullable'],
             'site_web_externe' => ['nullable', 'url', 'max:255'],
@@ -293,19 +294,19 @@ class SettingsController extends Controller
             $baseSlug = Str::slug($validated['nom']);
             $newSlug = $baseSlug;
             $counter = 1;
-            
+
             while (Entreprise::where('slug', $newSlug)->where('id', '!=', $entreprise->id)->exists()) {
-                $newSlug = $baseSlug . '-' . $counter;
+                $newSlug = $baseSlug.'-'.$counter;
                 $counter++;
             }
             $validated['slug'] = $newSlug;
         }
 
         // Nettoyer et formater les mots-clés
-        if (!empty($validated['mots_cles'])) {
+        if (! empty($validated['mots_cles'])) {
             $motsClesArray = array_map('trim', explode(',', $validated['mots_cles']));
-            $motsClesArray = array_filter($motsClesArray, function($mot) {
-                return !empty($mot) && strlen($mot) >= 2;
+            $motsClesArray = array_filter($motsClesArray, function ($mot) {
+                return ! empty($mot) && strlen($mot) >= 2;
             });
             $motsClesArray = array_unique($motsClesArray);
             $validated['mots_cles'] = implode(', ', $motsClesArray);
@@ -366,24 +367,24 @@ class SettingsController extends Controller
             // Atomicité : uploader d'abord, supprimer ensuite
             // 1. Uploader le nouveau logo
             $logoPath = $imageService->processAndStore($request->file('logo'), 'logos');
-            
+
             // 2. Vérifier que l'upload a réussi
-            if (!Storage::disk('public')->exists($logoPath)) {
+            if (! Storage::disk('public')->exists($logoPath)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Erreur lors de l\'upload du logo.',
                 ], 500);
             }
-            
+
             // 3. Sauvegarder l'ancien chemin
             $oldLogoPath = $entreprise->logo;
-            
+
             // 4. Mettre à jour avec le nouveau chemin
             $entreprise->update(['logo' => $logoPath]);
-            
+
             // Invalider le cache public de l'entreprise
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
-            
+
             // 5. Supprimer l'ancien logo APRÈS la mise à jour réussie
             if ($oldLogoPath) {
                 try {
@@ -402,11 +403,11 @@ class SettingsController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Logo mis à jour avec succès.',
-                    'logo_url' => asset('media/' . $logoPath),
+                    'logo_url' => asset('media/'.$logoPath),
                 ]);
             }
 
-            return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+            return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
                 ->with('success', 'Logo mis à jour avec succès.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson() || $request->wantsJson()) {
@@ -416,9 +417,10 @@ class SettingsController extends Controller
                     'errors' => $e->errors(),
                 ], 422);
             }
+
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'upload du logo : ' . $e->getMessage(), [
+            \Log::error('Erreur lors de l\'upload du logo : '.$e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -426,10 +428,11 @@ class SettingsController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Erreur lors de l\'upload du logo : ' . $e->getMessage(),
+                    'message' => 'Erreur lors de l\'upload du logo : '.$e->getMessage(),
                 ], 500);
             }
-            return back()->with('error', 'Erreur lors de l\'upload du logo : ' . $e->getMessage());
+
+            return back()->with('error', 'Erreur lors de l\'upload du logo : '.$e->getMessage());
         }
     }
 
@@ -447,12 +450,12 @@ class SettingsController extends Controller
         if ($entreprise->logo) {
             $imageService->delete($entreprise->logo);
             $entreprise->update(['logo' => null]);
-            
+
             // Invalider le cache public de l'entreprise
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
         }
 
-        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
             ->with('success', 'Le logo a été supprimé.');
     }
 
@@ -476,24 +479,24 @@ class SettingsController extends Controller
             // Atomicité : uploader d'abord, supprimer ensuite
             // 1. Uploader la nouvelle image de fond
             $imageFondPath = $imageService->processAndStore($request->file('image_fond'), 'images_fond');
-            
+
             // 2. Vérifier que l'upload a réussi
-            if (!Storage::disk('public')->exists($imageFondPath)) {
+            if (! Storage::disk('public')->exists($imageFondPath)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Erreur lors de l\'upload de l\'image de fond.',
                 ], 500);
             }
-            
+
             // 3. Sauvegarder l'ancien chemin
             $oldImageFondPath = $entreprise->image_fond;
-            
+
             // 4. Mettre à jour avec le nouveau chemin
             $entreprise->update(['image_fond' => $imageFondPath]);
-            
+
             // Invalider le cache public de l'entreprise
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
-            
+
             // 5. Supprimer l'ancienne image APRÈS la mise à jour réussie
             if ($oldImageFondPath) {
                 try {
@@ -512,11 +515,11 @@ class SettingsController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Image de fond mise à jour avec succès.',
-                    'image_fond_url' => asset('media/' . $imageFondPath),
+                    'image_fond_url' => asset('media/'.$imageFondPath),
                 ]);
             }
 
-            return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+            return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
                 ->with('success', 'Image de fond mise à jour avec succès.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson() || $request->wantsJson()) {
@@ -526,9 +529,10 @@ class SettingsController extends Controller
                     'errors' => $e->errors(),
                 ], 422);
             }
+
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage(), [
+            \Log::error('Erreur lors de l\'upload de l\'image de fond : '.$e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -536,10 +540,11 @@ class SettingsController extends Controller
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage(),
+                    'message' => 'Erreur lors de l\'upload de l\'image de fond : '.$e->getMessage(),
                 ], 500);
             }
-            return back()->with('error', 'Erreur lors de l\'upload de l\'image de fond : ' . $e->getMessage());
+
+            return back()->with('error', 'Erreur lors de l\'upload de l\'image de fond : '.$e->getMessage());
         }
     }
 
@@ -557,12 +562,12 @@ class SettingsController extends Controller
         if ($entreprise->image_fond) {
             $imageService->delete($entreprise->image_fond);
             $entreprise->update(['image_fond' => null]);
-            
+
             // Invalider le cache public de l'entreprise
             \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
         }
 
-        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
             ->with('success', 'L\'image de fond a été supprimée.');
     }
 
@@ -598,7 +603,7 @@ class SettingsController extends Controller
         // Invalider le cache public de l'entreprise
         \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
-        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
             ->with('success', 'La photo a été ajoutée avec succès.');
     }
 
@@ -624,7 +629,7 @@ class SettingsController extends Controller
         // Invalider le cache public de l'entreprise
         \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
 
-        return redirect(route('entreprise.dashboard', ['slug' => $slug]) . '?tab=parametres')
+        return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
             ->with('success', 'La photo a été supprimée.');
     }
 
@@ -635,13 +640,13 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->is_admin) {
+        if (! $user->is_admin) {
             return redirect()->route('settings.index')
                 ->with('error', 'Accès refusé.');
         }
 
         // Vérifier si la colonne existe
-        if (!Schema::hasColumn('users', 'notifications_erreurs_actives')) {
+        if (! Schema::hasColumn('users', 'notifications_erreurs_actives')) {
             return redirect()->route('settings.index', ['tab' => 'preferences'])
                 ->with('error', 'La fonctionnalité n\'est pas encore disponible. Veuillez exécuter les migrations.');
         }
@@ -704,7 +709,7 @@ class SettingsController extends Controller
             ->firstOrFail();
 
         // Vérifier si la suppression est possible
-        if (!$entreprise->canBeArchived()) {
+        if (! $entreprise->canBeArchived()) {
             return back()->with('error', 'Impossible de supprimer cette entreprise car elle possède des abonnements actifs.');
         }
 
@@ -799,7 +804,7 @@ class SettingsController extends Controller
     public function restoreEntreprise(Request $request, $slug)
     {
         $user = Auth::user();
-        
+
         // Chercher parmi les entreprises supprimées (withTrashed)
         $entreprise = Entreprise::withTrashed()
             ->where('slug', $slug)
@@ -807,7 +812,7 @@ class SettingsController extends Controller
             ->firstOrFail();
 
         // Vérifier si la restauration est possible par l'utilisateur
-        if (!$entreprise->canBeRestoredByUser()) {
+        if (! $entreprise->canBeRestoredByUser()) {
             return back()->with('error', 'Impossible de restaurer cette entreprise. Le délai de 30 jours est dépassé.');
         }
 

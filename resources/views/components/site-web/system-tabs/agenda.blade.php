@@ -8,4 +8,5 @@
     'membres' => $membres,
     'aGestionMultiPersonnes' => $aGestionMultiPersonnes,
     'userInfo' => $userInfo,
+    'intervalle_creneaux_minutes' => $intervalle_creneaux_minutes ?? 30,
 ])

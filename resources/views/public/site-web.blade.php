@@ -152,6 +152,7 @@
                         'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false,
                         'userInfo' => $userInfo ?? null,
                         'services' => $services ?? collect(),
+                        'intervalle_creneaux_minutes' => $intervalle_creneaux_minutes ?? 30,
                     ])
                 @else
                     {{-- Onglet custom : rendu des blocs --}}

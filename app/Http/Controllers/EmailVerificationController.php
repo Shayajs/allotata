@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\EmailVerification;
 use App\Models\SecurityLog;
+use App\Support\PublicAgendaReturnUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 
 class EmailVerificationController extends Controller
 {
@@ -23,16 +25,16 @@ class EmailVerificationController extends Controller
         $email = null;
 
         // Si l'utilisateur n'est pas connecté mais qu'on a un email en session (depuis tentative de connexion)
-        if (!$user && $request->session()->has('pending_verification_email')) {
+        if (! $user && $request->session()->has('pending_verification_email')) {
             $email = $request->session()->get('pending_verification_email');
             $user = \App\Models\User::where('email', $email)->first();
 
             // Si l'utilisateur existe et n'a pas son email vérifié, envoyer automatiquement un email
             // Mais seulement si on n'a pas déjà envoyé un email récemment (éviter les spams sur refresh)
-            if ($user && !$user->hasVerifiedEmail()) {
+            if ($user && ! $user->hasVerifiedEmail()) {
                 $lastEmailSent = $request->session()->get('last_verification_email_sent_at');
-                $shouldSendEmail = !$lastEmailSent || now()->diffInMinutes($lastEmailSent) > 2; // Au moins 2 minutes entre chaque envoi
-                
+                $shouldSendEmail = ! $lastEmailSent || now()->diffInMinutes($lastEmailSent) > 2; // Au moins 2 minutes entre chaque envoi
+
                 if ($shouldSendEmail) {
                     // Générer un nouveau hash de vérification si nécessaire
                     $emailVerification = EmailVerification::where('user_id', $user->id)
@@ -41,17 +43,17 @@ class EmailVerificationController extends Controller
                         ->latest()
                         ->first();
 
-                    if (!$emailVerification) {
+                    if (! $emailVerification) {
                         $emailVerification = EmailVerification::generateHashForUser($user->id);
                     }
 
                     // Envoyer l'email de vérification
                     try {
                         $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
-                        
+
                         // Marquer qu'on a envoyé un email maintenant (pour éviter les spams)
                         $request->session()->put('last_verification_email_sent_at', now());
-                        
+
                         // Logger l'événement
                         SecurityLog::log(
                             $user->id,
@@ -64,18 +66,18 @@ class EmailVerificationController extends Controller
                             false
                         );
                     } catch (\Exception $e) {
-                        \Log::error("Erreur lors de l'envoi de l'email de vérification depuis le sas : " . $e->getMessage());
+                        \Log::error("Erreur lors de l'envoi de l'email de vérification depuis le sas : ".$e->getMessage());
                     }
                 }
             }
         } elseif ($user) {
             $email = $user->email;
-            
+
             // Si l'utilisateur est connecté mais n'a pas vérifié, envoyer aussi un email si nécessaire
-            if (!$user->hasVerifiedEmail()) {
+            if (! $user->hasVerifiedEmail()) {
                 $lastEmailSent = $request->session()->get('last_verification_email_sent_at');
-                $shouldSendEmail = !$lastEmailSent || now()->diffInMinutes($lastEmailSent) > 2;
-                
+                $shouldSendEmail = ! $lastEmailSent || now()->diffInMinutes($lastEmailSent) > 2;
+
                 if ($shouldSendEmail) {
                     $emailVerification = EmailVerification::where('user_id', $user->id)
                         ->where('is_used', false)
@@ -83,7 +85,7 @@ class EmailVerificationController extends Controller
                         ->latest()
                         ->first();
 
-                    if (!$emailVerification) {
+                    if (! $emailVerification) {
                         $emailVerification = EmailVerification::generateHashForUser($user->id);
                     }
 
@@ -91,7 +93,7 @@ class EmailVerificationController extends Controller
                         $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
                         $request->session()->put('last_verification_email_sent_at', now());
                     } catch (\Exception $e) {
-                        \Log::error("Erreur lors de l'envoi de l'email de vérification : " . $e->getMessage());
+                        \Log::error("Erreur lors de l'envoi de l'email de vérification : ".$e->getMessage());
                     }
                 }
             }
@@ -110,7 +112,7 @@ class EmailVerificationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors(['email' => 'Vous devez être connecté pour recevoir un email de vérification.']);
         }
 
@@ -126,7 +128,8 @@ class EmailVerificationController extends Controller
         try {
             $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de vérification : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de vérification : ".$e->getMessage());
+
             return back()->withErrors(['email' => 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.']);
         }
 
@@ -141,7 +144,7 @@ class EmailVerificationController extends Controller
             false
         );
 
-        return back()->with('status', 'Un nouvel email de vérification a été envoyé à ' . $user->email . '.');
+        return back()->with('status', 'Un nouvel email de vérification a été envoyé à '.$user->email.'.');
     }
 
     /**
@@ -154,14 +157,14 @@ class EmailVerificationController extends Controller
             ->where('expires_at', '>', now())
             ->first();
 
-        if (!$emailVerification || !$emailVerification->isValid()) {
+        if (! $emailVerification || ! $emailVerification->isValid()) {
             return redirect()->route('verification.required')
                 ->withErrors(['email' => 'Ce lien de vérification est invalide ou a expiré. Veuillez demander un nouveau lien.']);
         }
 
         $user = $emailVerification->user;
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('verification.required')
                 ->withErrors(['email' => 'Utilisateur introuvable.']);
         }
@@ -191,7 +194,7 @@ class EmailVerificationController extends Controller
         );
 
         // Connecter l'utilisateur s'il ne l'est pas déjà
-        if (!Auth::check() || Auth::id() !== $user->id) {
+        if (! Auth::check() || Auth::id() !== $user->id) {
             Auth::login($user);
         }
 
@@ -199,15 +202,15 @@ class EmailVerificationController extends Controller
         try {
             \App\Helpers\EmailHelper::sendWelcome($user);
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de bienvenue : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de bienvenue : ".$e->getMessage());
         }
 
         // Vérifier s'il y a des invitations en attente pour cet email
         $invitationsEnAttente = \App\Models\EntrepriseInvitation::where('email', $user->email)
             ->where('statut', 'en_attente_compte')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('expire_at')
-                      ->orWhere('expire_at', '>', now());
+                    ->orWhere('expire_at', '>', now());
             })
             ->get();
 
@@ -226,15 +229,20 @@ class EmailVerificationController extends Controller
             // Rediriger vers la première invitation si une seule, sinon vers le dashboard
             if ($invitationsConverties === 1 && $invitationsEnAttente->first()) {
                 return redirect()->route('invitations.show', $invitationsEnAttente->first()->token)
-                    ->with('success', $message);
+                    ->with('success', $message)
+                    ->withCookie(Cookie::forget(PublicAgendaReturnUrl::POST_VERIFY_COOKIE));
             }
         }
 
-        return redirect()->route('dashboard')
-            ->with('status', $message);
+        $agendaReturn = PublicAgendaReturnUrl::normalize($request->cookie(PublicAgendaReturnUrl::POST_VERIFY_COOKIE));
+        if ($agendaReturn) {
+            return redirect($agendaReturn)
+                ->with('status', 'Bienvenue ! Reprenez votre réservation : vos choix sur cet appareil ont été conservés.')
+                ->withCookie(Cookie::forget(PublicAgendaReturnUrl::POST_VERIFY_COOKIE));
+        }
 
-        // Sinon, rediriger vers la connexion
-        return redirect()->route('login')
-            ->with('status', 'Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.');
+        return redirect()->route('dashboard')
+            ->with('status', $message)
+            ->withCookie(Cookie::forget(PublicAgendaReturnUrl::POST_VERIFY_COOKIE));
     }
 }

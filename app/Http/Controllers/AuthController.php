@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\LoginAttempt;
 use App\Models\AccountLockout;
+use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
+use App\Models\User;
 use App\Services\SecurityService;
-use App\Mail\WelcomeEmail;
+use App\Support\PublicAgendaReturnUrl;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +24,7 @@ class AuthController extends Controller
     {
         $invitationToken = $request->get('invitation');
         $invitation = null;
-        
+
         if ($invitationToken) {
             $invitation = \App\Models\EntrepriseInvitation::where('token', $invitationToken)
                 ->where('statut', 'en_attente_compte')
@@ -33,6 +34,7 @@ class AuthController extends Controller
 
         return view('auth.signup', [
             'invitation' => $invitation,
+            'public_agenda_return' => PublicAgendaReturnUrl::normalize($request->query('return')),
         ]);
     }
 
@@ -73,6 +75,7 @@ class AuthController extends Controller
             'cgu_accepted' => ['required', 'accepted'],
             'cgv_accepted' => ['required', 'accepted'],
             'confidentialite_accepted' => ['required', 'accepted'],
+            'return' => ['nullable', 'string', 'max:2048'],
         ]);
 
         // Si une invitation est fournie, vérifier qu'elle correspond à l'email
@@ -82,18 +85,18 @@ class AuthController extends Controller
                 ->where('statut', 'en_attente_compte')
                 ->first();
 
-            if (!$invitation) {
+            if (! $invitation) {
                 return back()->withErrors(['email' => 'Cette invitation n\'est pas valide pour cet email.'])
                     ->withInput();
             }
         }
 
         // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
-        $fullName = trim($validated['name']) . ' ' . trim($validated['surname']);
+        $fullName = trim($validated['name']).' '.trim($validated['surname']);
 
         // Résoudre le parrain si un code de parrainage est fourni
         $parrainId = null;
-        if (!empty($validated['code_parrainage'])) {
+        if (! empty($validated['code_parrainage'])) {
             $parrain = User::where('code_parrain', strtoupper($validated['code_parrainage']))->first();
             if ($parrain) {
                 $parrainId = $parrain->id;
@@ -147,7 +150,7 @@ class AuthController extends Controller
                     'content_encoding' => $pendingPush['content_encoding'] ?? 'aesgcm',
                 ]);
             } catch (\Exception $e) {
-                \Log::warning("Erreur lors du rattachement de la push subscription : " . $e->getMessage());
+                \Log::warning('Erreur lors du rattachement de la push subscription : '.$e->getMessage());
             }
             $request->session()->forget('pending_push_subscription');
         }
@@ -159,7 +162,7 @@ class AuthController extends Controller
         try {
             $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
         } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de vérification : " . $e->getMessage());
+            \Log::error("Erreur lors de l'envoi de l'email de vérification : ".$e->getMessage());
         }
 
         // Logger l'inscription
@@ -175,8 +178,10 @@ class AuthController extends Controller
         );
 
         // NE PAS connecter automatiquement - rediriger vers le sas de vérification
-        return redirect()->route('verification.required')
+        $redirectResponse = redirect()->route('verification.required')
             ->with('status', 'Votre compte a été créé avec succès ! Veuillez vérifier votre email pour accéder à votre compte.');
+
+        return $this->withAgendaPostVerifyCookie($redirectResponse, $request->input('return'));
     }
 
     /**
@@ -184,10 +189,18 @@ class AuthController extends Controller
      */
     public function showSignin(Request $request)
     {
+        if ($request->filled('return')) {
+            $normalized = PublicAgendaReturnUrl::normalize($request->query('return'));
+            if ($normalized) {
+                $request->session()->put('url.intended', $normalized);
+            }
+        }
+
         $invitationToken = $request->session()->get('invitation_token');
-        
+
         return view('auth.signin', [
             'invitation_token' => $invitationToken,
+            'public_agenda_return' => PublicAgendaReturnUrl::normalize($request->query('return')),
         ]);
     }
 
@@ -196,10 +209,23 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $validated = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
+            'return' => ['nullable', 'string', 'max:2048'],
         ]);
+
+        if (! empty($validated['return'])) {
+            $normalizedReturn = PublicAgendaReturnUrl::normalize($validated['return']);
+            if ($normalizedReturn) {
+                $request->session()->put('url.intended', $normalizedReturn);
+            }
+        }
+
+        $credentials = [
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+        ];
 
         $ipAddress = $request->ip();
         $userAgent = $request->userAgent();
@@ -235,7 +261,7 @@ class AuthController extends Controller
                     ['reason' => 'account_forbidden'],
                     'high',
                     true,
-                    "Tentative de connexion sur un compte interdit"
+                    'Tentative de connexion sur un compte interdit'
                 );
 
                 return back()->withErrors([
@@ -257,7 +283,7 @@ class AuthController extends Controller
                     ['reason' => 'account_deleted'],
                     'high',
                     true,
-                    "Tentative de connexion sur un compte supprimé"
+                    'Tentative de connexion sur un compte supprimé'
                 );
 
                 return back()->withErrors([
@@ -276,7 +302,7 @@ class AuthController extends Controller
             // Vérifier si le compte est verrouillé
             if ($lockout->isCurrentlyLocked()) {
                 $remainingMinutes = now()->diffInMinutes($lockout->locked_until, false);
-                
+
                 $loginAttempt->update([
                     'failure_reason' => 'account_locked',
                 ]);
@@ -290,7 +316,7 @@ class AuthController extends Controller
                     ['locked_until' => $lockout->locked_until],
                     'high',
                     true,
-                    "Tentative de connexion alors que le compte est verrouillé"
+                    'Tentative de connexion alors que le compte est verrouillé'
                 );
 
                 return back()->withErrors([
@@ -313,10 +339,10 @@ class AuthController extends Controller
                 throw $e;
             }
         }
-        
+
         if ($attemptSucceeded) {
             // Vérifier si l'email est vérifié
-            if (!$user->hasVerifiedEmail()) {
+            if (! $user->hasVerifiedEmail()) {
                 // Logger la tentative
                 $loginAttempt->update([
                     'success' => false,
@@ -332,36 +358,40 @@ class AuthController extends Controller
                     [],
                     'medium',
                     false,
-                    "Tentative de connexion avec email non vérifié"
+                    'Tentative de connexion avec email non vérifié'
                 );
 
                 // Stocker l'email en session pour le sas (AVANT de déconnecter)
                 // Le sas enverra automatiquement l'email de vérification
                 $request->session()->put('pending_verification_email', $user->email);
-                
+                $agendaReturnCandidate = $request->session()->get('url.intended');
+
                 // Déconnecter et rediriger vers le sas
                 $this->safeLogout($request);
                 $request->session()->regenerateToken(); // Régénérer le token CSRF mais garder les données de session
 
-                return redirect()->route('verification.required')
-                    ->with('status', 'Votre email n\'a pas encore été vérifié. Un email de vérification va vous être envoyé.');
+                return $this->withAgendaPostVerifyCookie(
+                    redirect()->route('verification.required')
+                        ->with('status', 'Votre email n\'a pas encore été vérifié. Un email de vérification va vous être envoyé.'),
+                    $agendaReturnCandidate
+                );
             }
 
             // Vérifier si l'utilisateur a l'A2F activé (email/SMS) ou Google 2FA (TOTP)
             $hasGoogle2fa = class_exists(\PragmaRX\Google2FA\Google2FA::class) && $user->hasGoogle2faEnabled();
             if ($user->a2f_enabled || $hasGoogle2fa) {
                 $securityService = app(SecurityService::class);
-                
+
                 // Si Google 2FA est activé, toujours demander le code TOTP
                 if ($hasGoogle2fa) {
                     // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
                     $request->session()->put('two_factor_user_id', $user->id);
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
-                    
+
                     // Déconnecter temporairement (sera reconnecté après vérification A2F)
                     $this->safeLogout($request);
                     $request->session()->regenerateToken();
-                    
+
                     // Logger la tentative
                     $loginAttempt->update([
                         'success' => false,
@@ -377,23 +407,23 @@ class AuthController extends Controller
                         [],
                         'medium',
                         false,
-                        "Google 2FA (TOTP) requis pour la connexion"
+                        'Google 2FA (TOTP) requis pour la connexion'
                     );
 
                     // Rediriger vers la page A2F (qui affichera le formulaire TOTP)
                     return redirect()->route('two-factor.show');
                 }
-                
+
                 // Vérifier si l'A2F email/SMS est nécessaire (nouvelle IP, nouveau périphérique, ou changement de pays)
                 if ($user->a2f_enabled && $securityService->shouldRequireA2F($user, $ipAddress, $userAgent)) {
                     // Stocker l'ID utilisateur et le "remember" en session pour l'A2F
                     $request->session()->put('two_factor_user_id', $user->id);
                     $request->session()->put('two_factor_remember', $request->boolean('remember'));
-                    
+
                     // Déconnecter temporairement (sera reconnecté après vérification A2F)
                     $this->safeLogout($request);
                     $request->session()->regenerateToken();
-                    
+
                     // Logger la tentative
                     $loginAttempt->update([
                         'success' => false,
@@ -409,13 +439,13 @@ class AuthController extends Controller
                         [],
                         'medium',
                         false,
-                        "A2F requis pour la connexion - nouvelle IP ou périphérique détecté"
+                        'A2F requis pour la connexion - nouvelle IP ou périphérique détecté'
                     );
 
                     // Rediriger vers la page A2F
                     return redirect()->route('two-factor.show');
                 }
-                
+
                 // A2F activé mais IP/périphérique connus → Pas besoin de code
                 // Marquer le périphérique comme approuvé pour cette connexion
                 $securityService->markDeviceAsTrusted($user, $ipAddress, $userAgent);
@@ -443,28 +473,29 @@ class AuthController extends Controller
             $securityService->recordSuccessfulLogin($user, $ipAddress, $userAgent);
 
             $request->session()->regenerate();
-            
+
             // Si une invitation est en attente, rediriger vers la page d'invitation
             if ($request->session()->has('invitation_token')) {
                 $token = $request->session()->get('invitation_token');
                 $request->session()->forget('invitation_token');
+
                 return redirect()->route('invitations.show', $token);
             }
-            
+
             return redirect()->intended(route('dashboard'));
         }
 
         // Connexion échouée - Vérifier si c'est un ancien mot de passe
         $failureReason = $user ? 'invalid_credentials' : 'user_not_found';
         $isOldPassword = false;
-        
+
         if ($user && $request->filled('password')) {
             // Vérifier si le mot de passe correspond à un ancien mot de passe
             $isOldPassword = \App\Models\UserSecurityHistory::checkOldPassword($user, $request->password);
-            
+
             if ($isOldPassword) {
                 $failureReason = 'old_password_used';
-                
+
                 // Logger l'événement de sécurité suspect
                 SecurityLog::log(
                     $user->id,
@@ -475,11 +506,11 @@ class AuthController extends Controller
                     [],
                     'high',
                     true,
-                    "Tentative de connexion avec un ancien mot de passe"
+                    'Tentative de connexion avec un ancien mot de passe'
                 );
             }
         }
-        
+
         $loginAttempt->update([
             'failure_reason' => $failureReason,
         ]);
@@ -511,10 +542,10 @@ class AuthController extends Controller
         }
 
         $errorMessage = 'Les identifiants fournis ne correspondent à aucun compte.';
-        
+
         // Message spécifique pour les anciens mots de passe
         if ($isOldPassword) {
-            $errorMessage = "Vous avez utilisé un ancien mot de passe. Veuillez utiliser votre mot de passe actuel. Si vous avez oublié votre mot de passe, utilisez la fonction de réinitialisation.";
+            $errorMessage = 'Vous avez utilisé un ancien mot de passe. Veuillez utiliser votre mot de passe actuel. Si vous avez oublié votre mot de passe, utilisez la fonction de réinitialisation.';
         } elseif ($user && $lockout && $lockout->isCurrentlyLocked()) {
             $remainingMinutes = now()->diffInMinutes($lockout->locked_until, false);
             $errorMessage = "Votre compte est temporairement verrouillé après plusieurs tentatives échouées. Veuillez réessayer dans {$remainingMinutes} minute(s) ou réinitialiser votre mot de passe.";
@@ -531,7 +562,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = Auth::user();
-        
+
         if ($user) {
             // Logger la déconnexion
             SecurityLog::log(
@@ -552,7 +583,7 @@ class AuthController extends Controller
 
         return redirect('/');
     }
-    
+
     /**
      * Déconnexion robuste qui gère le cas où le CookieJar n'est pas disponible
      */
@@ -564,7 +595,7 @@ class AuthController extends Controller
             // Si le CookieJar n'est pas disponible, forcer la déconnexion via session
             if (str_contains($e->getMessage(), 'Cookie jar has not been set')) {
                 // Vider manuellement l'utilisateur de la session
-                $request->session()->forget('login_web_' . sha1(Auth::getDefaultDriver()));
+                $request->session()->forget('login_web_'.sha1(Auth::getDefaultDriver()));
             } else {
                 throw $e;
             }
@@ -581,6 +612,7 @@ class AuthController extends Controller
     public function showPopup(Request $request)
     {
         $mode = $request->query('mode', 'login'); // login | register
+
         return view('auth.popup', ['mode' => $mode]);
     }
 
@@ -625,6 +657,7 @@ class AuthController extends Controller
 
             if ($lockout->isCurrentlyLocked()) {
                 $mins = now()->diffInMinutes($lockout->locked_until, false);
+
                 return response()->json([
                     'success' => false,
                     'error' => "Compte temporairement verrouillé. Réessayez dans {$mins} minute(s).",
@@ -645,7 +678,7 @@ class AuthController extends Controller
             }
         }
 
-        if (!$attemptSucceeded) {
+        if (! $attemptSucceeded) {
             // Incrémenter les tentatives échouées
             if ($user) {
                 $lockout = $user->accountLockout;
@@ -667,7 +700,7 @@ class AuthController extends Controller
         }
 
         // Email non vérifié → signaler au popup
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             $request->session()->put('pending_verification_email', $user->email);
             $this->safeLogout($request);
             $request->session()->regenerateToken();
@@ -711,8 +744,8 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'user' => [
-                'name'      => $user->name,
-                'email'     => $user->email,
+                'name' => $user->name,
+                'email' => $user->email,
                 'telephone' => $user->telephone ?? '',
             ],
         ]);
@@ -724,17 +757,17 @@ class AuthController extends Controller
     public function registerPopup(Request $request)
     {
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $user = User::create([
-            'name'              => $validated['name'],
-            'email'             => $validated['email'],
-            'password'          => Hash::make($validated['password']),
-            'est_client'        => true,
-            'est_gerant'        => false,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'est_client' => true,
+            'est_gerant' => false,
             'email_verified_at' => null,
         ]);
 
@@ -743,7 +776,7 @@ class AuthController extends Controller
         try {
             $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
         } catch (\Exception $e) {
-            \Log::error("Erreur envoi email vérification popup : " . $e->getMessage());
+            \Log::error('Erreur envoi email vérification popup : '.$e->getMessage());
         }
 
         SecurityLog::log($user->id, 'account_created', $request->ip(), $request->userAgent(), null, ['source' => 'popup'], 'low', false);
@@ -753,5 +786,28 @@ class AuthController extends Controller
             'needs_verification' => true,
             'message' => 'Compte créé ! Vérifiez votre email pour vous connecter.',
         ]);
+    }
+
+    /**
+     * Pose un cookie pour retrouver l'agenda public après vérification de l'e-mail (nouvelle session).
+     */
+    protected function withAgendaPostVerifyCookie(RedirectResponse $response, ?string $urlCandidate): RedirectResponse
+    {
+        $normalized = PublicAgendaReturnUrl::normalize($urlCandidate);
+        if ($normalized === null) {
+            return $response;
+        }
+
+        return $response->withCookie(cookie(
+            PublicAgendaReturnUrl::POST_VERIFY_COOKIE,
+            $normalized,
+            PublicAgendaReturnUrl::POST_VERIFY_COOKIE_MINUTES,
+            '/',
+            null,
+            (bool) config('session.secure'),
+            true,
+            false,
+            config('session.same_site', 'lax')
+        ));
     }
 }

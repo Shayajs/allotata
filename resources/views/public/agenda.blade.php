@@ -10,6 +10,9 @@
     @include('partials.theme-script')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+    @php
+        $agendaReturnUrl = request()->fullUrl();
+    @endphp
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <!-- Navigation -->
         <nav class="mb-6 flex items-center justify-between">
@@ -32,6 +35,12 @@
                 </svg>
             </button>
         </nav>
+
+        @if (session('status'))
+            <div class="mb-6 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm text-green-800 dark:text-green-200" role="status">
+                {{ session('status') }}
+            </div>
+        @endif
 
         <!-- En-tête -->
         <header class="mb-8">
@@ -65,14 +74,22 @@
 
                 @guest
                     <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
+                        <p class="text-xs sm:text-sm text-green-800 dark:text-green-200 bg-green-50/90 dark:bg-green-900/25 border border-green-200/80 dark:border-green-800/60 rounded-lg px-3 py-2">
+                            <strong>Rien n’est perdu :</strong> votre sélection (créneau, service, options) est conservée sur cet appareil. Après connexion ou inscription, vous revenez ici pour finaliser.
+                        </p>
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                                 <p class="font-semibold text-slate-800 dark:text-slate-100">Vous avez un compte ?</p>
                                 <p>Connectez-vous pour <strong class="text-slate-900 dark:text-white">pré-remplir</strong> vos coordonnées et accéder à votre <strong class="text-slate-900 dark:text-white">espace personnel</strong> : toutes vos réservations, leur statut et vos notifications au même endroit.</p>
                             </div>
-                            <a href="{{ route('login') }}" class="inline-flex justify-center items-center shrink-0 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition whitespace-nowrap">
-                                Se connecter
-                            </a>
+                            <div class="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+                                <a href="{{ route('login', ['return' => $agendaReturnUrl]) }}" class="inline-flex justify-center items-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition whitespace-nowrap">
+                                    Se connecter
+                                </a>
+                                <a href="{{ route('signup', ['return' => $agendaReturnUrl]) }}" class="inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 border border-green-600/40 dark:border-green-500/40 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition">
+                                    Créer un compte
+                                </a>
+                            </div>
                         </div>
                         <p class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-600 pt-3">
                             Pas le temps ? Réservez sans compte ci-dessous avec votre nom, e-mail et téléphone. La confirmation vous sera envoyée par e-mail.
@@ -470,14 +487,22 @@
 
                     @guest
                         <div class="mb-5 p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 space-y-3">
+                            <p class="text-xs sm:text-sm text-green-800 dark:text-green-200 bg-green-50/90 dark:bg-green-900/25 border border-green-200/80 dark:border-green-800/60 rounded-lg px-3 py-2">
+                                <strong>Rien n’est perdu :</strong> votre sélection (créneau, service, options) est conservée sur cet appareil. Après connexion ou inscription, vous revenez ici pour finaliser.
+                            </p>
                             <div class="flex flex-col gap-3">
                                 <div class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                                     <p class="font-semibold text-slate-800 dark:text-slate-100">Vous avez un compte ?</p>
                                     <p>Connectez-vous pour <strong class="text-slate-900 dark:text-white">pré-remplir</strong> vos coordonnées et accéder à votre <strong class="text-slate-900 dark:text-white">espace personnel</strong> : toutes vos réservations, leur statut et vos notifications au même endroit.</p>
                                 </div>
-                                <a href="{{ route('login') }}" class="inline-flex justify-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition">
-                                    Se connecter
-                                </a>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <a href="{{ route('login', ['return' => $agendaReturnUrl]) }}" class="inline-flex justify-center px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 rounded-lg transition">
+                                        Se connecter
+                                    </a>
+                                    <a href="{{ route('signup', ['return' => $agendaReturnUrl]) }}" class="inline-flex justify-center px-4 py-2.5 text-sm font-medium text-green-700 dark:text-green-300 border border-green-600/40 dark:border-green-500/40 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition">
+                                        Créer un compte
+                                    </a>
+                                </div>
                             </div>
                             <p class="text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-600 pt-3">
                                 Pas le temps ? Réservez sans compte avec nom, e-mail et téléphone. La confirmation vous sera envoyée par e-mail.
@@ -729,7 +754,132 @@
             const jours = @json($jours);
             const horaires = @json($horaires);
             const reservationsUrl = '{{ route("public.agenda.reservations", $entreprise->slug, false) }}';
-            
+            const INTERVALLE_CRENEAUX_MINUTES = {{ (int) ($intervalle_creneaux_minutes ?? $entreprise->resolveIntervalleCreneauxMinutes()) }};
+            const AGENDA_DRAFT_KEY = 'public_agenda_draft_' + @json($entreprise->slug);
+
+            let agendaDraftTimer = null;
+            function loadAgendaDraft() {
+                try {
+                    const raw = localStorage.getItem(AGENDA_DRAFT_KEY);
+                    return raw ? JSON.parse(raw) : null;
+                } catch (e) {
+                    return null;
+                }
+            }
+            function collectAgendaDraftPayload() {
+                const form = document.getElementById('reservation-form');
+                if (!form) return null;
+                const byId = (id) => document.getElementById(id);
+                const service_options = {};
+                form.querySelectorAll('[name^="service_options"]').forEach((el) => {
+                    const name = el.name;
+                    if (el.type === 'radio' && el.checked) {
+                        service_options[name] = el.value;
+                    } else if (el.tagName === 'SELECT' && el.value) {
+                        service_options[name] = el.value;
+                    }
+                });
+                const telCache = form.querySelector('[name="telephone_cache"]');
+                return {
+                    type_service_id: byId('type_service_id')?.value || '',
+                    date_reservation: byId('date_reservation')?.value || '',
+                    heure_reservation: byId('heure_reservation')?.value || '',
+                    date_butoire: byId('date_butoire')?.value || '',
+                    membre_id: byId('membre_id')?.value || '',
+                    lieu: byId('lieu')?.value || '',
+                    notes: byId('notes')?.value || '',
+                    nom_client: byId('nom_client')?.value || '',
+                    email_client: byId('email_client')?.value || '',
+                    telephone_client: byId('telephone_client')?.value || '',
+                    telephone_cache: !!(telCache && telCache.checked),
+                    service_options,
+                    selectedSlot: selectedSlot ? { date: selectedSlot.date, time: selectedSlot.time } : null,
+                    currentWeekOffset,
+                };
+            }
+            function saveAgendaDraftNow() {
+                try {
+                    const p = collectAgendaDraftPayload();
+                    if (!p) return;
+                    const hasUseful = p.type_service_id || p.date_reservation || p.heure_reservation || p.date_butoire
+                        || p.selectedSlot || Object.keys(p.service_options).length > 0;
+                    if (!hasUseful) {
+                        localStorage.removeItem(AGENDA_DRAFT_KEY);
+                        return;
+                    }
+                    localStorage.setItem(AGENDA_DRAFT_KEY, JSON.stringify(p));
+                } catch (e) { /* ignore */ }
+            }
+            function scheduleSaveAgendaDraft() {
+                clearTimeout(agendaDraftTimer);
+                agendaDraftTimer = setTimeout(saveAgendaDraftNow, 400);
+            }
+            function applyServiceOptionsFromDraft(draft) {
+                if (!draft.service_options) return;
+                const esc = (n) => (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(n) : n.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                ['reservation-form', 'reservation-form-mobile'].forEach((fid) => {
+                    const f = document.getElementById(fid);
+                    if (!f) return;
+                    Object.entries(draft.service_options).forEach(([name, val]) => {
+                        const radios = f.querySelectorAll('input[type="radio"][name="' + esc(name) + '"]');
+                        let hit = false;
+                        radios.forEach((r) => {
+                            if (r.value === String(val)) {
+                                r.checked = true;
+                                hit = true;
+                            }
+                        });
+                        if (!hit) {
+                            const sel = f.querySelector('select[name="' + esc(name) + '"]');
+                            if (sel) sel.value = val;
+                        }
+                    });
+                });
+            }
+            function setFieldBoth(desktopId, mobileId, value) {
+                if (value === undefined || value === null) return;
+                const d = document.getElementById(desktopId);
+                const m = document.getElementById(mobileId);
+                if (d) d.value = value;
+                if (m) m.value = value;
+            }
+            async function applyAgendaDraft(draft) {
+                if (!draft || !draft.type_service_id) return;
+                if (serviceSelect) serviceSelect.value = draft.type_service_id;
+                if (serviceSelectMobile) serviceSelectMobile.value = draft.type_service_id;
+                const primary = serviceSelect || serviceSelectMobile;
+                if (primary) {
+                    window.handleServiceChange(primary);
+                }
+                await new Promise((r) => setTimeout(r, 50));
+                applyServiceOptionsFromDraft(draft);
+                setFieldBoth('membre_id', 'membre_id_mobile', draft.membre_id);
+                setFieldBoth('lieu', 'lieu_mobile', draft.lieu);
+                setFieldBoth('notes', 'notes_mobile', draft.notes);
+                setFieldBoth('date_butoire', 'date_butoire_mobile', draft.date_butoire);
+                setFieldBoth('nom_client', 'nom_client_mobile', draft.nom_client);
+                setFieldBoth('email_client', 'email_client_mobile', draft.email_client);
+                setFieldBoth('telephone_client', 'telephone_client_mobile', draft.telephone_client);
+                document.querySelectorAll('[name="telephone_cache"]').forEach((cb) => {
+                    cb.checked = !!draft.telephone_cache;
+                });
+                if (draft.selectedSlot && draft.selectedSlot.date && draft.selectedSlot.time) {
+                    selectSlot(draft.selectedSlot.date, draft.selectedSlot.time);
+                } else {
+                    if (draft.date_reservation) {
+                        setDateFieldValue(dateInput, draft.date_reservation);
+                        setDateFieldValue(dateInputMobile, draft.date_reservation);
+                    }
+                    if (draft.heure_reservation) {
+                        if (heureInput) heureInput.value = draft.heure_reservation;
+                        if (heureInputMobile) heureInputMobile.value = draft.heure_reservation;
+                    }
+                    await renderCalendar();
+                    updateRecap();
+                }
+                scheduleSaveAgendaDraft();
+            }
+
             // État du calendrier
             let currentWeekOffset = 0;
             /** Si on a sauté des semaines au chargement, offset affiché où montrer le message explicatif */
@@ -832,6 +982,7 @@
                 if (selectedSlot) {
                     void renderCalendar();
                 }
+                scheduleSaveAgendaDraft();
             };
 
             // État initial : afficher date butoire ou date+heure selon le service sélectionné
@@ -1036,21 +1187,21 @@
                 return base;
             }
 
-            /** Le créneau [slotTime, slotTime+30) chevauche l'intervalle de la réservation en cours (même jour) */
+            /** Le créneau [slotTime, slotTime + INTERVALLE) chevauche l'intervalle de la réservation en cours (même jour) */
             function isSlotInReservationSpan(dateStr, slotTime, sel, totalMinutes) {
                 if (!sel || totalMinutes < 1) return false;
                 if (sel.date !== dateStr) return false;
                 const startMin = parseTimeToMinutes(sel.time);
                 const endMin = startMin + totalMinutes;
                 const slotStart = parseTimeToMinutes(slotTime);
-                const slotEnd = slotStart + 30;
+                const slotEnd = slotStart + INTERVALLE_CRENEAUX_MINUTES;
                 return slotStart < endMin && slotEnd > startMin;
             }
 
             // Vérifier si un créneau est réservé
             function isSlotReserved(dateStr, time) {
                 const slotStart = new Date(dateStr + 'T' + time + ':00');
-                const slotEnd = new Date(slotStart.getTime() + 30 * 60 * 1000); // +30 min
+                const slotEnd = new Date(slotStart.getTime() + INTERVALLE_CRENEAUX_MINUTES * 60 * 1000);
                 
                 return reservations.some(res => {
                     const resStart = new Date(res.start);
@@ -1081,7 +1232,7 @@
                     
                     // Le créneau est dans la plage s'il commence dans la plage et se termine avant la fin
                     // On vérifie si le début du créneau (timeMinutes) est >= startMinutes et < endMinutes
-                    return timeMinutes >= startMinutes && (timeMinutes + 30) <= endMinutes;
+                    return timeMinutes >= startMinutes && (timeMinutes + INTERVALLE_CRENEAUX_MINUTES) <= endMinutes;
                 });
             }
             
@@ -1095,19 +1246,18 @@
                 const hasValidPlages = plages.length > 0 && plages.some(p => p.ouverture && p.fermeture);
                 
                 if (!hasValidPlages) {
-                    // Jour fermé : générer quand même quelques créneaux grisés pour l'affichage
-                    // De 8h à 20h par défaut
-                    for (let h = 8; h < 20; h++) {
-                        for (let m = 0; m < 60; m += 30) {
-                            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                            slots.push({
-                                time: timeStr,
-                                available: false,
-                                isPast: false,
-                                isReserved: false,
-                                isInPlage: false
-                            });
-                        }
+                    // Jour fermé : créneaux grisés 8h–20h (exclus), pas fixe = intervalle (continu sur les heures)
+                    for (let t = 8 * 60; t < 20 * 60; t += INTERVALLE_CRENEAUX_MINUTES) {
+                        const h = Math.floor(t / 60);
+                        const m = t % 60;
+                        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        slots.push({
+                            time: timeStr,
+                            available: false,
+                            isPast: false,
+                            isReserved: false,
+                            isInPlage: false
+                        });
                     }
                     return slots;
                 }
@@ -1127,37 +1277,27 @@
                 minHour = Math.min(minHour, 8);
                 maxHour = Math.max(maxHour, 20);
                 
-                // Générer TOUS les créneaux de la journée (toutes les 30 minutes)
-                for (let h = minHour; h <= maxHour; h++) {
-                    for (let m = 0; m < 60; m += 30) {
-                        // Ne pas générer après maxHour
-                        if (h === maxHour && m > 0) {
-                            break;
-                        }
-                        
-                        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                        const dateStr = formatDateISO(date);
-                        const now = new Date();
-                        const slotDate = new Date(dateStr + 'T' + timeStr + ':00');
-                        
-                        // Vérifier si le créneau est dans une plage horaire valide
-                        const isInPlage = isTimeInPlages(timeStr, plages);
-                        
-                        // Vérifier si le créneau est dans le passé (+ 1h de marge)
-                        const isPast = slotDate <= new Date(now.getTime() + 60 * 60 * 1000);
-                        const isReserved = isSlotReserved(dateStr, timeStr);
-                        
-                        // Le créneau est disponible seulement s'il est dans une plage ET pas dans le passé ET pas réservé
-                        const available = isInPlage && !isPast && !isReserved;
-                        
-                        slots.push({
-                            time: timeStr,
-                            available: available,
-                            isPast: isPast,
-                            isReserved: isReserved,
-                            isInPlage: isInPlage
-                        });
-                    }
+                // Créneaux sur toute la plage d'affichage (minutes cumulées : correct si intervalle ∤ 60)
+                for (let t = minHour * 60; t <= maxHour * 60; t += INTERVALLE_CRENEAUX_MINUTES) {
+                    const h = Math.floor(t / 60);
+                    const m = t % 60;
+                    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    const dateStr = formatDateISO(date);
+                    const now = new Date();
+                    const slotDate = new Date(dateStr + 'T' + timeStr + ':00');
+
+                    const isInPlage = isTimeInPlages(timeStr, plages);
+                    const isPast = slotDate <= new Date(now.getTime() + 60 * 60 * 1000);
+                    const isReserved = isSlotReserved(dateStr, timeStr);
+                    const available = isInPlage && !isPast && !isReserved;
+
+                    slots.push({
+                        time: timeStr,
+                        available: available,
+                        isPast: isPast,
+                        isReserved: isReserved,
+                        isInPlage: isInPlage
+                    });
                 }
                 
                 return slots;
@@ -1327,6 +1467,7 @@
                 
                 renderCalendar();
                 updateRecap();
+                scheduleSaveAgendaDraft();
             }
             
             // Modifier updateRecap pour inclure les options
@@ -1403,6 +1544,7 @@
                 if (currentWeekOffset > 0) {
                     currentWeekOffset--;
                     renderCalendar();
+                    scheduleSaveAgendaDraft();
                 }
             });
             
@@ -1410,6 +1552,7 @@
                 if (currentWeekOffset < 8) { // Max 8 semaines à l'avance
                     currentWeekOffset++;
                     renderCalendar();
+                    scheduleSaveAgendaDraft();
                 }
             });
             
@@ -1417,6 +1560,7 @@
                 currentWeekOffset = 0;
                 showAutoAdvanceHintOffset = null;
                 renderCalendar();
+                scheduleSaveAgendaDraft();
             });
             
             // Écouter les changements sur les deux formulaires
@@ -1433,26 +1577,42 @@
             if (heureInputMobile) {
                 heureInputMobile.addEventListener('change', updateRecap);
             }
+
+            ['reservation-form', 'reservation-form-mobile'].forEach((fid) => {
+                const f = document.getElementById(fid);
+                if (!f) return;
+                f.addEventListener('input', scheduleSaveAgendaDraft);
+                f.addEventListener('change', scheduleSaveAgendaDraft);
+                f.addEventListener('submit', () => {
+                    try {
+                        localStorage.removeItem(AGENDA_DRAFT_KEY);
+                    } catch (e) { /* ignore */ }
+                });
+            });
             
+            const agendaDraft = loadAgendaDraft();
+            if (!agendaDraft || typeof agendaDraft.currentWeekOffset !== 'number') {
+                await pickInitialWeekOffset();
+            } else {
+                currentWeekOffset = Math.max(0, Math.min(8, agendaDraft.currentWeekOffset));
+            }
+            await renderCalendar();
+            if (agendaDraft) {
+                await applyAgendaDraft(agendaDraft);
+            }
+
             // Si un service est pré-sélectionné via l'URL, déclencher la mise à jour
             const serviceParam = new URLSearchParams(window.location.search).get('service');
-            if (serviceParam) {
-                // Attendre que le DOM soit complètement chargé
+            if (serviceParam && !agendaDraft?.type_service_id) {
                 setTimeout(() => {
                     if (serviceSelect && serviceSelect.value === serviceParam) {
-                        // Utiliser la nouvelle fonction handleServiceChange
                         window.handleServiceChange(serviceSelect);
                     }
                     if (serviceSelectMobile && serviceSelectMobile.value === serviceParam) {
-                        // Utiliser la nouvelle fonction handleServiceChange
                         window.handleServiceChange(serviceSelectMobile);
                     }
                 }, 100);
             }
-            
-            // Charger la première semaine où il reste au moins un créneau (ex. samedi 20h → semaine suivante)
-            await pickInitialWeekOffset();
-            await renderCalendar();
         });
     </script>
 
