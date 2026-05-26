@@ -960,6 +960,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Tâches planifiées (CRON)
     Route::get('/scheduled-tasks', [\App\Http\Controllers\Admin\ScheduledTaskLogController::class, 'index'])->name('scheduled-tasks.index');
     Route::post('/scheduled-tasks/cleanup', [\App\Http\Controllers\Admin\ScheduledTaskLogController::class, 'cleanup'])->name('scheduled-tasks.cleanup');
+
+    // Audits du site
+    Route::get('/audits', [\App\Http\Controllers\Admin\SiteAuditController::class, 'index'])->name('audits.index');
+    Route::get('/audits/{audit}', [\App\Http\Controllers\Admin\SiteAuditController::class, 'show'])->name('audits.show');
+    Route::post('/audits/start', [\App\Http\Controllers\Admin\SiteAuditController::class, 'start'])->name('audits.start');
     
     // Gestion des prix Stripe
     Route::get('/stripe-prices', [\App\Http\Controllers\Admin\TarifController::class, 'index'])->name('stripe-prices.index');

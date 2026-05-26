@@ -2682,46 +2682,37 @@ class AdminController extends Controller
             'create_notification' => 'nullable|boolean',
         ]);
 
-        $pushService = new PushNotificationService();
         $url = $validated['url'] ?: null;
         $sentCount = 0;
 
         if ($validated['target_type'] === 'user') {
             $user = User::findOrFail($validated['user_id']);
 
-            $pushService->sendToUser($user, $validated['title'], $validated['body'], $validated['category'], $url);
+            Notification::creer(
+                $user->id,
+                'admin_push',
+                $validated['title'],
+                $validated['body'],
+                $url,
+                ['category' => $validated['category'], 'sent_by' => auth()->id()]
+            );
             $sentCount = 1;
-
-            if ($request->boolean('create_notification')) {
-                Notification::create([
-                    'user_id' => $user->id,
-                    'type' => 'admin_push',
-                    'titre' => $validated['title'],
-                    'message' => $validated['body'],
-                    'lien' => $url,
-                    'donnees' => ['category' => $validated['category'], 'sent_by' => auth()->id()],
-                ]);
-            }
         } else {
             $users = User::whereHas('pushSubscriptions')->get();
             foreach ($users as $user) {
-                $pushService->sendToUser($user, $validated['title'], $validated['body'], $validated['category'], $url);
+                Notification::creer(
+                    $user->id,
+                    'admin_push',
+                    $validated['title'],
+                    $validated['body'],
+                    $url,
+                    ['category' => $validated['category'], 'sent_by' => auth()->id()]
+                );
                 $sentCount++;
-
-                if ($request->boolean('create_notification')) {
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'type' => 'admin_push',
-                        'titre' => $validated['title'],
-                        'message' => $validated['body'],
-                        'lien' => $url,
-                        'donnees' => ['category' => $validated['category'], 'sent_by' => auth()->id()],
-                    ]);
-                }
             }
         }
 
-        return back()->with('success', "Notification push envoyée à {$sentCount} utilisateur(s).");
+        return back()->with('success', "Notification envoyée à {$sentCount} utilisateur(s).");
     }
 
     public function checkPushSubscription()

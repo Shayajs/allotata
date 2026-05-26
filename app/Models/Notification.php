@@ -65,10 +65,44 @@ class Notification extends Model
         'devis' => 'paiement',
         'devis_accepte' => 'paiement',
         'devis_refuse' => 'paiement',
+        'commande' => 'reservation',
+        'invitation_membre' => 'mise_a_jour',
+        'admin_push' => 'general',
     ];
 
     /**
-     * Créer une notification (in-app + push si activé)
+     * Permet de desactiver le push pour une instance specifique.
+     * Utilise par AdminController qui envoie le push separement.
+     */
+    public bool $skipPush = false;
+
+    protected static function booted(): void
+    {
+        static::created(function (self $notification) {
+            if ($notification->skipPush) {
+                return;
+            }
+
+            try {
+                $user = $notification->user ?? User::find($notification->user_id);
+                if (!$user || !$user->pushSubscriptions()->exists()) {
+                    return;
+                }
+
+                $pushCategory = self::TYPE_TO_PUSH_CATEGORY[$notification->type] ?? 'general';
+                $lien = $notification->lien;
+                $pushUrl = $lien ? (str_starts_with($lien, 'http') ? $lien : config('app.url') . $lien) : null;
+
+                $pushService = new \App\Services\PushNotificationService();
+                $pushService->sendToUser($user, $notification->titre, $notification->message, $pushCategory, $pushUrl);
+            } catch (\Exception $e) {
+                \Log::warning("Erreur envoi push notification : " . $e->getMessage());
+            }
+        });
+    }
+
+    /**
+     * Créer une notification (in-app + push automatique via le hook created)
      */
     public static function creer(
         int $userId,
@@ -78,7 +112,7 @@ class Notification extends Model
         ?string $lien = null,
         ?array $donnees = null
     ): self {
-        $notification = self::create([
+        return self::create([
             'user_id' => $userId,
             'type' => $type,
             'titre' => $titre,
@@ -86,21 +120,5 @@ class Notification extends Model
             'lien' => $lien,
             'donnees' => $donnees,
         ]);
-
-        // Envoyer une notification push si l'utilisateur a des souscriptions
-        try {
-            $user = User::find($userId);
-            if ($user && $user->pushSubscriptions()->exists()) {
-                $pushCategory = self::TYPE_TO_PUSH_CATEGORY[$type] ?? 'general';
-                $pushUrl = $lien ? (str_starts_with($lien, 'http') ? $lien : config('app.url') . $lien) : null;
-
-                $pushService = new \App\Services\PushNotificationService();
-                $pushService->sendToUser($user, $titre, $message, $pushCategory, $pushUrl);
-            }
-        } catch (\Exception $e) {
-            \Log::warning("Erreur envoi push notification : " . $e->getMessage());
-        }
-
-        return $notification;
     }
 }
