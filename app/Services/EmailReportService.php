@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\User;
+use App\Helpers\EmailHelper;
 use App\Models\Entreprise;
 use App\Models\Reservation;
-use App\Helpers\EmailHelper;
 use Illuminate\Support\Facades\Log;
 
 class EmailReportService
@@ -16,7 +15,7 @@ class EmailReportService
     public function sendWeeklyReport(Entreprise $entreprise): bool
     {
         $user = $entreprise->user;
-        if (!$user || !$user->email) {
+        if (! $user || ! $user->email) {
             return false;
         }
 
@@ -28,7 +27,7 @@ class EmailReportService
             ->whereBetween('date_reservation', [$debutSemaine, $finSemaine])
             ->get();
 
-        $reservationsAcceptees = $reservations->filter(function($r) {
+        $reservationsAcceptees = $reservations->filter(function ($r) {
             return in_array($r->statut, ['confirmee', 'terminee']);
         });
 
@@ -42,9 +41,11 @@ class EmailReportService
 
         try {
             EmailHelper::sendWeeklyReport($user, $entreprise, $stats);
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi du rapport hebdomadaire pour l'entreprise #{$entreprise->id}: " . $e->getMessage());
+            Log::error("Erreur lors de l'envoi du rapport hebdomadaire pour l'entreprise #{$entreprise->id}: ".$e->getMessage());
+
             return false;
         }
     }
@@ -55,7 +56,7 @@ class EmailReportService
     public function sendMonthlyReport(Entreprise $entreprise): bool
     {
         $user = $entreprise->user;
-        if (!$user || !$user->email) {
+        if (! $user || ! $user->email) {
             return false;
         }
 
@@ -67,7 +68,7 @@ class EmailReportService
             ->whereBetween('date_reservation', [$debutMois, $finMois])
             ->get();
 
-        $reservationsAcceptees = $reservations->filter(function($r) {
+        $reservationsAcceptees = $reservations->filter(function ($r) {
             return in_array($r->statut, ['confirmee', 'terminee']);
         });
 
@@ -81,11 +82,12 @@ class EmailReportService
         ];
 
         try {
-            // Utiliser le même template que le rapport hebdomadaire (ou créer un template mensuel si nécessaire)
-            EmailHelper::sendWeeklyReport($user, $entreprise, $stats);
+            EmailHelper::sendMonthlyReport($user, $entreprise, $stats);
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi du rapport mensuel pour l'entreprise #{$entreprise->id}: " . $e->getMessage());
+            Log::error("Erreur lors de l'envoi du rapport mensuel pour l'entreprise #{$entreprise->id}: ".$e->getMessage());
+
             return false;
         }
     }

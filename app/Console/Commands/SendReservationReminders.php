@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Reservation;
 use App\Helpers\EmailHelper;
+use App\Models\Reservation;
 use Illuminate\Console\Command;
-use Carbon\Carbon;
 
 class SendReservationReminders extends Command
 {
@@ -29,17 +28,22 @@ class SendReservationReminders extends Command
     public function handle()
     {
         $hoursBefore = (int) $this->option('hours');
-        
+
         // Calculer la date cible (maintenant + X heures)
         $targetDate = now()->addHours($hoursBefore);
-        
+
         // Récupérer les réservations confirmées qui ont lieu dans X heures
+        // Inclut les clients inscrits ET les invités ayant laissé un email
         $reservations = Reservation::where('statut', 'confirmee')
+            ->whereNotNull('date_reservation')
             ->whereDate('date_reservation', $targetDate->format('Y-m-d'))
             ->whereTime('date_reservation', '>=', $targetDate->copy()->subMinutes(30)->format('H:i:s'))
             ->whereTime('date_reservation', '<=', $targetDate->copy()->addMinutes(30)->format('H:i:s'))
-            ->whereHas('user') // Uniquement les clients inscrits
-            ->with(['user', 'entreprise'])
+            ->where(function ($query) {
+                $query->whereHas('user')
+                    ->orWhereNotNull('email_client');
+            })
+            ->with(['user', 'entreprise', 'membre.user'])
             ->get();
 
         $sentCount = 0;
@@ -47,21 +51,21 @@ class SendReservationReminders extends Command
 
         foreach ($reservations as $reservation) {
             try {
-                // Vérifier que l'utilisateur a un email
-                if ($reservation->user && $reservation->user->email) {
+                $emailTo = $reservation->user?->email ?? $reservation->email_client;
+                if ($emailTo) {
                     EmailHelper::sendReservationReminder($reservation, $hoursBefore);
                     $sentCount++;
-                    $this->info("Rappel envoyé pour la réservation #{$reservation->id} (client: {$reservation->user->email})");
+                    $this->info("Rappel envoyé pour la réservation #{$reservation->id} (email: {$emailTo})");
                 }
             } catch (\Exception $e) {
                 $errorCount++;
-                $this->error("Erreur lors de l'envoi du rappel pour la réservation #{$reservation->id}: " . $e->getMessage());
-                \Log::error("Erreur lors de l'envoi du rappel de réservation #{$reservation->id}: " . $e->getMessage());
+                $this->error("Erreur lors de l'envoi du rappel pour la réservation #{$reservation->id}: ".$e->getMessage());
+                \Log::error("Erreur lors de l'envoi du rappel de réservation #{$reservation->id}: ".$e->getMessage());
             }
         }
 
         $this->info("Rappels envoyés: {$sentCount}, Erreurs: {$errorCount}");
-        
+
         return Command::SUCCESS;
     }
 }

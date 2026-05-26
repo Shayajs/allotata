@@ -13,6 +13,21 @@ use App\Services\EmailTemplateService;
 class EmailHelper
 {
     /**
+     * Formate la date de réservation en gérant le cas date_butoire (date_reservation null).
+     */
+    private static function formatDateReservation(Reservation $reservation): string
+    {
+        if ($reservation->date_reservation) {
+            return $reservation->date_reservation->format('d/m/Y à H:i');
+        }
+        if ($reservation->date_butoire) {
+            return $reservation->date_butoire->format('d/m/Y').' (date butoire)';
+        }
+
+        return '—';
+    }
+
+    /**
      * Envoyer un email de bienvenue
      */
     public static function sendWelcome(User $user): bool
@@ -35,37 +50,29 @@ class EmailHelper
         }
 
         $nomClient = $client?->name ?? ($reservation->nom_client ?? 'Client');
-        $dateReservationStr = $reservation->date_reservation
-            ? $reservation->date_reservation->format('d/m/Y à H:i')
-            : ($reservation->date_butoire
-                ? $reservation->date_butoire->format('d/m/Y').' (date butoire)'
-                : '—');
 
         $data = [
             'nom_client' => $nomClient,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $dateReservationStr,
+            'date_reservation' => self::formatDateReservation($reservation),
             'duree' => $reservation->duree_minutes ?? 30,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
             'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
         ];
 
-        // Lieu (optionnel)
         if ($reservation->lieu) {
             $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
-        // Membre (optionnel)
         if ($reservation->membre && $reservation->membre->user) {
             $data['membre_html'] = '<p><strong>Avec :</strong> '.htmlspecialchars($reservation->membre->user->name).'</p>';
         } else {
             $data['membre_html'] = '';
         }
 
-        // Notes (optionnel)
         if ($reservation->notes) {
             $data['notes_html'] = '<p><strong>Notes :</strong> '.nl2br(htmlspecialchars($reservation->notes)).'</p>';
         } else {
@@ -73,6 +80,50 @@ class EmailHelper
         }
 
         return EmailTemplateService::send('reservation_confirmation_client', $emailTo, $data);
+    }
+
+    /**
+     * Envoyer un email de réservation en attente au client (statut en_attente).
+     */
+    public static function sendReservationPendingClient(Reservation $reservation): bool
+    {
+        $client = $reservation->user;
+        $emailTo = $client?->email ?? $reservation->email_client;
+        if (! $emailTo) {
+            return false;
+        }
+
+        $nomClient = $client?->name ?? ($reservation->nom_client ?? 'Client');
+
+        $data = [
+            'nom_client' => $nomClient,
+            'nom_entreprise' => $reservation->entreprise->nom,
+            'nom_service' => $reservation->type_service ?? 'Service',
+            'date_reservation' => self::formatDateReservation($reservation),
+            'duree' => $reservation->duree_minutes ?? 30,
+            'prix' => number_format($reservation->prix, 2, ',', ' '),
+            'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
+        ];
+
+        if ($reservation->lieu) {
+            $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
+        } else {
+            $data['lieu_html'] = '';
+        }
+
+        if ($reservation->membre && $reservation->membre->user) {
+            $data['membre_html'] = '<p><strong>Avec :</strong> '.htmlspecialchars($reservation->membre->user->name).'</p>';
+        } else {
+            $data['membre_html'] = '';
+        }
+
+        if ($reservation->notes) {
+            $data['notes_html'] = '<p><strong>Notes :</strong> '.nl2br(htmlspecialchars($reservation->notes)).'</p>';
+        } else {
+            $data['notes_html'] = '';
+        }
+
+        return EmailTemplateService::send('reservation_pending_client', $emailTo, $data);
     }
 
     /**
@@ -92,7 +143,7 @@ class EmailHelper
             'nom_client' => $nomClient,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
+            'date_reservation' => self::formatDateReservation($reservation),
             'duree' => $reservation->duree_minutes ?? 30,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
             'telephone' => $reservation->telephone_client
@@ -101,14 +152,12 @@ class EmailHelper
             'url_reservation' => route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
         ];
 
-        // Lieu (optionnel)
         if ($reservation->lieu) {
             $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
-        // Notes (optionnel)
         if ($reservation->notes) {
             $data['notes_html'] = '<p><strong>Notes du client :</strong> '.nl2br(htmlspecialchars($reservation->notes)).'</p>';
         } else {
@@ -119,43 +168,43 @@ class EmailHelper
     }
 
     /**
-     * Envoyer un rappel de réservation
+     * Envoyer un rappel de réservation (supporte clients inscrits et invités).
      */
     public static function sendReservationReminder(Reservation $reservation, int $hoursBefore = 24): bool
     {
         $client = $reservation->user;
-        if (! $client) {
+        $emailTo = $client?->email ?? $reservation->email_client;
+        if (! $emailTo) {
             return false;
         }
 
+        $nomClient = $client?->name ?? ($reservation->nom_client ?? 'Client');
         $contact = $reservation->entreprise->telephone ?? $reservation->entreprise->email ?? 'N/A';
 
         $data = [
-            'nom_client' => $client->name,
+            'nom_client' => $nomClient,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
+            'date_reservation' => self::formatDateReservation($reservation),
             'duree' => $reservation->duree_minutes ?? 30,
             'heures_avant' => $hoursBefore,
             'contact_entreprise' => $contact,
             'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
         ];
 
-        // Lieu (optionnel)
         if ($reservation->lieu) {
             $data['lieu_html'] = '<p><strong>Lieu :</strong> '.htmlspecialchars($reservation->lieu).'</p>';
         } else {
             $data['lieu_html'] = '';
         }
 
-        // Membre (optionnel)
         if ($reservation->membre && $reservation->membre->user) {
             $data['membre_html'] = '<p><strong>Avec :</strong> '.htmlspecialchars($reservation->membre->user->name).'</p>';
         } else {
             $data['membre_html'] = '';
         }
 
-        return EmailTemplateService::send('reservation_reminder', $client->email, $data);
+        return EmailTemplateService::send('reservation_reminder', $emailTo, $data);
     }
 
     /**
@@ -172,7 +221,7 @@ class EmailHelper
             'nom_client' => $client->name,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
+            'date_reservation' => self::formatDateReservation($reservation),
             'montant' => number_format($reservation->prix, 2, ',', ' '),
             'date_paiement' => ($reservation->date_paiement ?? now())->format('d/m/Y à H:i'),
             'url_reservation' => route('public.reservation.show', $reservation->hash ?? $reservation->id),
@@ -190,11 +239,9 @@ class EmailHelper
         $nomClient = 'Client';
 
         if ($conversation->user_id) {
-            // Message pour un client
             $recipient = $conversation->user;
             $nomClient = $recipient->name;
         } else {
-            // Message pour un gérant
             $recipient = $conversation->entreprise->user;
         }
 
@@ -224,18 +271,23 @@ class EmailHelper
 
     /**
      * Envoyer une notification d'annulation de réservation au client
+     * (supporte clients inscrits et invités).
      */
     public static function sendReservationCancelledClient(Reservation $reservation, string $cancelledBy = 'client'): bool
     {
         $client = $reservation->user;
-        if (! $client) {
+        $emailTo = $client?->email ?? $reservation->email_client;
+        if (! $emailTo) {
             return false;
         }
 
+        $nomClient = $client?->name ?? ($reservation->nom_client ?? 'Client');
+        $dateStr = self::formatDateReservation($reservation);
+
         if ($cancelledBy === 'client') {
-            $messageAnnulation = '<p>Nous vous confirmons l\'annulation de votre réservation du <strong>'.$reservation->date_reservation->format('d/m/Y à H:i').'</strong>.</p>';
+            $messageAnnulation = '<p>Nous vous confirmons l\'annulation de votre réservation du <strong>'.$dateStr.'</strong>.</p>';
         } else {
-            $messageAnnulation = '<p>Votre réservation du <strong>'.$reservation->date_reservation->format('d/m/Y à H:i').'</strong> a été annulée par <strong>'.$reservation->entreprise->nom.'</strong>.</p>';
+            $messageAnnulation = '<p>Votre réservation du <strong>'.$dateStr.'</strong> a été annulée par <strong>'.$reservation->entreprise->nom.'</strong>.</p>';
         }
 
         $remboursementHtml = '';
@@ -244,17 +296,42 @@ class EmailHelper
         }
 
         $data = [
-            'nom_client' => $client->name,
+            'nom_client' => $nomClient,
             'nom_entreprise' => $reservation->entreprise->nom,
             'nom_service' => $reservation->type_service ?? 'Service',
-            'date_reservation' => $reservation->date_reservation->format('d/m/Y à H:i'),
+            'date_reservation' => $dateStr,
             'prix' => number_format($reservation->prix, 2, ',', ' '),
             'message_annulation' => $messageAnnulation,
             'remboursement_html' => $remboursementHtml,
             'url_entreprise' => route('public.entreprise', $reservation->entreprise->slug),
         ];
 
-        return EmailTemplateService::send('reservation_cancelled_client', $client->email, $data);
+        return EmailTemplateService::send('reservation_cancelled_client', $emailTo, $data);
+    }
+
+    /**
+     * Envoyer une notification d'annulation de réservation au gérant.
+     */
+    public static function sendReservationCancelledGerant(Reservation $reservation): bool
+    {
+        $gerant = $reservation->entreprise->user;
+        if (! $gerant) {
+            return false;
+        }
+
+        $client = $reservation->user;
+        $nomClient = $client ? $client->name : ($reservation->nom_client ?? 'Client non inscrit');
+
+        $data = [
+            'nom_client' => $nomClient,
+            'nom_entreprise' => $reservation->entreprise->nom,
+            'nom_service' => $reservation->type_service ?? 'Service',
+            'date_reservation' => self::formatDateReservation($reservation),
+            'prix' => number_format($reservation->prix, 2, ',', ' '),
+            'url_reservation' => route('reservations.show', [$reservation->entreprise->slug, $reservation->id]),
+        ];
+
+        return EmailTemplateService::send('reservation_cancelled_gerant', $gerant->email, $data);
     }
 
     /**
@@ -277,16 +354,23 @@ class EmailHelper
     }
 
     /**
-     * Envoyer un email de vérification
+     * Envoyer un rapport mensuel
      */
-    public static function sendEmailVerification(User $user, \App\Models\EmailVerification $emailVerification): bool
+    public static function sendMonthlyReport(User $user, Entreprise $entreprise, array $stats): bool
     {
-        $verificationUrl = route('verification.verify', ['hash' => $emailVerification->hash]);
+        $data = [
+            'nom_gerant' => $user->name,
+            'nom_entreprise' => $entreprise->nom,
+            'total_reservations' => $stats['total_reservations'] ?? 0,
+            'reservations_confirmees' => $stats['reservations_confirmees'] ?? 0,
+            'reservations_en_attente' => $stats['reservations_en_attente'] ?? 0,
+            'reservations_terminees' => $stats['reservations_terminees'] ?? 0,
+            'revenu_total' => number_format($stats['revenu_total'] ?? 0, 2, ',', ' '),
+            'revenu_paye' => number_format($stats['revenu_paye'] ?? 0, 2, ',', ' '),
+            'url_dashboard' => route('entreprise.dashboard', $entreprise->slug),
+        ];
 
-        return EmailTemplateService::send('email_verification', $user->email, [
-            'nom_client' => $user->name,
-            'url_verification' => $verificationUrl,
-        ]);
+        return EmailTemplateService::send('monthly_report', $user->email, $data);
     }
 
     /**

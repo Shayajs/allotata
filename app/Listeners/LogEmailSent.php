@@ -18,14 +18,17 @@ class LogEmailSent
             $recipient = null;
             $subject = $message->getSubject() ?? 'Sans sujet';
             
-            // Récupérer le destinataire principal
+            // Récupérer le destinataire principal (Symfony Mailer retourne des objets Address)
             $to = $message->getTo();
             if ($to && count($to) > 0) {
-                $recipient = array_key_first($to);
+                $firstRecipient = reset($to);
+                $recipient = $firstRecipient instanceof \Symfony\Component\Mime\Address
+                    ? $firstRecipient->getAddress()
+                    : (string) $firstRecipient;
             }
 
             if (!$recipient) {
-                return; // Pas de destinataire, on skip
+                return;
             }
 
             // Déterminer le type d'email selon le sujet

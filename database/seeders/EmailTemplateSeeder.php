@@ -66,7 +66,7 @@ class EmailTemplateSeeder extends Seeder
                 </div>
                 
                 <p>À bientôt !<br>L\'équipe Allo Tata</p>',
-                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'prix', 'lieu', 'membre', 'notes', 'url_reservation'],
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'prix', 'lieu_html', 'membre_html', 'notes_html', 'url_reservation'],
                 'description' => 'Email de confirmation de réservation envoyé au client',
             ],
             [
@@ -97,7 +97,7 @@ class EmailTemplateSeeder extends Seeder
                 </div>
                 
                 <p>Cordialement,<br>L\'équipe Allo Tata</p>',
-                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'prix', 'telephone', 'lieu', 'notes', 'url_reservation'],
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'prix', 'telephone', 'lieu_html', 'notes_html', 'url_reservation'],
                 'description' => 'Email envoyé au gérant lors d\'une nouvelle réservation',
             ],
             [
@@ -127,7 +127,7 @@ class EmailTemplateSeeder extends Seeder
                 </div>
                 
                 <p>À bientôt !<br>L\'équipe Allo Tata</p>',
-                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'lieu', 'membre', 'heures_avant', 'contact_entreprise', 'url_reservation'],
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'lieu_html', 'membre_html', 'heures_avant', 'contact_entreprise', 'url_reservation'],
                 'description' => 'Email de rappel envoyé avant un rendez-vous',
             ],
             [
@@ -203,7 +203,7 @@ class EmailTemplateSeeder extends Seeder
                 </div>
                 
                 <p>À bientôt !<br>L\'équipe Allo Tata</p>',
-                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'prix', 'message_annulation', 'remboursement', 'url_entreprise'],
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'prix', 'message_annulation', 'remboursement_html', 'url_entreprise'],
                 'description' => 'Email d\'annulation de réservation envoyé au client',
             ],
             [
@@ -290,6 +290,92 @@ class EmailTemplateSeeder extends Seeder
                 <p style="font-size: 14px; line-height: 1.7; color: #6b7280; margin-top: 16px;">Vous pouvez également accéder à votre <a href="{url_checkout}" style="color: #22c55e; text-decoration: underline;">espace paiement</a> pour gérer vos échéances.</p>',
                 'variables' => ['nom_client', 'montant', 'libelle_echeance', 'periode', 'url_authenticate', 'url_checkout'],
                 'description' => 'Email envoyé quand la banque exige une authentification 3DS en mode off_session (SCA Recovery)',
+            ],
+            [
+                'type' => 'reservation_pending_client',
+                'name' => 'Réservation en attente (Client)',
+                'subject' => 'Réservation en attente de confirmation - {nom_entreprise}',
+                'body' => '<h1 style="color: #f59e0b; margin-bottom: 20px;">Réservation en attente</h1>
+                
+                <p>Bonjour {nom_client},</p>
+                
+                <p>Votre demande de réservation auprès de <strong>{nom_entreprise}</strong> a bien été enregistrée et est <strong>en attente de confirmation</strong>.</p>
+                
+                <div class="warning-box">
+                    <h3 style="margin-top: 0;">Détails de votre réservation :</h3>
+                    <p><strong>Service :</strong> {nom_service}</p>
+                    <p><strong>Date et heure :</strong> {date_reservation}</p>
+                    <p><strong>Durée :</strong> {duree} minutes</p>
+                    <p><strong>Prix :</strong> {prix} €</p>
+                    {lieu_html}
+                    {membre_html}
+                </div>
+                
+                {notes_html}
+                
+                <p>Vous recevrez un email de confirmation dès que votre réservation sera validée.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{url_reservation}" class="button">Suivre ma réservation</a>
+                </div>
+                
+                <p>À bientôt !<br>L\'équipe Allo Tata</p>',
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'duree', 'prix', 'lieu_html', 'membre_html', 'notes_html', 'url_reservation'],
+                'description' => 'Email envoyé au client quand sa réservation est en attente de validation par le gérant',
+            ],
+            [
+                'type' => 'reservation_cancelled_gerant',
+                'name' => 'Réservation annulée (Gérant)',
+                'subject' => 'Annulation de réservation - {nom_entreprise}',
+                'body' => '<h1 style="color: #ef4444; margin-bottom: 20px;">Réservation annulée par le client</h1>
+                
+                <p>Bonjour,</p>
+                
+                <p>Un client a annulé sa réservation pour <strong>{nom_entreprise}</strong>.</p>
+                
+                <div class="error-box">
+                    <h3 style="margin-top: 0;">Détails de la réservation annulée :</h3>
+                    <p><strong>Client :</strong> {nom_client}</p>
+                    <p><strong>Service :</strong> {nom_service}</p>
+                    <p><strong>Date et heure :</strong> {date_reservation}</p>
+                    <p><strong>Prix :</strong> {prix} €</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{url_reservation}" class="button">Voir la réservation</a>
+                </div>
+                
+                <p>Cordialement,<br>L\'équipe Allo Tata</p>',
+                'variables' => ['nom_client', 'nom_entreprise', 'nom_service', 'date_reservation', 'prix', 'url_reservation'],
+                'description' => 'Email envoyé au gérant quand un client annule sa réservation',
+            ],
+            [
+                'type' => 'monthly_report',
+                'name' => 'Rapport mensuel',
+                'subject' => 'Rapport mensuel - {nom_entreprise}',
+                'body' => '<h1 style="color: #22c55e; margin-bottom: 20px;">Rapport mensuel</h1>
+                
+                <p>Bonjour {nom_gerant},</p>
+                
+                <p>Voici votre rapport mensuel pour <strong>{nom_entreprise}</strong>.</p>
+                
+                <div class="info-box">
+                    <h3 style="margin-top: 0;">Statistiques du mois :</h3>
+                    <p><strong>Réservations totales :</strong> {total_reservations}</p>
+                    <p><strong>Réservations confirmées :</strong> {reservations_confirmees}</p>
+                    <p><strong>Réservations en attente :</strong> {reservations_en_attente}</p>
+                    <p><strong>Réservations terminées :</strong> {reservations_terminees}</p>
+                    <p><strong>Revenu total :</strong> {revenu_total} €</p>
+                    <p><strong>Revenu encaissé :</strong> {revenu_paye} €</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{url_dashboard}" class="button">Voir le dashboard</a>
+                </div>
+                
+                <p>Bon mois !<br>L\'équipe Allo Tata</p>',
+                'variables' => ['nom_gerant', 'nom_entreprise', 'total_reservations', 'reservations_confirmees', 'reservations_en_attente', 'reservations_terminees', 'revenu_total', 'revenu_paye', 'url_dashboard'],
+                'description' => 'Rapport mensuel envoyé aux gérants',
             ],
         ];
 

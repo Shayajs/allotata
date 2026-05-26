@@ -23,7 +23,11 @@ class EmailTemplateService
             $template = EmailTemplate::getByType($type);
             
             if (!$template) {
-                Log::error("Template email introuvable : {$type}");
+                Log::error("Template email introuvable ou inactif : {$type}. Exécutez : php artisan db:seed --class=EmailTemplateSeeder", [
+                    'type' => $type,
+                    'to' => $to,
+                    'templates_count' => EmailTemplate::count(),
+                ]);
                 return false;
             }
 
@@ -62,7 +66,12 @@ class EmailTemplateService
             // Le logging sera fait automatiquement par le listener LogEmailSent
             return true;
         } catch (\Exception $e) {
-            Log::error("Erreur lors de l'envoi de l'email avec template {$type} : " . $e->getMessage());
+            Log::error("Erreur lors de l'envoi de l'email avec template {$type} : " . $e->getMessage(), [
+                'type' => $type,
+                'to' => $to,
+                'exception' => $e::class,
+                'trace' => $e->getTraceAsString(),
+            ]);
             return false;
         }
     }

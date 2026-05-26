@@ -1023,11 +1023,22 @@ class PublicController extends Controller
                     route('dashboard'),
                     ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
                 );
+
+                try {
+                    $reservation->refresh();
+                    \App\Helpers\EmailHelper::sendReservationPendingClient($reservation);
+                } catch (\Exception $e) {
+                    \Log::error("Erreur lors de l'envoi de l'email de réservation en attente : ".$e->getMessage());
+                }
             }
         } elseif (! empty($reservation->email_client)) {
             try {
                 $reservation->refresh();
-                \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+                if ($statutInitial === 'confirmee') {
+                    \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
+                } else {
+                    \App\Helpers\EmailHelper::sendReservationPendingClient($reservation);
+                }
             } catch (\Exception $e) {
                 \Log::error("Erreur lors de l'envoi de l'email de confirmation (invité) : ".$e->getMessage());
             }
@@ -1203,12 +1214,16 @@ class PublicController extends Controller
                 ['reservation_id' => $reservation->id]
             );
 
-            // Envoyer un email au gérant (via template si nécessaire)
-            // Note: Pas de template spécifique pour le gérant lors d'annulation client
+            try {
+                $reservation->refresh();
+                \App\Helpers\EmailHelper::sendReservationCancelledGerant($reservation);
+            } catch (\Exception $e) {
+                \Log::error("Erreur lors de l'envoi de l'email d'annulation au gérant : ".$e->getMessage());
+            }
         }
 
-        // Envoyer un email au client s'il est inscrit
-        if ($reservation->user_id) {
+        // Envoyer un email au client (inscrit ou invité avec email)
+        if ($reservation->user_id || ! empty($reservation->email_client)) {
             try {
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'client');

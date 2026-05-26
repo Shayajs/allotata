@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reservation;
 use App\Models\Entreprise;
 use App\Models\Notification;
+use App\Models\Reservation;
 use App\Models\User;
-use App\Mail\ReservationConfirmationEmail;
-use App\Mail\ReservationCancelledEmail;
-use App\Mail\PaymentReceivedEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class ReservationController extends Controller
@@ -24,9 +20,9 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -36,16 +32,16 @@ class ReservationController extends Controller
         // Recherche
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('type_service', 'like', "%{$search}%")
-                  ->orWhere('lieu', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%")
-                  ->orWhere('nom_client', 'like', "%{$search}%")
-                  ->orWhere('email_client', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('lieu', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhere('nom_client', 'like', "%{$search}%")
+                    ->orWhere('email_client', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -96,7 +92,7 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -145,20 +141,20 @@ class ReservationController extends Controller
             ->firstOrFail();
 
         // Vérifier si la réservation a un user_id (cliente inscrite)
-        if (!$reservation->user_id) {
+        if (! $reservation->user_id) {
             return back()->with('error', 'Impossible de démarrer une conversation pour une cliente non inscrite.');
         }
 
         // Vérifier si une conversation existe déjà pour cette réservation
         // Vérifier d'abord si la colonne existe (pour éviter l'erreur si la migration n'est pas exécutée)
         $hasReservationIdColumn = \Schema::hasColumn('conversations', 'reservation_id');
-        
+
         $conversation = null;
         if ($hasReservationIdColumn) {
             $conversation = \App\Models\Conversation::where('reservation_id', $reservation->id)->first();
         }
 
-        if (!$conversation) {
+        if (! $conversation) {
             // Vérifier si une conversation existe déjà entre le client et l'entreprise
             $existingConversation = \App\Models\Conversation::where('user_id', $reservation->user_id)
                 ->where('entreprise_id', $entreprise->id)
@@ -207,9 +203,9 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -223,7 +219,7 @@ class ReservationController extends Controller
 
         $reservation->update([
             'statut' => 'confirmee',
-            'notes' => $reservation->notes . ($validated['notes_gerant'] ? "\n\n[Note de la tata] " . $validated['notes_gerant'] : ''),
+            'notes' => $reservation->notes.($validated['notes_gerant'] ? "\n\n[Note de la tata] ".$validated['notes_gerant'] : ''),
         ]);
 
         // Invalider le cache des statistiques
@@ -239,13 +235,15 @@ class ReservationController extends Controller
                 route('dashboard'),
                 ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
             );
+        }
 
-            // Envoyer un email de confirmation au client
+        // Envoyer un email de confirmation au client (inscrit ou invité avec email)
+        if ($reservation->user_id || ! empty($reservation->email_client)) {
             try {
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de confirmation : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email de confirmation : ".$e->getMessage());
             }
         }
 
@@ -261,9 +259,9 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -277,7 +275,7 @@ class ReservationController extends Controller
 
         $reservation->update([
             'statut' => 'annulee',
-            'notes' => $reservation->notes . ($validated['raison_refus'] ? "\n\n[Raison du refus] " . $validated['raison_refus'] : ''),
+            'notes' => $reservation->notes.($validated['raison_refus'] ? "\n\n[Raison du refus] ".$validated['raison_refus'] : ''),
         ]);
 
         // Créer une notification pour le client (uniquement si inscrit)
@@ -289,15 +287,17 @@ class ReservationController extends Controller
                 'Réservation annulée',
                 "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été annulée.{$raison}",
                 route('dashboard'),
-            ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
+                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
             );
+        }
 
-            // Envoyer un email d'annulation au client
+        // Envoyer un email d'annulation au client (inscrit ou invité avec email)
+        if ($reservation->user_id || ! empty($reservation->email_client)) {
             try {
                 $reservation->refresh();
                 \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'gerant');
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email d'annulation : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email d'annulation : ".$e->getMessage());
             }
         }
 
@@ -325,7 +325,7 @@ class ReservationController extends Controller
 
         $notesActuelles = $reservation->notes ?? '';
         $reservation->update([
-            'notes' => $notesActuelles . ($notesActuelles ? "\n\n" : '') . "[Note de la tata] " . $validated['notes_gerant'],
+            'notes' => $notesActuelles.($notesActuelles ? "\n\n" : '').'[Note de la tata] '.$validated['notes_gerant'],
         ]);
 
         return redirect()->route('reservations.show', [$slug, $id])
@@ -340,7 +340,7 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
 
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -373,12 +373,12 @@ class ReservationController extends Controller
         if ($isDateButoire) {
             $reservation->update([
                 'date_butoire' => $validated['date_butoire'],
-                'date_reservation' => $validated['date_butoire'] . ' 00:00:00',
+                'date_reservation' => $validated['date_butoire'].' 00:00:00',
                 'lieu' => $validated['lieu'] ?? null,
                 'notes' => $validated['notes'] ?? $reservation->notes,
             ]);
         } else {
-            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $dateTime = $validated['date_reservation'].' '.$validated['heure_reservation'];
             $debutUpdate = \Carbon\Carbon::parse($dateTime);
             $reservation->update([
                 'date_reservation' => $dateTime,
@@ -414,9 +414,9 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -434,21 +434,21 @@ class ReservationController extends Controller
         $reservation->update([
             'est_paye' => true,
             'date_paiement' => $datePaiement,
-            'notes' => $reservation->notes . ($validated['notes_paiement'] ? "\n\n[Paiement] " . $validated['notes_paiement'] : ''),
+            'notes' => $reservation->notes.($validated['notes_paiement'] ? "\n\n[Paiement] ".$validated['notes_paiement'] : ''),
         ]);
 
         // Recharger la réservation pour avoir les dernières valeurs
         $reservation->refresh();
-        
+
         // Envoyer un email au client pour confirmer le paiement
         if ($reservation->user_id) {
             try {
                 \App\Helpers\EmailHelper::sendPaymentReceived($reservation);
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de paiement : " . $e->getMessage());
+                \Log::error("Erreur lors de l'envoi de l'email de paiement : ".$e->getMessage());
             }
         }
-        
+
         // La facture sera générée automatiquement par l'observer ReservationObserver
         // Vérifier si une facture a été créée
         $factureGeneree = $reservation->facture;
@@ -463,7 +463,7 @@ class ReservationController extends Controller
                     $message .= ' Une facture a été générée.';
                 }
             } catch (\Exception $e) {
-                \Log::error('Erreur lors de la génération manuelle de la facture : ' . $e->getMessage());
+                \Log::error('Erreur lors de la génération manuelle de la facture : '.$e->getMessage());
             }
         }
 
@@ -491,14 +491,14 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             return response()->json(['error' => 'Accès refusé'], 403);
         }
 
         $query = $request->get('q', '');
-        
+
         if (strlen($query) < 2) {
             return response()->json([]);
         }
@@ -548,7 +548,7 @@ class ReservationController extends Controller
         }
 
         // Trier par similarité décroissante
-        usort($results, function($a, $b) {
+        usort($results, function ($a, $b) {
             return $b['similarity'] <=> $a['similarity'];
         });
 
@@ -566,9 +566,9 @@ class ReservationController extends Controller
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
-        
+
         // Vérifier les permissions
-        if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
 
@@ -582,7 +582,7 @@ class ReservationController extends Controller
                 ->where('est_actif', true)
                 ->first();
 
-            if (!$typeService) {
+            if (! $typeService) {
                 return back()->withErrors(['type_service_id' => 'Type de service invalide.']);
             }
 
@@ -626,8 +626,8 @@ class ReservationController extends Controller
             $client = User::where('id', $validated['user_id'])
                 ->where('est_client', true)
                 ->first();
-            
-            if (!$client) {
+
+            if (! $client) {
                 return back()->withErrors(['user_id' => 'L\'utilisateur sélectionné n\'est pas un client.']);
             }
         }
@@ -635,27 +635,27 @@ class ReservationController extends Controller
         // Construire date/heure selon le type de structure
         if ($isDateButoire) {
             $dateButoire = $validated['date_butoire'];
-            $dateTime = $dateButoire . ' 00:00:00';
+            $dateTime = $dateButoire.' 00:00:00';
             $debutReservation = \Carbon\Carbon::parse($dateTime);
             $dureeMinutes = $typeService->duree_minutes;
         } else {
-            $dateTime = $validated['date_reservation'] . ' ' . $validated['heure_reservation'];
+            $dateTime = $validated['date_reservation'].' '.$validated['heure_reservation'];
             $debutReservation = \Carbon\Carbon::parse($dateTime);
             $dureeMinutes = (int) $validated['duree_minutes'];
         }
 
         // Gérer la sélection du membre
         $membreId = null;
-        if (!empty($validated['membre_id'])) {
+        if (! empty($validated['membre_id'])) {
             $membre = \App\Models\EntrepriseMembre::where('id', $validated['membre_id'])
                 ->where('entreprise_id', $entreprise->id)
                 ->where('est_actif', true)
                 ->first();
-            
-            if (!$membre) {
+
+            if (! $membre) {
                 return back()->withErrors(['membre_id' => 'Membre invalide.']);
             }
-            
+
             $membreId = $membre->id;
         }
 
@@ -681,7 +681,7 @@ class ReservationController extends Controller
         }
 
         // Si cliente non inscrite, ajouter les informations
-        if (!($validated['user_id'] ?? null)) {
+        if (! ($validated['user_id'] ?? null)) {
             $reservationData['nom_client'] = $validated['nom_client'];
             $reservationData['email_client'] = $validated['email_client'] ?? null;
             $reservationData['telephone_client_non_inscrit'] = $validated['telephone_client_non_inscrit'];
@@ -703,7 +703,7 @@ class ReservationController extends Controller
 
         // Vérifier la disponibilité ET créer dans une transaction atomique (anti-doublon)
         // On ne vérifie le chevauchement que pour les dates futures, et on skip pour date_butoire et événements
-        $skipCheck = $isDateButoire || $isEvenement || !$debutReservation->isFuture();
+        $skipCheck = $isDateButoire || $isEvenement || ! $debutReservation->isFuture();
 
         // Pour les événements, vérifier la capacité
         if ($isEvenement && $typeService && $typeService->capacite_max) {
@@ -717,7 +717,7 @@ class ReservationController extends Controller
                 );
             });
 
-            if (!$disponible) {
+            if (! $disponible) {
                 return back()->withErrors(['error' => 'Cet événement est complet.']);
             }
         }
@@ -731,7 +731,7 @@ class ReservationController extends Controller
             $skipCheck
         );
 
-        if (!$reservation) {
+        if (! $reservation) {
             return back()->withErrors(['error' => 'Ce créneau est déjà réservé. Veuillez choisir un autre horaire.']);
         }
 
