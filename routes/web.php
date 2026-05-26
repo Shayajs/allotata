@@ -1006,6 +1006,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/push-notifications', [AdminController::class, 'pushNotifications'])->name('push-notifications.index');
     Route::post('/push-notifications/send', [AdminController::class, 'sendPushNotification'])->name('push-notifications.send');
     Route::get('/push-notifications/search-users', [AdminController::class, 'searchUsersForPush'])->name('push-notifications.search-users');
+    Route::get('/push-notifications/check-subscription', [AdminController::class, 'checkPushSubscription'])->name('push-notifications.check-subscription');
+    Route::post('/push-notifications/test-self', [AdminController::class, 'testSelfPush'])->name('push-notifications.test-self');
     
     // Legacy / Specific Sync Actions (Redirigés ou gérés par le nouveau controller si implémentés, sinon garder AdminController pour l'instant pour la rétrocompatibilité des actions spécifiques utilisateur/entreprise si je ne les ai pas toutes migrées)
     // J'ai implémenté forceManual, mais pas syncUserSubscription ni cancel... 

@@ -2724,6 +2724,51 @@ class AdminController extends Controller
         return back()->with('success', "Notification push envoyée à {$sentCount} utilisateur(s).");
     }
 
+    public function checkPushSubscription()
+    {
+        $user = auth()->user();
+        $count = $user->pushSubscriptions()->count();
+
+        return response()->json([
+            'has_subscription' => $count > 0,
+            'count' => $count,
+        ]);
+    }
+
+    public function testSelfPush()
+    {
+        $user = auth()->user();
+        $subscriptions = $user->pushSubscriptions;
+
+        if ($subscriptions->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucune souscription push trouvée pour votre compte.',
+            ]);
+        }
+
+        try {
+            $pushService = new PushNotificationService();
+            $pushService->sendToUser(
+                $user,
+                'Test Push - Allo Tata',
+                'Cette notification a été envoyée depuis le diagnostic admin. Si vous la voyez, tout fonctionne !',
+                'general',
+                config('app.url') . '/admin/push-notifications'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => "Push envoyé vers {$subscriptions->count()} souscription(s). Vérifiez votre appareil.",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
     public function searchUsersForPush(Request $request)
     {
         $query = $request->get('q', '');
