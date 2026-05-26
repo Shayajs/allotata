@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Hors connexion - Allo Tata</title>
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="/icons/icon-192x192.png">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --bg: #f8fafc; --text: #0f172a; --muted: #64748b; --card: #ffffff; --border: #e2e8f0; --accent: #22c55e; --accent-dark: #16a34a; }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #0f172a; --text: #f1f5f9; --muted: #94a3b8; --card: #1e293b; --border: #334155; --accent: #22c55e; --accent-dark: #16a34a; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .container {
+            text-align: center; max-width: 420px; width: 100%;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 48px 32px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+        }
+        .icon {
+            width: 80px; height: 80px; margin: 0 auto 24px;
+            background: var(--bg); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon svg { width: 40px; height: 40px; color: var(--muted); }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+        p { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+        .btn {
+            display: inline-block; padding: 12px 32px;
+            background: var(--accent); color: #fff; font-weight: 600; font-size: 15px;
+            border: none; border-radius: 10px; cursor: pointer;
+            text-decoration: none; transition: background .2s;
+        }
+        .btn:hover { background: var(--accent-dark); }
+        .status { margin-top: 20px; font-size: 13px; color: var(--muted); }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-right: 6px; vertical-align: middle; }
+        .dot.online { background: #22c55e; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+        .loading .dot { animation: pulse 1.5s infinite; background: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728M8.464 15.536a5 5 0 010-7.072M15.536 8.464a5 5 0 010 7.072M12 12h.01"/>
+            </svg>
+        </div>
+        <h1>Pas de connexion</h1>
+        <p>Vous êtes actuellement hors ligne. Vérifiez votre connexion Internet et réessayez.</p>
+        <button class="btn" onclick="location.reload()">Réessayer</button>
+        <div class="status" id="status">
+            <span class="dot" id="dot"></span>
+            <span id="status-text">Hors connexion</span>
+        </div>
+    </div>
+    <script>
+        function updateStatus() {
+            var dot = document.getElementById('dot');
+            var text = document.getElementById('status-text');
+            var container = document.getElementById('status');
+            if (navigator.onLine) {
+                dot.className = 'dot online';
+                text.textContent = 'Connexion rétablie, rechargement...';
+                container.className = 'status loading';
+                setTimeout(function() { location.reload(); }, 800);
+            } else {
+                dot.className = 'dot';
+                text.textContent = 'Hors connexion';
+                container.className = 'status';
+            }
+        }
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        updateStatus();
+    </script>
+</body>
+</html>

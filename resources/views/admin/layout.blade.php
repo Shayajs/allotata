@@ -106,12 +106,13 @@
     @stack('styles')
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+    @include('partials.offline-banner')
     @include('partials.super-user-banner')
     @include('components.mobile-nav', ['navType' => 'admin', 'id' => 'admin_mobile_nav', 'hideButton' => true])
 
     <div class="min-h-screen flex">
-        <!-- Sidebar (PC) -->
-        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
+        <!-- Sidebar (PC) – cachée en PWA mobile via .nav-sidebar -->
+        <aside class="nav-sidebar w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 text-xl font-bold">
@@ -501,7 +502,7 @@
             <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-8 py-4 sticky top-0 z-30">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <button onclick="toggleBurgerMenu('admin_mobile_nav')" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Menu">
+                        <button onclick="toggleBurgerMenu('admin_mobile_nav')" class="lg:hidden pwa-hide-mobile p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Menu">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -613,6 +614,9 @@
             </div>
         </main>
     </div>
+
+    {{-- Bottom bar PWA admin (visible uniquement en PWA mobile) --}}
+    <x-nav.pwa-admin-bottom-bar />
 
     @include('partials.cookie-banner')
 

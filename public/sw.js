@@ -1,35 +1,62 @@
-const CACHE_NAME = 'allotata-cache-v1';
-const ASSETS_TO_CACHE = [
-    '/',
+const CACHE_NAME = 'allotata-cache-v3';
+const ASSETS_CACHE = 'allotata-assets-v1';
+const PRECACHE = [
+    '/offline.html',
     '/manifest.json',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
-    // On ajoutera ici les CSS/JS principaux si on a leurs noms exacts
 ];
 
-// Installation du Service Worker
+// Installation : pre-cache des ressources critiques
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE))
     );
 });
 
-// Activation et nettoyage des anciens caches
+// Activation : nettoyage des anciens caches + prise de controle immediate
 self.addEventListener('activate', (event) => {
+    const VALID_CACHES = [CACHE_NAME, ASSETS_CACHE];
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
+                cacheNames.map((name) => {
+                    if (!VALID_CACHES.includes(name)) {
+                        return caches.delete(name);
                     }
                 })
             );
         }).then(() => self.clients.claim())
     );
+});
+
+// ═══════════════════════════════════════════════════════════
+//  Pre-cache a la demande (pages utilisateur)
+// ═══════════════════════════════════════════════════════════
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'PRECACHE_URLS') {
+        const urls = event.data.urls || [];
+        event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => {
+                return Promise.allSettled(
+                    urls.map((url) =>
+                        cache.match(url).then((existing) => {
+                            if (existing) return;
+                            return fetch(url, { credentials: 'same-origin' })
+                                .then((resp) => {
+                                    if (resp && resp.status === 200) {
+                                        return cache.put(url, resp);
+                                    }
+                                })
+                                .catch(() => {});
+                        })
+                    )
+                );
+            })
+        );
+    }
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -115,41 +142,102 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  Cache (PWA)
+//  Cache (PWA) — Strategies par type de requete
 // ═══════════════════════════════════════════════════════════
 
-// Stratégie : Network First (Réseau en priorité, Cache en secours)
-// Cela permet d'avoir toujours la version la plus récente du site, mais de fonctionner hors-ligne si besoin.
+function isAsset(url) {
+    return /\.(js|css|woff2?|ttf|eot|png|jpg|jpeg|gif|svg|webp|ico|avif)(\?.*)?$/i.test(url)
+        || url.includes('/build/');
+}
+
+function isNavigationRequest(request) {
+    return request.mode === 'navigate'
+        || (request.method === 'GET' && request.headers.get('accept') && request.headers.get('accept').includes('text/html'));
+}
+
 self.addEventListener('fetch', (event) => {
-    // On ignore les requêtes non-GET (POST, PUT, etc.) et les extensions chrome
     if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
         return;
     }
 
-    event.respondWith(
-        fetch(event.request)
-            .then((networkResponse) => {
-                // Si la réponse est valide, on la met en cache pour plus tard
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
+    const url = new URL(event.request.url);
+
+    // Ignorer les requetes temps-reel et les APIs qui ne doivent pas etre cachees
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/broadcasting/')) {
+        return;
+    }
+
+    // Endpoints JSON emploi du temps et reservations → Network-First avec cache
+    if (url.pathname.match(/\/(emploi-du-temps\/events|agenda\/reservations|reservations)$/) && !isNavigationRequest(event.request)) {
+        event.respondWith(
+            fetch(event.request).then((response) => {
+                if (response && response.status === 200) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
-                return networkResponse;
-            })
-            .catch(() => {
-                // Si le réseau échoue (hors-ligne), on cherche dans le cache
-                return caches.match(event.request).then((cachedResponse) => {
-                    if (cachedResponse) {
-                        return cachedResponse;
-                    }
-                    // Fallback optionnel : si on demande une page HTML et qu'elle n'est pas en cache,
-                    // on pourrait renvoyer la page d'accueil ou une page "offline" générique.
-                    if (event.request.headers.get('accept').includes('text/html')) {
-                        return caches.match('/');
-                    }
+                return response;
+            }).catch(() => caches.match(event.request).then((cached) => cached || new Response('{"events":[],"offline":true}', { headers: { 'Content-Type': 'application/json' } })))
+        );
+        return;
+    }
+
+    // Assets statiques (JS, CSS, images, fonts) → Cache-First + mise a jour en arriere-plan
+    if (isAsset(event.request.url)) {
+        event.respondWith(
+            caches.open(ASSETS_CACHE).then((cache) => {
+                return cache.match(event.request).then((cached) => {
+                    const networkFetch = fetch(event.request).then((response) => {
+                        if (response && response.status === 200) {
+                            cache.put(event.request, response.clone());
+                        }
+                        return response;
+                    }).catch(() => cached);
+
+                    return cached || networkFetch;
                 });
             })
+        );
+        return;
+    }
+
+    // Pages HTML → Stale-While-Revalidate (cache instantane + mise a jour reseau)
+    if (isNavigationRequest(event.request)) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then((cache) => {
+                return cache.match(event.request).then((cached) => {
+                    const networkFetch = fetch(event.request).then((response) => {
+                        if (response && response.status === 200) {
+                            cache.put(event.request, response.clone());
+                        }
+                        return response;
+                    }).catch(() => {
+                        if (cached) return cached;
+                        return caches.match('/offline.html');
+                    });
+
+                    // Si on a une version cachee, la servir immediatement
+                    // Le reseau met a jour le cache pour la prochaine visite
+                    if (cached) {
+                        // Lancer la mise a jour en arriere-plan (sans attendre)
+                        event.waitUntil(networkFetch.catch(() => {}));
+                        return cached;
+                    }
+
+                    return networkFetch;
+                });
+            })
+        );
+        return;
+    }
+
+    // Autres GET (JSON, etc.) → Network-First avec fallback cache
+    event.respondWith(
+        fetch(event.request).then((response) => {
+            if (response && response.status === 200) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return response;
+        }).catch(() => caches.match(event.request))
     );
 });

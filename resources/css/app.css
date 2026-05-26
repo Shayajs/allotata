@@ -286,3 +286,34 @@ input.flatpickr-input {
     .is-pwa .pwa-bottom-bar { display: none !important; }
     .is-pwa .pwa-header { display: none !important; }
 }
+
+/* ═══════════════════════════════════════
+   Mode hors connexion
+   ═══════════════════════════════════════ */
+
+/* Décaler le contenu quand la bannière offline est visible */
+html.is-offline body { padding-top: 36px; }
+
+/* Désactiver visuellement les formulaires */
+html.is-offline form {
+    opacity: 0.5;
+    pointer-events: none;
+    user-select: none;
+}
+
+html.is-offline button[type="submit"],
+html.is-offline input[type="submit"] {
+    cursor: not-allowed !important;
+    filter: grayscale(1);
+}
+
+/* Masquer les éléments inutiles hors ligne */
+html.is-offline .offline-hide { display: none !important; }
+
+/* Les liens de déconnexion / actions POST ne doivent pas être cliquables */
+html.is-offline a[data-method="post"],
+html.is-offline a[data-method="delete"],
+html.is-offline a[data-method="put"] {
+    pointer-events: none;
+    opacity: 0.5;
+}

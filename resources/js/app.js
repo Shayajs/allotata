@@ -161,7 +161,6 @@ const isPwa = window.matchMedia('(display-mode: standalone)').matches
 if (isPwa) {
     document.documentElement.classList.add('is-pwa');
 }
-// Réagir aux changements de mode d'affichage (ex: ajout au home screen)
 window.matchMedia('(display-mode: standalone)').addEventListener('change', function (e) {
     if (e.matches) {
         document.documentElement.classList.add('is-pwa');
@@ -169,3 +168,49 @@ window.matchMedia('(display-mode: standalone)').addEventListener('change', funct
         document.documentElement.classList.remove('is-pwa');
     }
 });
+
+// ========================================
+// Détection online/offline
+// ========================================
+function setOfflineState(isOffline) {
+    var html = document.documentElement;
+    var banner = document.getElementById('offline-banner');
+    var reconnectBanner = document.getElementById('reconnect-banner');
+
+    if (isOffline) {
+        html.classList.add('is-offline');
+        if (banner) banner.classList.remove('hidden');
+    } else {
+        var wasOffline = html.classList.contains('is-offline');
+        html.classList.remove('is-offline');
+        if (banner) banner.classList.add('hidden');
+
+        if (wasOffline && reconnectBanner) {
+            reconnectBanner.classList.remove('hidden');
+            setTimeout(function () {
+                reconnectBanner.classList.add('hidden');
+            }, 3000);
+        }
+    }
+}
+
+setOfflineState(!navigator.onLine);
+window.addEventListener('online', function () { setOfflineState(false); });
+window.addEventListener('offline', function () { setOfflineState(true); });
+
+// ========================================
+// Pre-cache des pages utilisateur pour l'offline
+// ========================================
+(function precacheUserPages() {
+    if (!('serviceWorker' in navigator) || !navigator.onLine) return;
+    var urls = window.offlinePrecacheUrls;
+    if (!urls || !urls.length) return;
+
+    navigator.serviceWorker.ready.then(function (registration) {
+        if (!registration.active) return;
+        registration.active.postMessage({
+            type: 'PRECACHE_URLS',
+            urls: urls,
+        });
+    });
+})();

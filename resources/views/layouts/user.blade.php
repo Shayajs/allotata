@@ -13,6 +13,15 @@
             window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
             window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
             window.currentUserId = {{ auth()->id() ?? 'null' }};
+            @auth
+            window.offlinePrecacheUrls = @json(array_values(array_filter([
+                '/dashboard',
+                '/settings',
+                ...auth()->user()->entreprises->map(fn($e) => '/m/' . $e->slug)->toArray(),
+                ...auth()->user()->entreprises->map(fn($e) => '/m/' . $e->slug . '/reservations')->toArray(),
+                ...(auth()->user()->est_client ? ['/dashboard'] : []),
+            ])));
+            @endauth
         </script>
         @include('partials.favicon')
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -22,6 +31,7 @@
         @stack('styles')
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200">
+        @include('partials.offline-banner')
         @include('partials.super-user-banner')
         <!-- Navigation Desktop -->
         <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 ">
