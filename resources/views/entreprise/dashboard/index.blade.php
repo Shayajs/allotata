@@ -30,11 +30,7 @@
         <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
         @include('partials.theme-script')
         <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js');
-                });
-            }
+            window.VAPID_PUBLIC_KEY = '{{ config("webpush.vapid.public_key") }}';
         </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">

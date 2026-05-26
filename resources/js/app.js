@@ -1,6 +1,7 @@
 import './bootstrap';
 import './address-autocomplete';
 import './presence';
+import { isPushSupported, isPushSubscribed, subscribeToPush, sendSubscriptionToServer } from './push-notifications';
 
 // ========================================
 // Flatpickr — Dates en français
@@ -128,6 +129,29 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
         }
     }
 });
+
+// ========================================
+// Push Notifications — Re-souscription silencieuse
+// ========================================
+(async function initPushResubscribe() {
+    if (!isPushSupported() || !window.currentUserId || !window.VAPID_PUBLIC_KEY) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+        const alreadySubscribed = await isPushSubscribed();
+        if (alreadySubscribed) return;
+
+        const subscription = await subscribeToPush(window.VAPID_PUBLIC_KEY);
+        if (subscription) {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta) {
+                await sendSubscriptionToServer(subscription, csrfMeta.content);
+            }
+        }
+    } catch (e) {
+        // Silencieux — ne pas bloquer le chargement de la page
+    }
+})();
 
 // ========================================
 // Détection PWA (display-mode: standalone)

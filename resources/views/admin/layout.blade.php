@@ -609,7 +609,12 @@
     @include('partials.cookie-banner')
 
     @stack('scripts')
-    
 
+    <script>
+        window.VAPID_PUBLIC_KEY = '{{ config("webpush.vapid.public_key") }}';
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
 </body>
 </html>

@@ -19,6 +19,9 @@ use App\Models\Ticket;
 use App\Models\Contact;
 use App\Models\EntrepriseFinance;
 use App\Models\Facture;
+use App\Models\Notification;
+use App\Models\PushSubscription;
+use App\Services\PushNotificationService;
 
 class AdminController extends Controller
 {
@@ -2649,5 +2652,98 @@ class AdminController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    public function pushNotifications()
+    {
+        $stats = [
+            'total_subscribers' => User::whereHas('pushSubscriptions')->count(),
+            'total_subscriptions' => PushSubscription::count(),
+        ];
+
+        $recentNotifications = Notification::where('type', 'admin_push')
+            ->with('user')
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get();
+
+        return view('admin.push-notifications.index', compact('stats', 'recentNotifications'));
+    }
+
+    public function sendPushNotification(Request $request)
+    {
+        $validated = $request->validate([
+            'target_type' => 'required|in:user,all',
+            'user_id' => 'required_if:target_type,user|nullable|exists:users,id',
+            'title' => 'required|string|max:100',
+            'body' => 'required|string|max:500',
+            'category' => 'required|string|in:general,reservation,paiement,message,rappel,promotion,mise_a_jour',
+            'url' => 'nullable|string|max:255',
+            'create_notification' => 'nullable|boolean',
+        ]);
+
+        $pushService = new PushNotificationService();
+        $url = $validated['url'] ?: null;
+        $sentCount = 0;
+
+        if ($validated['target_type'] === 'user') {
+            $user = User::findOrFail($validated['user_id']);
+
+            $pushService->sendToUser($user, $validated['title'], $validated['body'], $validated['category'], $url);
+            $sentCount = 1;
+
+            if ($request->boolean('create_notification')) {
+                Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'admin_push',
+                    'titre' => $validated['title'],
+                    'message' => $validated['body'],
+                    'lien' => $url,
+                    'donnees' => ['category' => $validated['category'], 'sent_by' => auth()->id()],
+                ]);
+            }
+        } else {
+            $users = User::whereHas('pushSubscriptions')->get();
+            foreach ($users as $user) {
+                $pushService->sendToUser($user, $validated['title'], $validated['body'], $validated['category'], $url);
+                $sentCount++;
+
+                if ($request->boolean('create_notification')) {
+                    Notification::create([
+                        'user_id' => $user->id,
+                        'type' => 'admin_push',
+                        'titre' => $validated['title'],
+                        'message' => $validated['body'],
+                        'lien' => $url,
+                        'donnees' => ['category' => $validated['category'], 'sent_by' => auth()->id()],
+                    ]);
+                }
+            }
+        }
+
+        return back()->with('success', "Notification push envoyée à {$sentCount} utilisateur(s).");
+    }
+
+    public function searchUsersForPush(Request $request)
+    {
+        $query = $request->get('q', '');
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $users = User::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+              ->orWhere('email', 'like', "%{$query}%");
+        })
+        ->limit(10)
+        ->get()
+        ->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'has_push' => $u->pushSubscriptions()->exists(),
+        ]);
+
+        return response()->json($users);
     }
 }

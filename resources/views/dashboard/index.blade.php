@@ -20,18 +20,7 @@
         @include('partials.theme-script')
         
         <script>
-            // Register Service Worker
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(registration => {
-                            console.log('SW registered:', registration);
-                        })
-                        .catch(err => {
-                            console.log('SW registration failed:', err);
-                        });
-                });
-            }
+            window.VAPID_PUBLIC_KEY = '{{ config("webpush.vapid.public_key") }}';
         </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">

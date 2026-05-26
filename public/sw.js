@@ -9,6 +9,7 @@ const ASSETS_TO_CACHE = [
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS_TO_CACHE);
@@ -27,7 +28,7 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
@@ -89,6 +90,27 @@ self.addEventListener('notificationclick', (event) => {
                 return clients.openWindow(url);
             }
         })
+    );
+});
+
+// Re-souscription automatique si le navigateur change l'endpoint (Firefox)
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil(
+        self.registration.pushManager.subscribe(event.oldSubscription.options)
+            .then((newSubscription) => {
+                return fetch('/push-subscription', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: newSubscription.endpoint,
+                        keys: {
+                            p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('p256dh')))),
+                            auth: btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('auth')))),
+                        },
+                        content_encoding: (PushManager.supportedContentEncodings || ['aesgcm'])[0],
+                    }),
+                });
+            })
     );
 });
 
