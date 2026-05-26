@@ -58,6 +58,45 @@
         <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plus</h3>
     </div>
     <div class="px-2 pb-6 space-y-1">
+        @auth
+            @php $pwaUser = auth()->user(); @endphp
+
+            {{-- Lien Administration (admin uniquement) --}}
+            @if($pwaUser->is_admin)
+                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ NavigationService::getIconPath('shield') }}"></path></svg>
+                    <span class="text-sm font-medium">Administration</span>
+                    <svg class="w-4 h-4 ml-auto text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            @endif
+
+            {{-- Lien Paramètres --}}
+            @if($context === 'dashboard')
+                <a href="{{ route('settings.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ NavigationService::getIconPath('cog') }}"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ NavigationService::getIconPath('cog-inner') }}"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Paramètres</span>
+                    <svg class="w-4 h-4 ml-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            @endif
+
+            {{-- Lien Espace Paiement --}}
+            @if($context === 'dashboard')
+                <a href="{{ route('checkout.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ NavigationService::getIconPath('credit-card') }}"></path></svg>
+                    <span class="text-sm font-medium">Espace Paiement</span>
+                    <svg class="w-4 h-4 ml-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            @endif
+
+            {{-- Séparateur si des liens spéciaux ont été ajoutés --}}
+            @if($pwaUser->is_admin || $context === 'dashboard')
+                <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+            @endif
+        @endauth
+
         @foreach($moreItems as $mItem)
             @php
                 $isActive = $activeTab === ($mItem['tab'] ?? $mItem['key']);
