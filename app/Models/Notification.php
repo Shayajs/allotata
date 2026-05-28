@@ -68,7 +68,28 @@ class Notification extends Model
         'commande' => 'reservation',
         'invitation_membre' => 'mise_a_jour',
         'admin_push' => 'general',
+        'admin_ticket_nouveau' => 'admin',
+        'admin_ticket_reponse' => 'admin',
+        'admin_contact' => 'admin',
+        'admin_message_interne' => 'admin',
+        'admin_audit_alerte' => 'admin',
+        'admin_audit_termine' => 'admin',
+        'admin_audit_echec' => 'admin',
+        'admin_erreur' => 'admin',
+        'admin_gdpr' => 'admin',
+        'admin_entreprise_validation' => 'admin',
+        'audit' => 'admin',
     ];
+
+    public function isUrgent(): bool
+    {
+        return (bool) ($this->donnees['urgent'] ?? false);
+    }
+
+    public function isAdminOps(): bool
+    {
+        return str_starts_with($this->type, 'admin_') || $this->type === 'audit';
+    }
 
     /**
      * Permet de desactiver le push pour une instance specifique.

@@ -8,6 +8,19 @@ use Illuminate\Support\Facades\Request;
 
 class EntrepriseObserver
 {
+    public function created(Entreprise $entreprise): void
+    {
+        if ($entreprise->est_verifiee) {
+            return;
+        }
+
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyEntreprisePendingValidation($entreprise);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification admin entreprise à valider: '.$e->getMessage());
+        }
+    }
+
     /**
      * Handle the Entreprise "updated" event.
      */

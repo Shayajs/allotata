@@ -36,6 +36,27 @@ Badge **statut paiement** dans le centre de notifications (`donnees.payment_stat
 
 `MessagerieController` : in-app + push ; email uniquement si activé dans les réglages.
 
+## Notifications administrateurs
+
+Service : `AdminNotificationService` — alerte **tous les comptes `is_admin`**.
+
+| Événement | Type | Lien |
+|-----------|------|------|
+| Nouveau ticket | `admin_ticket_nouveau` | Fiche ticket admin |
+| Réponse client sur ticket | `admin_ticket_reponse` | Fiche ticket admin |
+| Formulaire contact | `admin_contact` | Fiche contact admin |
+| Message messagerie interne | `admin_message_interne` | Conversation admin |
+| Audit terminé (note basse / critiques) | `admin_audit_alerte` | Rapport audit |
+| Audit terminé (OK) | `admin_audit_termine` | Rapport audit |
+| Audit échoué | `admin_audit_echec` | Rapport audit |
+| Erreur application (`error_logs`) | `admin_erreur` | `/admin/errors` |
+| Demande suppression RGPD | `admin_gdpr` | `/admin/gdpr` |
+| Entreprise à valider | `admin_entreprise_validation` | Fiche entreprise admin |
+
+**Préférences** : catégorie `admin_ops` dans Paramètres → Notifications (visible si `is_admin`).
+
+**Erreurs** : in-app pour tous les admins ; push si `notifications_erreurs_actives` **et** push `admin_ops` activé.
+
 ## Déploiement
 
 ```bash

@@ -443,7 +443,7 @@ class GdprService
 
         $delayDays = $this->getDeletionDelayDays();
 
-        return GdprRequest::create([
+        $gdprRequest = GdprRequest::create([
             'user_id' => $user->id,
             'requested_by' => $requestedBy?->id,
             'type' => GdprRequest::TYPE_DELETION,
@@ -459,6 +459,14 @@ class GdprService
                 'entreprises_count' => $user->entreprises()->count(),
             ],
         ]);
+
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyGdprDeletionRequest($gdprRequest);
+        } catch (\Throwable $e) {
+            Log::warning('Notification admin RGPD: '.$e->getMessage());
+        }
+
+        return $gdprRequest;
     }
 
     /**

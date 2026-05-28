@@ -77,6 +77,7 @@
                             <option value="reservation" {{ request('type') === 'reservation' ? 'selected' : '' }}>Réservations</option>
                             <option value="paiement" {{ request('type') === 'paiement' ? 'selected' : '' }}>Paiements</option>
                             <option value="message" {{ request('type') === 'message' ? 'selected' : '' }}>Messages</option>
+                            <option value="admin" {{ request('type') === 'admin' ? 'selected' : '' }}>Administration</option>
                             <option value="rappel" {{ request('type') === 'rappel' ? 'selected' : '' }}>Rappels</option>
                             <option value="systeme" {{ request('type') === 'systeme' ? 'selected' : '' }}>Système</option>
                         </select>
@@ -127,6 +128,12 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                                                 </svg>
                                             </div>
+                                        @elseif($notification->isAdminOps())
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                            </div>
                                         @elseif(in_array($notification->type, ['message', 'nouveau_message']))
                                             <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                                                 <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,6 +162,11 @@
                                             @if(!$notification->est_lue)
                                                 <span class="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">
                                                     Nouveau
+                                                </span>
+                                            @endif
+                                            @if($notification->isUrgent())
+                                                <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                                    Urgent
                                                 </span>
                                             @endif
                                             @if($notification->paymentStatutLabel())

@@ -236,7 +236,10 @@ class AdminNotificationService
         ];
 
         foreach ($this->getAdmins() as $admin) {
-            $notification = Notification::create([
+            $shouldPush = (bool) $admin->notifications_erreurs_actives
+                && $this->preferences->wants($admin, NotificationPreferenceService::CATEGORY_ADMIN_OPS, NotificationPreferenceService::CHANNEL_PUSH);
+
+            $notification = new Notification([
                 'user_id' => $admin->id,
                 'type' => 'admin_erreur',
                 'titre' => 'Erreur application',
@@ -244,14 +247,8 @@ class AdminNotificationService
                 'lien' => $lien,
                 'donnees' => $donnees,
             ]);
-
-            if ($admin->notifications_erreurs_actives
-                && $this->preferences->wants($admin, NotificationPreferenceService::CATEGORY_ADMIN_OPS, NotificationPreferenceService::CHANNEL_PUSH)) {
-                $notification->skipPush = false;
-                $this->sendPushToAdmin($admin, 'admin_erreur', 'Erreur application', $preview, $lien);
-            } else {
-                $notification->skipPush = true;
-            }
+            $notification->skipPush = ! $shouldPush;
+            $notification->save();
         }
     }
 

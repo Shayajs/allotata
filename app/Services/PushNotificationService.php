@@ -19,6 +19,7 @@ class PushNotificationService
         'rappel' => NotificationPreferenceService::CATEGORY_REMINDER,
         'promotion' => NotificationPreferenceService::CATEGORY_PROMOTION,
         'mise_a_jour' => NotificationPreferenceService::CATEGORY_PRODUCT_UPDATE,
+        'admin' => NotificationPreferenceService::CATEGORY_ADMIN_OPS,
     ];
 
     /** @deprecated Conservé pour sendToAllSubscribers (requête SQL legacy) */

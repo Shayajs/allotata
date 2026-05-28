@@ -1234,13 +1234,16 @@
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Canaux par catégorie</h3>
                             <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                                Mêmes réglages pour votre usage <strong>client</strong> et <strong>professionnel</strong> (un compte, une messagerie, un centre de notifications).
+                                Mêmes réglages pour votre usage <strong>client</strong> et <strong>professionnel</strong>.
                                 Pour les messages, le <strong>push</strong> est recommandé ; l’email est désactivé par défaut.
+                                @if($user->is_admin)
+                                    La ligne <strong>Administration plateforme</strong> concerne les alertes tickets, contacts, audits, etc.
+                                @endif
                             </p>
 
                             @php
                                 use App\Services\NotificationPreferenceService as NPref;
-                                $notifCategories = NPref::categories();
+                                $notifCategories = app(NPref::class)->categoriesForUser($user);
                                 $notifChannels = NPref::channels();
                                 $notifLabels = NPref::categoryLabels();
                                 $notifDescs = NPref::categoryDescriptions();

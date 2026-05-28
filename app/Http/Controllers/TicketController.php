@@ -64,6 +64,12 @@ class TicketController extends Controller
             'statut' => 'ouvert',
         ]);
 
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyNewTicket($ticket);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification admin nouveau ticket: '.$e->getMessage());
+        }
+
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Votre ticket a été créé avec succès. Numéro : ' . $ticket->numero_ticket);
     }
@@ -117,12 +123,18 @@ class TicketController extends Controller
             'est_interne' => 'nullable|boolean',
         ]);
 
-        TicketMessage::create([
+        $ticketMessage = TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'message' => $validated['message'],
             'est_interne' => Auth::user()->is_admin && ($validated['est_interne'] ?? false),
         ]);
+
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyTicketUserReply($ticket, $ticketMessage);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification admin réponse ticket: '.$e->getMessage());
+        }
 
         // Si le ticket était résolu et qu'un nouveau message est ajouté, le rouvrir
         if ($ticket->statut === 'resolu' && $ticket->user_id === Auth::id()) {

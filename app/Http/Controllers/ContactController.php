@@ -28,13 +28,19 @@ class ContactController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
-        Contact::create([
+        $contact = Contact::create([
             'nom' => $validated['nom'],
             'email' => $validated['email'],
             'sujet' => $validated['sujet'],
             'message' => $validated['message'],
             'user_id' => Auth::id(), // null si non authentifié
         ]);
+
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyNewContact($contact);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification admin contact: '.$e->getMessage());
+        }
 
         return redirect()->route('home')
             ->with('success', 'Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.');

@@ -175,6 +175,12 @@ class InternalMessagingController extends Controller
         // Charger les relations
         $message->load(['user', 'reactions.user']);
 
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyInternalMessage($message, $conversation);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification messagerie interne admin: '.$e->getMessage());
+        }
+
         return response()->json([
             'message' => $message,
         ]);

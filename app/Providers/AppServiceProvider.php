@@ -8,6 +8,8 @@ use App\Models\Reservation;
 use App\Models\RendezVous;
 use App\Models\User;
 use App\Models\Entreprise;
+use App\Models\ErrorLog;
+use App\Observers\ErrorLogObserver;
 use App\Observers\ReservationObserver;
 use App\Observers\RendezVousObserver;
 use App\Observers\UserObserver;
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         RendezVous::observe(RendezVousObserver::class);
         User::observe(UserObserver::class);
         Entreprise::observe(EntrepriseObserver::class);
+        ErrorLog::observe(ErrorLogObserver::class);
 
         // Enregistrer les policies
         Gate::policy(\App\Models\CourseLesson::class, \App\Policies\CourseLessonPolicy::class);

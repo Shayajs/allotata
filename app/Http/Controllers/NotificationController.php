@@ -27,6 +27,11 @@ class NotificationController extends Controller
                 ]);
             } elseif ($type === 'message') {
                 $query->whereIn('type', ['message', 'nouveau_message']);
+            } elseif ($type === 'admin') {
+                $query->where(function ($q) {
+                    $q->where('type', 'like', 'admin_%')
+                        ->orWhere('type', 'audit');
+                });
             } else {
                 $query->where('type', $type);
             }

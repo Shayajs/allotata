@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\Notification;
 use App\Models\SiteAudit;
 use App\Services\Audit\BackupChecker;
 use App\Services\Audit\ContactChecker;
@@ -115,14 +114,11 @@ class RunSiteAudit implements ShouldQueue
             'duration_seconds' => now()->diffInSeconds($audit->started_at),
         ]);
 
-        Notification::creer(
-            $audit->user_id,
-            'audit',
-            'Audit du site terminé',
-            "Note globale : {$noteGlobale}/100",
-            '/admin/audits/' . $audit->id,
-            ['audit_id' => $audit->id, 'note' => $noteGlobale]
-        );
+        try {
+            app(\App\Services\AdminNotificationService::class)->notifyAuditCompleted($audit);
+        } catch (\Throwable $e) {
+            \Log::warning('Notification admin audit terminé: '.$e->getMessage());
+        }
     }
 
     private function calculateGlobalScore(array $resume): int
@@ -169,14 +165,11 @@ class RunSiteAudit implements ShouldQueue
                 'duration_seconds' => $audit->started_at ? now()->diffInSeconds($audit->started_at) : 0,
             ]);
 
-            Notification::creer(
-                $audit->user_id,
-                'audit',
-                'Audit échoué',
-                'L\'audit du site a rencontré une erreur fatale.',
-                '/admin/audits/' . $audit->id,
-                ['audit_id' => $audit->id, 'error' => $exception->getMessage()]
-            );
+            try {
+                app(\App\Services\AdminNotificationService::class)->notifyAuditFailed($audit, $exception->getMessage());
+            } catch (\Throwable $e) {
+                \Log::warning('Notification admin audit échoué: '.$e->getMessage());
+            }
         }
     }
 }

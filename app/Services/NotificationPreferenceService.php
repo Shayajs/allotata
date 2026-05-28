@@ -28,7 +28,10 @@ class NotificationPreferenceService
 
     public const CATEGORY_PRODUCT_UPDATE = 'product_update';
 
-  /** Mapping catégorie → colonne legacy (push uniquement) */
+    /** Alertes plateforme (admins uniquement) */
+    public const CATEGORY_ADMIN_OPS = 'admin_ops';
+
+    /** Mapping catégorie → colonne legacy (push uniquement) */
     private const LEGACY_PUSH_COLUMN = [
         self::CATEGORY_RESERVATION => 'notifications_reservations',
         self::CATEGORY_PAYMENT => 'notifications_paiements',
@@ -62,6 +65,17 @@ class NotificationPreferenceService
         'mise_a_jour' => self::CATEGORY_PRODUCT_UPDATE,
         'invitation_membre' => self::CATEGORY_PRODUCT_UPDATE,
         'admin_push' => 'general',
+        'admin_ticket_nouveau' => self::CATEGORY_ADMIN_OPS,
+        'admin_ticket_reponse' => self::CATEGORY_ADMIN_OPS,
+        'admin_contact' => self::CATEGORY_ADMIN_OPS,
+        'admin_message_interne' => self::CATEGORY_ADMIN_OPS,
+        'admin_audit_alerte' => self::CATEGORY_ADMIN_OPS,
+        'admin_audit_termine' => self::CATEGORY_ADMIN_OPS,
+        'admin_audit_echec' => self::CATEGORY_ADMIN_OPS,
+        'admin_erreur' => self::CATEGORY_ADMIN_OPS,
+        'admin_gdpr' => self::CATEGORY_ADMIN_OPS,
+        'admin_entreprise_validation' => self::CATEGORY_ADMIN_OPS,
+        'audit' => self::CATEGORY_ADMIN_OPS,
     ];
 
     /** Catégorie push (PushNotificationService) */
@@ -72,7 +86,13 @@ class NotificationPreferenceService
         self::CATEGORY_REMINDER => 'rappel',
         self::CATEGORY_PROMOTION => 'promotion',
         self::CATEGORY_PRODUCT_UPDATE => 'mise_a_jour',
+        self::CATEGORY_ADMIN_OPS => 'admin',
     ];
+
+    public static function adminCategories(): array
+    {
+        return [self::CATEGORY_ADMIN_OPS];
+    }
 
     public static function categories(): array
     {
@@ -100,6 +120,7 @@ class NotificationPreferenceService
             self::CATEGORY_REMINDER => 'Rappels de RDV',
             self::CATEGORY_PROMOTION => 'Promotions & offres',
             self::CATEGORY_PRODUCT_UPDATE => 'Mises à jour',
+            self::CATEGORY_ADMIN_OPS => 'Administration plateforme',
         ];
     }
 
@@ -121,21 +142,33 @@ class NotificationPreferenceService
             self::CATEGORY_REMINDER => 'Rappels avant vos rendez-vous',
             self::CATEGORY_PROMOTION => 'Offres spéciales et promotions',
             self::CATEGORY_PRODUCT_UPDATE => 'Nouvelles fonctionnalités et invitations équipe',
+            self::CATEGORY_ADMIN_OPS => 'Tickets, contacts, messagerie interne, audits, erreurs et validations',
         ];
     }
 
     public function defaults(): array
     {
         $defaults = [];
-        foreach (self::categories() as $category) {
+        foreach (array_merge(self::categories(), self::adminCategories()) as $category) {
             $defaults[$category] = [
                 self::CHANNEL_IN_APP => true,
                 self::CHANNEL_PUSH => true,
-                self::CHANNEL_EMAIL => $category !== self::CATEGORY_MESSAGE,
+                self::CHANNEL_EMAIL => ! in_array($category, [self::CATEGORY_MESSAGE, self::CATEGORY_ADMIN_OPS], true),
             ];
         }
 
         return $defaults;
+    }
+
+    /** @return list<string> */
+    public function categoriesForUser(User $user): array
+    {
+        $cats = self::categories();
+        if ($user->isAdmin()) {
+            $cats = array_merge($cats, self::adminCategories());
+        }
+
+        return $cats;
     }
 
     public function forUser(User $user, string $category): array
@@ -155,7 +188,7 @@ class NotificationPreferenceService
 
         $merged = $this->defaults();
         if (is_array($stored)) {
-            foreach (self::categories() as $cat) {
+            foreach (array_keys($this->defaults()) as $cat) {
                 if (! isset($stored[$cat]) || ! is_array($stored[$cat])) {
                     continue;
                 }
@@ -179,7 +212,7 @@ class NotificationPreferenceService
     public function allForUser(User $user): array
     {
         $result = [];
-        foreach (self::categories() as $category) {
+        foreach ($this->categoriesForUser($user) as $category) {
             $result[$category] = $this->forUser($user, $category);
         }
 
@@ -209,7 +242,7 @@ class NotificationPreferenceService
     public function saveForUser(User $user, array $matrix): void
     {
         $normalized = $this->defaults();
-        foreach (self::categories() as $category) {
+        foreach ($this->categoriesForUser($user) as $category) {
             if (! isset($matrix[$category]) || ! is_array($matrix[$category])) {
                 continue;
             }
@@ -220,7 +253,9 @@ class NotificationPreferenceService
 
         $legacy = [];
         foreach (self::LEGACY_PUSH_COLUMN as $category => $column) {
-            $legacy[$column] = $normalized[$category][self::CHANNEL_PUSH] ?? true;
+            if (isset($normalized[$category])) {
+                $legacy[$column] = $normalized[$category][self::CHANNEL_PUSH] ?? true;
+            }
         }
 
         $user->update(array_merge(
