@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
+use App\Services\VisitorLocationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {
@@ -79,11 +79,7 @@ class SearchController extends Controller
         }
 
         if (empty($query)) {
-            return view('search.results', [
-                'results' => collect([]),
-                'query' => '',
-                'count' => 0
-            ]);
+            return $this->searchAllByVisitorProximity($request);
         }
 
         // Séparer les mots-clés
@@ -303,5 +299,27 @@ class SearchController extends Controller
             });
 
         return response()->json($results);
+    }
+
+    /**
+     * Liste toutes les entreprises actives, triées par proximité (position visiteur via IP).
+     */
+    private function searchAllByVisitorProximity(Request $request)
+    {
+        $visitorLocation = app(VisitorLocationService::class)->resolve($request);
+
+        $allResults = Entreprise::query()
+            ->with(['user', 'typesServices', 'avis'])
+            ->orderByDistanceFrom($visitorLocation['latitude'], $visitorLocation['longitude'])
+            ->get()
+            ->filter(fn ($entreprise) => $entreprise->aAbonnementActif());
+
+        return view('search.results', [
+            'results' => $allResults->values(),
+            'query' => '',
+            'count' => $allResults->count(),
+            'visitorLocation' => $visitorLocation,
+            'sortedByProximity' => true,
+        ]);
     }
 }

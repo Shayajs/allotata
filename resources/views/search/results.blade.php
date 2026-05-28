@@ -189,6 +189,20 @@
                                 <p class="text-slate-600 dark:text-slate-400">
                                     {{ $count }} résultat(s) trouvé(s)
                                 </p>
+                            @elseif(!empty($sortedByProximity))
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+                                    @if(!empty($visitorLocation['city']))
+                                        Entreprises près de {{ $visitorLocation['city'] }}
+                                    @else
+                                        Toutes les entreprises
+                                    @endif
+                                </h2>
+                                <p class="text-slate-600 dark:text-slate-400">
+                                    {{ $count }} entreprise(s) — du plus proche au plus loin
+                                    @if(($visitorLocation['source'] ?? '') === 'ip')
+                                        <span class="text-slate-500 dark:text-slate-500">(position estimée via votre connexion)</span>
+                                    @endif
+                                </p>
                             @else
                                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
                                     Entreprises trouvées
@@ -319,13 +333,18 @@
                                     </div>
                                 @endif
 
-                                <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500">
+                                <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500 flex-wrap">
                                     @if($entreprise->ville)
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         </svg>
                                         <span>{{ $entreprise->ville }}</span>
+                                    @endif
+                                    @if(isset($entreprise->distance) && $entreprise->distance !== null)
+                                        <span class="text-green-600 dark:text-green-400 font-medium">
+                                            • {{ number_format($entreprise->distance, 1, ',', ' ') }} km
+                                        </span>
                                     @endif
                                 </div>
                             </a>

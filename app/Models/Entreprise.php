@@ -763,6 +763,27 @@ class Entreprise extends Model
     }
 
     /**
+     * Calcule la distance depuis un point et trie du plus proche au plus loin.
+     * Les entreprises sans coordonnées GPS apparaissent en dernier.
+     */
+    public function scopeOrderByDistanceFrom($query, float $latitude, float $longitude)
+    {
+        $haversine = '(
+            6371 * acos(
+                cos(radians(?)) 
+                * cos(radians(latitude)) 
+                * cos(radians(longitude) - radians(?)) 
+                + sin(radians(?)) 
+                * sin(radians(latitude))
+            )
+        )';
+
+        return $query
+            ->selectRaw("entreprises.*, {$haversine} AS distance", [$latitude, $longitude, $latitude])
+            ->orderByRaw('distance IS NULL, distance ASC');
+    }
+
+    /**
      * Scope pour rechercher des entreprises par code postal
      */
     public function scopeByPostcode($query, string $postcode)
