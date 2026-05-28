@@ -77,7 +77,7 @@
                     </svg>
                     Filtrer
                 </button>
-                <a href="{{ route('admin.email-logs.index') }}" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium">
+                <a href="{{ route('admin.email-logs.index') }}" class="ui-btn-simple bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium">
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
@@ -185,7 +185,7 @@
                                                     <textarea name="reason" rows="3" placeholder="Ex: Vérifié par téléphone, client confirmé..." class="ui-textarea w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white"></textarea>
                                                 </div>
                                                 <div class="flex gap-3">
-                                                    <button type="button" onclick="document.getElementById('verifyModal-{{ $log->id }}').classList.add('hidden')" class="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium">
+                                                    <button type="button" onclick="document.getElementById('verifyModal-{{ $log->id }}').classList.add('hidden')" class="ui-btn-simple flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium">
                                                         Annuler
                                                     </button>
                                                     <button type="submit" class="ui-btn-simple flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">

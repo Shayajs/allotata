@@ -21,16 +21,16 @@
 @layer components {
     textarea:not(.no-ui-textarea),
     .ui-textarea {
-        border-radius: 0.75rem;
-        padding: 0.75rem 1rem;
-        min-height: 7rem;
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        min-height: 7rem !important;
         line-height: 1.5;
     }
 
     .ui-btn-simple {
-        border-radius: 0.75rem;
-        min-height: 2.75rem;
-        padding: 0.625rem 1rem;
+        border-radius: 0.75rem !important;
+        min-height: 2.75rem !important;
+        padding: 0.625rem 1rem !important;
         display: inline-flex;
         align-items: center;
         justify-content: center;

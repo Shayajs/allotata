@@ -95,12 +95,12 @@
 
             <div id="diag-results" class="space-y-3 mb-6"></div>
 
-            <button onclick="runDiagnostic()" id="diag-btn" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+            <button type="button" onclick="runDiagnostic()" id="diag-btn" class="ui-btn-simple w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
                 Lancer le diagnostic complet
             </button>
 
             <div id="diag-test-push" class="mt-4 hidden">
-                <button onclick="sendTestPush()" class="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition">
+                <button type="button" onclick="sendTestPush()" class="ui-btn-simple w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition">
                     Envoyer une notification push de test (sur cet appareil)
                 </button>
             </div>
