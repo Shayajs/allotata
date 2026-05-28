@@ -77,6 +77,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'notifications_rappels',
         'notifications_promotions',
         'notifications_mises_a_jour',
+        'notification_channel_prefs',
         'push_banner_dismissed_at',
         // Enrichissement profil
         'genre',
@@ -149,6 +150,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'notifications_rappels' => 'boolean',
             'notifications_promotions' => 'boolean',
             'notifications_mises_a_jour' => 'boolean',
+            'notification_channel_prefs' => 'array',
             'push_banner_dismissed_at' => 'datetime',
             'derniere_connexion_at' => 'datetime',
             'pref_horaire_matin' => 'boolean',
@@ -292,6 +294,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function aAbonnementActif(): bool
     {
         return \App\Services\SubscriptionService::checkSubscriptionStatus($this);
+    }
+
+    /**
+     * Abonnement Premium accordé manuellement par un admin (hors Stripe).
+     */
+    public function hasActiveManualPremium(): bool
+    {
+        return (bool) $this->abonnement_manuel
+            && $this->abonnement_manuel_actif_jusqu
+            && ! $this->abonnement_manuel_actif_jusqu->isPast();
     }
 
     /**

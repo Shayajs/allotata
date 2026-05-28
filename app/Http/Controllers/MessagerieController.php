@@ -321,16 +321,7 @@ class MessagerieController extends Controller
             'dernier_message_at' => now(),
         ]);
 
-        // Envoyer un email à l'autre partie si elle n'est pas en ligne
-        try {
-            $conversation->refresh();
-            $recipient = $conversation->user_id ? $conversation->user : $conversation->entreprise->user;
-            if ($recipient && $recipient->id !== $user->id) {
-                \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
-            }
-        } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : ".$e->getMessage());
-        }
+        $this->notifierDestinataireMessage($conversation, $message, $user, $entreprise, false);
 
         return back()->with('success', 'Message envoyé !');
     }
@@ -462,17 +453,56 @@ class MessagerieController extends Controller
             'dernier_message_at' => now(),
         ]);
 
-        // Envoyer un email au client si ce n'est pas lui qui a envoyé
-        try {
-            $conversation->refresh();
-            if ($conversation->user_id && $conversation->user_id !== $user->id) {
-                \App\Helpers\EmailHelper::sendNewMessage($message, $conversation);
-            }
-        } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de nouveau message : ".$e->getMessage());
-        }
+        $this->notifierDestinataireMessage($conversation, $message, $user, $entreprise, true);
 
         return back()->with('success', 'Message envoyé !');
+    }
+
+    /**
+     * Notifie le destinataire (in-app + push ; email si activé dans les réglages).
+     */
+    private function notifierDestinataireMessage(
+        Conversation $conversation,
+        Message $message,
+        $expediteur,
+        Entreprise $entreprise,
+        bool $expediteurEstGerant,
+    ): void {
+        try {
+            $conversation->refresh();
+            if ($expediteurEstGerant) {
+                $recipient = $conversation->user;
+                if (! $recipient || $recipient->id === $expediteur->id) {
+                    return;
+                }
+                $lien = route('messagerie.show', $entreprise->slug);
+            } else {
+                $recipient = $entreprise->user;
+                if (! $recipient || $recipient->id === $expediteur->id) {
+                    return;
+                }
+                $lien = route('messagerie.show-gerant', [$entreprise->slug, $conversation->id]);
+            }
+
+            $preview = $message->contenu
+                ? \Illuminate\Support\Str::limit(strip_tags($message->contenu), 120)
+                : 'Image envoyée';
+
+            app(\App\Services\UserNotificationService::class)->notifyNewMessage(
+                $recipient,
+                'Nouveau message — '.$entreprise->nom,
+                $expediteur->name.' : '.$preview,
+                $lien,
+                [
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $message->id,
+                    'entreprise_slug' => $entreprise->slug,
+                ],
+                fn () => \App\Helpers\EmailHelper::sendNewMessage($message, $conversation),
+            );
+        } catch (\Exception $e) {
+            \Log::error("Erreur notification nouveau message : ".$e->getMessage());
+        }
     }
 
     /**

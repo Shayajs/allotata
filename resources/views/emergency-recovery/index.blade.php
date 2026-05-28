@@ -403,6 +403,16 @@
             background: var(--bg-tertiary);
             color: var(--text-secondary);
         }
+
+        .badge-verified {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge-unverified {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
         
         .badge-size {
             background: var(--bg-tertiary);
@@ -710,6 +720,10 @@
                 <div class="stat-label">Admins</div>
             </div>
             <div class="stat-card">
+                <div class="stat-value" style="color: {{ ($unverifiedCount ?? 0) > 0 ? 'var(--warning)' : 'var(--success)' }};">{{ $unverifiedCount ?? 0 }}</div>
+                <div class="stat-label">Emails non vérifiés</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-value">{{ count($backups ?? []) }}</div>
                 <div class="stat-label">Sauvegardes</div>
             </div>
@@ -828,11 +842,37 @@
             </div>
         </div>
 
+        <!-- Verify email by address -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">✉️</span>
+                <span class="section-title">Vérifier un email manuellement</span>
+            </div>
+            <div class="section-content">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                    Débloque la connexion pour un compte dont l'email n'a pas été validé (lien de vérification perdu, mail non reçu, etc.).
+                </p>
+                <form method="POST" action="{{ request()->fullUrl() }}" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                    @csrf
+                    <input type="hidden" name="secret_token" value="{{ $token }}">
+                    <input type="hidden" name="action" value="verify_email">
+                    <div class="form-group" style="flex: 1; min-width: 220px; margin: 0;">
+                        <label class="form-label">Adresse email</label>
+                        <input type="email" name="email" class="form-input" required placeholder="utilisateur@exemple.fr">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>✅</span>
+                        <span>Valider l'email</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Users List Section -->
         <div class="section">
             <div class="section-header">
                 <span class="section-icon">👥</span>
-                <span class="section-title">Utilisateurs ({{ $users->count() }})</span>
+                <span class="section-title">Utilisateurs ({{ $users->count() }} derniers)</span>
             </div>
             <div class="section-content" style="padding: 0;">
                 @if($users->count() > 0)
@@ -843,6 +883,7 @@
                                     <th>ID</th>
                                     <th>Nom</th>
                                     <th>Email</th>
+                                    <th>Email vérifié</th>
                                     <th>Rôle</th>
                                     <th>Actions</th>
                                 </tr>
@@ -854,6 +895,13 @@
                                     <td>{{ $user->name }}</td>
                                     <td style="font-family: monospace; font-size: 12px;">{{ $user->email }}</td>
                                     <td>
+                                        @if($user->email_verified_at)
+                                            <span class="badge badge-verified" title="{{ $user->email_verified_at->format('d/m/Y H:i') }}">Oui</span>
+                                        @else
+                                            <span class="badge badge-unverified">Non</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         @if($user->is_admin)
                                             <span class="badge badge-admin">Admin</span>
                                         @else
@@ -862,6 +910,15 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                            @if(!$user->email_verified_at)
+                                            <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="secret_token" value="{{ $token }}">
+                                                <input type="hidden" name="action" value="verify_email">
+                                                <input type="hidden" name="user_id" value="{{ $user->id }}">
+                                                <button type="submit" class="btn btn-ghost btn-sm">✅ Vérifier email</button>
+                                            </form>
+                                            @endif
                                             @if(!$user->is_admin)
                                             <form method="POST" action="{{ request()->fullUrl() }}" style="display: inline;">
                                                 @csrf

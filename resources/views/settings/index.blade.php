@@ -1230,42 +1230,63 @@
                             </div>
                         </div>
 
-                        <!-- Section Préférences par catégorie -->
+                        <!-- Section Préférences par catégorie × canal -->
                         <div>
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Catégories de notifications</h3>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Choisissez les types de notifications que vous souhaitez recevoir (email, push et in-app).</p>
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Canaux par catégorie</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                Mêmes réglages pour votre usage <strong>client</strong> et <strong>professionnel</strong> (un compte, une messagerie, un centre de notifications).
+                                Pour les messages, le <strong>push</strong> est recommandé ; l’email est désactivé par défaut.
+                            </p>
 
-                            <form action="{{ route('settings.notifications.update') }}" method="POST">
+                            @php
+                                use App\Services\NotificationPreferenceService as NPref;
+                                $notifCategories = NPref::categories();
+                                $notifChannels = NPref::channels();
+                                $notifLabels = NPref::categoryLabels();
+                                $notifDescs = NPref::categoryDescriptions();
+                                $notifChannelLabels = NPref::channelLabels();
+                                $channelPrefs = $notificationChannelPrefs ?? app(NPref::class)->allForUser($user);
+                            @endphp
+
+                            <form action="{{ route('settings.notifications.update') }}" method="POST" id="form-notification-prefs">
                                 @csrf
-                                <div class="space-y-3">
-                                    @php
-                                        $notifPrefs = [
-                                            ['field' => 'notifications_reservations', 'label' => 'Réservations', 'desc' => 'Confirmations, rappels et modifications de vos réservations'],
-                                            ['field' => 'notifications_paiements', 'label' => 'Paiements', 'desc' => 'Confirmations de paiement et factures'],
-                                            ['field' => 'notifications_messages', 'label' => 'Messages', 'desc' => 'Nouveaux messages de vos contacts'],
-                                            ['field' => 'notifications_rappels', 'label' => 'Rappels de RDV', 'desc' => 'Rappels avant vos rendez-vous'],
-                                            ['field' => 'notifications_promotions', 'label' => 'Promotions & Offres', 'desc' => 'Offres spéciales et promotions'],
-                                            ['field' => 'notifications_mises_a_jour', 'label' => 'Mises à jour', 'desc' => 'Nouvelles fonctionnalités et améliorations'],
-                                        ];
-                                    @endphp
-
-                                    @foreach($notifPrefs as $pref)
-                                        <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                            <div class="flex items-center justify-between">
-                                                <div>
-                                                    <p class="font-medium text-slate-900 dark:text-white">{{ $pref['label'] }}</p>
-                                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ $pref['desc'] }}</p>
-                                                </div>
-                                                <label class="relative inline-flex items-center cursor-pointer">
-                                                    <input type="checkbox" name="{{ $pref['field'] }}" value="1"
-                                                        {{ $user->{$pref['field']} ? 'checked' : '' }}
-                                                        onchange="this.form.submit()"
-                                                        class="sr-only peer">
-                                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    @endforeach
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <table class="w-full min-w-[520px] text-sm">
+                                        <thead class="bg-slate-50 dark:bg-slate-800/80">
+                                            <tr>
+                                                <th class="text-left p-3 font-medium text-slate-700 dark:text-slate-300">Catégorie</th>
+                                                @foreach($notifChannels as $ch)
+                                                    <th class="p-3 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ $notifChannelLabels[$ch] }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                                            @foreach($notifCategories as $cat)
+                                                <tr class="bg-white dark:bg-slate-800">
+                                                    <td class="p-3 align-top">
+                                                        <p class="font-medium text-slate-900 dark:text-white">{{ $notifLabels[$cat] }}</p>
+                                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ $notifDescs[$cat] }}</p>
+                                                    </td>
+                                                    @foreach($notifChannels as $ch)
+                                                        <td class="p-3 text-center align-middle">
+                                                            <label class="inline-flex items-center justify-center cursor-pointer" title="{{ $notifChannelLabels[$ch] }}">
+                                                                <input type="checkbox"
+                                                                    name="notif[{{ $cat }}][{{ $ch }}]"
+                                                                    value="1"
+                                                                    {{ ($channelPrefs[$cat][$ch] ?? false) ? 'checked' : '' }}
+                                                                    class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 dark:border-slate-600 dark:bg-slate-700">
+                                                            </label>
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button type="submit" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                                        Enregistrer les préférences
+                                    </button>
                                 </div>
                             </form>
                         </div>

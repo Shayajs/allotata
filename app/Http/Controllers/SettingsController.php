@@ -7,6 +7,7 @@ use App\Models\Entreprise;
 use App\Models\StripeTransaction;
 use App\Services\ImageService;
 use App\Services\NavigationService;
+use App\Services\NotificationPreferenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -100,19 +101,20 @@ class SettingsController extends Controller
         $lastPayments = $lastPayments->sortByDesc(fn ($p) => $p->date)->take(15)->values();
 
         // Prochaines échéances (a_payer, en_attente)
-        $upcomingQuery = Echeance::where('user_id', $user->id)
+        $upcomingEcheances = Echeance::where('user_id', $user->id)
             ->whereIn('statut', [Echeance::STATUT_A_PAYER, Echeance::STATUT_EN_ATTENTE])
-            ->orderBy('periode_fin');
-        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && ! $user->abonnement_manuel_actif_jusqu->isPast()) {
-            $upcomingQuery->where('payment_origin', Echeance::ORIGIN_MANUAL);
-        }
-        $upcomingEcheances = $upcomingQuery->get();
+            ->requiringUserPayment($user)
+            ->orderBy('periode_fin')
+            ->get();
 
         // Données RGPD pour l'onglet Confidentialité
         $gdprData = \App\Http\Controllers\GdprController::getGdprDataForUser($user->id);
 
+        $notificationChannelPrefs = app(NotificationPreferenceService::class)->allForUser($user);
+
         return view('settings.index', [
             'user' => $user,
+            'notificationChannelPrefs' => $notificationChannelPrefs,
             'entreprises' => $entreprises,
             'subscription' => $subscription,
             'stripeSubscription' => $stripeSubscription,
@@ -726,21 +728,12 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $fields = [
-            'notifications_reservations',
-            'notifications_paiements',
-            'notifications_messages',
-            'notifications_rappels',
-            'notifications_promotions',
-            'notifications_mises_a_jour',
-        ];
-
-        $data = [];
-        foreach ($fields as $field) {
-            $data[$field] = $request->has($field);
+        $matrix = $request->input('notif', []);
+        if (! is_array($matrix)) {
+            $matrix = [];
         }
 
-        $user->update($data);
+        app(NotificationPreferenceService::class)->saveForUser($user, $matrix);
 
         return redirect()->route('settings.index', ['tab' => 'notifications'])
             ->with('success', 'Préférences de notifications mises à jour.');

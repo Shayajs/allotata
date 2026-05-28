@@ -65,12 +65,10 @@ class CheckoutController extends Controller
                 Echeance::STATUT_A_PAYER,
                 Echeance::STATUT_EN_ATTENTE,
             ])
+            ->requiringUserPayment($user)
             ->orderBy('periode_debut')
             ->with('entreprise')
             ->get();
-        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
-            $echeances = $echeances->where('payment_origin', Echeance::ORIGIN_MANUAL)->values();
-        }
 
         // ── Catégoriser par état pour un affichage clair ──
         $echeancesEchec     = $echeances->where('statut', Echeance::STATUT_ECHEC)->values();
@@ -788,17 +786,20 @@ class CheckoutController extends Controller
                         'message' => '3DS requis (SCA) en mode off_session – authentification nécessaire.',
                     ]);
                     
-                    // Envoyer un email automatique au client pour finaliser l'authentification
                     try {
-                        EmailHelper::sendPaymentAuthenticationRequired($user, $echeance, $piId);
-                        Log::info('Email SCA Recovery envoyé', [
+                        app(\App\Services\UserNotificationService::class)->notifyPaymentStatus(
+                            $user,
+                            $echeance,
+                            'requires_action',
+                            null,
+                            fn () => EmailHelper::sendPaymentAuthenticationRequired($user, $echeance, $piId),
+                        );
+                        Log::info('Notification SCA selon préférences utilisateur', [
                             'user_id' => $user->id,
                             'echeance_id' => $echeance->id,
-                            'payment_intent_id' => $piId,
                         ]);
                     } catch (\Throwable $emailEx) {
-                        // Ne pas bloquer le flux si l'email échoue
-                        Log::warning('Échec envoi email SCA Recovery', [
+                        Log::warning('Échec notification SCA', [
                             'user_id' => $user->id,
                             'echeance_id' => $echeance->id,
                             'error' => $emailEx->getMessage(),

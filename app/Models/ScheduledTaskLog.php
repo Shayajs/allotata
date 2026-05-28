@@ -55,7 +55,9 @@ class ScheduledTaskLog extends Model
     public static function getCommandLabels(): array
     {
         return [
-            'subscriptions:check-echeances' => 'Échéances abonnements',
+            'subscriptions:check-echeances' => 'Échéances abonnements Stripe',
+            'subscriptions:generate-invoices' => 'Factures abonnements manuels',
+            'subscriptions:process-payments' => 'Auto-charge & retry paiements',
             'subscriptions:reconcile-echeances' => 'Réconciliation Stripe',
             'essais:check-expiration' => 'Vérification essais gratuits',
             'reservations:send-reminders --hours=24' => 'Rappels RDV (24h)',

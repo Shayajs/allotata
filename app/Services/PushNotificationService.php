@@ -11,9 +11,17 @@ class PushNotificationService
 {
     private WebPush $webPush;
 
-    /**
-     * Mapping des types de notification vers les préférences utilisateur
-     */
+    /** Clé push → catégorie préférences */
+    private const PUSH_KEY_TO_CATEGORY = [
+        'reservation' => NotificationPreferenceService::CATEGORY_RESERVATION,
+        'paiement' => NotificationPreferenceService::CATEGORY_PAYMENT,
+        'message' => NotificationPreferenceService::CATEGORY_MESSAGE,
+        'rappel' => NotificationPreferenceService::CATEGORY_REMINDER,
+        'promotion' => NotificationPreferenceService::CATEGORY_PROMOTION,
+        'mise_a_jour' => NotificationPreferenceService::CATEGORY_PRODUCT_UPDATE,
+    ];
+
+    /** @deprecated Conservé pour sendToAllSubscribers (requête SQL legacy) */
     private const CATEGORY_MAP = [
         'reservation' => 'notifications_reservations',
         'paiement' => 'notifications_paiements',
@@ -109,16 +117,16 @@ class PushNotificationService
     /**
      * Vérifier si l'utilisateur souhaite recevoir cette catégorie de notification
      */
-    private function userWantsCategory(User $user, string $category): bool
+    private function userWantsCategory(User $user, string $pushKey): bool
     {
-        $field = self::CATEGORY_MAP[$category] ?? null;
+        $prefCategory = self::PUSH_KEY_TO_CATEGORY[$pushKey] ?? null;
 
-        if ($field === null) {
-            // Catégorie inconnue → on envoie par défaut
-            return true;
+        if ($prefCategory !== null) {
+            return app(NotificationPreferenceService::class)
+                ->wants($user, $prefCategory, NotificationPreferenceService::CHANNEL_PUSH);
         }
 
-        return (bool) $user->{$field};
+        return true;
     }
 
     /**

@@ -32,6 +32,8 @@ class GenerateManualSubscriptionInvoices extends Command
         $this->info('📄 Génération des factures d\'abonnements manuels...');
         $force = $this->option('force');
         $jourActuel = now()->day;
+        $dernierJourDuMois = now()->daysInMonth;
+        $estDernierJour = $jourActuel === $dernierJourDuMois;
         $dateActuelle = now();
 
         $facturesGenerees = 0;
@@ -48,9 +50,12 @@ class GenerateManualSubscriptionInvoices extends Command
         $this->info("Trouvé {$usersAvecAbonnementManuel->count()} utilisateurs avec abonnement manuel");
 
         foreach ($usersAvecAbonnementManuel as $user) {
-            // Vérifier si c'est le jour de renouvellement
-            if ($user->abonnement_manuel_jour_renouvellement == $jourActuel || $force) {
-                try {
+            $billingDay = (int) $user->abonnement_manuel_jour_renouvellement;
+            if (! $force && ! $this->shouldRunForDay($billingDay, $jourActuel, $dernierJourDuMois, $estDernierJour)) {
+                continue;
+            }
+
+            try {
                     // Déterminer la date de facture
                     $dateFacture = $dateActuelle->copy();
                     
@@ -84,10 +89,9 @@ class GenerateManualSubscriptionInvoices extends Command
                         $facturesGenerees++;
                         $this->info("  ✓ Facture générée pour {$user->name} - {$facture->numero_facture} ({$facture->montant_ttc}€)");
                     }
-                } catch (\Exception $e) {
-                    $erreurs++;
-                    $this->error("  ✗ Erreur pour {$user->name}: " . $e->getMessage());
-                }
+            } catch (\Exception $e) {
+                $erreurs++;
+                $this->error("  ✗ Erreur pour {$user->name}: " . $e->getMessage());
             }
         }
 
@@ -106,9 +110,12 @@ class GenerateManualSubscriptionInvoices extends Command
         $this->info("Trouvé {$entrepriseSubscriptions->count()} abonnements manuels entreprises");
 
         foreach ($entrepriseSubscriptions as $subscription) {
-            // Vérifier si c'est le jour de renouvellement
-            if ($subscription->jour_renouvellement == $jourActuel || $force) {
-                try {
+            $billingDay = (int) $subscription->jour_renouvellement;
+            if (! $force && ! $this->shouldRunForDay($billingDay, $jourActuel, $dernierJourDuMois, $estDernierJour)) {
+                continue;
+            }
+
+            try {
                     // Déterminer la date de facture
                     $dateFacture = $dateActuelle->copy();
                     
@@ -142,10 +149,9 @@ class GenerateManualSubscriptionInvoices extends Command
                         $facturesGenerees++;
                         $this->info("  ✓ Facture générée pour {$subscription->entreprise->nom} - {$subscription->type} - {$facture->numero_facture} ({$facture->montant_ttc}€)");
                     }
-                } catch (\Exception $e) {
-                    $erreurs++;
-                    $this->error("  ✗ Erreur pour {$subscription->entreprise->nom} - {$subscription->type}: " . $e->getMessage());
-                }
+            } catch (\Exception $e) {
+                $erreurs++;
+                $this->error("  ✗ Erreur pour {$subscription->entreprise->nom} - {$subscription->type}: " . $e->getMessage());
             }
         }
 
@@ -157,5 +163,14 @@ class GenerateManualSubscriptionInvoices extends Command
         }
 
         return 0;
+    }
+
+    private function shouldRunForDay(int $billingDay, int $today, int $daysInMonth, bool $isMonthEnd): bool
+    {
+        if ($billingDay === $today) {
+            return true;
+        }
+
+        return $isMonthEnd && $billingDay > $daysInMonth;
     }
 }

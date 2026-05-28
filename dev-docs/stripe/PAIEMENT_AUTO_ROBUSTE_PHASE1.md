@@ -45,13 +45,18 @@ Cette refonte corrige un point critique:
 
 ### Commande `subscriptions:check-echeances`
 
-- Cree les echeances auto pour les abonnements non manuels.
-- Cree les echeances mensuelles manuelles (visibles membre + admin) avec:
-  - `payment_origin=manual`
-  - `auto_charge_eligible=false`
+- Cree les echeances **Stripe uniquement** (Premium + options entreprise carte).
+- Premium : uniquement si `subscribed('default')` (actif ou periode de grace Cashier) — **pas** de relance sur un ancien paiement > 12 mois.
+- Abonnements manuels : **non** geres ici (voir `subscriptions:generate-invoices`).
 - Idempotence renforcee:
   - pas de doublons meme scope/periode/source
   - filtres de statut pour eviter les recreations incoherentes.
+
+### Commande `subscriptions:generate-invoices`
+
+- Planifiee quotidiennement (06:05), avant `process-payments`.
+- Genere les **factures** compta pour abonnements manuels utilisateur et entreprise.
+- Jour de facturation : meme regle que `check-echeances` (dernier jour du mois si jour > fin de mois).
 
 ### Commande `subscriptions:process-payments`
 
@@ -99,16 +104,19 @@ Choix metier applique:
 
 Dans dashboard/settings/checkout:
 
-- si abonnement manuel actif, l'affichage des echeances dues est filtre sur l'origine manuelle;
-- evite les faux messages "vous devez de l'argent" issus d'anciennes dettes Stripe non arbitrees.
+- les echeances `payment_origin=manual` ou `auto_charge_eligible=false` ne sont **jamais** proposées au membre (pas de bouton « Régler »);
+- si abonnement Premium manuel actif, les anciennes dettes Premium Stripe (`auto_card`, sans entreprise) sont masquées côté membre;
+- le CRON `process-payments` ignore déjà ces échéances ; seul l'admin voit les lignes manuelles dans `/admin/echeances`.
 
 ## Cohérence d'execution CRON
 
-`/cron-run` execute maintenant aussi:
+`/cron-run` execute dans l'ordre:
 
+- `subscriptions:check-echeances`
+- `subscriptions:generate-invoices`
 - `subscriptions:process-payments`
-
-pour rester coherent avec `check` + `reconcile`.
+- `subscriptions:reconcile-echeances`
+- `essais:check-expiration`
 
 ## Validation et tests
 
@@ -124,6 +132,7 @@ pour rester coherent avec `check` + `reconcile`.
 1. `php artisan migrate`
 2. verifier scheduler:
    - `subscriptions:check-echeances`
+   - `subscriptions:generate-invoices`
    - `subscriptions:process-payments`
    - `subscriptions:reconcile-echeances`
 3. verifier admin:

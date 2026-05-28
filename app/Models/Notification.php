@@ -85,24 +85,30 @@ class Notification extends Model
 
             try {
                 $user = $notification->user ?? User::find($notification->user_id);
-                if (!$user || !$user->pushSubscriptions()->exists()) {
+                if (! $user || ! $user->pushSubscriptions()->exists()) {
+                    return;
+                }
+
+                $prefs = app(\App\Services\NotificationPreferenceService::class);
+                $category = $prefs->categoryFromNotificationType($notification->type);
+                if (! $prefs->wants($user, $category, \App\Services\NotificationPreferenceService::CHANNEL_PUSH)) {
                     return;
                 }
 
                 $pushCategory = self::TYPE_TO_PUSH_CATEGORY[$notification->type] ?? 'general';
                 $lien = $notification->lien;
-                $pushUrl = $lien ? (str_starts_with($lien, 'http') ? $lien : config('app.url') . $lien) : null;
+                $pushUrl = $lien ? (str_starts_with($lien, 'http') ? $lien : config('app.url').$lien) : null;
 
-                $pushService = new \App\Services\PushNotificationService();
-                $pushService->sendToUser($user, $notification->titre, $notification->message, $pushCategory, $pushUrl);
+                app(\App\Services\PushNotificationService::class)
+                    ->sendToUser($user, $notification->titre, $notification->message, $pushCategory, $pushUrl);
             } catch (\Exception $e) {
-                \Log::warning("Erreur envoi push notification : " . $e->getMessage());
+                \Log::warning('Erreur envoi push notification : '.$e->getMessage());
             }
         });
     }
 
     /**
-     * Créer une notification (in-app + push automatique via le hook created)
+     * Créer une notification en respectant les préférences canal (in-app, push, email optionnel).
      */
     public static function creer(
         int $userId,
@@ -110,15 +116,57 @@ class Notification extends Model
         string $titre,
         string $message,
         ?string $lien = null,
-        ?array $donnees = null
-    ): self {
-        return self::create([
-            'user_id' => $userId,
-            'type' => $type,
-            'titre' => $titre,
-            'message' => $message,
-            'lien' => $lien,
-            'donnees' => $donnees,
-        ]);
+        ?array $donnees = null,
+        ?callable $emailCallback = null,
+    ): ?self {
+        $user = User::find($userId);
+        if (! $user) {
+            return null;
+        }
+
+        $prefs = app(\App\Services\NotificationPreferenceService::class);
+        $category = $prefs->categoryFromNotificationType($type);
+
+        return app(\App\Services\UserNotificationService::class)->notify(
+            $user,
+            $category,
+            $type,
+            $titre,
+            $message,
+            $lien,
+            $donnees,
+            $emailCallback,
+        );
+    }
+
+    /** Libellé lisible du statut paiement (donnees.payment_statut). */
+    public function paymentStatutLabel(): ?string
+    {
+        $statut = $this->donnees['payment_statut'] ?? null;
+        if (! $statut) {
+            return null;
+        }
+
+        return match ($statut) {
+            'paye', 'succeeded' => 'Payé',
+            'echec', 'failed' => 'Échec',
+            'requires_action', '3ds' => 'Action requise',
+            'en_attente' => 'En attente',
+            'a_payer' => 'À payer',
+            default => ucfirst((string) $statut),
+        };
+    }
+
+    public function paymentStatutBadgeClass(): string
+    {
+        $statut = $this->donnees['payment_statut'] ?? '';
+
+        return match ($statut) {
+            'paye', 'succeeded' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+            'echec', 'failed' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+            'requires_action', '3ds' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+            'en_attente', 'a_payer' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+            default => 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+        };
     }
 }

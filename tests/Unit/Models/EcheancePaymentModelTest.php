@@ -19,5 +19,22 @@ class EcheancePaymentModelTest extends TestCase
         $this->assertSame(Echeance::ORIGIN_MANUAL, $echeance->payment_origin);
         $this->assertFalse((bool) $echeance->auto_charge_eligible);
         $this->assertTrue($echeance->estAPayer());
+        $this->assertFalse($echeance->requiresUserPayment());
+        $this->assertFalse($echeance->estReglable());
+    }
+
+    public function test_auto_card_echeance_requires_user_payment(): void
+    {
+        $echeance = new Echeance([
+            'payment_origin' => Echeance::ORIGIN_AUTO_CARD,
+            'payment_provider' => Echeance::PROVIDER_STRIPE,
+            'auto_charge_eligible' => true,
+            'statut' => Echeance::STATUT_A_PAYER,
+            'subscription_type' => Echeance::TYPE_DEFAULT,
+            'entreprise_id' => null,
+        ]);
+
+        $this->assertTrue($echeance->requiresUserPayment());
+        $this->assertTrue($echeance->estReglable());
     }
 }

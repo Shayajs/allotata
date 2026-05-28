@@ -76,6 +76,7 @@
                             <option value="">Tous les types</option>
                             <option value="reservation" {{ request('type') === 'reservation' ? 'selected' : '' }}>Réservations</option>
                             <option value="paiement" {{ request('type') === 'paiement' ? 'selected' : '' }}>Paiements</option>
+                            <option value="message" {{ request('type') === 'message' ? 'selected' : '' }}>Messages</option>
                             <option value="rappel" {{ request('type') === 'rappel' ? 'selected' : '' }}>Rappels</option>
                             <option value="systeme" {{ request('type') === 'systeme' ? 'selected' : '' }}>Système</option>
                         </select>
@@ -120,10 +121,16 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                                 </svg>
                                             </div>
-                                        @elseif($notification->type === 'paiement')
+                                        @elseif(in_array($notification->type, ['paiement', 'paiement_recu', 'paiement_echec', 'paiement_3ds', 'paiement_en_attente', 'devis', 'devis_accepte', 'devis_refuse']))
                                             <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                                                 <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                </svg>
+                                            </div>
+                                        @elseif(in_array($notification->type, ['message', 'nouveau_message']))
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                                                 </svg>
                                             </div>
                                         @elseif($notification->type === 'rappel')
@@ -150,10 +157,20 @@
                                                     Nouveau
                                                 </span>
                                             @endif
+                                            @if($notification->paymentStatutLabel())
+                                                <span class="px-2 py-0.5 text-xs rounded-full {{ $notification->paymentStatutBadgeClass() }}">
+                                                    {{ $notification->paymentStatutLabel() }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <p class="text-slate-600 dark:text-slate-400 mb-2 text-sm sm:text-base whitespace-pre-line">
                                             {{ $notification->message }}
                                         </p>
+                                        @if(isset($notification->donnees['montant']) && $notification->donnees['montant'] > 0)
+                                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">
+                                                Montant : {{ number_format($notification->donnees['montant'], 2, ',', ' ') }} €
+                                            </p>
+                                        @endif
                                         <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-500 dark:text-slate-400">
                                             <span>{{ $notification->created_at->format('d/m/Y à H:i') }}</span>
                                             @if($notification->est_lue)

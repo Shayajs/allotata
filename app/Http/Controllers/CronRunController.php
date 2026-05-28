@@ -46,6 +46,14 @@ class CronRunController extends Controller
         }
 
         try {
+            Artisan::call('subscriptions:generate-invoices');
+            $results['generate_invoices'] = ['exit' => 0, 'output' => trim(Artisan::output())];
+        } catch (\Throwable $e) {
+            Log::error('CronRun generate-invoices failed', ['error' => $e->getMessage()]);
+            $results['generate_invoices'] = ['exit' => 1, 'error' => $e->getMessage()];
+        }
+
+        try {
             Artisan::call('subscriptions:process-payments');
             $results['process_payments'] = ['exit' => 0, 'output' => trim(Artisan::output())];
         } catch (\Throwable $e) {

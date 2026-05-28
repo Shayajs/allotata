@@ -430,8 +430,9 @@
                             class="flex-1 flex justify-center py-3 px-4 border border-slate-300 dark:border-slate-600 text-base font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
                             Précédent
                         </button>
-                        <button type="submit" id="btn-submit"
-                            class="flex-1 flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all">
+                        <button type="button" id="btn-submit" disabled
+                            aria-disabled="true"
+                            class="flex-1 flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-green-600 disabled:hover:to-green-500">
                             Créer mon compte
                         </button>
                     </div>
@@ -499,6 +500,9 @@
                 if (target) target.classList.remove('hidden');
                 currentStep = step;
                 updateStepper(step);
+                if (step === 4) {
+                    updateSubmitButtonState();
+                }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
@@ -575,6 +579,21 @@
                 return valid;
             }
 
+            const legalAcceptanceIds = ['cgu_accepted', 'cgv_accepted', 'confidentialite_accepted'];
+
+            function areLegalAcceptancesChecked() {
+                return legalAcceptanceIds.every(id => document.getElementById(id)?.checked);
+            }
+
+            function updateSubmitButtonState() {
+                const btn = document.getElementById('btn-submit');
+                if (!btn) return;
+
+                const enabled = areLegalAcceptancesChecked();
+                btn.disabled = !enabled;
+                btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+            }
+
             function validateStep4() {
                 clearErrors();
                 let valid = true;
@@ -592,6 +611,7 @@
                     }
                 });
 
+                updateSubmitButtonState();
                 return valid;
             }
 
@@ -691,15 +711,37 @@
                 }
             }
 
-            // ── Soumission du formulaire ──
-            document.getElementById('signup-form').addEventListener('submit', function(e) {
-                if (!validateStep4()) {
-                    e.preventDefault();
+            // ── CGU : activer / désactiver le bouton de création ──
+            legalAcceptanceIds.forEach(id => {
+                document.getElementById(id)?.addEventListener('change', updateSubmitButtonState);
+            });
+            updateSubmitButtonState();
+
+            function submitSignupForm() {
+                if (!validateStep1()) {
+                    showStep(1);
                     return;
                 }
+                if (!validateStep4()) {
+                    showStep(4);
+                    return;
+                }
+                document.getElementById('signup-form').requestSubmit();
+            }
 
-                // On laisse le formulaire se soumettre normalement
-                // L'étape 4 sera affichée après la redirection serveur vers verification.required
+            document.getElementById('btn-submit')?.addEventListener('click', submitSignupForm);
+
+            // ── Soumission du formulaire (Entrée, etc.) ──
+            document.getElementById('signup-form').addEventListener('submit', function(e) {
+                if (!validateStep1()) {
+                    e.preventDefault();
+                    showStep(1);
+                    return;
+                }
+                if (!validateStep4()) {
+                    e.preventDefault();
+                    showStep(4);
+                }
             });
 
             // ── Étape 5 : détection du fournisseur email ──

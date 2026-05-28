@@ -96,13 +96,19 @@ php artisan route:list | grep emergency
 
 ### 2. Promouvoir un utilisateur existant
 - Transforme n'importe quel utilisateur en admin
+- **Vérifie automatiquement son email** s'il ne l'était pas encore (débloque la connexion)
 - Utile si vous avez perdu l'accès à votre compte admin
 
-### 3. Se connecter directement
+### 3. Vérifier un email manuellement
+- Formulaire par adresse email ou bouton par ligne dans la liste
+- Débloque la connexion quand le lien de vérification n'a pas été reçu / cliqué
+- Sans cette étape, même un admin promu ne peut pas se connecter
+
+### 4. Se connecter directement
 - Connexion immédiate sans mot de passe
 - Utile pour tester ou récupérer l'accès
 
-### 4. Importer et restaurer une sauvegarde
+### 5. Importer et restaurer une sauvegarde
 - Import de fichiers `.sql` ou `.sql.gz`
 - Restauration complète de la base de données
 - **Sécurité intégrée** :

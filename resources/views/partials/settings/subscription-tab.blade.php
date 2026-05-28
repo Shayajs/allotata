@@ -1,12 +1,10 @@
 <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">💳 Gestion de l'abonnement</h2>
 
 @php
-    $echeancesQuery = \App\Models\Echeance::where('user_id', $user->id)
-        ->whereIn('statut', [\App\Models\Echeance::STATUT_A_PAYER, \App\Models\Echeance::STATUT_EN_ATTENTE]);
-    if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
-        $echeancesQuery->where('payment_origin', \App\Models\Echeance::ORIGIN_MANUAL);
-    }
-    $echeancesAPayer = $echeancesQuery->count();
+    $echeancesAPayer = \App\Models\Echeance::where('user_id', $user->id)
+        ->whereIn('statut', [\App\Models\Echeance::STATUT_A_PAYER, \App\Models\Echeance::STATUT_EN_ATTENTE])
+        ->requiringUserPayment($user)
+        ->count();
 @endphp
 @if($echeancesAPayer > 0)
     <div class="mb-6 p-4 sm:p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-4">
@@ -296,9 +294,9 @@
             <svg class="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             Prochains paiements
         </h3>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Échéances à régler ou à annuler.</p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Échéances Stripe à régler ou à annuler.</p>
         <div class="space-y-4">
-            @foreach($upcomingEcheances as $e)
+            @foreach($upcomingEcheances->filter(fn ($e) => $e->requiresUserPayment($user)) as $e)
                 @php
                     $montant = (float) ($e->montant_final ?? $e->montant_du ?? 0);
                 @endphp

@@ -86,9 +86,13 @@ if (!function_exists('scheduleWithLogging')) {
 // ABONNEMENTS & PAIEMENTS
 // =============================================
 
-// Créer les échéances mensuelles (Premium + options entreprise) selon le jour de facturation
-scheduleWithLogging('subscriptions:check-echeances', 'Échéances abonnements')
+// Créer les échéances Stripe (Premium + options entreprise) selon le jour de facturation
+scheduleWithLogging('subscriptions:check-echeances', 'Échéances abonnements Stripe')
     ->dailyAt('06:00')->withoutOverlapping();
+
+// Factures compta pour abonnements manuels (Premium + options entreprise)
+scheduleWithLogging('subscriptions:generate-invoices', 'Factures abonnements manuels')
+    ->dailyAt('06:05')->withoutOverlapping();
 
 // Auto-charge des échéances a_payer + retry des échecs (3 tentatives, cancel après 7j)
 scheduleWithLogging('subscriptions:process-payments', 'Auto-charge & retry paiements')

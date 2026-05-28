@@ -201,6 +201,12 @@ class ProcessPaymentsCommand extends Command
                 ]),
             ]);
 
+            $echeance->loadMissing('user');
+            if ($echeance->user) {
+                app(\App\Services\UserNotificationService::class)
+                    ->notifyPaymentStatus($echeance->user, $echeance, 'echec', $charge['message'] ?? null);
+            }
+
             PaymentAuditLog::log('auto_charge_fail', $echeance->user_id, [
                 'echeance_id' => $echeance->id,
                 'amount' => $montant,
@@ -230,6 +236,12 @@ class ProcessPaymentsCommand extends Command
                 'payment_intent_id' => $charge['payment_intent_id'],
             ]);
 
+            $echeance->loadMissing('user');
+            if ($echeance->user) {
+                app(\App\Services\UserNotificationService::class)
+                    ->notifyPaymentStatus($echeance->user, $echeance, 'requires_action');
+            }
+
             return 'skip';
         }
 
@@ -251,6 +263,12 @@ class ProcessPaymentsCommand extends Command
             'context' => ['provider' => $provider->key()],
             'message' => 'Auto-charge réussi – ' . $echeance->libelle(),
         ]);
+
+        $echeance->loadMissing('user');
+        if ($echeance->user) {
+            app(\App\Services\UserNotificationService::class)
+                ->notifyPaymentStatus($echeance->user, $echeance, 'paye');
+        }
 
         return 'ok';
     }

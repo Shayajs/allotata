@@ -1253,6 +1253,8 @@ Route::post("/emergency-recovery-{$emergencyHash}", function(Request $request) {
         return $controller->createAdmin($request);
     } elseif ($action === 'promote' && $userId) {
         return $controller->promoteToAdmin($request, $userId);
+    } elseif ($action === 'verify_email' && ($userId || $request->filled('email'))) {
+        return $controller->verifyEmail($request, $userId);
     } elseif ($action === 'login_as' && $userId) {
         return $controller->loginAs($request, $userId);
     } elseif ($action === 'import_backup') {

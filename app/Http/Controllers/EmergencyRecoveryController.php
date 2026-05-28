@@ -33,8 +33,11 @@ class EmergencyRecoveryController extends Controller
             abort(404, 'Page not found');
         }
 
-        $users = User::orderBy('created_at', 'desc')->limit(50)->get(['id', 'name', 'email', 'is_admin', 'created_at']);
+        $users = User::orderBy('created_at', 'desc')->limit(50)->get([
+            'id', 'name', 'email', 'is_admin', 'email_verified_at', 'created_at',
+        ]);
         $adminCount = User::where('is_admin', true)->count();
+        $unverifiedCount = User::whereNull('email_verified_at')->count();
         
         // Récupérer les sauvegardes disponibles
         try {
@@ -47,6 +50,7 @@ class EmergencyRecoveryController extends Controller
         return view('emergency-recovery.index', [
             'users' => $users,
             'adminCount' => $adminCount,
+            'unverifiedCount' => $unverifiedCount,
             'backups' => $backups,
             'token' => $secretToken, // Pour les formulaires
         ]);
@@ -129,11 +133,64 @@ class EmergencyRecoveryController extends Controller
                     ->with('info', "{$user->name} est déjà administrateur.");
             }
 
+            $wasUnverified = ! $user->hasVerifiedEmail();
+
             $user->is_admin = true;
+            if ($wasUnverified) {
+                $user->email_verified_at = now();
+            }
             $user->save();
 
             // Logger l'action critique
             Log::critical("EMERGENCY RECOVERY: Utilisateur promu admin", [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'email_verified' => $wasUnverified,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            $message = "✅ {$user->name} ({$user->email}) a été promu administrateur.";
+            if ($wasUnverified) {
+                $message .= ' Son email a aussi été vérifié (connexion débloquée).';
+            }
+
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la promotion d'admin dans emergency recovery: " . $e->getMessage());
+            $token = $request->get('token') ?: $secretToken;
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('error', 'Erreur lors de la promotion : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Valider manuellement l'email d'un utilisateur (connexion bloquée sinon).
+     */
+    public function verifyEmail(Request $request, $userId = null)
+    {
+        $secretToken = env('EMERGENCY_RECOVERY_TOKEN', 'change-me-in-production-' . Str::random(32));
+        if ($request->input('secret_token') !== $secretToken) {
+            return redirect()->route('emergency.recovery', ['token' => $request->get('token')])
+                ->with('error', 'Token invalide');
+        }
+
+        try {
+            $user = $userId
+                ? User::findOrFail($userId)
+                : User::where('email', strtolower(trim($request->input('email', ''))))->firstOrFail();
+
+            $token = $request->get('token') ?: $secretToken;
+
+            if ($user->hasVerifiedEmail()) {
+                return redirect()->route('emergency.recovery', ['token' => $token])
+                    ->with('info', "L'email de {$user->email} est déjà vérifié.");
+            }
+
+            $user->markEmailAsVerified();
+
+            Log::critical('EMERGENCY RECOVERY: Email vérifié manuellement', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'ip' => $request->ip(),
@@ -141,12 +198,18 @@ class EmergencyRecoveryController extends Controller
             ]);
 
             return redirect()->route('emergency.recovery', ['token' => $token])
-                ->with('success', "✅ {$user->name} ({$user->email}) a été promu administrateur.");
-        } catch (\Exception $e) {
-            Log::error("Erreur lors de la promotion d'admin dans emergency recovery: " . $e->getMessage());
+                ->with('success', "✅ Email vérifié pour {$user->name} ({$user->email}). Connexion possible.");
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             $token = $request->get('token') ?: $secretToken;
+
             return redirect()->route('emergency.recovery', ['token' => $token])
-                ->with('error', 'Erreur lors de la promotion : ' . $e->getMessage());
+                ->with('error', 'Utilisateur introuvable.');
+        } catch (\Exception $e) {
+            Log::error("Erreur vérification email emergency recovery: ".$e->getMessage());
+            $token = $request->get('token') ?: $secretToken;
+
+            return redirect()->route('emergency.recovery', ['token' => $token])
+                ->with('error', 'Erreur : '.$e->getMessage());
         }
     }
 

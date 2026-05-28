@@ -17,9 +17,19 @@ class NotificationController extends Controller
         
         $query = $user->notifications();
 
-        // Filtre par type
+        // Filtre par type (groupe paiement / message)
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $type = $request->type;
+            if ($type === 'paiement') {
+                $query->whereIn('type', [
+                    'paiement', 'paiement_recu', 'paiement_echec', 'paiement_3ds', 'paiement_en_attente',
+                    'devis', 'devis_accepte', 'devis_refuse',
+                ]);
+            } elseif ($type === 'message') {
+                $query->whereIn('type', ['message', 'nouveau_message']);
+            } else {
+                $query->where('type', $type);
+            }
         }
 
         // Filtre par statut (lue/non lue)

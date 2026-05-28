@@ -12,7 +12,7 @@ class CheckEcheancesCommand extends Command
 {
     protected $signature = 'subscriptions:check-echeances {--force : Créer même si une échéance existe déjà}';
 
-    protected $description = 'Crée les échéances mensuelles (Premium + options entreprise) selon les jours de facturation';
+    protected $description = 'Crée les échéances Stripe (Premium + options entreprise). Les abonnements manuels passent par subscriptions:generate-invoices.';
 
     public function handle(): int
     {
@@ -46,12 +46,8 @@ class CheckEcheancesCommand extends Command
             ->get();
 
         foreach ($usersAuto as $user) {
-            $hasStripe = $user->subscribed('default');
-            $hasEcheancePayee = Echeance::where('user_id', $user->id)
-                ->where('statut', Echeance::STATUT_PAYE)
-                ->where('paye_at', '>=', now()->subMonths(12))
-                ->exists();
-            if (!$hasStripe && !$hasEcheancePayee) {
+            // Uniquement abonnement Stripe actif (ou période de grâce Cashier) — pas de relance sur ancien paiement isolé.
+            if (! $user->subscribed('default')) {
                 $skipped++;
                 continue;
             }
@@ -108,76 +104,9 @@ class CheckEcheancesCommand extends Command
             $created++;
         }
 
-        // --- Échéances Premium manuelles (visibles membre + admin, jamais auto-charge) ---
-        $usersManual = User::query()
-            ->where('abonnement_manuel', true)
-            ->whereNotNull('abonnement_manuel_actif_jusqu')
-            ->get();
-
-        foreach ($usersManual as $user) {
-            if (!$user->abonnement_manuel_actif_jusqu || $user->abonnement_manuel_actif_jusqu->isPast()) {
-                $skipped++;
-                continue;
-            }
-
-            $manualBillingDay = (int) ($user->abonnement_manuel_jour_renouvellement ?: ($user->abonnement_manuel_date_debut?->day ?? $user->jour_facturation ?? 1));
-            if (!$this->shouldRunForDay($manualBillingDay, $jour, $dernierJourDuMois, $estDernierJour)) {
-                $skipped++;
-                continue;
-            }
-
-            $exists = Echeance::where('user_id', $user->id)
-                ->whereNull('entreprise_id')
-                ->where('subscription_type', Echeance::TYPE_DEFAULT)
-                ->where('payment_origin', Echeance::ORIGIN_MANUAL)
-                ->whereDate('periode_debut', $debut)
-                ->whereDate('periode_fin', $fin)
-                ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
-                ->exists();
-            if ($exists && !$force) {
-                $skipped++;
-                continue;
-            }
-
-            $manualAmount = (float) ($user->abonnement_manuel_montant ?? 0);
-            if ($manualAmount <= 0) {
-                $manualAmount = (float) (\App\Models\Tarif::displayForUser($user, Echeance::TYPE_DEFAULT)['amount'] ?? 0);
-            }
-            if ($manualAmount <= 0) {
-                $skipped++;
-                continue;
-            }
-
-            Echeance::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'entreprise_id' => null,
-                    'subscription_type' => Echeance::TYPE_DEFAULT,
-                    'payment_origin' => Echeance::ORIGIN_MANUAL,
-                    'periode_debut' => $debut,
-                    'periode_fin' => $fin,
-                ],
-                [
-                    'payment_provider' => null,
-                    'auto_charge_eligible' => false,
-                    'jour_facturation' => $manualBillingDay,
-                    'montant_du' => $manualAmount,
-                    'montant_final' => $manualAmount,
-                    'reduction_promo' => 0,
-                    'promo_code_id' => null,
-                    'statut' => Echeance::STATUT_A_PAYER,
-                    'metadata' => array_filter([
-                        'manual' => true,
-                        'manual_notes' => $user->abonnement_manuel_notes,
-                        'created_by_scheduler' => true,
-                    ]),
-                ]
-            );
-            $created++;
-        }
-
-        // --- Échéances options entreprise (auto + manuel) ---
+        // --- Échéances options entreprise (Stripe uniquement ; manuel → subscriptions:generate-invoices) ---
         $subs = EntrepriseSubscription::query()
+            ->where('est_manuel', false)
             ->whereNotNull('jour_renouvellement')
             ->where(function ($q) use ($jour, $dernierJourDuMois, $estDernierJour) {
                 $q->where('jour_renouvellement', $jour);
@@ -189,10 +118,11 @@ class CheckEcheancesCommand extends Command
             ->get();
 
         foreach ($subs as $sub) {
-            if (!$sub->estActif()) {
+            if (! $sub->estActif()) {
                 $skipped++;
                 continue;
             }
+
             $entreprise = $sub->entreprise;
             $user = $entreprise?->user;
             if (!$user) {
@@ -200,7 +130,7 @@ class CheckEcheancesCommand extends Command
                 continue;
             }
 
-            $origin = $sub->est_manuel ? Echeance::ORIGIN_MANUAL : Echeance::ORIGIN_AUTO_CARD;
+            $origin = Echeance::ORIGIN_AUTO_CARD;
             $exists = Echeance::where('user_id', $user->id)
                 ->where('entreprise_id', $entreprise->id)
                 ->where('subscription_type', $sub->type)
@@ -239,8 +169,8 @@ class CheckEcheancesCommand extends Command
                     'periode_fin' => $fin,
                 ],
                 [
-                    'payment_provider' => $sub->est_manuel ? null : Echeance::PROVIDER_STRIPE,
-                    'auto_charge_eligible' => !$sub->est_manuel,
+                    'payment_provider' => Echeance::PROVIDER_STRIPE,
+                    'auto_charge_eligible' => true,
                     'jour_facturation' => $sub->jour_renouvellement ?? 1,
                     'montant_du' => $calc['montant_du'],
                     'montant_final' => $calc['montant_final'],
@@ -249,7 +179,6 @@ class CheckEcheancesCommand extends Command
                     'statut' => Echeance::STATUT_A_PAYER,
                     'metadata' => array_filter([
                         'lignes' => $calc['lignes'],
-                        'manual' => (bool) $sub->est_manuel,
                         'created_by_scheduler' => true,
                     ]),
                 ]

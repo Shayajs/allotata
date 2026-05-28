@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -121,10 +122,63 @@ class Echeance extends Model
     }
 
     /**
+     * L'utilisateur doit-il payer cette échéance lui-même (Stripe / checkout) ?
+     * Les échéances manuelles ou gérées par admin ne déclenchent pas de relance.
+     */
+    public function requiresUserPayment(?User $user = null): bool
+    {
+        if ($this->payment_origin === self::ORIGIN_MANUAL || ! $this->auto_charge_eligible) {
+            return false;
+        }
+
+        if ($user === null && $this->relationLoaded('user')) {
+            $user = $this->getRelation('user');
+        }
+
+        if ($user?->hasActiveManualPremium()) {
+            if (! $this->entreprise_id && $this->subscription_type === self::TYPE_DEFAULT) {
+                return false;
+            }
+        }
+
+        if ($this->entreprise_id && $this->subscription_type) {
+            $sub = EntrepriseSubscription::where('entreprise_id', $this->entreprise_id)
+                ->where('type', $this->subscription_type)
+                ->orderByDesc('est_manuel')
+                ->first();
+
+            if ($sub?->est_manuel && $sub->actif_jusqu && ! $sub->actif_jusqu->isPast()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Échéances affichées dans checkout / réglages (exclut le manuel admin).
+     */
+    public function scopeRequiringUserPayment(Builder $query, ?User $user = null): Builder
+    {
+        $query->where('auto_charge_eligible', true)
+            ->where('payment_origin', '!=', self::ORIGIN_MANUAL);
+
+        if ($user?->hasActiveManualPremium()) {
+            $query->whereNotNull('entreprise_id');
+        }
+
+        return $query;
+    }
+
+    /**
      * L'échéance est-elle réglable ? (bouton "Régler" / "Régulariser")
      */
     public function estReglable(): bool
     {
+        if (! $this->requiresUserPayment()) {
+            return false;
+        }
+
         return in_array($this->statut, [
             self::STATUT_BROUILLON,
             self::STATUT_A_PAYER,
@@ -137,6 +191,10 @@ class Echeance extends Model
      */
     public function estAnnulable(): bool
     {
+        if (! $this->requiresUserPayment()) {
+            return false;
+        }
+
         return in_array($this->statut, [
             self::STATUT_BROUILLON,
             self::STATUT_A_PAYER,
