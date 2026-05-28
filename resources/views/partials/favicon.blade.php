@@ -1,3 +1,4 @@
+{{-- allotata-site-favicon --}}
 @php
     use App\Helpers\SiteHelper;
     

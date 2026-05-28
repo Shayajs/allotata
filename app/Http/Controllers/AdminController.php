@@ -11,6 +11,7 @@ use Laravel\Cashier\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Stripe\Stripe;
 use Stripe\Price;
 use Stripe\Product;
@@ -21,6 +22,8 @@ use App\Models\EntrepriseFinance;
 use App\Models\Facture;
 use App\Models\Notification;
 use App\Models\PushSubscription;
+use App\Models\SecurityLog;
+use App\Models\SiteDailyVisitor;
 use App\Services\PushNotificationService;
 
 class AdminController extends Controller
@@ -150,6 +153,39 @@ class AdminController extends Controller
         $prixMoyenAbo = 29.99; 
         $stats['mrr'] = $stats['abonnements_actifs'] * $prixMoyenAbo;
 
+        $stats['today_connexions'] = SecurityLog::query()
+            ->where('event_type', 'login_success')
+            ->whereNotNull('user_id')
+            ->whereDate('created_at', today())
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $stats['today_visitors_members'] = 0;
+        $stats['today_visitors_guests'] = 0;
+        $stats['today_visitors_bots'] = 0;
+        $stats['today_page_views'] = 0;
+
+        if (Schema::hasTable('site_daily_visitors')) {
+            $stats['today_visitors_members'] = SiteDailyVisitor::query()
+                ->whereDate('visit_date', today())
+                ->where('visitor_type', SiteDailyVisitor::TYPE_MEMBER)
+                ->count();
+
+            $stats['today_visitors_guests'] = SiteDailyVisitor::query()
+                ->whereDate('visit_date', today())
+                ->where('visitor_type', SiteDailyVisitor::TYPE_GUEST)
+                ->count();
+
+            $stats['today_visitors_bots'] = SiteDailyVisitor::query()
+                ->whereDate('visit_date', today())
+                ->where('visitor_type', SiteDailyVisitor::TYPE_BOT)
+                ->count();
+
+            $stats['today_page_views'] = (int) SiteDailyVisitor::query()
+                ->whereDate('visit_date', today())
+                ->sum('page_views');
+        }
+
         return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs', 'activityFeed'));
     }
 
@@ -190,16 +226,53 @@ class AdminController extends Controller
         $labels = [];
         $inscriptionsData = [];
         $reservationsData = [];
+        $connexionsData = [];
+        $traficMembers = [];
+        $traficGuests = [];
+        $traficBots = [];
+        $traficPageViews = [];
 
         for ($i = $days - 1; $i >= 0; $i--) {
-            $date = now()->subDays($i);
+            $date = now()->subDays($i)->startOfDay();
             $labels[] = $date->format('d/m');
-            
+
             $inscriptionsData[] = User::whereDate('created_at', $date)->count();
             $reservationsData[] = Reservation::whereDate('created_at', $date)->count();
+
+            $connexionsData[] = SecurityLog::query()
+                ->where('event_type', 'login_success')
+                ->whereNotNull('user_id')
+                ->whereDate('created_at', $date)
+                ->distinct('user_id')
+                ->count('user_id');
+
+            if (Schema::hasTable('site_daily_visitors')) {
+                $traficMembers[] = SiteDailyVisitor::query()
+                    ->whereDate('visit_date', $date)
+                    ->where('visitor_type', SiteDailyVisitor::TYPE_MEMBER)
+                    ->count();
+
+                $traficGuests[] = SiteDailyVisitor::query()
+                    ->whereDate('visit_date', $date)
+                    ->where('visitor_type', SiteDailyVisitor::TYPE_GUEST)
+                    ->count();
+
+                $traficBots[] = SiteDailyVisitor::query()
+                    ->whereDate('visit_date', $date)
+                    ->where('visitor_type', SiteDailyVisitor::TYPE_BOT)
+                    ->count();
+
+                $traficPageViews[] = (int) SiteDailyVisitor::query()
+                    ->whereDate('visit_date', $date)
+                    ->sum('page_views');
+            } else {
+                $traficMembers[] = 0;
+                $traficGuests[] = 0;
+                $traficBots[] = 0;
+                $traficPageViews[] = 0;
+            }
         }
 
-        // Tickets par statut
         $ticketsData = [
             Ticket::where('statut', 'ouvert')->count(),
             Ticket::where('statut', 'en_cours')->count(),
@@ -215,6 +288,17 @@ class AdminController extends Controller
             'reservations' => [
                 'labels' => $labels,
                 'data' => $reservationsData,
+            ],
+            'connexions' => [
+                'labels' => $labels,
+                'data' => $connexionsData,
+            ],
+            'trafic' => [
+                'labels' => $labels,
+                'members' => $traficMembers,
+                'guests' => $traficGuests,
+                'bots' => $traficBots,
+                'page_views' => $traficPageViews,
             ],
             'tickets' => $ticketsData,
         ];

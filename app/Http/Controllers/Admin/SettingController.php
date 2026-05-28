@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\InjectSiteFavicon;
 use App\Models\Setting;
 use App\Models\ActivityLog;
 use App\Services\ImageService;
@@ -205,6 +206,10 @@ class SettingController extends Controller
             
             // Mettre à jour le setting
             Setting::set($settingKey, $logoPath, 'string');
+
+            if (in_array($settingKey, ['site_logo_light', 'site_logo_dark'], true)) {
+                InjectSiteFavicon::clearCache();
+            }
             
             // Supprimer l'ancien logo si différent
             if ($oldLogoPath && $oldLogoPath !== $logoPath && Storage::disk('public')->exists($oldLogoPath)) {

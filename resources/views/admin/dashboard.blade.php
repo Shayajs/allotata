@@ -138,6 +138,30 @@
     </div>
 </div>
 
+<!-- Activité du jour (site vivant ?) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Connexions aujourd'hui</p>
+        <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ number_format($stats['today_connexions'] ?? 0) }}</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Membres uniques (max 1 / jour)</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Visiteurs membres</p>
+        <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($stats['today_visitors_members'] ?? 0) }}</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Sessions connectées</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Visiteurs invités</p>
+        <p class="text-2xl font-bold text-sky-600 dark:text-sky-400">{{ number_format($stats['today_visitors_guests'] ?? 0) }}</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Non connectés</p>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Bots & robots</p>
+        <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ number_format($stats['today_visitors_bots'] ?? 0) }}</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{{ number_format($stats['today_page_views'] ?? 0) }} pages vues au total</p>
+    </div>
+</div>
+
 <!-- Graphiques -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Inscriptions par jour -->
@@ -163,6 +187,35 @@
         </h2>
         <div class="relative h-[250px]">
             <canvas id="reservationsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Connexions & trafic site -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+            </svg>
+            Connexions (30 derniers jours)
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Membres distincts ayant ouvert une session — 1 seul comptage par jour, même après 40 reconnexions</p>
+        <div class="relative h-[250px]">
+            <canvas id="connexionsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+            <svg class="w-5 h-5 flex-shrink-0 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            Trafic site (30 derniers jours)
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Visiteurs uniques par session / jour — membres, invités et bots détectés</p>
+        <div class="relative h-[250px]">
+            <canvas id="traficChart"></canvas>
         </div>
     </div>
 </div>
@@ -285,6 +338,8 @@
 
     let inscriptionsChart = null;
     let reservationsChart = null;
+    let connexionsChart = null;
+    let traficChart = null;
     let ticketsChart = null;
 
     // Données (injectées par Blade)
@@ -298,10 +353,18 @@
         data: {!! json_encode($chartData['reservations']['data']) !!}
     };
 
+    const connexionsData = {
+        labels: {!! json_encode($chartData['connexions']['labels']) !!},
+        data: {!! json_encode($chartData['connexions']['data']) !!}
+    };
+
+    const traficData = {!! json_encode($chartData['trafic']) !!};
+
     const ticketsData = {!! json_encode($chartData['tickets']) !!};
 
     function initCharts() {
         const colors = getThemeColors();
+        const isDark = document.documentElement.classList.contains('dark');
 
         // 1. Inscriptions
         const inscriptionsCtx = document.getElementById('inscriptionsChart').getContext('2d');
@@ -372,7 +435,96 @@
             }
         });
 
-        // 3. Tickets
+        // 3. Connexions (membres uniques / jour)
+        const connexionsCtx = document.getElementById('connexionsChart').getContext('2d');
+        if (connexionsChart) connexionsChart.destroy();
+
+        connexionsChart = new Chart(connexionsCtx, {
+            type: 'line',
+            data: {
+                labels: connexionsData.labels,
+                datasets: [{
+                    label: 'Connexions',
+                    data: connexionsData.data,
+                    borderColor: '#6366f1',
+                    backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, maxRotation: 45, minRotation: 45 }
+                    },
+                    y: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, stepSize: 1 },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 4. Trafic site (empilé)
+        const traficCtx = document.getElementById('traficChart').getContext('2d');
+        if (traficChart) traficChart.destroy();
+
+        traficChart = new Chart(traficCtx, {
+            type: 'bar',
+            data: {
+                labels: traficData.labels,
+                datasets: [
+                    {
+                        label: 'Membres',
+                        data: traficData.members,
+                        backgroundColor: 'rgba(34, 197, 94, 0.85)',
+                        stack: 'trafic'
+                    },
+                    {
+                        label: 'Invités',
+                        data: traficData.guests,
+                        backgroundColor: 'rgba(14, 165, 233, 0.85)',
+                        stack: 'trafic'
+                    },
+                    {
+                        label: 'Bots',
+                        data: traficData.bots,
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        stack: 'trafic'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: colors.text }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, maxRotation: 45, minRotation: 45 }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text, stepSize: 1 },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 5. Tickets
         const ticketsCtx = document.getElementById('ticketsChart').getContext('2d');
         if (ticketsChart) ticketsChart.destroy();
 

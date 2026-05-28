@@ -28,6 +28,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Middleware global pour tracker l'activité utilisateur
         $middleware->append(\App\Http\Middleware\TrackUserActivity::class);
+
+        // Favicon site sur toutes les pages HTML (sauf contre-règles, ex. BrightShell)
+        $middleware->appendToGroup('web', \App\Http\Middleware\InjectSiteFavicon::class);
+
+        // Trafic site (visiteurs uniques / jour, bots, invités)
+        $middleware->appendToGroup('web', \App\Http\Middleware\TrackSiteTraffic::class);
         
         // Exception CSRF pour les webhooks Stripe, Google Calendar et l'authentification broadcasting
         $middleware->validateCsrfTokens(except: [
