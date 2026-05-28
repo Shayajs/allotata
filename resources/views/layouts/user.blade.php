@@ -14,13 +14,19 @@
             window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
             window.currentUserId = {{ auth()->id() ?? 'null' }};
             @auth
-            window.offlinePrecacheUrls = @json(array_values(array_filter([
-                '/dashboard',
-                '/settings',
-                ...auth()->user()->entreprises->map(fn($e) => '/m/' . $e->slug)->toArray(),
-                ...auth()->user()->entreprises->map(fn($e) => '/m/' . $e->slug . '/reservations')->toArray(),
-                ...(auth()->user()->est_client ? ['/dashboard'] : []),
-            ])));
+            @php
+                $offlinePrecacheUrls = ['/dashboard', '/settings'];
+                $offlinePrecacheUrls = array_merge(
+                    $offlinePrecacheUrls,
+                    auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug)->toArray(),
+                    auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug . '/reservations')->toArray()
+                );
+                if (auth()->user()->est_client) {
+                    $offlinePrecacheUrls[] = '/dashboard';
+                }
+                $offlinePrecacheUrls = array_values(array_unique(array_filter($offlinePrecacheUrls)));
+            @endphp
+            window.offlinePrecacheUrls = @json($offlinePrecacheUrls);
             @endauth
         </script>
         @include('partials.favicon')

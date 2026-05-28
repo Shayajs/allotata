@@ -89,7 +89,7 @@
                                     @break
                                 @case('json')
                                     <textarea 
-                                        name="{{ $setting- class="ui-textarea">key }}"
+                                        name="{{ $setting->key }}"
                                         id="{{ $setting->key }}"
                                         rows="3"
                                         class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono text-sm"
