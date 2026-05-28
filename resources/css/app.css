@@ -19,6 +19,16 @@
 }
 
 @layer components {
+    input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='color']):not([type='submit']):not([type='button']):not([type='reset']):not(.no-ui-input),
+    select:not(.no-ui-select),
+    .ui-input,
+    .ui-select {
+        border-radius: 0.75rem !important;
+        min-height: 2.75rem !important;
+        padding: 0.625rem 1rem !important;
+        line-height: 1.2;
+    }
+
     textarea:not(.no-ui-textarea),
     .ui-textarea {
         border-radius: 0.75rem !important;

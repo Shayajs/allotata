@@ -17,7 +17,7 @@
                 {{-- Destinataire --}}
                 <div class="mb-5">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Destinataire</label>
-                    <select name="target_type" id="target-type" onchange="toggleUserSearch()" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
+                    <select name="target_type" id="target-type" onchange="toggleUserSearch()" class="ui-select w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
                         <option value="user">Utilisateur spécifique</option>
                         <option value="all">Tous les abonnés push</option>
                     </select>
@@ -28,7 +28,7 @@
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Rechercher un utilisateur</label>
                     <div class="relative">
                         <input type="text" id="user-search" placeholder="Nom ou email..." autocomplete="off"
-                            class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
+                            class="ui-input w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
                         <input type="hidden" name="user_id" id="user-id">
                         <div id="user-results" class="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"></div>
                     </div>
@@ -38,7 +38,7 @@
                 {{-- Catégorie --}}
                 <div class="mb-5">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Catégorie</label>
-                    <select name="category" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
+                    <select name="category" class="ui-select w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
                         <option value="general">Général</option>
                         <option value="reservation">Réservation</option>
                         <option value="paiement">Paiement</option>
@@ -54,7 +54,7 @@
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Titre</label>
                     <input type="text" name="title" required maxlength="100" placeholder="Titre de la notification"
                         value="{{ old('title') }}"
-                        class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
+                        class="ui-input w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
                 </div>
 
                 {{-- Message --}}
@@ -68,7 +68,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL de redirection <span class="text-slate-400">(optionnel)</span></label>
                     <input type="text" name="url" placeholder="/dashboard" value="{{ old('url') }}"
-                        class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
+                        class="ui-input w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">
                 </div>
 
                 {{-- Créer aussi une notification in-app --}}
