@@ -41,7 +41,7 @@
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Délai (jours)</label>
                     <input type="number" name="delay_days" value="{{ $delayDays }}" min="0" max="365" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-green-500 focus:border-green-500">
                 </div>
-                <button type="submit" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">
+                <button type="submit" class="ui-btn-simple px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">
                     Enregistrer
                 </button>
             </form>
@@ -99,7 +99,7 @@
                 <!-- Raison -->
                 <div x-show="action === 'deletion'" x-cloak>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Raison (obligatoire)</label>
-                    <textarea id="admin-reason" rows="2" maxlength="1000" placeholder="Ex: Demande CNIL, demande client par email..." class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-green-500 focus:border-green-500"></textarea>
+                    <textarea id="admin-reason" rows="2" maxlength="1000" placeholder="Ex: Demande CNIL, demande client par email..." class="ui-textarea w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-green-500 focus:border-green-500"></textarea>
                 </div>
 
                 <!-- Boutons d'action -->
@@ -109,7 +109,7 @@
                             @csrf
                             <input type="hidden" name="user_id" x-bind:value="userId">
                             <input type="hidden" name="reason" value="">
-                            <button type="submit" x-bind:disabled="!userId" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition">
+                            <button type="submit" x-bind:disabled="!userId" class="ui-btn-simple px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition">
                                 Générer l'export
                             </button>
                         </form>
@@ -119,7 +119,7 @@
                             @csrf
                             <input type="hidden" name="user_id" x-bind:value="userId">
                             <input type="hidden" name="reason" value="">
-                            <button type="submit" x-bind:disabled="!userId" onclick="return confirm('Confirmer la demande de suppression pour cet utilisateur ?')" class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition">
+                            <button type="submit" x-bind:disabled="!userId" onclick="return confirm('Confirmer la demande de suppression pour cet utilisateur ?')" class="ui-btn-simple px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition">
                                 Demander la suppression
                             </button>
                         </form>
@@ -155,7 +155,7 @@
                 <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Recherche</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Nom ou email..." class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-green-500">
             </div>
-            <button type="submit" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm transition">
+            <button type="submit" class="ui-btn-simple px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm transition">
                 Filtrer
             </button>
             @if(request()->hasAny(['type', 'status', 'search']))
@@ -240,7 +240,7 @@
                                     @if($req->canBeCancelled())
                                         <form action="{{ route('admin.gdpr.cancel', $req) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" onclick="return confirm('Annuler cette demande ?')" class="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                                            <button type="submit" onclick="return confirm('Annuler cette demande ?')" class="ui-btn-simple px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition">
                                                 Annuler
                                             </button>
                                         </form>
@@ -249,7 +249,7 @@
                                     @if($req->isDeletion() && $req->isPending())
                                         <form action="{{ route('admin.gdpr.execute-now', $req) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" onclick="return confirm('ATTENTION : Cela va anonymiser immédiatement cet utilisateur. Êtes-vous sûr ?')" class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                                            <button type="submit" onclick="return confirm('ATTENTION : Cela va anonymiser immédiatement cet utilisateur. Êtes-vous sûr ?')" class="ui-btn-simple px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition">
                                                 Exécuter maintenant
                                             </button>
                                         </form>

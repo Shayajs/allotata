@@ -128,7 +128,7 @@
                 <input type="date" name="date_fin" value="{{ request('date_fin') }}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Filtrer</button>
+                <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Filtrer</button>
                 <a href="{{ route('admin.echeances.index') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition">Réinitialiser</a>
             </div>
         </div>
@@ -229,21 +229,21 @@
                                     <button type="button" onclick="document.getElementById('manual-pay-form-{{ $e->id }}').classList.toggle('hidden')" class="text-green-600 dark:text-green-400 hover:underline mr-2">Marquer payé</button>
                                     <form action="{{ route('admin.echeances.arrete', $e) }}" method="POST" class="inline" onsubmit="return confirm('Marquer cette échéance comme arrêtée ?');">
                                         @csrf
-                                        <button type="submit" class="text-amber-600 dark:text-amber-400 hover:underline mr-2">Arrêter</button>
+                                        <button type="submit" class="ui-btn-simple text-amber-600 dark:text-amber-400 hover:underline mr-2">Arrêter</button>
                                     </form>
                                     <form action="{{ route('admin.echeances.annule', $e) }}" method="POST" class="inline" onsubmit="return confirm('Annuler cette échéance ?');">
                                         @csrf
-                                        <button type="submit" class="text-red-600 dark:text-red-400 hover:underline">Annuler</button>
+                                        <button type="submit" class="ui-btn-simple text-red-600 dark:text-red-400 hover:underline">Annuler</button>
                                     </form>
                                     @if(($e->payment_provider === 'stripe' || $e->stripe_payment_intent_id || $e->stripe_checkout_session_id) && $e->payment_origin !== \App\Models\Echeance::ORIGIN_MANUAL)
                                         <form action="{{ route('admin.echeances.convert-to-manual', $e) }}" method="POST" class="inline" onsubmit="return confirm('Convertir cette dette Stripe en dette manuelle (sans auto-prélèvement) ?');">
                                             @csrf
-                                            <button type="submit" class="text-indigo-600 dark:text-indigo-400 hover:underline ml-2">Convertir manuel</button>
+                                            <button type="submit" class="ui-btn-simple text-indigo-600 dark:text-indigo-400 hover:underline ml-2">Convertir manuel</button>
                                         </form>
                                     @endif
                                     <form action="{{ route('admin.echeances.offline-settled', $e) }}" method="POST" class="inline" onsubmit="return confirm('Marquer cette dette comme réglée hors-ligne ?');">
                                         @csrf
-                                        <button type="submit" class="text-emerald-600 dark:text-emerald-400 hover:underline ml-2">Réglé hors-ligne</button>
+                                        <button type="submit" class="ui-btn-simple text-emerald-600 dark:text-emerald-400 hover:underline ml-2">Réglé hors-ligne</button>
                                     </form>
                                 @else
                                     —
@@ -285,7 +285,7 @@
                                                 <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Notes internes</label>
                                                 <input type="text" name="refund_notes" placeholder="Raison détaillée du remboursement..." class="w-full px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm" maxlength="1000">
                                             </div>
-                                            <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition text-sm">
+                                            <button type="submit" class="ui-btn-simple px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition text-sm">
                                                 Rembourser
                                             </button>
                                         </div>
@@ -307,7 +307,7 @@
                                             <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Note (geste commercial, etc.)</label>
                                             <input type="text" name="reduction_manuel_notes" value="{{ old('reduction_manuel_notes', $e->reduction_manuel_notes) }}" placeholder="Ex. Geste commercial" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" maxlength="500">
                                         </div>
-                                        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">Enregistrer</button>
+                                        <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">Enregistrer</button>
                                     </form>
                                 </td>
                             </tr>

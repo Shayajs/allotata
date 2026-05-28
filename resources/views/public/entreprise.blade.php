@@ -57,7 +57,9 @@
                             </div>
                             <p class="text-sm sm:text-base md:text-lg text-white/90 truncate">
                                 {{ $entreprise->type_activite }}
-                                @if($entreprise->ville)
+                                @if($entreprise->estVirtuelle())
+                                    • Prestations en ligne
+                                @elseif($entreprise->ville)
                                     • {{ $entreprise->ville }}
                                 @endif
                             </p>
@@ -128,7 +130,9 @@
                             </div>
                             <p class="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400">
                                 {{ $entreprise->type_activite }}
-                                @if($entreprise->ville)
+                                @if($entreprise->estVirtuelle())
+                                    • Prestations en ligne
+                                @elseif($entreprise->ville)
                                     • {{ $entreprise->ville }}
                                 @endif
                             </p>
@@ -298,7 +302,14 @@
                             </div>
                         @endif
 
-                        @if($entreprise->rayon_deplacement > 0)
+                        @if($entreprise->estVirtuelle())
+                            <div class="flex items-center gap-2 text-sm sm:text-base text-violet-700 dark:text-violet-300">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Prestations 100 % en ligne — pas de lieu d'accueil physique</span>
+                            </div>
+                        @elseif($entreprise->rayon_deplacement > 0)
                             <div class="flex items-center gap-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -312,7 +323,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
-                                <span>Service fixe</span>
+                                <span>Sur place{{ $entreprise->ville ? ' — '.$entreprise->ville : '' }}</span>
                             </div>
                         @endif
                     </div>
@@ -577,8 +588,20 @@
                     </div>
                 @endif
 
-                {{-- Carte de localisation --}}
-                @if($entreprise->latitude && $entreprise->longitude)
+                {{-- Carte de localisation (entreprises physiques uniquement) --}}
+                @if($entreprise->estVirtuelle())
+                    <div class="p-4 sm:p-6 bg-violet-50 dark:bg-violet-900/20 rounded-xl shadow-sm border border-violet-200 dark:border-violet-800">
+                        <h3 class="text-base sm:text-lg font-semibold text-violet-900 dark:text-violet-100 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            Activité en ligne
+                        </h3>
+                        <p class="text-sm text-violet-800 dark:text-violet-200">
+                            Cette entreprise propose ses services à distance (visio, livraison numérique, conseil en ligne, etc.). Contactez-la via la messagerie pour convenir des modalités.
+                        </p>
+                    </div>
+                @elseif($entreprise->latitude && $entreprise->longitude)
                     <div class="p-4 sm:p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                         <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                             <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

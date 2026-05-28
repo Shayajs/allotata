@@ -19,7 +19,7 @@
     <div class="flex flex-wrap gap-3">
         <form action="{{ route('admin.subscriptions.sync') }}" method="POST" id="sync-form">
             @csrf
-            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm" id="sync-btn">
+            <button type="submit" class="ui-btn-simple inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm" id="sync-btn">
                 <svg class="w-4 h-4" id="sync-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
@@ -218,7 +218,7 @@
                             <div class="flex items-center justify-end gap-2">
                                 <form action="{{ route('admin.subscriptions.user.sync', $subscription) }}" method="POST" class="inline-block">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" title="Synchroniser avec Stripe">
+                                    <button type="submit" class="ui-btn-simple inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" title="Synchroniser avec Stripe">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                         </svg>
@@ -333,7 +333,7 @@
                             <div class="flex items-center justify-end gap-2">
                                 <form action="{{ route('admin.subscriptions.entreprise.sync', $subscription) }}" method="POST" class="inline-block">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" title="Synchroniser avec Stripe">
+                                    <button type="submit" class="ui-btn-simple inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" title="Synchroniser avec Stripe">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                         </svg>
@@ -413,7 +413,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right" data-label="Actions">
                             <form action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Arrêter l\'abonnement manuel ?');">
                                 @csrf
-                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                                <button type="submit" class="ui-btn-simple inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
@@ -506,7 +506,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-right" data-label="Actions">
                             <form action="{{ route('admin.subscriptions.stop_manual', $subscription->id) }}" method="POST" onsubmit="return confirm('Arrêter cet abonnement manuel ?');" class="inline-block">
                                 @csrf
-                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                                <button type="submit" class="ui-btn-simple inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
@@ -583,7 +583,7 @@
                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all text-sm">
+                    <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all text-sm">
                         Activer Abonnement
                     </button>
                 </div>

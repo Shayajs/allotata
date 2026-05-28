@@ -75,7 +75,7 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                    <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                         🔍 Rechercher
                     </button>
                 </div>
@@ -128,14 +128,14 @@
                                     </a>
                                     <form method="POST" action="{{ route('admin.contacts.toggle-read', $contact) }}" class="inline">
                                         @csrf
-                                        <button type="submit" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                        <button type="submit" class="ui-btn-simple text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                             {{ $contact->est_lu ? 'Non lu' : 'Lu' }}
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.contacts.destroy', $contact) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce message ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                        <button type="submit" class="ui-btn-simple text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                             Supprimer
                                         </button>
                                     </form>

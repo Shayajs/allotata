@@ -134,7 +134,7 @@
                     id="ba-json-textarea" 
                     rows="12"
                     placeholder='Collez ici le JSON généré par l&apos;IA...'
-                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-sm leading-relaxed resize-y"
+                    class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-sm leading-relaxed resize-y"
                     spellcheck="false"
                 ></textarea>
             </div>

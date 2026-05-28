@@ -71,7 +71,7 @@
                 <input type="date" name="date_fin" value="{{ request('date_fin') }}" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             </div>
             <div class="md:col-span-5 flex gap-2">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                <button type="submit" class="ui-btn-simple bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -182,13 +182,13 @@
                                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                         Raison (optionnel)
                                                     </label>
-                                                    <textarea name="reason" rows="3" placeholder="Ex: Vérifié par téléphone, client confirmé..." class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white"></textarea>
+                                                    <textarea name="reason" rows="3" placeholder="Ex: Vérifié par téléphone, client confirmé..." class="ui-textarea w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white"></textarea>
                                                 </div>
                                                 <div class="flex gap-3">
                                                     <button type="button" onclick="document.getElementById('verifyModal-{{ $log->id }}').classList.add('hidden')" class="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-medium">
                                                         Annuler
                                                     </button>
-                                                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                                                    <button type="submit" class="ui-btn-simple flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
                                                         Vérifier
                                                     </button>
                                                 </div>

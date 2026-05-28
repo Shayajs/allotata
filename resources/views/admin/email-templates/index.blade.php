@@ -214,7 +214,7 @@
                     Annuler
                 </button>
                 <button type="submit" 
-                        class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                        class="ui-btn-simple flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                     Envoyer
                 </button>
             </div>

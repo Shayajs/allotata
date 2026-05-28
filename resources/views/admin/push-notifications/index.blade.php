@@ -61,7 +61,7 @@
                 <div class="mb-5">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message</label>
                     <textarea name="body" required maxlength="500" rows="3" placeholder="Corps de la notification"
-                        class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">{{ old('body') }}</textarea>
+                        class="ui-textarea w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-green-500 focus:ring-green-500">{{ old('body') }}</textarea>
                 </div>
 
                 {{-- URL --}}
@@ -80,7 +80,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                <button type="submit" class="ui-btn-simple w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                     Envoyer la notification
                 </button>
             </form>

@@ -105,7 +105,7 @@
                 placeholder="Rechercher..."
                 class="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
             >
-            <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
+            <button type="submit" class="ui-btn-simple px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">
                 🔍
             </button>
         </form>
@@ -301,14 +301,14 @@
             
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notes (optionnel)</label>
-                <textarea name="notes" rows="2" placeholder="Raison de l'octroi..." class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
+                <textarea name="notes" rows="2" placeholder="Raison de l'octroi..." class="ui-textarea w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
             </div>
             
             <div class="flex gap-3 pt-4">
                 <button type="button" onclick="closeAccorderModal()" class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium rounded-lg transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                     Accorder
                 </button>
             </div>
@@ -328,7 +328,7 @@
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="closeProlongerModal()" class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg">Annuler</button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Prolonger</button>
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Prolonger</button>
             </div>
         </form>
     </div>
@@ -346,7 +346,7 @@
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="closeRevoquerModal()" class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg">Annuler</button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">Révoquer</button>
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">Révoquer</button>
             </div>
         </form>
     </div>

@@ -16,7 +16,7 @@
                     <input type="checkbox" name="send_email" value="1" checked class="w-4 h-4 rounded border-slate-600">
                     <span>Envoyer par email</span>
                 </label>
-                <button type="submit" class="flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
+                <button type="submit" class="ui-btn-simple flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
@@ -41,7 +41,7 @@
                 @if($user->statut_compte === 'interdit' || $isLocked)
                     <form action="{{ route('admin.users.unblock', $user) }}" method="POST" class="flex-1 flex">
                         @csrf
-                        <button type="submit" class="flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
+                        <button type="submit" class="ui-btn-simple flex-1 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 min-h-[48px]">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
@@ -382,14 +382,14 @@
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
-                    <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                    <textarea name="reason" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
                 </div>
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="button" onclick="hideEmailModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">
                     Modifier
                 </button>
             </div>
@@ -411,13 +411,13 @@
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
-                <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                <textarea name="reason" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="hideBlockModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">
                     Bloquer
                 </button>
             </div>
@@ -439,13 +439,13 @@
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
-                <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                <textarea name="reason" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="hideArchiveModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition">
                     Archiver
                 </button>
             </div>

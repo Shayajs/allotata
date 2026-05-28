@@ -104,7 +104,7 @@
                                     <form method="POST" action="{{ route('admin.faqs.destroy', $faq) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette FAQ ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                        <button type="submit" class="ui-btn-simple text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                             Supprimer
                                         </button>
                                     </form>

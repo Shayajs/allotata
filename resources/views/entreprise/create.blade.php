@@ -258,142 +258,8 @@
                     <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
                         Localisation
                     </h2>
-                    
-                    <!-- Recherche d'adresse avec autocomplete -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            🔍 Rechercher une adresse
-                        </label>
-                        <div class="relative">
-                            <input 
-                                type="text" 
-                                id="address-search"
-                                placeholder="Commencez à taper votre adresse..."
-                                autocomplete="off"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                            <div id="address-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto"></div>
-                        </div>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Recherchez votre adresse pour remplir automatiquement les champs ci-dessous
-                        </p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Adresse (rue et numéro)
-                            </label>
-                            <input 
-                                type="text" 
-                                name="adresse_rue" 
-                                id="adresse_rue"
-                                value="{{ old('adresse_rue') }}"
-                                placeholder="123 rue de la Paix"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Code postal
-                            </label>
-                            <input 
-                                type="text" 
-                                name="code_postal" 
-                                id="code_postal"
-                                value="{{ old('code_postal') }}"
-                                placeholder="75001"
-                                maxlength="5"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Ville <span class="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="text" 
-                                name="ville" 
-                                id="ville"
-                                value="{{ old('ville') }}"
-                                required
-                                placeholder="Paris"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                            >
-                            @error('ville')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Rayon de déplacement (km)
-                            </label>
-                            <input 
-                                type="number" 
-                                name="rayon_deplacement" 
-                                id="rayon_deplacement"
-                                value="{{ old('rayon_deplacement', 0) }}"
-                                min="0"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                                placeholder="0 = fixe, >0 = mobile"
-                            >
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Mettez 0 si vous êtes fixe, ou le nombre de km si vous vous déplacez
-                            </p>
-                            @error('rayon_deplacement')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <!-- Toggle affichage adresse complète -->
-                    <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition mb-4">
-                        <input 
-                            type="checkbox" 
-                            name="afficher_adresse_complete" 
-                            value="1"
-                            {{ old('afficher_adresse_complete') ? 'checked' : '' }}
-                            class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
-                        >
-                        <div>
-                            <span class="text-sm font-medium text-slate-900 dark:text-white">
-                                📍 Afficher l'adresse complète publiquement
-                            </span>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Si activé, votre adresse complète (rue, numéro) sera visible. Sinon, seule la ville sera affichée.
-                            </p>
-                        </div>
-                    </label>
-
-                    <!-- Champs cachés pour les coordonnées GPS -->
-                    <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
-                    <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+                    <x-entreprise.localisation-form />
                 </div>
-
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const addressAutocomplete = new AddressAutocomplete({
-                            onSelect: function(data) {
-                                // Remplir les champs
-                                document.getElementById('adresse_rue').value = (data.housenumber || '') + ' ' + (data.street || data.name || '');
-                                document.getElementById('code_postal').value = data.postcode || '';
-                                document.getElementById('ville').value = data.city || '';
-                                document.getElementById('latitude').value = data.latitude || '';
-                                document.getElementById('longitude').value = data.longitude || '';
-                                
-                                // Vider le champ de recherche
-                                document.getElementById('address-search').value = data.label || '';
-                            }
-                        });
-
-                        addressAutocomplete.init('address-search', 'address-results', 'address');
-                    });
-                </script>
 
                 <!-- Section Informations légales -->
                 <div>
@@ -447,7 +313,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                     <button 
                         type="submit" 
-                        class="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
+                        class="ui-btn-simple flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all"
                     >
                         Créer mon entreprise
                     </button>
@@ -519,7 +385,7 @@
                         {{-- Bouton souscrire --}}
                         <form action="{{ route('subscription.checkout') }}" method="POST" class="mb-4">
                             @csrf
-                            <button type="submit" class="w-full min-h-[52px] px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.01] touch-manipulation">
+                            <button type="submit" class="ui-btn-simple w-full min-h-[52px] px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.01] touch-manipulation">
                                 @if($defaultPrice['amount'] > 0)
                                     Souscrire maintenant ({{ $defaultPrice['formatted'] }}/mois)
                                 @else

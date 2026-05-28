@@ -18,6 +18,40 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+@layer components {
+    textarea:not(.no-ui-textarea),
+    .ui-textarea {
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        min-height: 7rem;
+        line-height: 1.5;
+    }
+
+    .ui-btn-simple {
+        border-radius: 0.75rem;
+        min-height: 2.75rem;
+        padding: 0.625rem 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        line-height: 1.2;
+        transition: filter 150ms ease, box-shadow 150ms ease;
+    }
+
+    .ui-btn-simple:focus-visible {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent);
+    }
+
+    .ui-btn-simple:disabled,
+    .ui-btn-simple[aria-disabled='true'] {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
 /* Scrollbar personnalisée - Mode clair */
 ::-webkit-scrollbar {
     width: 10px;

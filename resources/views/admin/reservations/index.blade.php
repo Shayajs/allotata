@@ -65,7 +65,7 @@
                     >
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                    <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                         🔍 Rechercher
                     </button>
                 </div>
@@ -155,7 +155,7 @@
                                     @if(!$reservation->est_paye)
                                         <form action="{{ route('admin.reservations.mark-paid', $reservation) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                            <button type="submit" class="ui-btn-simple text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                                 Marquer payé
                                             </button>
                                         </form>

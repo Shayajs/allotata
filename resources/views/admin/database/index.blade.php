@@ -382,7 +382,7 @@
                 </button>
                 <button 
                     type="submit" 
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                    class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
                 >
                     Créer la sauvegarde
                 </button>

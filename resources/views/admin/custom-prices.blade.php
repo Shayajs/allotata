@@ -107,7 +107,7 @@
                                     <div class="flex items-center gap-2">
                                         <form action="{{ route('admin.custom-prices.toggle', $cp) }}" method="POST">
                                             @csrf
-                                            <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-lg transition
+                                            <button type="submit" class="ui-btn-simple px-3 py-1.5 text-xs font-medium rounded-lg transition
                                                 {{ $cp->is_active
                                                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200'
                                                     : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200' }}">
@@ -117,7 +117,7 @@
                                         <form action="{{ route('admin.custom-prices.delete', $cp) }}" method="POST" onsubmit="return confirm('Supprimer ce prix personnalisé ?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 transition">
+                                            <button type="submit" class="ui-btn-simple px-3 py-1.5 text-xs font-medium rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 transition">
                                                 Supprimer
                                             </button>
                                         </form>
@@ -246,7 +246,7 @@
 
             <div class="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button type="submit"
-                    class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                    class="ui-btn-simple px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                     Créer le prix personnalisé
                 </button>
             </div>

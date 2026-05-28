@@ -354,7 +354,7 @@
                     <textarea 
                         id="lesson-description"
                         rows="3"
-                        class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm resize-none"
+                        class="ui-textarea w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white text-sm resize-none"
                     >{{ old('description', $lesson->description) }}</textarea>
                 </div>
 

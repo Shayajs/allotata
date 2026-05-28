@@ -17,7 +17,7 @@
         <div class="flex gap-3">
             <form action="{{ route('admin.factures.generate-subscription') }}" method="POST" class="inline">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                <button type="submit" class="ui-btn-simple inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
@@ -76,7 +76,7 @@
                 </select>
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Filtrer</button>
+                <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Filtrer</button>
                 <a href="{{ route('admin.factures.index') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition">Réinitialiser</a>
             </div>
         </div>

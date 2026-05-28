@@ -33,7 +33,8 @@ class EntrepriseController extends Controller
             'description' => ['nullable', 'string'],
             'mots_cles' => ['nullable', 'string', 'max:500'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'], // Max 2MB
-            'ville' => ['nullable', 'string', 'max:255'],
+            'type_localisation' => ['required', 'in:physique,virtuel'],
+            'ville' => ['nullable', 'required_if:type_localisation,physique', 'string', 'max:255'],
             'adresse_rue' => ['nullable', 'string', 'max:255'],
             'code_postal' => ['nullable', 'string', 'max:20'],
             'latitude' => ['nullable', 'numeric'],
@@ -73,8 +74,7 @@ class EntrepriseController extends Controller
             $motsCles = implode(', ', $motsClesArray);
         }
 
-        // Créer l'entreprise
-        $entreprise = Entreprise::create([
+        $entrepriseData = Entreprise::applyTypeLocalisation([
             'user_id' => Auth::id(),
             'nom' => $validated['nom'],
             'slug' => $slug,
@@ -93,8 +93,10 @@ class EntrepriseController extends Controller
             'rayon_deplacement' => $validated['rayon_deplacement'] ?? 0,
             'siren' => $validated['siren'] ?? null,
             'status_juridique' => $validated['status_juridique'] ?? 'en_cours',
-            'est_verifiee' => false, // Par défaut non vérifiée
-        ]);
+            'est_verifiee' => false,
+        ], $validated['type_localisation']);
+
+        $entreprise = Entreprise::create($entrepriseData);
 
         // Mettre à jour le statut du user pour qu'il devienne gérant
         $user = Auth::user();

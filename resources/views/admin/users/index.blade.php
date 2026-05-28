@@ -78,7 +78,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                     🔍 Rechercher
                 </button>
             </div>
@@ -141,7 +141,7 @@
                                     <form action="{{ route('admin.email-logs.verify-user', $user) }}" method="POST" class="inline-block">
                                         @csrf
                                         <button type="submit" 
-                                                onclick="return confirm('Vérifier manuellement l\'email de {{ $user->email }} ?')"
+                                                onclick="return confirm('Vérifier manuellement cet email ?')"
                                                 class="px-2 py-1 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
                                                 title="Vérifier manuellement l'email">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,7 +200,7 @@
                                 @if(auth()->id() !== $user->id)
                                     <form action="{{ route('admin.users.impersonate', $user) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-1" title="Se connecter en tant que {{ $user->name }}">
+                                        <button type="submit" class="ui-btn-simple text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-1" title="Se connecter en tant que {{ $user->name }}">
                                             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>

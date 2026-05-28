@@ -151,7 +151,7 @@
                                 rows="3"
                                 placeholder="Ex: Ristourne de 50%, paiement direct, etc."
                                 maxlength="500"
-                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             ></textarea>
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 Notes internes pour référence (non visibles par l'entreprise).
@@ -159,7 +159,7 @@
                         </div>
 
                         <div class="flex gap-4">
-                            <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                            <button type="submit" class="ui-btn-simple px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
                                 Activer l'abonnement
                             </button>
                             <a href="{{ route('admin.entreprises.show', $entreprise) }}" class="px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">

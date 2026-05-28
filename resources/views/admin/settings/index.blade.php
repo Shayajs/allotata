@@ -89,7 +89,7 @@
                                     @break
                                 @case('json')
                                     <textarea 
-                                        name="{{ $setting->key }}"
+                                        name="{{ $setting- class="ui-textarea">key }}"
                                         id="{{ $setting->key }}"
                                         rows="3"
                                         class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono text-sm"
@@ -112,7 +112,7 @@
     @endforeach
 
     <div class="flex justify-end">
-        <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+        <button type="submit" class="ui-btn-simple px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -151,7 +151,7 @@
                 <form action="{{ route('admin.settings.delete-logo', 'light') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce logo ?');" class="mb-3">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                    <button type="submit" class="ui-btn-simple w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                         Supprimer
                     </button>
                 </form>
@@ -183,7 +183,7 @@
                 <form action="{{ route('admin.settings.delete-logo', 'dark') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce logo ?');" class="mb-3">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                    <button type="submit" class="ui-btn-simple w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                         Supprimer
                     </button>
                 </form>
@@ -215,7 +215,7 @@
                 <form action="{{ route('admin.settings.delete-logo', 'transparent') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce logo ?');" class="mb-3">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                    <button type="submit" class="ui-btn-simple w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                         Supprimer
                     </button>
                 </form>
@@ -253,7 +253,7 @@
                 <form action="{{ route('admin.settings.delete-logo', 'pwa') }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce logo ?');" class="mb-3">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                    <button type="submit" class="ui-btn-simple w-full px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                         Supprimer
                     </button>
                 </form>
@@ -308,7 +308,7 @@
             <input type="text" name="group" required placeholder="general" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
         </div>
         <div>
-            <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all">
+            <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all">
                 Ajouter
             </button>
         </div>

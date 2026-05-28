@@ -361,7 +361,7 @@
                     @endforeach
                 </select>
 
-                <button type="submit" class="p-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 rounded-xl transition-all">
+                <button type="submit" class="ui-btn-simple p-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 rounded-xl transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
@@ -434,7 +434,7 @@
                                     <form action="{{ route('entreprise.finances.destroy', [$selectedEntreprise->slug, $record->id]) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmer la suppression ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
+                                        <button type="submit" class="ui-btn-simple text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -497,14 +497,14 @@
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Optionnel)</label>
-                <textarea name="description" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-green-500"></textarea>
+                <textarea name="description" rows="2" class="ui-textarea w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-green-500"></textarea>
             </div>
 
             <div class="flex items-center gap-3 pt-4">
                 <button type="button" onclick="document.getElementById('modal-add-record').classList.add('hidden')" class="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-all">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-all">
                     Enregistrer
                 </button>
             </div>
@@ -552,14 +552,14 @@
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Optionnel)</label>
-                <textarea name="description" id="edit-description" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500"></textarea>
+                <textarea name="description" id="edit-description" rows="2" class="ui-textarea w-full bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-blue-500"></textarea>
             </div>
 
             <div class="flex items-center gap-3 pt-4">
                 <button type="button" onclick="document.getElementById('modal-edit-record').classList.add('hidden')" class="flex-1 px-4 py-3 text-slate-600 dark:text-slate-400 font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all">
                     Mettre à jour
                 </button>
             </div>

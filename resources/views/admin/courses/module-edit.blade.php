@@ -64,7 +64,7 @@
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
                     <textarea name="description" rows="3"
-                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">{{ old('description', $module->description) }}</textarea>
+                        class="ui-textarea w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">{{ old('description', $module->description) }}</textarea>
                 </div>
                 
                 <div>
@@ -183,7 +183,7 @@
             </div>
             
             <div class="mt-4">
-                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                     Enregistrer les modifications
                 </button>
             </div>
@@ -242,7 +242,7 @@
                             <form method="POST" action="{{ route('admin.courses.lessons.destroy', ['module' => $module, 'lesson' => $lesson]) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette leçon ?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition">
+                                <button type="submit" class="ui-btn-simple px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition">
                                     Supprimer
                                 </button>
                             </form>
@@ -296,7 +296,7 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
                         <textarea name="description" id="lesson-description" rows="3"
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            class="ui-textarea w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             placeholder="Brève description de la leçon (optionnel)"
                         ></textarea>
                         <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -334,7 +334,7 @@
                 </div>
 
                 <div class="flex gap-3 mt-6">
-                    <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
+                    <button type="submit" class="ui-btn-simple flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition">
                         Créer et éditer
                     </button>
                     <button type="button" onclick="closeLessonModal()" class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">

@@ -155,7 +155,7 @@
                         <textarea 
                             x-model="cardForm.description"
                             rows="3"
-                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            class="ui-textarea w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         ></textarea>
                     </div>
                     <div>
@@ -207,7 +207,7 @@
                     </button>
                     <button 
                         type="submit"
-                        class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
+                        class="ui-btn-simple px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
                     >
                         Enregistrer
                     </button>

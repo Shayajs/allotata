@@ -122,7 +122,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                <button type="submit" class="ui-btn-simple px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                     🔍 Filtrer
                 </button>
                 @if(request()->hasAny(['search', 'statut', 'priorite', 'categorie', 'assigne_a']))

@@ -12,8 +12,8 @@
     
     $layout = $settings['layout'] ?? 'centered';
     
-    // Afficher la carte uniquement si on a des coordonnées
-    $hasCoordinates = $entreprise->latitude && $entreprise->longitude;
+    $hasCoordinates = $entreprise->hasCoordinates();
+    $estVirtuelle = $entreprise->estVirtuelle();
 @endphp
 
 <section class="py-16 md:py-24 px-4" style="background: var(--site-background);" id="contact">
@@ -65,18 +65,28 @@
                     </a>
                 @endif
                 
-                @if($showAddress && ($entreprise->ville || $entreprise->formatted_address))
+                @if($showAddress && ($estVirtuelle || $entreprise->ville || $entreprise->formatted_address))
                     <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-100 dark:bg-slate-800">
                         <div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
                             <svg class="w-6 h-6" style="color: var(--site-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                @if($estVirtuelle)
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                @else
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                @endif
                             </svg>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Localisation</p>
-                            <p class="font-semibold" style="color: var(--site-text);">{{ $entreprise->formatted_address }}</p>
-                            @if($entreprise->estMobile())
+                            <p class="font-semibold" style="color: var(--site-text);">
+                                @if($estVirtuelle)
+                                    Prestations en ligne
+                                @else
+                                    {{ $entreprise->formatted_address }}
+                                @endif
+                            </p>
+                            @if(!$estVirtuelle && $entreprise->estMobile())
                                 <p class="text-sm text-slate-500 dark:text-slate-400">
                                     Se déplace dans un rayon de {{ $entreprise->rayon_deplacement }} km
                                 </p>

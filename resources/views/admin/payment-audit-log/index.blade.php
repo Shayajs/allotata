@@ -44,7 +44,7 @@
             <input type="date" name="to" value="{{ request('to') }}" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
         </div>
         <div class="flex items-end">
-            <button type="submit" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">Filtrer</button>
+            <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">Filtrer</button>
         </div>
     </div>
 </form>

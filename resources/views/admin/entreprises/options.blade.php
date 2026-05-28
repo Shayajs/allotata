@@ -79,7 +79,7 @@
                                 @if($abonnementSiteWeb->est_manuel)
                                     <form action="{{ route('admin.entreprises.options.desactiver', [$entreprise, 'site_web']) }}" method="POST" onsubmit="return confirm('Désactiver cette option ?');" class="mt-4">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
+                                        <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
                                             Révoquer l'accès manuel
                                         </button>
                                     </form>
@@ -96,7 +96,7 @@
                                 <input type="hidden" name="type" value="site_web">
                                 <input type="hidden" name="date_fin" value="{{ now()->addDays(30)->format('Y-m-d') }}">
                                 <input type="hidden" name="notes" value="30 jours d'essai">
-                                <button type="submit" class="w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
+                                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     Proposer 30 jours d'essai
                                 </button>
@@ -119,9 +119,9 @@
                                     name="notes" 
                                     rows="2"
                                     placeholder="Notes administratives..."
-                                    class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm"
+                                    class="ui-textarea w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm"
                                 >{{ old('notes') }}</textarea>
-                                <button type="submit" class="w-full px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm">
+                                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm">
                                     Offrir l'accès
                                 </button>
                             </form>
@@ -163,7 +163,7 @@
                                 @if($abonnementMultiPersonnes->est_manuel)
                                     <form action="{{ route('admin.entreprises.options.desactiver', [$entreprise, 'multi_personnes']) }}" method="POST" onsubmit="return confirm('Désactiver cette option ?');" class="mt-4">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
+                                        <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs font-bold rounded-xl transition-all dark:border-red-900/30 border border-red-100">
                                             Révoquer l'accès manuel
                                         </button>
                                     </form>
@@ -180,7 +180,7 @@
                                 <input type="hidden" name="type" value="multi_personnes">
                                 <input type="hidden" name="date_fin" value="{{ now()->addDays(30)->format('Y-m-d') }}">
                                 <input type="hidden" name="notes" value="30 jours d'essai">
-                                <button type="submit" class="w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
+                                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm flex items-center justify-center gap-2">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     Proposer 30 jours d'essai
                                 </button>
@@ -203,9 +203,9 @@
                                     name="notes" 
                                     rows="2"
                                     placeholder="Notes administratives..."
-                                    class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm"
+                                    class="ui-textarea w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm"
                                 >{{ old('notes') }}</textarea>
-                                <button type="submit" class="w-full px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm">
+                                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-2xl hover:scale-[1.02] transition-transform active:scale-95 shadow-lg text-sm">
                                     Offrir l'accès
                                 </button>
                             </form>
@@ -259,7 +259,7 @@
                         </div>
                     </div>
                     <div class="mt-6">
-                        <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg text-sm">
+                        <button type="submit" class="ui-btn-simple w-full sm:w-auto px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg text-sm">
                             Enregistrer le membre
                         </button>
                     </div>
@@ -327,7 +327,7 @@
                                         <form action="{{ route('admin.entreprises.membres.destroy', [$entreprise, $membre]) }}" method="POST" class="inline" onsubmit="return confirm('Retirer ce membre ?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest">Révoquer</button>
+                                            <button type="submit" class="ui-btn-simple text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-widest">Révoquer</button>
                                         </form>
                                     </div>
                                 </td>

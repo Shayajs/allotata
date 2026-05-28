@@ -65,7 +65,7 @@
                 <div class="flex gap-2">
                     <form action="{{ route('admin.entreprises.validate-nom', $entreprise) }}" method="POST" class="flex-1">
                         @csrf
-                        <button type="submit" class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
+                        <button type="submit" class="ui-btn-simple w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
                             Valider
                         </button>
                     </form>
@@ -105,7 +105,7 @@
                     <div class="flex gap-2">
                         <form action="{{ route('admin.entreprises.validate-siren', $entreprise) }}" method="POST" class="flex-1">
                             @csrf
-                            <button type="submit" class="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
+                            <button type="submit" class="ui-btn-simple w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-transform active:scale-95">
                                 Valider
                             </button>
                         </form>
@@ -132,7 +132,7 @@
         @if($entreprise->tousElementsValides() && !$entreprise->est_verifiee)
             <form action="{{ route('admin.entreprises.validate', $entreprise) }}" method="POST" onsubmit="return confirm('Valider cette entreprise ? Elle sera immédiatement visible.');">
                 @csrf
-                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 dark:shadow-none transition-all hover:scale-105 active:scale-95">
+                <button type="submit" class="ui-btn-simple px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 dark:shadow-none transition-all hover:scale-105 active:scale-95">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
@@ -155,7 +155,7 @@
 
         <form action="{{ route('admin.entreprises.renvoyer', $entreprise) }}" method="POST" onsubmit="return confirm('Renvoyer cette entreprise pour correction ? Le gérant recevra une notification.');">
             @csrf
-            <button type="submit" class="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95">
+            <button type="submit" class="ui-btn-simple px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold rounded-xl transition-all hover:scale-105 active:scale-95">
                 <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
@@ -304,11 +304,11 @@
                     rows="4"
                     required
                     placeholder="Ex: Le nom contient des caractères interdits ou est déjà pris..."
-                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder:text-slate-400"
+                    class="ui-textarea w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder:text-slate-400"
                 ></textarea>
             </div>
             <div class="flex flex-col gap-3">
-                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none transition-all hover:scale-[1.02]">
+                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none transition-all hover:scale-[1.02]">
                     Confirmer le refus
                 </button>
                 <button 
@@ -336,11 +336,11 @@
                     rows="4"
                     required
                     placeholder="Ex: Numéro non trouvé sur l'INSEE..."
-                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                    class="ui-textarea w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
                 ></textarea>
             </div>
             <div class="flex flex-col gap-3">
-                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
+                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
                     Confirmer le refus
                 </button>
                 <button 
@@ -368,11 +368,11 @@
                     rows="4"
                     required
                     placeholder="Expliquez ici l'ensemble du problème..."
-                    class="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                    class="ui-textarea w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
                 ></textarea>
             </div>
             <div class="flex flex-col gap-3">
-                <button type="submit" class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
+                <button type="submit" class="ui-btn-simple w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 dark:shadow-none">
                     Confirmer le refus global
                 </button>
                 <button 
@@ -429,13 +429,13 @@
                                                 <form action="{{ route('admin.entreprises.services.images.set-cover', [$entreprise->id, $service->id, $image->id]) }}" method="POST" class="inline">
                                                     @csrf
                                                     @if(!$image->est_couverture)
-                                                        <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">Définir couverture</button>
+                                                        <button type="submit" class="ui-btn-simple px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">Définir couverture</button>
                                                     @endif
                                                 </form>
                                                 <form action="{{ route('admin.entreprises.services.images.delete', [$entreprise->id, $service->id, $image->id]) }}" method="POST" onsubmit="return confirm('Supprimer cette image ?');" class="inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Supprimer</button>
+                                                    <button type="submit" class="ui-btn-simple px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded">Supprimer</button>
                                                 </form>
                                             </div>
                                         </div>
@@ -445,7 +445,7 @@
                                     @csrf
                                     <div class="flex gap-3">
                                         <input type="file" name="image" accept="image/*" required class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-slate-700 dark:text-white text-sm">
-                                        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
+                                        <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-sm">
                                             Ajouter une image
                                         </button>
                                     </div>
@@ -549,14 +549,14 @@
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
-                    <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                    <textarea name="reason" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
                 </div>
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="button" onclick="hideEmailModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">
                     Modifier
                 </button>
             </div>
@@ -578,13 +578,13 @@
             @csrf
             <div class="mb-4">
                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Raison (optionnel)</label>
-                <textarea name="reason" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
+                <textarea name="reason" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"></textarea>
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="hideArchiveModal()" class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                     Annuler
                 </button>
-                <button type="submit" class="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition">
+                <button type="submit" class="ui-btn-simple flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition">
                     Archiver
                 </button>
             </div>

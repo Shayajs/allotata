@@ -83,7 +83,7 @@
                                     name="message" 
                                     rows="4" 
                                     required
-                                    class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"
+                                    class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"
                                     placeholder="Tapez votre réponse..."
                                 ></textarea>
                             </div>
@@ -92,7 +92,7 @@
                                     <input type="checkbox" name="est_interne" value="1" class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-yellow-600 focus:ring-yellow-500">
                                     <span class="text-sm text-slate-600 dark:text-slate-400">Note interne (invisible pour l'utilisateur)</span>
                                 </label>
-                                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                <button type="submit" class="ui-btn-simple px-6 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                                     Envoyer
                                 </button>
                             </div>
@@ -163,7 +163,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                            <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                                 Mettre à jour
                             </button>
                         </form>

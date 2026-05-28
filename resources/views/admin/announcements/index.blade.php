@@ -62,7 +62,7 @@
                                 <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr ?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                    <button type="submit" class="ui-btn-simple text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                         Supprimer
                                     </button>
                                 </form>

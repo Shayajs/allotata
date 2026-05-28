@@ -37,7 +37,7 @@
                                 <form action="{{ route('admin.email-logs.verify-user', $user) }}" method="POST" class="inline-block">
                                     @csrf
                                     <button type="submit" 
-                                            onclick="return confirm('Êtes-vous sûr de vouloir vérifier manuellement l\'email de {{ $user->email }} ?')"
+                                            onclick="return confirm('Êtes-vous sûr de vouloir vérifier manuellement cet email ?')"
                                             class="px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
                                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>

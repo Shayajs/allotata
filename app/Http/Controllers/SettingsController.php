@@ -272,7 +272,8 @@ class SettingsController extends Controller
             'video_url' => ['nullable', 'url', 'max:500'],
             'afficher_video' => ['nullable'],
             'mots_cles' => ['nullable', 'string', 'max:500'],
-            'ville' => ['nullable', 'string', 'max:255'],
+            'type_localisation' => ['required', 'in:physique,virtuel'],
+            'ville' => ['nullable', 'required_if:type_localisation,physique', 'string', 'max:255'],
             'adresse_rue' => ['nullable', 'string', 'max:255'],
             'code_postal' => ['nullable', 'string', 'max:10'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
@@ -338,6 +339,8 @@ class SettingsController extends Controller
         if (empty($validated['longitude'])) {
             $validated['longitude'] = null;
         }
+
+        $validated = Entreprise::applyTypeLocalisation($validated, $validated['type_localisation']);
 
         $entreprise->update($validated);
 

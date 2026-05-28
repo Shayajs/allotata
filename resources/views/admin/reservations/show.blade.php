@@ -113,7 +113,7 @@
                                     <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded">Non payé</span>
                                     <form action="{{ route('admin.reservations.mark-paid', $reservation) }}" method="POST" class="mt-3">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                                        <button type="submit" class="ui-btn-simple w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                                             Marquer comme payé
                                         </button>
                                     </form>

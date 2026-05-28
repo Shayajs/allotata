@@ -305,7 +305,7 @@
                     id="message-input" 
                     rows="1" 
                     placeholder="Tapez votre message..."
-                    class="flex-1 px-3 py-2 lg:px-4 lg:py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-green-500 text-sm lg:text-base"
+                    class="ui-textarea flex-1 px-3 py-2 lg:px-4 lg:py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-green-500 text-sm lg:text-base"
                 ></textarea>
                 <button 
                     id="btn-send" 

@@ -40,7 +40,7 @@
             <input type="text" name="note" maxlength="1000" placeholder="Paiement direct / accord commercial..." class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
         </div>
         <div class="md:col-span-8">
-            <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Créer la dette</button>
+            <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Créer la dette</button>
         </div>
     </form>
 </div>

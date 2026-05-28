@@ -27,30 +27,39 @@ class SearchController extends Controller
         $entrepriseQuery = Entreprise::query()
             ->with(['user', 'typesServices', 'avis']);
 
-        // Appliquer la recherche par proximité si coordonnées fournies
+        // Recherche par proximité : entreprises physiques dans le rayon + toutes les virtuelles
         if ($villeLat && $villeLng && $rayon) {
             $lat = (float) $villeLat;
             $lng = (float) $villeLng;
             $radius = (float) $rayon;
 
-            // Formule Haversine pour calculer la distance
             $haversine = "(
                 6371 * acos(
-                    cos(radians({$lat})) 
-                    * cos(radians(latitude)) 
-                    * cos(radians(longitude) - radians({$lng})) 
-                    + sin(radians({$lat})) 
+                    cos(radians({$lat}))
+                    * cos(radians(latitude))
+                    * cos(radians(longitude) - radians({$lng}))
+                    + sin(radians({$lat}))
                     * sin(radians(latitude))
                 )
             )";
 
-            $entrepriseQuery->whereNotNull('latitude')
-                ->whereNotNull('longitude')
-                ->selectRaw("entreprises.*, {$haversine} AS distance")
-                ->whereRaw("{$haversine} <= ?", [$radius]);
+            $entrepriseQuery->where(function ($q) use ($haversine, $radius) {
+                $q->where('type_localisation', Entreprise::LOCALISATION_VIRTUEL)
+                    ->orWhere(function ($physical) use ($haversine, $radius) {
+                        $physical->where(function ($typeQ) {
+                            $typeQ->where('type_localisation', Entreprise::LOCALISATION_PHYSIQUE)
+                                ->orWhereNull('type_localisation');
+                        })
+                            ->whereNotNull('latitude')
+                            ->whereNotNull('longitude')
+                            ->whereRaw("{$haversine} <= ?", [$radius]);
+                    });
+            })->selectRaw("entreprises.*, CASE WHEN type_localisation = 'virtuel' THEN NULL ELSE {$haversine} END AS distance");
         } elseif ($villeFilter) {
-            // Recherche par nom de ville si pas de coordonnées
-            $entrepriseQuery->where('ville', 'LIKE', "%{$villeFilter}%");
+            $entrepriseQuery->where(function ($q) use ($villeFilter) {
+                $q->where('ville', 'LIKE', "%{$villeFilter}%")
+                    ->orWhere('type_localisation', Entreprise::LOCALISATION_VIRTUEL);
+            });
         }
 
         // Filtrer par type d'activité
@@ -228,8 +237,9 @@ class SearchController extends Controller
                     }
                 }
 
-                // Bonus si l'entreprise a des coordonnées GPS (meilleure qualité de données)
-                if ($entreprise->hasCoordinates()) {
+                if ($entreprise->estVirtuelle()) {
+                    $score += 8;
+                } elseif ($entreprise->hasCoordinates()) {
                     $score += 5;
                 }
 
@@ -308,11 +318,20 @@ class SearchController extends Controller
     {
         $visitorLocation = app(VisitorLocationService::class)->resolve($request);
 
-        $allResults = Entreprise::query()
+        $virtuelles = Entreprise::query()
+            ->virtuelle()
+            ->with(['user', 'typesServices', 'avis'])
+            ->get()
+            ->filter(fn ($entreprise) => $entreprise->aAbonnementActif());
+
+        $physiques = Entreprise::query()
+            ->physique()
             ->with(['user', 'typesServices', 'avis'])
             ->orderByDistanceFrom($visitorLocation['latitude'], $visitorLocation['longitude'])
             ->get()
             ->filter(fn ($entreprise) => $entreprise->aAbonnementActif());
+
+        $allResults = $physiques->concat($virtuelles);
 
         return view('search.results', [
             'results' => $allResults->values(),

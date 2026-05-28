@@ -87,7 +87,7 @@
                 <input type="date" name="date" value="{{ $filters['date'] ?? '' }}" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm">
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
+                <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
                     Filtrer
                 </button>
                 <a href="{{ route('admin.scheduled-tasks.index') }}" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 text-sm font-medium transition-colors">
@@ -104,7 +104,7 @@
         </p>
         <form method="POST" action="{{ route('admin.scheduled-tasks.cleanup') }}" onsubmit="return confirm('Supprimer les logs de plus de 30 jours ?')">
             @csrf
-            <button type="submit" class="px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 text-sm font-medium transition-colors">
+            <button type="submit" class="ui-btn-simple px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 text-sm font-medium transition-colors">
                 Nettoyer (+30 jours)
             </button>
         </form>

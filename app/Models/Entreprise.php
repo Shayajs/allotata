@@ -12,6 +12,10 @@ class Entreprise extends Model
 {
     use HasEssaisGratuits, HasFactory, SoftDeletes;
 
+    public const LOCALISATION_PHYSIQUE = 'physique';
+
+    public const LOCALISATION_VIRTUEL = 'virtuel';
+
     /**
      * Obtenir le nom de la clé de route (pour le route model binding)
      */
@@ -48,6 +52,7 @@ class Entreprise extends Model
         'latitude',
         'longitude',
         'afficher_adresse_complete',
+        'type_localisation',
         'rayon_deplacement',
         'options_supplementaires', // Pour stocker du JSON (langues, options...)
         'afficher_nom_gerant',
@@ -241,7 +246,71 @@ class Entreprise extends Model
      */
     public function estMobile(): bool
     {
-        return $this->rayon_deplacement > 0;
+        return ! $this->estVirtuelle() && $this->rayon_deplacement > 0;
+    }
+
+    public function estVirtuelle(): bool
+    {
+        return $this->type_localisation === self::LOCALISATION_VIRTUEL;
+    }
+
+    public function estPhysique(): bool
+    {
+        return ! $this->estVirtuelle();
+    }
+
+    /** Libellé court pour les pages publiques et la recherche */
+    public function libelleLocalisation(): string
+    {
+        if ($this->estVirtuelle()) {
+            return 'Prestations en ligne';
+        }
+
+        if ($this->estMobile()) {
+            return 'Déplacement jusqu\'à '.$this->rayon_deplacement.' km';
+        }
+
+        if ($this->ville) {
+            return $this->ville;
+        }
+
+        return 'Sur place';
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function applyTypeLocalisation(array $data, string $typeLocalisation): array
+    {
+        $data['type_localisation'] = $typeLocalisation === self::LOCALISATION_VIRTUEL
+            ? self::LOCALISATION_VIRTUEL
+            : self::LOCALISATION_PHYSIQUE;
+
+        if ($data['type_localisation'] === self::LOCALISATION_VIRTUEL) {
+            $data['ville'] = null;
+            $data['adresse_rue'] = null;
+            $data['code_postal'] = null;
+            $data['latitude'] = null;
+            $data['longitude'] = null;
+            $data['rayon_deplacement'] = 0;
+            $data['afficher_adresse_complete'] = false;
+        }
+
+        return $data;
+    }
+
+    public function scopePhysique($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('type_localisation', self::LOCALISATION_PHYSIQUE)
+                ->orWhereNull('type_localisation');
+        });
+    }
+
+    public function scopeVirtuelle($query)
+    {
+        return $query->where('type_localisation', self::LOCALISATION_VIRTUEL);
     }
 
     /**
@@ -804,6 +873,10 @@ class Entreprise extends Model
      */
     public function getFormattedAddressAttribute(): string
     {
+        if ($this->estVirtuelle()) {
+            return '';
+        }
+
         if ($this->afficher_adresse_complete && $this->adresse_rue) {
             $parts = array_filter([
                 $this->adresse_rue,
@@ -836,7 +909,9 @@ class Entreprise extends Model
      */
     public function hasCoordinates(): bool
     {
-        return ! is_null($this->latitude) && ! is_null($this->longitude);
+        return $this->estPhysique()
+            && ! is_null($this->latitude)
+            && ! is_null($this->longitude);
     }
 
     /**

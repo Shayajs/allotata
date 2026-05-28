@@ -197,7 +197,7 @@
                         name="product_description" 
                         rows="3"
                         placeholder="Description du produit..."
-                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     ></textarea>
                 </div>
             </div>
@@ -205,7 +205,7 @@
             <div class="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button 
                     type="submit" 
-                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                    class="ui-btn-simple px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
                 >
                     Créer le prix Stripe
                 </button>
@@ -280,11 +280,11 @@
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description du produit</label>
-                            <textarea id="editProductDescription" name="product_description" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
+                            <textarea id="editProductDescription" name="product_description" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                        <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
+                        <button type="submit" class="ui-btn-simple px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
                             Modifier le prix
                         </button>
                         <button type="button" onclick="closeEditModal()" class="px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition-colors">
@@ -346,11 +346,11 @@
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description du produit</label>
-                            <textarea id="createMissingProductDescription" name="product_description" rows="3" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
+                            <textarea id="createMissingProductDescription" name="product_description" rows="3" class="ui-textarea w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"></textarea>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                        <button type="submit" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors">
+                        <button type="submit" class="ui-btn-simple px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors">
                             Créer le prix
                         </button>
                         <button type="button" onclick="closeCreateMissingModal()" class="px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-semibold rounded-lg transition-colors">

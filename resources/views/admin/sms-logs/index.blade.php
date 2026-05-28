@@ -106,7 +106,7 @@
                 <input type="date" name="date_fin" value="{{ request('date_fin') }}" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
             </div>
             <div class="md:col-span-5 flex gap-2">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">Filtrer</button>
+                <button type="submit" class="ui-btn-simple bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">Filtrer</button>
                 <a href="{{ route('admin.sms-logs.index') }}" class="bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg font-medium">Réinitialiser</a>
             </div>
         </form>
@@ -219,10 +219,10 @@
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message (optionnel)</label>
-                <textarea name="message" rows="3" class="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white" placeholder="Message par défaut si vide"></textarea>
+                <textarea name="message" rows="3" class="ui-textarea w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white" placeholder="Message par défaut si vide"></textarea>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                <button type="submit" class="ui-btn-simple flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>

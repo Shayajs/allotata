@@ -40,18 +40,26 @@
                 </div>
             @endif
 
-            @if($entreprise->adresse_rue || $entreprise->ville)
+            @if($entreprise->estVirtuelle() || $entreprise->adresse_rue || $entreprise->ville)
                 <div class="flex items-start gap-4">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background: color-mix(in srgb, var(--site-primary) 15%, transparent);">
                         <svg class="w-5 h-5" style="color: var(--site-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            @if($entreprise->estVirtuelle())
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            @else
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            @endif
                         </svg>
                     </div>
                     <div>
-                        <p class="text-sm font-semibold mb-0.5" style="color: var(--site-text);">Adresse</p>
+                        <p class="text-sm font-semibold mb-0.5" style="color: var(--site-text);">Localisation</p>
                         <p class="text-sm opacity-70" style="color: var(--site-text);">
-                            @if($entreprise->adresse_rue){{ $entreprise->adresse_rue }}<br>@endif
-                            @if($entreprise->code_postal){{ $entreprise->code_postal }} @endif{{ $entreprise->ville }}
+                            @if($entreprise->estVirtuelle())
+                                Prestations en ligne — pas de lieu d'accueil physique
+                            @else
+                                @if($entreprise->adresse_rue){{ $entreprise->adresse_rue }}<br>@endif
+                                @if($entreprise->code_postal){{ $entreprise->code_postal }} @endif{{ $entreprise->ville }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -101,7 +109,7 @@
         </div>
 
         {{-- Carte --}}
-        @if($entreprise->latitude && $entreprise->longitude)
+        @if($entreprise->hasCoordinates())
             <div class="rounded-2xl overflow-hidden border shadow-sm h-80 md:h-auto" style="border-color: color-mix(in srgb, var(--site-text) 10%, transparent);">
                 <iframe
                     width="100%" height="100%"

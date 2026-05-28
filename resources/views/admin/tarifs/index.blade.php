@@ -81,7 +81,7 @@
                         <input type="text" name="label" value="{{ old('label', $tarif->label) }}" placeholder="Ex. Abonnement Premium" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white" maxlength="255">
                     </div>
                     <div class="md:col-span-4 flex justify-end">
-                        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Enregistrer</button>
+                        <button type="submit" class="ui-btn-simple px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Enregistrer</button>
                     </div>
                 </form>
             </div>
@@ -97,7 +97,7 @@
         <div class="flex flex-wrap gap-4 items-center">
             <form action="{{ route('admin.stripe-prices.verify-keys') }}" method="POST" class="inline">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium rounded-xl transition">
+                <button type="submit" class="ui-btn-simple inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium rounded-xl transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                     Vérifier les clés Stripe
                 </button>
@@ -108,14 +108,14 @@
             </a>
             <form action="{{ route('admin.stripe-prices.test-debit-api') }}" method="POST" class="inline">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition">
+                <button type="submit" class="ui-btn-simple inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                     Test débit API (0,50 €)
                 </button>
             </form>
             <form action="{{ route('admin.stripe-prices.test-payment') }}" method="POST" class="inline">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-500 hover:bg-slate-600 text-white font-medium rounded-xl transition">
+                <button type="submit" class="ui-btn-simple inline-flex items-center gap-2 px-4 py-2.5 bg-slate-500 hover:bg-slate-600 text-white font-medium rounded-xl transition">
                     Paiement test Checkout (0,50 €, redirection)
                 </button>
             </form>

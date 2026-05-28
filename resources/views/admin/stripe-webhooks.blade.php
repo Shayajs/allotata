@@ -295,7 +295,7 @@
                             <div class="flex items-end gap-2">
                                 <button 
                                     type="submit" 
-                                    class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition text-sm"
+                                    class="ui-btn-simple flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition text-sm"
                                 >
                                     🔍 Filtrer
                                 </button>

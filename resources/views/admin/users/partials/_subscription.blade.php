@@ -48,7 +48,7 @@
                             
                             <form action="{{ route('admin.subscriptions.user.purge', ['user' => $user->id, 'id' => $subscription->id]) }}" method="POST" onsubmit="return confirm('Forcer la suppression ?');">
                                 @csrf
-                                <button type="submit" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-all">
+                                <button type="submit" class="ui-btn-simple px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition-all">
                                     Nettoyer la BDD
                                 </button>
                             </form>
@@ -63,7 +63,7 @@
                     @if(!$subscription->onGracePeriod())
                         <form action="{{ route('admin.users.subscription.cancel-stripe', $user) }}" method="POST" onsubmit="return confirm('Annuler l\'abonnement ? Il restera actif jusqu\'à la fin du mois déjà payé.');">
                             @csrf
-                            <button type="submit" class="w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-[10px] lg:text-xs font-bold rounded-2xl transition-all border border-red-100 dark:border-red-900/30">
+                            <button type="submit" class="ui-btn-simple w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-[10px] lg:text-xs font-bold rounded-2xl transition-all border border-red-100 dark:border-red-900/30">
                                 Stopper le renouvellement
                             </button>
                         </form>
@@ -254,7 +254,7 @@
                             name="notes" 
                             rows="1"
                             placeholder="Optionnel..."
-                            class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white resize-none"
+                            class="ui-textarea w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white resize-none"
                             @if($hasActiveStripeSubscription) disabled @endif
                         >{{ old('notes', $user->abonnement_manuel_notes ?? '') }}</textarea>
                     </div>
@@ -263,7 +263,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 pt-2">
                     <button 
                         type="submit" 
-                        class="flex-[2] px-8 py-4 bg-slate-900 dark:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-indigo-500"
+                        class="ui-btn-simple flex-[2] px-8 py-4 bg-slate-900 dark:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center gap-2 hover:bg-slate-800 dark:hover:bg-indigo-500"
                         @if($hasActiveStripeSubscription) disabled @endif
                     >
                         <span>{{ $user->abonnement_manuel ? 'Enregistrer les modifications' : 'Activer l\'accès manuel' }}</span>
@@ -271,7 +271,7 @@
                     </button>
                     
                     @if($user->abonnement_manuel)
-                        <button type="submit" form="form-disable" class="flex-1 px-8 py-4 bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 font-bold rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <button type="submit" form="form-disable" class="ui-btn-simple flex-1 px-8 py-4 bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 font-bold rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all active:scale-95 flex items-center justify-center gap-2">
                             Révoquer
                         </button>
                     @endif

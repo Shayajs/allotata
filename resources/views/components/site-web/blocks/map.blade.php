@@ -9,8 +9,8 @@
     $showAddress = $content['showAddress'] ?? true;
     $height = $settings['height'] ?? '400px';
     
-    // Vérifier si on a des coordonnées
-    $hasCoordinates = $entreprise->latitude && $entreprise->longitude;
+    $hasCoordinates = $entreprise->hasCoordinates();
+    $estVirtuelle = $entreprise->estVirtuelle();
 @endphp
 
 <section class="py-16 md:py-24 px-4" style="background: var(--site-background);" id="map">
@@ -31,7 +31,17 @@
             @endif
         </div>
 
-        @if($hasCoordinates)
+        @if($estVirtuelle)
+            <div class="text-center py-12 px-6 rounded-2xl border-2 border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20">
+                <svg class="w-16 h-16 mx-auto mb-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold mb-2" style="color: var(--site-text);">Prestations en ligne</h3>
+                <p class="text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                    Pas de lieu d'accueil physique — contactez-nous pour organiser votre prestation à distance.
+                </p>
+            </div>
+        @elseif($hasCoordinates)
             {{-- Carte interactive --}}
             <div class="rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
                 @include('components.map-standalone', [

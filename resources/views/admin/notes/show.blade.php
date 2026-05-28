@@ -217,7 +217,7 @@
                     @method('DELETE')
                     <button 
                         type="submit"
-                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                        class="ui-btn-simple px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                         Supprimer
                     </button>

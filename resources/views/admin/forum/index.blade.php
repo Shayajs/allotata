@@ -78,7 +78,7 @@
                                     <form method="POST" action="{{ route('admin.forum.category.destroy', $category) }}" onsubmit="return confirm('Êtes-vous sûr ?')" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50">
+                                        <button type="submit" class="ui-btn-simple px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50">
                                             Supprimer
                                         </button>
                                     </form>
@@ -132,14 +132,14 @@
                                 <div class="flex items-center justify-end gap-2">
                                     <form method="POST" action="{{ route('admin.forum.post.toggle-pin', $post) }}" class="inline">
                                         @csrf
-                                        <button type="submit" class="px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50">
+                                        <button type="submit" class="ui-btn-simple px-3 py-1 text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50">
                                             {{ $post->est_epingle ? 'Désépingler' : 'Épingler' }}
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.forum.post.destroy', $post) }}" onsubmit="return confirm('Êtes-vous sûr ?')" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50">
+                                        <button type="submit" class="ui-btn-simple px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50">
                                             Supprimer
                                         </button>
                                     </form>
