@@ -226,13 +226,32 @@ class AdminNotificationService
             return;
         }
 
+        $level = strtolower((string) $log->level);
+        $ignoredLevels = ['debug', 'info', 'notice'];
+
+        // Ne pas notifier les logs purement informatifs.
+        if (in_array($level, $ignoredLevels, true)) {
+            return;
+        }
+
+        $urgentLevels = ['error', 'critical', 'alert', 'emergency', 'exception'];
+        $isUrgent = in_array($level, $urgentLevels, true);
+        $titleByLevel = [
+            'warning' => 'Avertissement application',
+            'error' => 'Erreur application',
+            'critical' => 'Erreur critique application',
+            'alert' => 'Alerte application',
+            'emergency' => 'Urgence application',
+            'exception' => 'Exception application',
+        ];
+
         $preview = Str::limit($log->message, 150);
         $lien = route('admin.errors.index');
         $donnees = [
             'error_log_id' => $log->id,
-            'level' => $log->level,
+            'level' => $level,
             'url' => $log->url,
-            'urgent' => true,
+            'urgent' => $isUrgent,
         ];
 
         foreach ($this->getAdmins() as $admin) {
@@ -242,7 +261,7 @@ class AdminNotificationService
             $notification = new Notification([
                 'user_id' => $admin->id,
                 'type' => 'admin_erreur',
-                'titre' => 'Erreur application',
+                'titre' => $titleByLevel[$level] ?? 'Erreur application',
                 'message' => $preview,
                 'lien' => $lien,
                 'donnees' => $donnees,

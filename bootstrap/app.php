@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'check.trusted.device' => \App\Http\Middleware\CheckTrustedDevice::class,
+            'account.access' => \App\Http\Middleware\HandleAccountAccess::class,
+            'account.access.view-block' => \App\Http\Middleware\BlockAccountAccessViewWrites::class,
+            'account.access.audit' => \App\Http\Middleware\LogAccountAccessActions::class,
             'lesson.accessible' => \App\Http\Middleware\EnsureLessonAccessible::class,
             'no.admin.exists' => \App\Http\Middleware\NoAdminExists::class,
             'google.rwg.auth' => \App\Http\Middleware\GoogleRwgAuth::class,
@@ -28,6 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Middleware global pour tracker l'activité utilisateur
         $middleware->append(\App\Http\Middleware\TrackUserActivity::class);
+
+        // Accès admin au compte d'un utilisateur (?mode=VIEW|EDIT&compte=id)
+        $middleware->appendToGroup('web', \App\Http\Middleware\HandleAccountAccess::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\BlockAccountAccessViewWrites::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\LogAccountAccessActions::class);
 
         // Favicon site sur toutes les pages HTML (sauf contre-règles, ex. BrightShell)
         $middleware->appendToGroup('web', \App\Http\Middleware\InjectSiteFavicon::class);

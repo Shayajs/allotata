@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
+use App\Services\AccountAccessService;
 use Illuminate\Mail\Events\MessageSent;
 
 class AppServiceProvider extends ServiceProvider
@@ -95,6 +97,13 @@ class AppServiceProvider extends ServiceProvider
             }
             
             return $guard;
+        });
+
+        View::composer('*', function ($view) {
+            $accountAccess = app(AccountAccessService::class);
+
+            $view->with('accountAccess', $accountAccess);
+            $view->with('accountAccessQuery', $accountAccess->buildQuery());
         });
     }
 }

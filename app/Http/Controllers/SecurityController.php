@@ -35,6 +35,13 @@ class SecurityController extends Controller
             ->limit(50)
             ->get();
 
+        $adminAccountLogs = SecurityLog::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->where('event_type', 'like', 'admin_account_%')
+            ->orderBy('created_at', 'desc')
+            ->limit(30)
+            ->get();
+
         // Récupérer l'historique des IPs
         $ipHistory = UserIpHistory::where('user_id', $user->id)
             ->orderBy('last_seen_at', 'desc')
@@ -66,6 +73,7 @@ class SecurityController extends Controller
             'user' => $user,
             'loginAttempts' => $loginAttempts,
             'securityLogs' => $securityLogs,
+            'adminAccountLogs' => $adminAccountLogs,
             'ipHistory' => $ipHistory,
             'lockout' => $lockout,
             'isLocked' => $isLocked,

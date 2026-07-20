@@ -20,6 +20,7 @@ class PushNotificationService
         'promotion' => NotificationPreferenceService::CATEGORY_PROMOTION,
         'mise_a_jour' => NotificationPreferenceService::CATEGORY_PRODUCT_UPDATE,
         'admin' => NotificationPreferenceService::CATEGORY_ADMIN_OPS,
+        'security' => NotificationPreferenceService::CATEGORY_SECURITY,
     ];
 
     /** @deprecated Conservé pour sendToAllSubscribers (requête SQL legacy) */

@@ -64,4 +64,27 @@ class SecurityLog extends Model
             'description' => $description,
         ]);
     }
+
+    public static function labelForEvent(string $eventType): string
+    {
+        return match ($eventType) {
+            'admin_account_access_view' => 'Consultation admin (lecture seule)',
+            'admin_account_access_edit' => 'Accès admin (mode édition)',
+            'admin_account_action' => 'Action admin sur votre compte',
+            'admin_password_reset' => 'Mot de passe réinitialisé par un admin',
+            'admin_email_change' => 'Email modifié par un admin',
+            'admin_account_blocked' => 'Compte bloqué par un admin',
+            'admin_account_unblocked' => 'Compte débloqué par un admin',
+            'admin_account_archived' => 'Compte archivé par un admin',
+            'account_status_changed' => 'Statut du compte modifié',
+            'login_success' => 'Connexion réussie',
+            'login_failed' => 'Échec de connexion',
+            default => ucfirst(str_replace('_', ' ', $eventType)),
+        };
+    }
+
+    public function isAdminAccountEvent(): bool
+    {
+        return str_starts_with($this->event_type, 'admin_account_');
+    }
 }

@@ -196,18 +196,46 @@
                             {{ $user->created_at->format('d/m/Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
-                            <div class="flex items-center justify-end gap-3">
+                            <div class="flex items-center justify-end gap-2 flex-wrap">
                                 @if(auth()->id() !== $user->id)
-                                    <form action="{{ route('admin.users.impersonate', $user) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="ui-btn-simple text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-1" title="Se connecter en tant que {{ $user->name }}">
-                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                            Connecter
-                                        </button>
-                                    </form>
+                                    @php
+                                        $viewAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_VIEW);
+                                        $editAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_EDIT);
+                                    @endphp
+                                    <a href="{{ $viewAccessUrl }}"
+                                       class="ui-btn-simple text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                       title="Observer le compte de {{ $user->name }} (lecture seule)">
+                                        Observer
+                                    </a>
+                                    <a href="{{ $editAccessUrl }}"
+                                       class="ui-btn-simple text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                       title="Contrôler le compte de {{ $user->name }} (édition)">
+                                        Contrôler
+                                    </a>
+                                    <div class="flex flex-col gap-1 w-full max-w-[220px] mt-1">
+                                        <div class="flex items-center gap-1">
+                                            <input type="text" readonly value="{{ $viewAccessUrl }}"
+                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                                   id="view-url-{{ $user->id }}">
+                                            <button type="button"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('view-url-{{ $user->id }}').value)"
+                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                                                    title="Copier lien VIEW">
+                                                VIEW
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <input type="text" readonly value="{{ $editAccessUrl }}"
+                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                                   id="edit-url-{{ $user->id }}">
+                                            <button type="button"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('edit-url-{{ $user->id }}').value)"
+                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                                                    title="Copier lien EDIT">
+                                                EDIT
+                                            </button>
+                                        </div>
+                                    </div>
                                 @endif
                                 <a href="{{ route('admin.users.show', $user) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-semibold">
                                     Voir

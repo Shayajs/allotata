@@ -22,6 +22,11 @@ class CheckTrustedDevice
             return $next($request);
         }
 
+        // Bypass pendant un accès admin au compte d'un utilisateur
+        if ($request->session()->has(\App\Services\AccountAccessService::SESSION_ADMIN_ID)) {
+            return $next($request);
+        }
+
         $user = Auth::user();
 
         // Ne pas vérifier si l'A2F n'est pas activé

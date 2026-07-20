@@ -31,6 +31,9 @@ class NotificationPreferenceService
     /** Alertes plateforme (admins uniquement) */
     public const CATEGORY_ADMIN_OPS = 'admin_ops';
 
+    /** Sécurité du compte (accès admin, alertes sensibles) */
+    public const CATEGORY_SECURITY = 'security';
+
     /** Mapping catégorie → colonne legacy (push uniquement) */
     private const LEGACY_PUSH_COLUMN = [
         self::CATEGORY_RESERVATION => 'notifications_reservations',
@@ -64,6 +67,7 @@ class NotificationPreferenceService
         'offre' => self::CATEGORY_PROMOTION,
         'mise_a_jour' => self::CATEGORY_PRODUCT_UPDATE,
         'invitation_membre' => self::CATEGORY_PRODUCT_UPDATE,
+        'admin_account_access' => self::CATEGORY_SECURITY,
         'admin_push' => 'general',
         'admin_ticket_nouveau' => self::CATEGORY_ADMIN_OPS,
         'admin_ticket_reponse' => self::CATEGORY_ADMIN_OPS,
@@ -87,6 +91,7 @@ class NotificationPreferenceService
         self::CATEGORY_PROMOTION => 'promotion',
         self::CATEGORY_PRODUCT_UPDATE => 'mise_a_jour',
         self::CATEGORY_ADMIN_OPS => 'admin',
+        self::CATEGORY_SECURITY => 'security',
     ];
 
     public static function adminCategories(): array
@@ -103,6 +108,7 @@ class NotificationPreferenceService
             self::CATEGORY_REMINDER,
             self::CATEGORY_PROMOTION,
             self::CATEGORY_PRODUCT_UPDATE,
+            self::CATEGORY_SECURITY,
         ];
     }
 
@@ -120,6 +126,7 @@ class NotificationPreferenceService
             self::CATEGORY_REMINDER => 'Rappels de RDV',
             self::CATEGORY_PROMOTION => 'Promotions & offres',
             self::CATEGORY_PRODUCT_UPDATE => 'Mises à jour',
+            self::CATEGORY_SECURITY => 'Sécurité du compte',
             self::CATEGORY_ADMIN_OPS => 'Administration plateforme',
         ];
     }
@@ -142,6 +149,7 @@ class NotificationPreferenceService
             self::CATEGORY_REMINDER => 'Rappels avant vos rendez-vous',
             self::CATEGORY_PROMOTION => 'Offres spéciales et promotions',
             self::CATEGORY_PRODUCT_UPDATE => 'Nouvelles fonctionnalités et invitations équipe',
+            self::CATEGORY_SECURITY => 'Accès administrateur et alertes liées à la sécurité de votre compte',
             self::CATEGORY_ADMIN_OPS => 'Tickets, contacts, messagerie interne, audits, erreurs et validations',
         ];
     }
@@ -156,6 +164,8 @@ class NotificationPreferenceService
                 self::CHANNEL_EMAIL => ! in_array($category, [self::CATEGORY_MESSAGE, self::CATEGORY_ADMIN_OPS], true),
             ];
         }
+
+        $defaults[self::CATEGORY_SECURITY][self::CHANNEL_EMAIL] = true;
 
         return $defaults;
     }

@@ -362,6 +362,53 @@
         </div>
     </div>
 
+    <!-- Accès et actions administrateur -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Accès et actions administrateur</h3>
+            <a href="{{ route('tickets.create') }}" class="text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400">
+                Contester / support
+            </a>
+        </div>
+        <div class="space-y-3">
+            @forelse(($adminAccountLogs ?? collect()) as $log)
+                <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full
+                                    @if($log->severity === 'critical') bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400
+                                    @elseif($log->severity === 'high') bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400
+                                    @elseif($log->severity === 'medium') bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400
+                                    @else bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-400
+                                    @endif">
+                                    {{ ucfirst($log->severity) }}
+                                </span>
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">
+                                    {{ \App\Models\SecurityLog::labelForEvent($log->event_type) }}
+                                </span>
+                            </div>
+                            @if($log->description)
+                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">{{ $log->description }}</p>
+                            @endif
+                            @if($log->event_type === 'admin_account_action' && !empty($log->metadata['summary']))
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ $log->metadata['summary'] }}</p>
+                            @endif
+                            <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-500 mt-2">
+                                <span>{{ $log->created_at->format('d/m/Y H:i') }}</span>
+                                <span>{{ $log->ip_address }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <p class="text-sm text-slate-600 dark:text-slate-400 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    Aucun accès ou action administrateur enregistré sur les 30 derniers jours.
+                </p>
+            @endforelse
+        </div>
+    </div>
+
     <!-- Logs de sécurité -->
     <div>
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Activités de sécurité récentes</h3>
@@ -385,7 +432,7 @@
                                         <span class="text-xs text-red-600 dark:text-red-400 font-medium">Suspect</span>
                                     @endif
                                     <span class="text-sm font-medium text-slate-900 dark:text-white">
-                                        {{ ucfirst(str_replace('_', ' ', $log->event_type)) }}
+                                        {{ \App\Models\SecurityLog::labelForEvent($log->event_type) }}
                                     </span>
                                 </div>
                                 @if($log->description)

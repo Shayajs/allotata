@@ -2418,48 +2418,30 @@ class AdminController extends Controller
     }
 
     /**
-     * Se connecter en tant qu'un autre utilisateur (Impersonation)
+     * @deprecated Utiliser les liens ?mode=EDIT&compte={id}
      */
     public function impersonate($userId)
     {
         $user = User::findOrFail($userId);
-        $originalAdminId = auth()->id();
 
-        // Sécurité : Empêcher de s'impersonate soi-même
-        if ($user->id === $originalAdminId) {
-            return redirect()->back()->with('error', 'Inutile de vous connecter en tant que vous-même.');
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'Impossible d\'accéder à votre propre compte.');
         }
-        
-        // Stocker l'ID de l'admin original en session
-        session(['original_admin_id' => $originalAdminId]);
-        session(['impersonated_at' => now()]);
-        
-        // Déconnecter l'admin et connecter l'utilisateur cible sans mot de passe
-        \Illuminate\Support\Facades\Auth::login($user);
-        
-        return redirect()->route('dashboard')->with('flash.banner', "Mode Super-User activé : Vous voyez le site en tant que {$user->name}");
+
+        return redirect()->route('dashboard', [
+            'mode' => 'EDIT',
+            'compte' => $user->id,
+        ]);
     }
 
     /**
-     * Arrêter l'impersonation et revenir au compte admin
+     * @deprecated Quitter via /admin/users sans paramètres mode/compte
      */
     public function stopImpersonating()
     {
-        // Vérifier si une session d'impersonation est active
-        if (!session()->has('original_admin_id')) {
-            return redirect()->route('dashboard');
-        }
+        app(\App\Services\AccountAccessService::class)->exit();
 
-        $adminId = session('original_admin_id');
-        
-        // Reconnecter l'admin original
-        \Illuminate\Support\Facades\Auth::loginUsingId($adminId);
-        
-        // Nettoyer la session
-        session()->forget('original_admin_id');
-        session()->forget('impersonated_at');
-        
-        return redirect()->route('admin.users.index')->with('success', 'Mode Super-User désactivé. Retour au panneau administrateur.');
+        return redirect()->route('admin.users.index')->with('success', 'Accès au compte utilisateur terminé.');
     }
 
     /**

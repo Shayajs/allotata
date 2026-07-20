@@ -16,6 +16,10 @@ class EnsureEmailIsVerified
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->session()->has(\App\Services\AccountAccessService::SESSION_ADMIN_ID)) {
+            return $next($request);
+        }
+
         if (Auth::check() && !Auth::user()->hasVerifiedEmail()) {
             return redirect()->route('verification.required')
                 ->with('status', 'Veuillez vérifier votre email pour accéder à cette page.');
