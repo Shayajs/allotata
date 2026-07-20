@@ -17,10 +17,16 @@ class HandleAccountAccess
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($this->accountAccess->shouldExitOnGet($request)) {
-            $this->accountAccess->exit();
+        if ($this->accountAccess->wantsExplicitExit($request) || $this->accountAccess->shouldExitOnAdminPanel($request)) {
+            if ($this->accountAccess->hasBridge()) {
+                $this->accountAccess->exit();
+            }
 
             return $next($request);
+        }
+
+        if ($this->accountAccess->needsQueryInjection($request)) {
+            return redirect()->to($this->accountAccess->injectQueryUrl($request));
         }
 
         $context = $this->accountAccess->resolveContext($request);

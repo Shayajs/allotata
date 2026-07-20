@@ -17,23 +17,40 @@ class BlockAccountAccessViewWrites
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (
-            $this->accountAccess->isActive()
-            && $this->accountAccess->mode() === AccountAccessService::MODE_VIEW
-            && ! in_array($request->method(), self::$safeMethods, true)
-        ) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Mode lecture seule : les modifications sont interdites. Passez en mode EDIT pour agir sur ce compte.',
-                    'edit_url' => $this->accountAccess->switchModeUrl('dashboard', AccountAccessService::MODE_EDIT),
-                ], 403);
-            }
-
-            $editUrl = $this->accountAccess->switchModeUrl('dashboard', AccountAccessService::MODE_EDIT);
-
-            abort(403, 'Mode lecture seule : les modifications sont interdites.'.($editUrl ? ' Passez en mode EDIT : '.$editUrl : ''));
+        if (! $this->accountAccess->isActive()) {
+            return $next($request);
         }
 
-        return $next($request);
+        if (in_array($request->method(), self::$safeMethods, true)) {
+            return $next($request);
+        }
+
+        $mode = $this->accountAccess->mode();
+        $routeName = $request->route()?->getName();
+
+        if ($mode === AccountAccessService::MODE_EDIT) {
+            return $next($request);
+        }
+
+        if ($this->accountAccess->canWriteRoute($routeName)) {
+            return $next($request);
+        }
+
+        $editUrl = $this->accountAccess->switchModeUrl('dashboard', AccountAccessService::MODE_EDIT);
+        $modeLabel = $this->accountAccess->modeLabel();
+
+        $message = $mode === AccountAccessService::MODE_VIEW
+            ? 'Mode lecture seule : les modifications sont interdites. Passez en mode EDIT pour agir sur ce compte.'
+            : "Mode {$modeLabel} : cette action n'est pas autorisée. Passez en mode EDIT pour un contrôle total.";
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'edit_url' => $editUrl,
+                'mode' => $mode,
+            ], 403);
+        }
+
+        abort(403, $message.($editUrl ? ' '.$editUrl : ''));
     }
 }

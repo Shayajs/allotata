@@ -765,6 +765,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Gestion des entreprises
     Route::get('/entreprises', [AdminController::class, 'entreprises'])->name('entreprises.index');
     Route::get('/entreprises/{entreprise}', [AdminController::class, 'showEntreprise'])->name('entreprises.show');
+    Route::post('/entreprises/{entreprise}/update', [AdminController::class, 'updateEntrepriseProfile'])->name('entreprises.update');
+    Route::post('/entreprises/{entreprise}/logo', [AdminController::class, 'uploadEntrepriseLogo'])->name('entreprises.logo.upload');
+    Route::delete('/entreprises/{entreprise}/logo', [AdminController::class, 'deleteEntrepriseLogo'])->name('entreprises.logo.delete');
+    Route::post('/entreprises/{entreprise}/image-fond', [AdminController::class, 'uploadEntrepriseImageFond'])->name('entreprises.image-fond.upload');
+    Route::delete('/entreprises/{entreprise}/image-fond', [AdminController::class, 'deleteEntrepriseImageFond'])->name('entreprises.image-fond.delete');
+    Route::post('/entreprises/{entreprise}/photos', [AdminController::class, 'addEntrepriseRealisationPhoto'])->name('entreprises.photos.store');
+    Route::delete('/entreprises/{entreprise}/photos/{photo}', [AdminController::class, 'deleteEntrepriseRealisationPhoto'])->name('entreprises.photos.destroy');
     Route::post('/entreprises/{entreprise}/verify', [AdminController::class, 'verifyEntreprise'])->name('entreprises.verify');
     Route::post('/entreprises/{entreprise}/unverify', [AdminController::class, 'unverifyEntreprise'])->name('entreprises.unverify');
     Route::post('/entreprises/{entreprise}/update-email', [AdminController::class, 'updateEntrepriseEmail'])->name('entreprises.update-email');

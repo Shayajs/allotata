@@ -200,6 +200,8 @@
                                 @if(auth()->id() !== $user->id)
                                     @php
                                         $viewAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_VIEW);
+                                        $supportAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_SUPPORT);
+                                        $billingAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_BILLING);
                                         $editAccessUrl = $accountAccess->impersonationUrl('dashboard', $user, \App\Services\AccountAccessService::MODE_EDIT);
                                     @endphp
                                     <a href="{{ $viewAccessUrl }}"
@@ -207,12 +209,22 @@
                                        title="Observer le compte de {{ $user->name }} (lecture seule)">
                                         Observer
                                     </a>
+                                    <a href="{{ $supportAccessUrl }}"
+                                       class="ui-btn-simple text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                                       title="Support — tickets et messagerie">
+                                        Support
+                                    </a>
+                                    <a href="{{ $billingAccessUrl }}"
+                                       class="ui-btn-simple text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                                       title="Facturation — abonnements et paiements">
+                                        Facturation
+                                    </a>
                                     <a href="{{ $editAccessUrl }}"
                                        class="ui-btn-simple text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                                        title="Contrôler le compte de {{ $user->name }} (édition)">
                                         Contrôler
                                     </a>
-                                    <div class="flex flex-col gap-1 w-full max-w-[220px] mt-1">
+                                    <div class="flex flex-col gap-1 w-full max-w-[240px] mt-1">
                                         <div class="flex items-center gap-1">
                                             <input type="text" readonly value="{{ $viewAccessUrl }}"
                                                    class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -222,6 +234,28 @@
                                                     class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
                                                     title="Copier lien VIEW">
                                                 VIEW
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <input type="text" readonly value="{{ $supportAccessUrl }}"
+                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                                   id="support-url-{{ $user->id }}">
+                                            <button type="button"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('support-url-{{ $user->id }}').value)"
+                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                                                    title="Copier lien SUPPORT">
+                                                SUP
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <input type="text" readonly value="{{ $billingAccessUrl }}"
+                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                                   id="billing-url-{{ $user->id }}">
+                                            <button type="button"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('billing-url-{{ $user->id }}').value)"
+                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                                                    title="Copier lien BILLING">
+                                                BILL
                                             </button>
                                         </div>
                                         <div class="flex items-center gap-1">

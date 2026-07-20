@@ -18,6 +18,14 @@ class SecurityLogLabelsTest extends TestCase
             SecurityLog::labelForEvent('admin_account_access_edit')
         );
         $this->assertSame(
+            'Accès admin (mode support)',
+            SecurityLog::labelForEvent('admin_account_access_support')
+        );
+        $this->assertSame(
+            'Accès admin (mode facturation)',
+            SecurityLog::labelForEvent('admin_account_access_billing')
+        );
+        $this->assertSame(
             'Action admin sur votre compte',
             SecurityLog::labelForEvent('admin_account_action')
         );

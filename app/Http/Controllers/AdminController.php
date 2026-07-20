@@ -758,7 +758,7 @@ class AdminController extends Controller
      */
     public function showEntreprise(Entreprise $entreprise)
     {
-        $entreprise->load(['user', 'reservations.user', 'typesServices.images']);
+        $entreprise->load(['user', 'reservations.user', 'typesServices.images', 'realisationPhotos']);
         
         // Charger l'historique de sécurité
         $securityHistory = \App\Models\EntrepriseSecurityHistory::where('entreprise_id', $entreprise->id)
@@ -767,6 +767,187 @@ class AdminController extends Controller
             ->get();
         
         return view('admin.entreprises.show', compact('entreprise', 'securityHistory'));
+    }
+
+    /**
+     * Mettre à jour le profil d'une entreprise (admin)
+     */
+    public function updateEntrepriseProfile(Request $request, Entreprise $entreprise)
+    {
+        $before = $entreprise->only([
+            'nom', 'type_activite', 'telephone', 'description', 'ville', 'adresse_rue', 'code_postal',
+        ]);
+
+        $entreprise = app(\App\Services\EntrepriseProfileService::class)->update($entreprise, $request);
+
+        SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_profile_updated',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            [
+                'admin_id' => auth()->id(),
+                'entreprise_id' => $entreprise->id,
+                'before' => $before,
+                'after' => $entreprise->only(array_keys($before)),
+            ],
+            'medium',
+            false,
+            'Un administrateur a modifié le profil de votre entreprise « '.$entreprise->nom.' ».'
+        );
+
+        \App\Models\ActivityLog::log(
+            'update',
+            "Profil entreprise #{$entreprise->id} ({$entreprise->nom}) modifié par admin",
+            $entreprise,
+            ['before' => $before]
+        );
+
+        return redirect()
+            ->route('admin.entreprises.show', $entreprise)
+            ->with('success', 'Profil de l\'entreprise mis à jour.');
+    }
+
+    public function uploadEntrepriseLogo(Request $request, Entreprise $entreprise)
+    {
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+        ]);
+
+        try {
+            app(\App\Services\EntrepriseProfileService::class)->uploadLogo($entreprise, $request->file('logo'));
+
+            SecurityLog::log(
+                $entreprise->user_id,
+                'admin_entreprise_logo_updated',
+                $request->ip(),
+                $request->userAgent(),
+                null,
+                ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id],
+                'low',
+                false,
+                'Un administrateur a modifié le logo de votre entreprise « '.$entreprise->nom.' ».'
+            );
+
+            return back()->with('success', 'Logo mis à jour.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur logo : '.$e->getMessage());
+        }
+    }
+
+    public function deleteEntrepriseLogo(Entreprise $entreprise)
+    {
+        app(\App\Services\EntrepriseProfileService::class)->deleteLogo($entreprise);
+
+        SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_logo_deleted',
+            request()->ip(),
+            request()->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id],
+            'low',
+            false,
+            'Un administrateur a supprimé le logo de votre entreprise « '.$entreprise->nom.' ».'
+        );
+
+        return back()->with('success', 'Logo supprimé.');
+    }
+
+    public function uploadEntrepriseImageFond(Request $request, Entreprise $entreprise)
+    {
+        $request->validate([
+            'image_fond' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+        ]);
+
+        try {
+            app(\App\Services\EntrepriseProfileService::class)->uploadImageFond($entreprise, $request->file('image_fond'));
+
+            SecurityLog::log(
+                $entreprise->user_id,
+                'admin_entreprise_image_fond_updated',
+                $request->ip(),
+                $request->userAgent(),
+                null,
+                ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id],
+                'low',
+                false,
+                'Un administrateur a modifié l\'image de fond de votre entreprise « '.$entreprise->nom.' ».'
+            );
+
+            return back()->with('success', 'Image de fond mise à jour.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur image de fond : '.$e->getMessage());
+        }
+    }
+
+    public function deleteEntrepriseImageFond(Entreprise $entreprise)
+    {
+        app(\App\Services\EntrepriseProfileService::class)->deleteImageFond($entreprise);
+
+        SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_image_fond_deleted',
+            request()->ip(),
+            request()->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id],
+            'low',
+            false,
+            'Un administrateur a supprimé l\'image de fond de votre entreprise « '.$entreprise->nom.' ».'
+        );
+
+        return back()->with('success', 'Image de fond supprimée.');
+    }
+
+    public function addEntrepriseRealisationPhoto(Request $request, Entreprise $entreprise)
+    {
+        $validated = $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
+            'titre' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        app(\App\Services\EntrepriseProfileService::class)->addRealisationPhoto(
+            $entreprise,
+            $request->file('photo'),
+            $validated['titre'] ?? null,
+            $validated['description'] ?? null,
+        );
+
+        SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_photo_added',
+            $request->ip(),
+            $request->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id],
+            'low',
+            false,
+            'Un administrateur a ajouté une photo à votre entreprise « '.$entreprise->nom.' ».'
+        );
+
+        return back()->with('success', 'Photo ajoutée.');
+    }
+
+    public function deleteEntrepriseRealisationPhoto(Entreprise $entreprise, $photo)
+    {
+        app(\App\Services\EntrepriseProfileService::class)->deleteRealisationPhoto($entreprise, (int) $photo);
+
+        SecurityLog::log(
+            $entreprise->user_id,
+            'admin_entreprise_photo_deleted',
+            request()->ip(),
+            request()->userAgent(),
+            null,
+            ['admin_id' => auth()->id(), 'entreprise_id' => $entreprise->id, 'photo_id' => (int) $photo],
+            'low',
+            false,
+            'Un administrateur a supprimé une photo de votre entreprise « '.$entreprise->nom.' ».'
+        );
+
+        return back()->with('success', 'Photo supprimée.');
     }
 
     /**

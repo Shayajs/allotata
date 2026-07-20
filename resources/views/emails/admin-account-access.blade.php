@@ -5,9 +5,9 @@
 
     <p>Bonjour {{ $user->name }},</p>
 
-    <p>Un administrateur Allo Tata a accédé à votre compte en <strong>mode édition</strong> le {{ now()->format('d/m/Y à H:i') }}.</p>
+    <p>Un administrateur Allo Tata a accédé à votre compte en <strong>mode {{ $modeLabel }}</strong> le {{ now()->format('d/m/Y à H:i') }}.</p>
 
-    <p>En mode édition, l'administrateur peut effectuer des actions au nom de votre compte (modifications, réservations, paramètres, etc.).</p>
+    <p>En mode {{ $modeLabel }}, l'administrateur peut {{ $scope }}.</p>
 
     <p>Vous pouvez consulter le détail des accès et actions réalisées dans l'onglet <strong>Sécurité</strong> de votre tableau de bord.</p>
 

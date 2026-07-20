@@ -1,10 +1,20 @@
-const CACHE_NAME = 'allotata-cache-v3';
+const CACHE_NAME = 'allotata-cache-v4';
 const ASSETS_CACHE = 'allotata-assets-v1';
 const PRECACHE = [
     '/offline.html',
     '/manifest.json',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
+];
+
+const AUTH_PATH_PREFIXES = [
+    '/signin',
+    '/signup',
+    '/password',
+    '/two-factor',
+    '/verification',
+    '/email/verification',
+    '/auth/',
 ];
 
 // Installation : pre-cache des ressources critiques
@@ -155,6 +165,10 @@ function isNavigationRequest(request) {
         || (request.method === 'GET' && request.headers.get('accept') && request.headers.get('accept').includes('text/html'));
 }
 
+function isAuthPage(pathname) {
+    return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+}
+
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
         return;
@@ -197,6 +211,13 @@ self.addEventListener('fetch', (event) => {
                 });
             })
         );
+        return;
+    }
+
+    // Les pages d'auth ne doivent jamais etre servies depuis le cache:
+    // un ancien HTML peut contenir un token CSRF perime et provoquer une 419.
+    if (isNavigationRequest(event.request) && isAuthPage(url.pathname)) {
+        event.respondWith(fetch(event.request));
         return;
     }
 
