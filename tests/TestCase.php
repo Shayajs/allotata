@@ -22,6 +22,25 @@ abstract class TestCase extends BaseTestCase
         $this->withoutVite();
     }
 
+    /**
+     * Évite le dump schema/*.sql (besoin du binaire `mysql`, absent de laravel_app).
+     *
+     * @return array<string, mixed>
+     */
+    protected function migrateFreshUsing()
+    {
+        $seeder = property_exists($this, 'seeder') ? $this->seeder : false;
+
+        return array_merge(
+            [
+                '--drop-views' => property_exists($this, 'dropViews') ? $this->dropViews : false,
+                '--drop-types' => property_exists($this, 'dropTypes') ? $this->dropTypes : false,
+                '--schema-path' => database_path('schema/__skip_cli_dump.sql'),
+            ],
+            $seeder ? ['--seeder' => $seeder] : ['--seed' => property_exists($this, 'seed') ? $this->seed : false],
+        );
+    }
+
     protected function isolateTestingDatabase(Application $app): void
     {
         $driver = $app['config']->get('database.default');
