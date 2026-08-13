@@ -33,6 +33,10 @@
                 color: transparent;
                 animation: gradient-flow 4s ease-in-out infinite;
             }
+            #search-input-home {
+                padding-left: 3.5rem !important;
+                padding-right: 8rem !important;
+            }
         </style>
         @include('partials.theme-script')
     </head>
@@ -167,9 +171,9 @@
                                     value="{{ request('q') }}"
                                     placeholder="Rechercher une entreprise, un service, une ville..." 
                                     autocomplete="off"
-                                    class="w-full px-6 py-4 pl-14 pr-32 text-lg bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                                    class="no-ui-input w-full py-4 pl-14 pr-32 text-lg bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 min-h-11"
                                 >
-                                <svg class="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-slate-400 dark:text-slate-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                 <button 

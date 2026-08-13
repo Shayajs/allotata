@@ -11,6 +11,9 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
+        <style>
+            #address-search { padding-left: 2.5rem !important; }
+        </style>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-lg w-full space-y-6 sm:space-y-8">
@@ -142,7 +145,7 @@
                             <div class="relative">
                                 <input id="address-search" type="text" autocomplete="off"
                                     value="{{ old('adresse') ? old('adresse') . ', ' . old('code_postal') . ' ' . old('ville') : '' }}"
-                                    class="appearance-none relative block w-full px-3 py-3 pl-10 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
+                                    class="no-ui-input appearance-none relative block w-full py-3 pl-10 pr-3 text-base border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-slate-800"
                                     placeholder="Commencez à taper votre adresse...">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

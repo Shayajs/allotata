@@ -35,6 +35,9 @@
             .search-input:focus + .search-icon {
                 color: rgb(34, 197, 94);
             }
+            input.search-input {
+                padding-left: 3rem !important;
+            }
         </style>
     </head>
     <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen">
@@ -95,7 +98,7 @@
                     @if($conversationsClient->count() > 0)
                         <div class="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 p-4">
                             <form method="GET" action="{{ route('messagerie.index') }}" class="relative">
-                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 search-icon text-slate-400 dark:text-slate-500">
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 search-icon text-slate-400 dark:text-slate-500 pointer-events-none">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
@@ -105,7 +108,7 @@
                                     name="search_client" 
                                     value="{{ request('search_client') }}"
                                     placeholder="Rechercher une entreprise..."
-                                    class="w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/50 dark:bg-slate-700/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all search-input"
+                                    class="no-ui-input w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/50 dark:bg-slate-700/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all search-input min-h-11"
                                 >
                             </form>
                         </div>
@@ -113,7 +116,7 @@
                     @if($conversationsGerant->count() > 0)
                         <div class="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 p-4">
                             <form method="GET" action="{{ route('messagerie.index') }}" class="relative">
-                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 search-icon text-slate-400 dark:text-slate-500">
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 search-icon text-slate-400 dark:text-slate-500 pointer-events-none">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
@@ -123,7 +126,7 @@
                                     name="search_gerant" 
                                     value="{{ request('search_gerant') }}"
                                     placeholder="Rechercher un client..."
-                                    class="w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/50 dark:bg-slate-700/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all search-input"
+                                    class="no-ui-input w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/50 dark:bg-slate-700/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all search-input min-h-11"
                                 >
                             </form>
                         </div>
