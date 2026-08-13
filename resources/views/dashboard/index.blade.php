@@ -22,6 +22,12 @@
         
         <script>
             window.VAPID_PUBLIC_KEY = '{{ config("webpush.vapid.public_key") }}';
+            window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
+            window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
+            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.2") }}';
+            window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
+            window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
+            window.currentUserId = {{ auth()->id() ?? 'null' }};
         </script>
     </head>
     <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex flex-col">
@@ -107,7 +113,7 @@
             @endif
 
             <!-- En-tête -->
-            <div class="mb-8">
+            <div id="dashboard-welcome" class="mb-8 {{ $activeTab === 'messagerie' ? 'hidden' : '' }}">
                 <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                     Bienvenue, {{ $user->name }} !
                 </h1>
@@ -128,7 +134,7 @@
                 <main class="flex-1 min-w-0">
                     {{-- Barre onglets mobile (composant centralisé) --}}
                     <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+                    <div id="dashboard-main-card" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 {{ $activeTab === 'messagerie' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6' }}">
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
                             @include('dashboard.tabs.accueil')
@@ -245,7 +251,25 @@
                 // Mettre à jour l'URL sans recharger la page
                 const url = new URL(window.location);
                 url.searchParams.set('tab', tabName);
+                if (tabName !== 'messagerie') {
+                    url.searchParams.delete('conversation');
+                }
                 window.history.replaceState({}, '', url);
+
+                const card = document.getElementById('dashboard-main-card');
+                if (card) {
+                    if (tabName === 'messagerie') {
+                        card.classList.remove('p-4', 'sm:p-6');
+                        card.classList.add('p-0', 'overflow-hidden');
+                    } else {
+                        card.classList.add('p-4', 'sm:p-6');
+                        card.classList.remove('p-0', 'overflow-hidden');
+                    }
+                }
+                const welcome = document.getElementById('dashboard-welcome');
+                if (welcome) {
+                    welcome.classList.toggle('hidden', tabName === 'messagerie');
+                }
 
                 // Initialiser l'emploi du temps si on affiche cet onglet
                 if (tabName === 'emploi-du-temps' && typeof window.initDashboardEmploiDuTemps === 'function') {

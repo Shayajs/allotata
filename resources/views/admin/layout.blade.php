@@ -170,7 +170,7 @@
 
     <div class="min-h-screen flex">
         <!-- Sidebar (PC) – cachée en PWA mobile via .nav-sidebar -->
-        <aside class="nav-sidebar w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
+        <aside id="admin-sidebar" class="nav-sidebar w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto">
             <!-- Logo -->
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 text-xl font-bold">
@@ -561,6 +561,22 @@
                 </a>
             </nav>
         </aside>
+        <script>
+            (function () {
+                var el = document.getElementById('admin-sidebar');
+                if (!el) return;
+                var key = 'allotata-admin-sidebar-scroll';
+                try {
+                    var saved = sessionStorage.getItem(key);
+                    if (saved !== null) el.scrollTop = parseInt(saved, 10) || 0;
+                } catch (e) {}
+                var save = function () {
+                    try { sessionStorage.setItem(key, String(el.scrollTop)); } catch (e) {}
+                };
+                el.addEventListener('scroll', save, { passive: true });
+                window.addEventListener('pagehide', save);
+            })();
+        </script>
 
         <!-- Main content -->
         <main class="flex-1 flex flex-col min-w-0">
@@ -762,6 +778,32 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
         }
+
+        // Conserver le scroll de page au changement d'onglet (évite le saut en haut
+        // quand le contenu précédent est masqué avant d'afficher le suivant).
+        window.adminKeepScroll = function (fn) {
+            var y = window.scrollY;
+            var html = document.documentElement;
+            html.classList.remove('scroll-smooth');
+            if (typeof fn === 'function') fn();
+            var restore = function () {
+                window.scrollTo(0, y);
+            };
+            restore();
+            requestAnimationFrame(function () {
+                restore();
+                requestAnimationFrame(restore);
+            });
+            setTimeout(function () {
+                restore();
+                html.classList.add('scroll-smooth');
+            }, 50);
+        };
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest('button[data-tab], button[data-user-tab], button[data-webhook-tab], .tab-button, .user-tab-btn, .webhook-tab-btn');
+            if (!trigger) return;
+            window.adminKeepScroll();
+        }, true);
     </script>
 </body>
 </html>

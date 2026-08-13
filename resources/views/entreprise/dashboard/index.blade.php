@@ -222,7 +222,7 @@
                 <main class="flex-1 min-w-0">
                     {{-- Barre onglets mobile (composant centralisé) --}}
                     <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+                    <div id="dashboard-main-card" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 {{ $activeTab === 'messagerie' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6' }}">
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
                             @include('entreprise.dashboard.tabs.accueil')
@@ -462,7 +462,21 @@
                 // Mettre à jour l'URL sans recharger la page
                 const url = new URL(window.location);
                 url.searchParams.set('tab', tabName);
+                if (tabName !== 'messagerie') {
+                    url.searchParams.delete('conversation');
+                }
                 window.history.replaceState({}, '', url);
+
+                const card = document.getElementById('dashboard-main-card');
+                if (card) {
+                    if (tabName === 'messagerie') {
+                        card.classList.remove('p-4', 'sm:p-6');
+                        card.classList.add('p-0', 'overflow-hidden');
+                    } else {
+                        card.classList.add('p-4', 'sm:p-6');
+                        card.classList.remove('p-0', 'overflow-hidden');
+                    }
+                }
 
                 // Initialiser le calendrier si on affiche l'onglet agenda
                 if (tabName === 'agenda' && typeof initCalendar === 'function') {

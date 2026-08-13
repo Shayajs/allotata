@@ -711,21 +711,17 @@ class AgendaController extends Controller
 
         $original = TypeService::where('id', $typeServiceId)
             ->where('entreprise_id', $entreprise->id)
+            ->with('options.choices')
             ->firstOrFail();
 
         try {
             DB::beginTransaction();
 
-            $copy = TypeService::create([
-                'entreprise_id' => $entreprise->id,
-                'nom' => 'Copie de ' . $original->nom,
-                'description' => $original->description,
-                'duree_minutes' => $original->duree_minutes,
-                'prix' => $original->prix,
-                'est_actif' => $original->est_actif,
-                'type_structure' => $original->type_structure,
-                'ordre_affichage' => null,
-            ]);
+            $copy = $original->replicate();
+            $copy->nom = 'Copie de ' . $original->nom;
+            $copy->ordre_affichage = (int) TypeService::where('entreprise_id', $entreprise->id)
+                ->max('ordre_affichage') + 1;
+            $copy->save();
 
             // Copier les options et leurs choices
             foreach ($original->options as $option) {

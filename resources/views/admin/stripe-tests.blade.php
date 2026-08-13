@@ -12,11 +12,12 @@
         <nav class="flex gap-1 min-w-max" role="tablist">
             <template x-for="tab in tabs" :key="tab.id">
                 <button
-                    @click="activeTab = tab.id"
+                    type="button"
+                    @click="const _y = window.scrollY; activeTab = tab.id; $nextTick(() => window.scrollTo(0, _y))"
                     :class="activeTab === tab.id
                         ? 'border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
                         : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'"
-                    class="px-4 py-3 text-sm font-medium border-b-2 rounded-t-lg transition whitespace-nowrap"
+                    class="tab-button px-4 py-3 text-sm font-medium border-b-2 rounded-t-lg transition whitespace-nowrap"
                     x-text="tab.label"
                 ></button>
             </template>

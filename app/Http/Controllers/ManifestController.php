@@ -42,19 +42,20 @@ class ManifestController extends Controller
     {
         $entreprise = \App\Models\Entreprise::where('slug', $slug)->firstOrFail();
         
-        // Si l'entreprise a un logo
-        if ($entreprise->logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($entreprise->logo)) {
-            // Ici, idéalement, on redimensionnerait l'image avec un package comme Intervention Image
-            // Pour l'instant, on renvoie l'image d'origine (le navigateur s'adaptera, mais ce n'est pas opti en perf)
-            // TODO: Utiliser ImageService pour resize
-            $path = \Illuminate\Support\Facades\Storage::disk('public')->path($entreprise->logo);
-            return response()->file($path);
+        if ($entreprise->logo) {
+            $logoPath = \App\Helpers\SiteHelper::publicStorageAbsolutePath($entreprise->logo);
+            if ($logoPath) {
+                return response()->file($logoPath);
+            }
         }
 
-        // Sinon, on génère une image placeholder avec la première lettre
-        // Note: Pour faire simple sans librairie GD complexe ici, on renvoie une image par défaut ou une redirection
-        // Vers une API de placeholder (ex: ui-avatars.com)
-        $color = '0f172a'; // Bleu nuit par défaut
+        $allotataFavicon = \App\Helpers\SiteHelper::getDefaultFaviconAbsolutePath();
+        if ($allotataFavicon) {
+            return response()->file($allotataFavicon);
+        }
+
+        // Dernier recours : initiale de l'entreprise
+        $color = '0f172a';
         $bg = 'ffffff';
         $name = urlencode($entreprise->nom);
         

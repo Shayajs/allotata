@@ -316,6 +316,9 @@ Route::post('/two-factor/request', [\App\Http\Controllers\TwoFactorController::c
 Route::post('/two-factor/verify', [\App\Http\Controllers\TwoFactorController::class, 'verify'])->name('two-factor.verify');
 
 // Entreprise (Public)
+Route::get('/p/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('public.favicon');
+Route::get('/w/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('site-web.favicon');
+Route::get('/m/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('entreprise.favicon');
 Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entreprise');
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');

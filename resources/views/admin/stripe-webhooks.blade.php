@@ -496,31 +496,30 @@
     @push('scripts')
     <script>
         function showWebhookTab(tabId) {
-            // Hide all contents
-            document.querySelectorAll('.webhook-tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
+            const run = () => {
+                document.querySelectorAll('.webhook-tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
 
-            // Reset all buttons
-            document.querySelectorAll('.webhook-tab-btn').forEach(btn => {
-                btn.classList.remove('border-green-500', 'text-green-600', 'dark:text-green-400');
-                btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
-            });
+                document.querySelectorAll('.webhook-tab-btn').forEach(btn => {
+                    btn.classList.remove('border-green-500', 'text-green-600', 'dark:text-green-400');
+                    btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+                });
 
-            // Show selected content
-            document.getElementById('webhook-tab-' + tabId)?.classList.remove('hidden');
+                document.getElementById('webhook-tab-' + tabId)?.classList.remove('hidden');
 
-            // Activate selected button
-            const activeBtn = document.querySelector(`[data-webhook-tab="${tabId}"]`);
-            if (activeBtn) {
-                activeBtn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
-                activeBtn.classList.add('border-green-500', 'text-green-600', 'dark:text-green-400');
-            }
+                const activeBtn = document.querySelector(`[data-webhook-tab="${tabId}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+                    activeBtn.classList.add('border-green-500', 'text-green-600', 'dark:text-green-400');
+                }
 
-            // Update URL without reload
-            const url = new URL(window.location);
-            url.searchParams.set('tab', tabId);
-            window.history.replaceState({}, '', url);
+                const url = new URL(window.location);
+                url.searchParams.set('tab', tabId);
+                window.history.replaceState({}, '', url);
+            };
+            if (window.adminKeepScroll) window.adminKeepScroll(run);
+            else run();
         }
 
         function showTransactionDetails(id) {

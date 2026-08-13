@@ -1,59 +1,300 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="docs/assets/logo.png" alt="Allo Tata" width="128">
 </p>
 
-## About Laravel
+<h1 align="center">Allo Tata</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  <strong>Concentrez-vous sur l’essentiel.<br>Allo Tata simplifie le quotidien des micro-entreprises.</strong>
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<p align="center">
+  Plateforme tout-en-un : agenda, clientèle, facturation, site vitrine, messagerie et finances.<br>
+  Pensée pour les artisans, indépendants et petites équipes en France.
+</p>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+<p align="center">
+  <a href="https://allotata.fr"><img src="https://img.shields.io/badge/Site-allotata.fr-22c55e" alt="allotata.fr"></a>
+  <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php&logoColor=white" alt="PHP 8.2+">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/Tailwind-v4-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind CSS v4">
+  <img src="https://img.shields.io/badge/Paiements-Stripe-635BFF?logo=stripe&logoColor=white" alt="Stripe">
+  <img src="https://img.shields.io/badge/PWA-installable-0f172a" alt="PWA">
+</p>
 
-## Learning Laravel
+<p align="center">
+  <a href="https://allotata.fr">Site public</a> ·
+  <a href="#démarrer-en-local">Installation</a> ·
+  <a href="#documentation">Documentation</a> ·
+  <a href="#déploiement">Déploiement</a>
+</p>
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Qu’est-ce qu’Allo Tata ?
 
-## Laravel Sponsors
+Allo Tata est à la fois **un outil de gestion** pour le professionnel et **une vitrine de réservation** pour ses clients.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Un coiffeur, un coach, un artisan ou une nounou crée son entreprise sur la plateforme. Ses clients le trouvent (recherche par nom, ville, service), consultent l’agenda, réservent un créneau, échangent en messagerie et laissent un avis. De son côté, le gérant pilote tout depuis un dashboard : planning, équipe, factures, stock, fidélité, site web.
 
-### Premium Partners
+Le produit est édité par **BrightShell** et en production sur [allotata.fr](https://allotata.fr).
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Deux publics, un même compte
 
-## Contributing
+| Rôle | Ce qu’il fait |
+|------|----------------|
+| **Client** | Cherche un pro, réserve, paie / suit ses RDV, discute, note la prestation. |
+| **Gérant** | Crée une (ou plusieurs) entreprises, configure services et horaires, accepte les RDV, facture, suit sa compta. |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Le passage « client → gérant » se fait en créant sa première entreprise. Un essai gratuit permet de tester le Premium avant de s’abonner.
 
-## Code of Conduct
+```mermaid
+flowchart LR
+  subgraph Public
+    A[Accueil] --> B[Recherche]
+    B --> C["Page /p/{slug}"]
+    C --> D[Réservation]
+    C --> E["Site vitrine /w/{slug}"]
+  end
+  subgraph Pro
+    F[Dashboard] --> G[Agenda]
+    F --> H[Clients]
+    F --> I[Factures]
+  end
+  D --> F
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Fonctionnalités
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Cœur métier
 
-## License
+- **Agenda & réservations** — horaires d’ouverture, créneaux en temps réel, RDV en ligne ou manuels, statuts (attente / confirmée / terminée / annulée), rappels email (et SMS si configuré) 24 h et 2 h avant.
+- **Page publique** — chaque entreprise a une URL `/p/{slug}` : services, tarifs, avis, calendrier, bouton réserver.
+- **Messagerie** — conversation par client, images, propositions de créneaux, négociation de prix, commandes produits.
+- **Facturation & finances** — factures PDF, recettes / dépenses, rapports (dont export utile pour l’URSSAF), historique des paiements.
+- **Clientèle** — fiches, notes privées, historique, programme de fidélité (points et niveaux).
+- **Avis vérifiés** — notation 5 étoiles après une vraie réservation, affichage public, modération.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Options
+
+| Option | Rôle |
+|--------|------|
+| **Site vitrine** | Éditeur visuel (blocs hero, services, galerie, FAQ…), thème, SEO, URL `/w/{slug}`, versions. |
+| **Multi-personnes** | Équipe, agendas individuels, invitations, assignation des RDV, stats par membre. |
+
+### Autour du métier
+
+- Catalogue **produits / stocks** et promotions
+- **Dashboard** client et entreprise (PWA installable)
+- **Cours** intégrés pour apprendre à utiliser la plateforme
+- Forum, FAQ, tickets support, feedback
+- **2FA** (email / SMS / TOTP), appareils de confiance, logs de sécurité
+- Sync **Google Calendar**, feed **Reserve with Google**
+- Notifications push (Web Push / VAPID)
+- Demandes **RGPD** (export / suppression)
+
+Les paiements d’abonnements passent par **Stripe** (Checkout, webhooks, portail client, réconciliation automatique des échéances).
+
+---
+
+## Stack technique
+
+| Couche | Choix |
+|--------|--------|
+| Backend | PHP 8.2+, [Laravel 12](https://laravel.com) |
+| Frontend | Blade, [Tailwind CSS v4](https://tailwindcss.com), Vite 7 |
+| Temps réel | Pusher (notes collaboratives, présence) |
+| Paiements | Stripe + Laravel Cashier |
+| PDF | DomPDF |
+| Auth renforcée | Google2FA (TOTP) |
+| Push | Web Push (VAPID) |
+| Emails / SMS | SMTP + templates ; SMS optionnel |
+| Prod | Docker (PHP-FPM, Nginx, MySQL 8), Supervisor, cron Laravel |
+
+En local, SQLite suffit (voir `.env.example`). En production : MySQL 8.
+
+---
+
+## Arborescence
+
+```
+allotata/
+├── app/
+│   ├── Console/Commands/     # CRON : rappels, Stripe, backups, Google…
+│   ├── Http/Controllers/     # Web, admin, API, BrightShell
+│   ├── Models/               # Entreprise, Reservation, Facture, …
+│   ├── Services/             # Logique métier (paiements, slots, RGPD…)
+│   └── Mail/                 # Emails transactionnels
+├── database/migrations/
+├── resources/
+│   ├── views/                # Blade (public, dashboard, admin, emails)
+│   ├── css/  js/
+│   └── lang/                 # FR
+├── routes/
+│   ├── web.php               # App principale
+│   ├── api.php
+│   └── console.php           # Planificateur
+├── dev-docs/                 # Docs internes, exposées sur /dev
+├── deploy/production/        # Nginx, Supervisor, script de deploy
+├── docs/assets/              # Logo et assets README
+└── public/
+```
+
+Pages utiles une fois l’app lancée :
+
+| URL | Rôle |
+|-----|------|
+| `/` | Accueil + recherche |
+| `/p/{slug}` | Page publique d’une entreprise |
+| `/w/{slug}` | Site vitrine |
+| `/dashboard` | Espace connecté |
+| `/admin` | Back-office (admins) |
+| `/dev` | Documentation développeur |
+| `/brightshell` | ERP interne BrightShell (admins) |
+
+---
+
+## Démarrer en local
+
+Prérequis : **PHP 8.2+**, **Composer**, **Node.js 20+**, **npm**.
+
+```bash
+git clone <url-du-repo> allotata
+cd allotata
+
+composer run setup
+```
+
+`setup` installe les dépendances PHP et JS, copie `.env`, génère `APP_KEY`, lance les migrations et compile les assets.
+
+Puis, en un seul processus (serveur + queue + logs + Vite) :
+
+```bash
+composer run dev
+```
+
+L’app écoute en général sur [http://localhost:8000](http://localhost:8000).
+
+### Configuration minimale
+
+1. Copier `.env.example` → `.env` si ce n’est pas déjà fait.
+2. Renseigner au moins :
+
+```env
+APP_NAME="Allo Tata"
+APP_URL=http://localhost:8000
+APP_LOCALE=fr
+APP_TIMEZONE=Europe/Paris
+
+DB_CONNECTION=sqlite          # ou mysql en collant DB_HOST / DB_DATABASE / …
+
+MAIL_MAILER=log               # les mails s’écrivent dans storage/logs
+```
+
+3. Pour Stripe, Google Calendar, Push, IMAP BrightShell : voir `.env.example` et `config/services.php`. Sans ces clés, les modules concernés restent inactifs.
+
+### Docker
+
+Le `docker-compose.yaml` de chaque machine est **local** (gitignoré). Un modèle production se trouve dans `docker-compose.yaml.prod_stable`.
+
+En prod typique : `laravel_app` (PHP-FPM) + `laravel_db` (MySQL 8) + `laravel_nginx`, derrière un reverse-proxy.
+
+---
+
+## Commandes utiles
+
+```bash
+php artisan migrate                 # migrations
+php artisan db:seed                 # seeders
+php artisan test                    # tests
+npm run dev                         # Vite (hot reload)
+npm run build                       # assets production
+
+php artisan schedule:run            # une passe du planificateur
+php artisan queue:listen --tries=1  # workers
+php artisan db:backup --keep=30     # sauvegarde BDD
+php artisan emergency:url           # URL de secours admin (token .env)
+```
+
+Tâches métier fréquentes : `reservations:send-reminders`, `subscriptions:check-echeances`, `subscriptions:process-payments`, `subscriptions:reconcile-echeances`, `essais:check-expiration`, `google-calendar:sync-all`.
+
+---
+
+## Planificateur
+
+Laravel Scheduler (`routes/console.php`) suppose un cron :
+
+```
+* * * * * cd /chemin/vers/allotata && php artisan schedule:run >> /dev/null 2>&1
+```
+
+| Quand | Commande | Rôle |
+|-------|----------|------|
+| 02:00 | `db:backup` | Sauvegarde BDD (30 derniers) |
+| 04:00 | `google:generate-merchant-feed` | Feed Reserve with Google |
+| 05:00 | `google-calendar:renew-watches` | Renouvellement webhooks Google |
+| 06:00–06:30 | abonnements Stripe | Échéances, factures, auto-charge, réconciliation |
+| 07:00 | `gdpr:process-requests` | Demandes RGPD |
+| 09:00 | `essais:check-expiration` | Essais gratuits |
+| toutes les heures | rappels RDV 24 h / 2 h | Email (+ SMS) |
+| toutes les 15 min | `google-calendar:sync-all` | Sync calendrier |
+| lundi 09:00 | `reports:send-weekly` | Rapport gérants |
+| 1er du mois 09:00 | `reports:send-monthly` | Rapport mensuel |
+
+Détails : [dev-docs/deploy](dev-docs/deploy/).
+
+---
+
+## Documentation
+
+La doc interne vit dans `dev-docs/` et s’affiche dans l’app sur **`/dev`** (compte connecté ; certains fichiers sont réservés admin).
+
+| Dossier | Contenu |
+|---------|---------|
+| [dev-docs/stripe](dev-docs/stripe/) | Checkout, webhooks, portail, robustesse paiements |
+| [dev-docs/deploy](dev-docs/deploy/) | Production, cron |
+| [dev-docs/database](dev-docs/database/) | Backups, migrations |
+| [dev-docs/email](dev-docs/email/) | Templates, SMTP, SMS |
+| [dev-docs/api](dev-docs/api/) | Endpoints publics, pages `/p` et `/w` |
+| [dev-docs/pusher](dev-docs/pusher/) | Temps réel |
+| [dev-docs/integration](dev-docs/integration/) | Médiathèque, Kanban |
+| [dev-docs/operations](dev-docs/operations/) | Perf, ops |
+| [deploy/production](deploy/production/) | Nginx, Supervisor, `deploy.sh` |
+| [docs/courses-manage.md](docs/courses-manage.md) | CLI des cours |
+
+Webhook Stripe à déclarer : `POST /stripe/webhook` (signature Stripe, pas de CSRF).
+
+---
+
+## Déploiement
+
+Guide pas à pas : [deploy/production/README.md](deploy/production/README.md) et [dev-docs/deploy/PRODUCTION_README.md](dev-docs/deploy/PRODUCTION_README.md).
+
+En résumé :
+
+1. `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://allotata.fr`
+2. `composer install --no-dev --optimize-autoloader` puis `npm run build`
+3. Nginx → `public/`, PHP-FPM, permissions `storage/` et `bootstrap/cache`
+4. Supervisor pour la queue
+5. Cron `schedule:run` chaque minute
+6. Clés Stripe / webhook, mail, VAPID, `EMERGENCY_RECOVERY_TOKEN`
+
+Le script `deploy/production/deploy.sh` enchaîne pull, dépendances, migrations et build.
+
+---
+
+## BrightShell
+
+`/brightshell` n’est **pas** le produit public. C’est l’ERP interne de l’éditeur (agenda, devis, factures, stock, mailing IMAP, Kanban, documents), réservé aux administrateurs, dans la même application Laravel.
+
+Allo Tata = SaaS + marketplace pour les micro-entreprises. BrightShell = outil interne de l’équipe.
+
+---
+
+## Licence
+
+Application propriétaire, éditée par **BrightShell**. Le framework Laravel reste sous licence MIT.
+
+Contact : [allotata.fr](https://allotata.fr) · [brightshell.fr](https://brightshell.fr)

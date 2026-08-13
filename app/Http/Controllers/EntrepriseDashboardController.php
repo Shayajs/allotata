@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\HorairesOuverture;
 use App\Models\CourseModule;
 use App\Models\CourseLesson;
+use App\Services\MessagerieViewService;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -113,7 +114,28 @@ class EntrepriseDashboardController extends Controller
         $factures = $this->getFactures($request, $entreprise);
 
         // ===== Données pour l'onglet Messagerie =====
-        $conversations = $this->getConversations($entreprise);
+        $messagerieService = app(MessagerieViewService::class);
+        $conversations = $messagerieService->entrepriseConversations($entreprise, $request->get('search_gerant'));
+        $messagerieConversation = null;
+        $messagerieMessages = collect();
+        $messageriePropositionActive = null;
+        $messageriePrestations = collect();
+        $messagerieProduits = collect();
+
+        if ($request->filled('conversation')) {
+            $selected = Conversation::where('id', $request->conversation)
+                ->where('entreprise_id', $entreprise->id)
+                ->with(['user', 'entreprise'])
+                ->first();
+            if ($selected) {
+                $chat = $messagerieService->hydrate($selected, $user, true);
+                $messagerieConversation = $chat['conversation'];
+                $messagerieMessages = $chat['messages'];
+                $messageriePropositionActive = $chat['propositionActive'];
+                $messageriePrestations = $chat['prestations'];
+                $messagerieProduits = $chat['produits'];
+            }
+        }
 
         // ===== Données pour l'onglet Statistiques =====
         $statsStatistiques = [];
@@ -387,6 +409,11 @@ class EntrepriseDashboardController extends Controller
             'factures' => $factures,
             // Messagerie
             'conversations' => $conversations,
+            'messagerieConversation' => $messagerieConversation,
+            'messagerieMessages' => $messagerieMessages,
+            'messageriePropositionActive' => $messageriePropositionActive,
+            'messageriePrestations' => $messageriePrestations,
+            'messagerieProduits' => $messagerieProduits,
             // Multi-personnes
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
             'membresAvecStats' => $membresAvecStats,

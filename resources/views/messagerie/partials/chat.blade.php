@@ -1,54 +1,22 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Conversation - {{ $entreprise->nom }}</title>
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        <script>
-            // Configuration Reverb pour la présence en temps réel
-            window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
-            window.REVERB_APP_KEY = '{{ env("REVERB_APP_KEY", "reverb-key") }}';
-            window.REVERB_HOST = '{{ env("REVERB_HOST", "127.0.0.2") }}';
-            window.REVERB_PORT = '{{ env("REVERB_PORT", "8080") }}';
-            window.REVERB_SCHEME = '{{ env("REVERB_SCHEME", "http") }}';
-            window.currentUserId = {{ auth()->id() ?? 'null' }};
-        </script>
-        @include('partials.theme-script')
-    </head>
-    <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen">
-        <!-- Navigation améliorée -->
-        <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-50 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <a href="{{ route('messagerie.index') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent hover:from-green-600 hover:to-orange-600 transition flex items-center gap-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        <span>Messagerie</span>
-                    </a>
-                    <div class="flex items-center gap-4">
-                        <a href="{{ route('messagerie.index') }}" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                            Liste des conversations
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+{{-- Corps du chat (extrait de l'ancienne page standalone) --}}
+@php
+    $listUrl = $listUrl ?? ($isGerant
+        ? route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie'])
+        : route('dashboard', ['tab' => 'messagerie']));
+@endphp
+<div class="h-full min-h-0 flex flex-col overflow-hidden">
+    <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 sm:p-4">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Colonne principale : Messages -->
                 <div class="lg:col-span-2 space-y-6">
             <!-- En-tête de conversation amélioré -->
-            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-6 mb-6">
-                <div class="flex items-center gap-4">
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-4 sm:p-6 mb-6">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <a href="{{ $listUrl }}" class="md:hidden flex-shrink-0 p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Retour aux conversations">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
                     @if(isset($isGerant) && $isGerant)
                         <div class="relative" data-user-id="{{ $conversation->user->id }}">
                             <x-avatar :user="$conversation->user" size="2xl" class="shadow-lg" />
@@ -417,7 +385,7 @@
             @endif
 
             <!-- Zone de messages améliorée style chat moderne -->
-            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden flex flex-col" style="height: calc(100vh - 400px); min-height: 600px;">
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden flex flex-col" style="height: min(520px, 55vh); min-height: 280px;">
                 <!-- En-tête de la zone de messages -->
                 <div class="bg-gradient-to-r from-green-500/10 to-orange-500/10 dark:from-green-500/20 dark:to-orange-500/20 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
                     <div class="flex items-center justify-between">
@@ -810,7 +778,6 @@
                     </div>
                 @endif
             </div>
-        </div>
 
         <script>
             // Scroll vers le bas des messages
@@ -1034,5 +1001,6 @@
                 });
             </script>
         @endif
-    </body>
-</html>
+
+    </div>
+</div>

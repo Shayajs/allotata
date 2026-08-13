@@ -1,7 +1,16 @@
 {{-- allotata-site-favicon --}}
 @php
     use App\Helpers\SiteHelper;
-    
+
+    $contextFavicon = SiteHelper::entrepriseContextFaviconUrl($entreprise ?? null);
+@endphp
+
+@if($contextFavicon)
+    <link rel="icon" type="image/png" href="{{ $contextFavicon }}" id="site-favicon">
+    <link rel="shortcut icon" type="image/png" href="{{ $contextFavicon }}">
+    <link rel="apple-touch-icon" href="{{ $contextFavicon }}">
+@else
+@php
     $logoLight = SiteHelper::getFavicon('light');
     $logoDark = SiteHelper::getFavicon('dark');
     $faviconFallback = asset('favicon.ico');
@@ -83,4 +92,5 @@
 @else
     <!-- Fallback vers le favicon statique si aucun logo n'est configuré -->
     <link rel="icon" type="image/x-icon" href="{{ $faviconFallback }}">
+@endif
 @endif

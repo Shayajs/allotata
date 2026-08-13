@@ -17,61 +17,14 @@ use Illuminate\Support\Facades\Schema;
 class MessagerieController extends Controller
 {
     /**
-     * Afficher la liste des conversations
+     * Ancienne liste standalone : redirige vers l’onglet messagerie du dashboard.
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
-
-        // Récupérer les conversations de l'utilisateur (client)
-        $conversationsClient = collect([]);
-        if ($user->est_client) {
-            $queryClient = Conversation::where('user_id', $user->id)
-                ->where('est_archivee', false)
-                ->with(['entreprise', 'dernierMessage.user']);
-
-            // Recherche
-            if ($request->filled('search_client')) {
-                $search = $request->search_client;
-                $queryClient->whereHas('entreprise', function ($q) use ($search) {
-                    $q->where('nom', 'like', "%{$search}%")
-                        ->orWhere('type_activite', 'like', "%{$search}%")
-                        ->orWhere('ville', 'like', "%{$search}%");
-                });
-            }
-
-            $conversationsClient = $queryClient->orderBy('dernier_message_at', 'desc')->get();
-        }
-
-        // Récupérer les conversations des entreprises du gérant
-        $conversationsGerant = collect([]);
-        if ($user->est_gerant) {
-            $entreprisesIds = $user->entreprises()->pluck('id');
-            $queryGerant = Conversation::whereIn('entreprise_id', $entreprisesIds)
-                ->where('est_archivee', false)
-                ->with(['user', 'entreprise', 'dernierMessage.user']);
-
-            // Recherche
-            if ($request->filled('search_gerant')) {
-                $search = $request->search_gerant;
-                $queryGerant->where(function ($q) use ($search) {
-                    $q->whereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })
-                        ->orWhereHas('entreprise', function ($entrepriseQuery) use ($search) {
-                            $entrepriseQuery->where('nom', 'like', "%{$search}%");
-                        });
-                });
-            }
-
-            $conversationsGerant = $queryGerant->orderBy('dernier_message_at', 'desc')->get();
-        }
-
-        return view('messagerie.index', [
-            'conversationsClient' => $conversationsClient,
-            'conversationsGerant' => $conversationsGerant,
-        ]);
+        return redirect()->route('dashboard', array_filter([
+            'tab' => 'messagerie',
+            'search_client' => $request->get('search_client'),
+        ]));
     }
 
     /**
@@ -132,7 +85,7 @@ class MessagerieController extends Controller
             $conversation->update(['dernier_message_at' => now()]);
         }
 
-        return redirect()->route('messagerie.show', $slug);
+        return redirect()->to($conversation->dashboardUrl(false));
     }
 
     /**
@@ -189,24 +142,22 @@ class MessagerieController extends Controller
             $conversation->update(['dernier_message_at' => now()]);
         }
 
-        return redirect()->route('messagerie.show', $slug);
+        return redirect()->to($conversation->dashboardUrl(false));
     }
 
     /**
-     * Afficher ou créer une conversation avec une entreprise
+     * Ancienne page chat client : crée la conversation si besoin, puis dashboard.
      */
     public function show($slug)
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
 
-        // Vérifier si une conversation existe déjà (non archivée)
         $conversation = Conversation::where('user_id', $user->id)
             ->where('entreprise_id', $entreprise->id)
             ->where('est_archivee', false)
             ->first();
 
-        // Créer la conversation si elle n'existe pas
         if (! $conversation) {
             $conversation = Conversation::create([
                 'user_id' => $user->id,
@@ -214,54 +165,9 @@ class MessagerieController extends Controller
             ]);
         }
 
-        // Charger la réservation si la colonne existe
-        if (Schema::hasColumn('conversations', 'reservation_id') && $conversation->reservation_id) {
-            $conversation->load(['reservation.typeService', 'reservation.user']);
-        }
+        $conversation->loadMissing('entreprise');
 
-        // Charger les messages avec leurs propositions
-        $messages = $conversation->messages()
-            ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Charger les propositions de rendez-vous actives avec les relations nécessaires
-        $propositionActive = $conversation->propositionRendezVousActive();
-        if ($propositionActive) {
-            $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
-        }
-
-        // Charger les prestations disponibles de l'entreprise
-        $prestations = $entreprise->typesServices()
-            ->where('est_actif', true)
-            ->with(['images', 'imageCouverture'])
-            ->orderBy('nom')
-            ->get();
-
-        // Charger les produits disponibles de l'entreprise
-        $produits = $entreprise->produits()
-            ->where('est_actif', true)
-            ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
-            ->get()
-            ->filter(function ($produit) {
-                return $produit->estDisponible();
-            });
-
-        // Marquer les messages comme lus
-        $conversation->messages()
-            ->where('user_id', '!=', $user->id)
-            ->where('est_lu', false)
-            ->update(['est_lu' => true]);
-
-        return view('messagerie.show', [
-            'conversation' => $conversation,
-            'entreprise' => $entreprise,
-            'messages' => $messages,
-            'isGerant' => false, // C'est la vue client
-            'propositionActive' => $propositionActive,
-            'prestations' => $prestations ?? collect(),
-            'produits' => $produits ?? collect(),
-        ]);
+        return redirect()->to($conversation->dashboardUrl(false));
     }
 
     /**
@@ -327,7 +233,7 @@ class MessagerieController extends Controller
     }
 
     /**
-     * Afficher une conversation (pour les gérants)
+     * Ancienne page chat gérant : redirige vers le dashboard entreprise.
      */
     public function showGerant($slug, $conversationId)
     {
@@ -335,7 +241,6 @@ class MessagerieController extends Controller
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
 
-        // Vérifier les permissions
         if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
         }
@@ -345,60 +250,7 @@ class MessagerieController extends Controller
             ->with(['user', 'entreprise'])
             ->firstOrFail();
 
-        // Charger les relations du contexte
-        if ($conversation->reservation_id) {
-            $conversation->load(['reservation.typeService', 'reservation.user']);
-        }
-        if ($conversation->produit_id) {
-            $conversation->load(['produit.stock', 'produit.images', 'produit.imageCouverture', 'produit.promotionActive']);
-        }
-        if ($conversation->type_service_id) {
-            $conversation->load(['typeService.images', 'typeService.imageCouverture']);
-        }
-
-        // Charger les messages avec leurs propositions
-        $messages = $conversation->messages()
-            ->with(['user', 'propositionRdv.auteur', 'propositionRdv.entreprise', 'propositionRdv.reservation'])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Charger les propositions de rendez-vous actives avec les relations nécessaires
-        $propositionActive = $conversation->propositionRendezVousActive();
-        if ($propositionActive) {
-            $propositionActive->load(['user', 'entreprise.user', 'conversation.user', 'reservation']);
-        }
-
-        // Charger les prestations disponibles de l'entreprise
-        $prestations = $entreprise->typesServices()
-            ->where('est_actif', true)
-            ->with(['images', 'imageCouverture'])
-            ->orderBy('nom')
-            ->get();
-
-        // Charger les produits disponibles de l'entreprise
-        $produits = $entreprise->produits()
-            ->where('est_actif', true)
-            ->with(['stock', 'images', 'imageCouverture', 'promotionActive'])
-            ->get()
-            ->filter(function ($produit) {
-                return $produit->estDisponible();
-            });
-
-        // Marquer les messages comme lus
-        $conversation->messages()
-            ->where('user_id', '!=', $user->id)
-            ->where('est_lu', false)
-            ->update(['est_lu' => true]);
-
-        return view('messagerie.show', [
-            'conversation' => $conversation,
-            'entreprise' => $entreprise,
-            'messages' => $messages,
-            'isGerant' => true,
-            'propositionActive' => $propositionActive,
-            'prestations' => $prestations ?? collect(),
-            'produits' => $produits ?? collect(),
-        ]);
+        return redirect()->to($conversation->dashboardUrl(true));
     }
 
     /**

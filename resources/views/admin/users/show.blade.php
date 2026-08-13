@@ -88,31 +88,30 @@
 
 <script>
     function showUserTab(tabId) {
-        // Hide all contents
-        document.querySelectorAll('.user-tab-content').forEach(content => {
-            content.classList.add('hidden');
-        });
+        const run = () => {
+            document.querySelectorAll('.user-tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
 
-        // Reset all buttons
-        document.querySelectorAll('.user-tab-btn').forEach(btn => {
-            btn.classList.remove('border-green-500', 'text-green-600');
-            btn.classList.add('border-transparent', 'text-slate-500');
-        });
+            document.querySelectorAll('.user-tab-btn').forEach(btn => {
+                btn.classList.remove('border-green-500', 'text-green-600');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
 
-        // Show selected content
-        document.getElementById('user-tab-' + tabId)?.classList.remove('hidden');
+            document.getElementById('user-tab-' + tabId)?.classList.remove('hidden');
 
-        // Activate selected button
-        const activeBtn = document.querySelector(`[data-user-tab="${tabId}"]`);
-        if (activeBtn) {
-            activeBtn.classList.remove('border-transparent', 'text-slate-500');
-            activeBtn.classList.add('border-green-500', 'text-green-600');
-        }
+            const activeBtn = document.querySelector(`[data-user-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-500');
+                activeBtn.classList.add('border-green-500', 'text-green-600');
+            }
 
-        // Update URL without reload
-        const url = new URL(window.location);
-        url.searchParams.set('tab', tabId);
-        window.history.replaceState({}, '', url);
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabId);
+            window.history.replaceState({}, '', url);
+        };
+        if (window.adminKeepScroll) window.adminKeepScroll(run);
+        else run();
     }
 
     // Handle initial tab from URL

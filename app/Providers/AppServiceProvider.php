@@ -105,5 +105,17 @@ class AppServiceProvider extends ServiceProvider
             $view->with('accountAccess', $accountAccess);
             $view->with('accountAccessQuery', $accountAccess->buildQuery());
         });
+
+        View::composer('partials.favicon', function ($view) {
+            $current = $view->offsetExists('entreprise') ? $view['entreprise'] : null;
+            if ($current instanceof Entreprise) {
+                return;
+            }
+
+            $resolved = \App\Helpers\SiteHelper::resolveEntrepriseFromRequest();
+            if ($resolved) {
+                $view->with('entreprise', $resolved);
+            }
+        });
     }
 }

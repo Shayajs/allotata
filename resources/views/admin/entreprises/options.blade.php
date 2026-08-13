@@ -342,26 +342,26 @@
 
 <script>
     function showTab(tabName) {
-        // Masquer tous les contenus
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.add('hidden');
-        });
+        const run = () => {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
 
-        // Réinitialiser tous les boutons
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('border-green-500', 'text-green-600');
-            button.classList.add('border-transparent', 'text-slate-500');
-        });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('border-green-500', 'text-green-600');
+                button.classList.add('border-transparent', 'text-slate-500');
+            });
 
-        // Afficher le contenu
-        document.getElementById('tab-' + tabName)?.classList.remove('hidden');
+            document.getElementById('tab-' + tabName)?.classList.remove('hidden');
 
-        // Activer le bouton
-        const btn = document.querySelector(`[data-tab="${tabName}"]`);
-        if (btn) {
-            btn.classList.remove('border-transparent', 'text-slate-500');
-            btn.classList.add('border-green-500', 'text-green-600');
-        }
+            const btn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (btn) {
+                btn.classList.remove('border-transparent', 'text-slate-500');
+                btn.classList.add('border-green-500', 'text-green-600');
+            }
+        };
+        if (window.adminKeepScroll) window.adminKeepScroll(run);
+        else run();
     }
 </script>
 @endsection

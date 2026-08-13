@@ -12,6 +12,8 @@ use App\Models\UserIpHistory;
 use App\Models\AccountLockout;
 use App\Models\CourseModule;
 use App\Models\CourseLesson;
+use App\Models\Conversation;
+use App\Services\MessagerieViewService;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -282,6 +284,31 @@ class DashboardController extends Controller
                 ->keyBy('module_id');
         }
 
+        $messagerieService = app(MessagerieViewService::class);
+        $messagerieConversations = $messagerieService->clientConversations($user, $request->get('search_client'));
+        $messagerieConversation = null;
+        $messagerieEntreprise = null;
+        $messagerieMessages = collect();
+        $messageriePropositionActive = null;
+        $messageriePrestations = collect();
+        $messagerieProduits = collect();
+
+        if ($request->filled('conversation')) {
+            $selected = Conversation::where('id', $request->conversation)
+                ->where('user_id', $user->id)
+                ->with('entreprise')
+                ->first();
+            if ($selected) {
+                $chat = $messagerieService->hydrate($selected, $user, false);
+                $messagerieConversation = $chat['conversation'];
+                $messagerieEntreprise = $chat['entreprise'];
+                $messagerieMessages = $chat['messages'];
+                $messageriePropositionActive = $chat['propositionActive'];
+                $messageriePrestations = $chat['prestations'];
+                $messagerieProduits = $chat['produits'];
+            }
+        }
+
         // Navigation items centralisés
         $navItems = NavigationService::getDashboardItems($user, [
             'entreprises_count' => $entreprises->count(),
@@ -324,6 +351,14 @@ class DashboardController extends Controller
             'courseLinks' => $this->loadCourseLinks(),
             // Navigation
             'navItems' => $navItems,
+            // Messagerie embarquée
+            'messagerieConversations' => $messagerieConversations,
+            'messagerieConversation' => $messagerieConversation,
+            'messagerieEntreprise' => $messagerieEntreprise,
+            'messagerieMessages' => $messagerieMessages,
+            'messageriePropositionActive' => $messageriePropositionActive,
+            'messageriePrestations' => $messageriePrestations,
+            'messagerieProduits' => $messagerieProduits,
         ]);
     }
 

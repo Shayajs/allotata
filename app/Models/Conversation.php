@@ -117,6 +117,27 @@ class Conversation extends Model
     }
 
     /**
+     * URL de la conversation dans le dashboard (client ou gérant).
+     */
+    public function dashboardUrl(bool $asGerant = false): string
+    {
+        $slug = $this->entreprise?->slug ?? $this->entreprise()->value('slug');
+
+        if ($asGerant) {
+            return route('entreprise.dashboard', [
+                'slug' => $slug,
+                'tab' => 'messagerie',
+                'conversation' => $this->id,
+            ]);
+        }
+
+        return route('dashboard', [
+            'tab' => 'messagerie',
+            'conversation' => $this->id,
+        ]);
+    }
+
+    /**
      * Détermine le type de contexte de la conversation
      */
     public function getContexteTypeAttribute(): ?string

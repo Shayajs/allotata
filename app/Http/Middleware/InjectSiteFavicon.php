@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\SiteHelper;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -32,7 +33,7 @@ class InjectSiteFavicon
             return $response;
         }
 
-        $faviconHtml = $this->renderFaviconHtml();
+        $faviconHtml = $this->renderFaviconHtml($request);
         $content = preg_replace('/<\/head>/i', $faviconHtml."\n</head>", $content, 1);
         $response->setContent($content);
 
@@ -45,7 +46,8 @@ class InjectSiteFavicon
             return false;
         }
 
-        if ($request->routeIs('brightshell.*') || $request->is('brightshell', 'brightshell/*')) {
+        if ($request->routeIs('brightshell.*', 'public.favicon', 'site-web.favicon', 'entreprise.favicon')
+            || $request->is('brightshell', 'brightshell/*')) {
             return false;
         }
 
@@ -78,8 +80,14 @@ class InjectSiteFavicon
         return true;
     }
 
-    private function renderFaviconHtml(): string
+    private function renderFaviconHtml(Request $request): string
     {
+        $entreprise = SiteHelper::resolveEntrepriseFromRequest($request);
+
+        if ($entreprise) {
+            return trim(view('partials.favicon', ['entreprise' => $entreprise])->render());
+        }
+
         return Cache::remember(self::CACHE_KEY, 300, function () {
             return trim(view('partials.favicon')->render());
         });
