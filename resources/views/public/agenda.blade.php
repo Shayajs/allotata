@@ -57,6 +57,10 @@
             </div>
         </header>
 
+        @if($entreprise->prendRdvSurDemande())
+            <x-rdv-sur-demande :entreprise="$entreprise" />
+        @else
+
         <!-- Formulaire mobile (visible en haut sur mobile uniquement) -->
         <div class="xl:hidden mb-6">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6">
@@ -740,8 +744,10 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
+    @unless($entreprise->prendRdvSurDemande())
     <script>
         // Définir la fonction globalement pour l'accès depuis le HTML
         window.handleServiceChange = function(selectElement) {
@@ -1615,6 +1621,7 @@
             }
         });
     </script>
+    @endunless
 
     @include('partials.footer')
     @include('partials.cookie-banner')

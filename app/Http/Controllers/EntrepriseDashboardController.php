@@ -89,7 +89,7 @@ class EntrepriseDashboardController extends Controller
             ->orderBy('ordre_plage')
             ->get();
         $typesServices = $entreprise->typesServices()
-            ->with(['images', 'imageCouverture'])
+            ->with(['images', 'imageCouverture', 'options.choices'])
             ->orderBy('nom')
             ->get();
 
@@ -463,7 +463,7 @@ class EntrepriseDashboardController extends Controller
             case 'mes-services':
             case 'services':
                 $data['typesServices'] = $entreprise->typesServices()
-                    ->with(['images', 'imageCouverture'])
+                    ->with(['images', 'imageCouverture', 'options.choices'])
                     ->orderBy('nom')
                     ->get();
                 break;
@@ -484,7 +484,7 @@ class EntrepriseDashboardController extends Controller
                 $data['reservations'] = $this->getReservationsGroupedByStatus($request, $entreprise);
                 $data['aGestionMultiPersonnes'] = $entreprise->aGestionMultiPersonnes();
                 $data['typesServices'] = $entreprise->typesServices()
-                    ->with(['images', 'imageCouverture'])
+                    ->with(['images', 'imageCouverture', 'options.choices'])
                     ->orderBy('nom')
                     ->get();
                 if ($data['aGestionMultiPersonnes']) {
@@ -504,7 +504,7 @@ class EntrepriseDashboardController extends Controller
                     ->orderBy('ordre_plage')
                     ->get();
                 $data['typesServices'] = $entreprise->typesServices()
-                    ->with(['images', 'imageCouverture'])
+                    ->with(['images', 'imageCouverture', 'options.choices'])
                     ->orderBy('nom')
                     ->get();
                 break;

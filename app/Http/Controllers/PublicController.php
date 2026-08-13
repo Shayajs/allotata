@@ -172,10 +172,17 @@ class PublicController extends Controller
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
-        // Si l'entreprise n'accepte les RDV que via messagerie, rediriger vers la messagerie
-        if ($entreprise->rdv_uniquement_messagerie) {
-            return redirect()->route('messagerie.show', $slug)
-                ->with('info', 'Cette entreprise accepte les rendez-vous uniquement via la messagerie. Veuillez contacter l\'entreprise pour prendre rendez-vous.');
+        if ($entreprise->prendRdvSurDemande()) {
+            return view('public.agenda', [
+                'entreprise' => $entreprise,
+                'horaires' => collect(),
+                'jours' => [],
+                'isOwner' => $isOwner,
+                'membres' => collect(),
+                'aGestionMultiPersonnes' => false,
+                'userInfo' => null,
+                'intervalle_creneaux_minutes' => $entreprise->resolveIntervalleCreneauxMinutes(),
+            ]);
         }
 
         // Charger les membres si l'entreprise a la gestion multi-personnes
@@ -703,6 +710,12 @@ class PublicController extends Controller
     {
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
+
+        if ($entreprise->prendRdvSurDemande()) {
+            return redirect()
+                ->route('public.agenda', $slug)
+                ->withErrors(['error' => 'Cette entreprise ne propose pas de créneaux en ligne. Contactez-la pour convenir d’un rendez-vous.']);
+        }
 
         // Vérifier que le type de service appartient à l'entreprise (avant validation conditionnelle)
         $typeService = TypeService::where('id', $request->input('type_service_id'))

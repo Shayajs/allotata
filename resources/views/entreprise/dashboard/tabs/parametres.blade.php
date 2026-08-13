@@ -360,25 +360,41 @@
                 <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
                     <input 
                         type="checkbox" 
-                        name="rdv_uniquement_messagerie" 
+                        name="rdv_uniquement_messagerie"
+                        id="rdv_uniquement_messagerie"
                         value="1"
                         {{ old('rdv_uniquement_messagerie', $entreprise->rdv_uniquement_messagerie) ? 'checked' : '' }}
                         class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
                     >
                     <div>
                         <span class="text-sm font-medium text-slate-900 dark:text-white">
-                            💬 Rendez-vous uniquement via messagerie
+                            Sur rendez-vous uniquement
                         </span>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            L'agenda public sera désactivé, les clients devront passer par la messagerie.
+                            Aucun agenda n’est montré aux clients. Ils voient une page d’information et vous contactent pour convenir d’un créneau. Idéal si vous n’avez pas d’emploi du temps public.
                         </p>
                     </div>
                 </label>
 
-                <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
+                <div id="rdv-sur-demande-message-wrap" class="{{ old('rdv_uniquement_messagerie', $entreprise->rdv_uniquement_messagerie) ? '' : 'hidden' }}">
+                    <label for="rdv_sur_demande_message" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">
+                        Message affiché aux clients (optionnel)
+                    </label>
+                    <textarea
+                        id="rdv_sur_demande_message"
+                        name="rdv_sur_demande_message"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Ex. : Contactez-moi au moins 48 h à l’avance, je vous proposerai un créneau."
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                    >{{ old('rdv_sur_demande_message', $entreprise->rdv_sur_demande_message) }}</textarea>
+                </div>
+
+                <label id="accepter-reservations-auto-label" class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-700 transition">
                     <input 
                         type="checkbox" 
-                        name="accepter_reservations_auto" 
+                        name="accepter_reservations_auto"
+                        id="accepter_reservations_auto"
                         value="1"
                         {{ old('accepter_reservations_auto', $entreprise->accepter_reservations_auto) ? 'checked' : '' }}
                         class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
@@ -393,7 +409,7 @@
                     </div>
                 </label>
 
-                <div class="p-4 border border-slate-200 dark:border-slate-600 rounded-lg">
+                <div id="intervalle-creneaux-wrap" class="p-4 border border-slate-200 dark:border-slate-600 rounded-lg">
                     <label for="intervalle_creneaux_minutes" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">
                         Intervalle entre les créneaux proposés (minutes)
                     </label>
@@ -776,5 +792,28 @@
                 closeArchiveModal();
             }
         });
+
+        (function syncRdvSurDemandeOptions() {
+            const rdv = document.getElementById('rdv_uniquement_messagerie');
+            const auto = document.getElementById('accepter_reservations_auto');
+            const messageWrap = document.getElementById('rdv-sur-demande-message-wrap');
+            const intervalleWrap = document.getElementById('intervalle-creneaux-wrap');
+            const autoLabel = document.getElementById('accepter-reservations-auto-label');
+            const intervalleInput = document.getElementById('intervalle_creneaux_minutes');
+            if (!rdv) return;
+            const apply = () => {
+                const on = rdv.checked;
+                if (messageWrap) messageWrap.classList.toggle('hidden', !on);
+                if (intervalleWrap) intervalleWrap.classList.toggle('hidden', on);
+                if (intervalleInput) intervalleInput.required = !on;
+                if (auto) {
+                    if (on) auto.checked = false;
+                    auto.disabled = on;
+                }
+                if (autoLabel) autoLabel.classList.toggle('opacity-50', on);
+            };
+            rdv.addEventListener('change', apply);
+            apply();
+        })();
     </script>
 </div>

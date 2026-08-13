@@ -649,8 +649,9 @@
         }
     }
 
-    // Initialiser avec l'onglet réservations par défaut
-    showAgendaSubTab('reservations');
+    const initialSubtab = @json(session('agenda_subtab', request('subtab', 'reservations')));
+    const allowedSubtabs = ['reservations', 'emploi-du-temps', 'parametres'];
+    showAgendaSubTab(allowedSubtabs.includes(initialSubtab) ? initialSubtab : 'reservations');
 
     // Données PHP
     const horaires = @json($horaires);

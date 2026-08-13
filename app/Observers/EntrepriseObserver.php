@@ -50,7 +50,7 @@ class EntrepriseObserver
             'logo', 'image_fond', 'ville', 'adresse_rue', 'code_postal',
             'latitude', 'longitude', 'afficher_adresse_complete',
             'rayon_deplacement', 'afficher_nom_gerant', 'prix_negociables',
-            'rdv_uniquement_messagerie', 'est_verifiee', 'phrase_accroche',
+            'rdv_uniquement_messagerie', 'rdv_sur_demande_message', 'est_verifiee', 'phrase_accroche',
             'site_web_externe'
         ];
 

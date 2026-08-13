@@ -32,7 +32,7 @@ class EntrepriseController extends Controller
             'telephone' => ['nullable', 'string', 'max:20'],
             'description' => ['nullable', 'string'],
             'mots_cles' => ['nullable', 'string', 'max:500'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'], // Max 2MB
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'], // Max 5MB
             'type_localisation' => ['required', 'in:physique,virtuel'],
             'ville' => ['nullable', 'required_if:type_localisation,physique', 'string', 'max:255'],
             'adresse_rue' => ['nullable', 'string', 'max:255'],

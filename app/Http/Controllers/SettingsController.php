@@ -281,7 +281,7 @@ class SettingsController extends Controller
                 ->firstOrFail();
 
             $request->validate([
-                'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+                'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
             ]);
 
             $result = app(\App\Services\EntrepriseProfileService::class)->uploadLogo($entreprise, $request->file('logo'));

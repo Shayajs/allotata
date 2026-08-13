@@ -10,7 +10,11 @@
             {{ $block['content']['title'] ?? 'Prendre rendez-vous' }}
         </h2>
         <p class="text-lg opacity-60 mb-8 max-w-2xl mx-auto" style="color: var(--site-text);">
-            {{ $block['content']['subtitle'] ?? 'Réservez votre créneau en quelques clics' }}
+            @if($entreprise->prendRdvSurDemande())
+                {{ $block['content']['subtitle'] ?? 'Les rendez-vous se prennent sur demande. Contactez-nous pour convenir d’un créneau.' }}
+            @else
+                {{ $block['content']['subtitle'] ?? 'Réservez votre créneau en quelques clics' }}
+            @endif
         </p>
 
         {{-- Aperçu des services --}}
@@ -31,7 +35,7 @@
         <a href="{{ $reservationTabUrl }}"
            class="inline-block px-8 py-4 text-lg font-semibold text-white transition hover:opacity-90"
            style="background: var(--site-primary); border-radius: var(--site-button-radius); box-shadow: var(--site-button-shadow);">
-            {{ $block['content']['buttonText'] ?? 'Réserver maintenant' }}
+            {{ $entreprise->prendRdvSurDemande() ? ($block['content']['buttonText'] ?? 'Demander un rendez-vous') : ($block['content']['buttonText'] ?? 'Réserver maintenant') }}
         </a>
     </div>
 </section>

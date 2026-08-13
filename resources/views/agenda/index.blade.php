@@ -349,7 +349,16 @@
                                 </div>
                                 <div class="flex gap-2">
                                     <button 
-                                        onclick="editService({{ $service->id }}, '{{ addslashes($service->nom) }}', '{{ addslashes($service->description ?? '') }}', {{ $service->duree_minutes }}, {{ $service->prix }}, {{ $service->est_actif ? 'true' : 'false' }})"
+                                        type="button"
+                                        onclick="editServiceFromPayload(this)"
+                                        data-service="{{ json_encode([
+                                            'id' => $service->id,
+                                            'nom' => $service->nom,
+                                            'description' => $service->description ?? '',
+                                            'duree' => $service->duree_minutes,
+                                            'prix' => (float) $service->prix,
+                                            'est_actif' => (bool) $service->est_actif,
+                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) }}"
                                         class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                                     >
                                         Modifier
@@ -396,6 +405,7 @@
                 <form action="{{ route('agenda.service.store', $entreprise->slug) }}" method="POST">
                     @csrf
                     <input type="hidden" name="type_service_id" id="type_service_id">
+                    <input type="hidden" name="type_structure" value="ponctuel">
                     
                     <div class="space-y-4">
                         <div>
@@ -411,11 +421,11 @@
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Description</label>
                             <textarea 
-                                name="description" 
+                                name="service_description" 
                                 id="service_description"
                                 rows="3"
                                 class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors resize-none"
-                            ></textarea>
+                            >{{ old('service_description', old('description')) }}</textarea>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
@@ -1076,6 +1086,23 @@
                 document.getElementById('modal-service').classList.remove('hidden');
             }
             
+            function editServiceFromPayload(button) {
+                let service = {};
+                try {
+                    service = JSON.parse(button.getAttribute('data-service') || '{}');
+                } catch (e) {
+                    console.error('Erreur parsing service:', e);
+                }
+                editService(
+                    service.id,
+                    service.nom || '',
+                    service.description || '',
+                    service.duree || 30,
+                    service.prix || 0,
+                    !!service.est_actif
+                );
+            }
+
             function editService(id, nom, description, duree, prix, actif) {
                 document.getElementById('modal-title').textContent = 'Modifier le service';
                 document.getElementById('type_service_id').value = id;

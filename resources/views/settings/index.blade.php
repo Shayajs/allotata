@@ -1031,25 +1031,34 @@
                                                 </label>
                                             </div>
 
-                                            <!-- RDV uniquement via messagerie -->
-                                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                            <!-- Sur rendez-vous uniquement -->
+                                            <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg" data-rdv-sur-demande>
                                                 <label class="flex items-start gap-3 cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
-                                                        name="rdv_uniquement_messagerie" 
+                                                        name="rdv_uniquement_messagerie"
                                                         value="1"
                                                         {{ old('rdv_uniquement_messagerie', $entreprise->rdv_uniquement_messagerie) ? 'checked' : '' }}
-                                                        class="mt-1 w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500"
+                                                        class="mt-1 w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500 js-rdv-sur-demande"
                                                     >
                                                     <div>
                                                         <span class="text-sm font-medium text-slate-900 dark:text-white">
-                                                            💬 Rendez-vous uniquement via messagerie
+                                                            Sur rendez-vous uniquement
                                                         </span>
                                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                                            Si activé, les clients devront passer par la messagerie pour prendre rendez-vous. L'agenda public sera désactivé.
+                                                            Aucun agenda n’est montré aux clients. Ils voient une page d’information et vous contactent pour convenir d’un créneau.
                                                         </p>
                                                     </div>
                                                 </label>
+                                                <div class="js-rdv-sur-demande-message mt-3 {{ old('rdv_uniquement_messagerie', $entreprise->rdv_uniquement_messagerie) ? '' : 'hidden' }}">
+                                                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Message affiché aux clients (optionnel)</label>
+                                                    <textarea
+                                                        name="rdv_sur_demande_message"
+                                                        rows="3"
+                                                        maxlength="2000"
+                                                        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500"
+                                                    >{{ old('rdv_sur_demande_message', $entreprise->rdv_sur_demande_message) }}</textarea>
+                                                </div>
                                             </div>
 
                                             <!-- Options supplémentaires -->
@@ -1997,6 +2006,15 @@
             const urlParams = new URLSearchParams(window.location.search);
             const tab = urlParams.get('tab') || 'account';
             showTab(tab);
+
+            document.querySelectorAll('[data-rdv-sur-demande]').forEach(function(wrap) {
+                const checkbox = wrap.querySelector('.js-rdv-sur-demande');
+                const message = wrap.querySelector('.js-rdv-sur-demande-message');
+                if (!checkbox || !message) return;
+                const apply = () => message.classList.toggle('hidden', !checkbox.checked);
+                checkbox.addEventListener('change', apply);
+                apply();
+            });
 
             // Upload automatique du logo
             @foreach($entreprises as $entreprise)

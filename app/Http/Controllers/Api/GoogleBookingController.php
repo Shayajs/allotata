@@ -102,6 +102,11 @@ class GoogleBookingController extends Controller
                     continue;
                 }
 
+                if ($entreprise->prendRdvSurDemande()) {
+                    $results[] = $this->buildSlotAvailability($slot, false);
+                    continue;
+                }
+
                 $debut = Carbon::createFromTimestamp($startSec);
                 $dureeMinutes = (int) ceil($durationSec / 60);
 
@@ -189,6 +194,15 @@ class GoogleBookingController extends Controller
                     'description' => 'Marchand ou service introuvable.',
                 ]),
             ], 404);
+        }
+
+        if ($entreprise->prendRdvSurDemande()) {
+            return response()->json([
+                'booking_failure' => new BookingFailureResource([
+                    'cause' => BookingFailureResource::CAUSE_SLOT_UNAVAILABLE,
+                    'description' => 'Cette entreprise ne propose pas de créneaux en ligne.',
+                ]),
+            ], 409);
         }
 
         $debut = Carbon::createFromTimestamp($startSec);

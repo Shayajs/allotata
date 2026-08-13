@@ -7,6 +7,7 @@ services:
         working_dir: /var/www/html
         volumes:
             - .:/var/www/html
+            - ./deploy/production/php-uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
         networks:
             - laravel_net
 

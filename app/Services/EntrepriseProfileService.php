@@ -45,8 +45,9 @@ class EntrepriseProfileService
             'afficher_nom_gerant' => ['nullable'],
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
+            'rdv_sur_demande_message' => ['nullable', 'string', 'max:2000'],
             'accepter_reservations_auto' => ['nullable'],
-            'intervalle_creneaux_minutes' => ['required', 'integer', 'min:5', 'max:180'],
+            'intervalle_creneaux_minutes' => ['nullable', 'integer', 'min:5', 'max:180'],
             'notif_message_prise' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'notif_message_annulation' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'livraison_disponible_par_defaut' => ['nullable'],
@@ -84,6 +85,16 @@ class EntrepriseProfileService
         $validated['prix_negociables'] = $request->has('prix_negociables') && $request->input('prix_negociables') == '1';
         $validated['rdv_uniquement_messagerie'] = $request->has('rdv_uniquement_messagerie') && $request->input('rdv_uniquement_messagerie') == '1';
         $validated['accepter_reservations_auto'] = $request->has('accepter_reservations_auto') && $request->input('accepter_reservations_auto') == '1';
+        if ($validated['rdv_uniquement_messagerie']) {
+            $validated['accepter_reservations_auto'] = false;
+        }
+        $validated['rdv_sur_demande_message'] = trim((string) $request->input('rdv_sur_demande_message', '')) !== ''
+            ? trim((string) $request->input('rdv_sur_demande_message'))
+            : null;
+
+        if (empty($validated['intervalle_creneaux_minutes'] ?? null)) {
+            $validated['intervalle_creneaux_minutes'] = $entreprise->intervalle_creneaux_minutes ?? 30;
+        }
         $validated['livraison_disponible_par_defaut'] = $request->has('livraison_disponible_par_defaut') && $request->input('livraison_disponible_par_defaut') == '1';
         $validated['vente_sur_place_disponible_par_defaut'] = $request->has('vente_sur_place_disponible_par_defaut') && $request->input('vente_sur_place_disponible_par_defaut') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';

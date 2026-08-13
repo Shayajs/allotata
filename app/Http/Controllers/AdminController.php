@@ -812,7 +812,7 @@ class AdminController extends Controller
     public function uploadEntrepriseLogo(Request $request, Entreprise $entreprise)
     {
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
         ]);
 
         try {

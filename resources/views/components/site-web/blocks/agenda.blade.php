@@ -11,10 +11,17 @@
                 {{ $block['content']['title'] ?? 'Notre agenda' }}
             </h2>
             <p class="opacity-60" style="color: var(--site-text);">
-                {{ $block['content']['subtitle'] ?? 'Consultez nos disponibilités et réservez en ligne' }}
+                @if($entreprise->prendRdvSurDemande())
+                    {{ $block['content']['subtitle'] ?? 'Les rendez-vous se prennent sur demande.' }}
+                @else
+                    {{ $block['content']['subtitle'] ?? 'Consultez nos disponibilités et réservez en ligne' }}
+                @endif
             </p>
         </div>
 
+        @if($entreprise->prendRdvSurDemande())
+            <x-rdv-sur-demande :entreprise="$entreprise" />
+        @else
         {{-- Aperçu jours de la semaine --}}
         <div class="grid grid-cols-7 gap-2 mb-6">
             @php
@@ -43,5 +50,6 @@
                 Voir les disponibilités
             </a>
         </div>
+        @endif
     </div>
 </section>

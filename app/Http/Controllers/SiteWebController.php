@@ -240,6 +240,12 @@ class SiteWebController extends Controller
             abort(404);
         }
 
+        if ($entreprise->prendRdvSurDemande()) {
+            return redirect()
+                ->route('site-web.show', ['slug' => $slug])
+                ->withErrors(['error' => 'Cette entreprise ne propose pas de créneaux en ligne. Contactez-la pour convenir d’un rendez-vous.']);
+        }
+
         $typeService = TypeService::where('id', $request->input('type_service_id'))
             ->where('entreprise_id', $entreprise->id)
             ->where('est_actif', true)

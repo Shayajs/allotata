@@ -38,6 +38,11 @@
                         <a href="{{ route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
                         </a>
+                        <span class="hidden md:inline-flex items-center pl-4 ml-1 border-l border-orange-400 dark:border-orange-500/70">
+                            <span class="text-sm font-semibold tracking-wide text-slate-600 dark:text-slate-300">
+                                Tableau de Bord
+                            </span>
+                        </span>
                         @if($user->is_admin && config('app.debug'))
                             <span class="px-2 py-1 text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full border border-yellow-300 dark:border-yellow-700">
                                 <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

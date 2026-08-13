@@ -37,13 +37,18 @@
         @include('partials.super-user-banner')
         @include('partials.push-notifications-banner')
         <!-- Navigation -->
-        <nav class="pwa-desktop-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+        <nav class="pwa-desktop-header bg-slate-100/90 dark:bg-slate-800 border-b border-orange-300/80 dark:border-orange-700/40 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-2 sm:gap-4">
                         <a href="{{ route('dashboard') }}" class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
                         </a>
+                        <span class="hidden md:inline-flex items-center pl-4 ml-1 border-l border-orange-400 dark:border-orange-500/70">
+                            <span class="text-sm font-semibold tracking-wide text-indigo-700 dark:text-indigo-300">
+                                Mon entreprise
+                            </span>
+                        </span>
                         
                         <!-- Menu Burger pour mobile web -->
                         @include('components.mobile-nav', ['navType' => 'entreprise', 'entreprise' => $entreprise, 'aGestionMultiPersonnes' => $aGestionMultiPersonnes ?? false, 'activeTab' => $activeTab ?? 'accueil'])

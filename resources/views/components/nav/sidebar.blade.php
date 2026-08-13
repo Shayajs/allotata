@@ -3,10 +3,25 @@
 
 @php
     use App\Services\NavigationService;
+
+    $isPro = $context === 'entreprise';
+    $navSurface = $isPro
+        ? 'bg-slate-100/90 dark:bg-slate-800 border-orange-300/80 dark:border-orange-700/40'
+        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700';
+    $navTitle = match ($context) {
+        'dashboard' => 'Tableau de Bord',
+        'entreprise' => 'Mon entreprise',
+        default => null,
+    };
 @endphp
 
 <aside class="nav-sidebar hidden md:flex flex-col w-16 xl:w-64 flex-shrink-0 sticky top-20 self-start h-[calc(100vh-6rem)] overflow-y-auto">
-    <nav class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-2 xl:p-3 space-y-1">
+    <nav class="{{ $navSurface }} rounded-xl shadow-sm border p-2 xl:p-3 space-y-1">
+        @if($navTitle)
+            <div class="hidden xl:block px-3 py-2 mb-1">
+                <p class="text-xs font-semibold uppercase tracking-wider {{ $isPro ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400' }}">{{ $navTitle }}</p>
+            </div>
+        @endif
         @foreach($items as $item)
             @if(isset($item['separator']))
                 <div class="my-2 border-t border-slate-200 dark:border-slate-700"></div>

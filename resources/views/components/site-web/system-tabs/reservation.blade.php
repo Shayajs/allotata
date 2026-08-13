@@ -22,6 +22,10 @@
         </div>
     </header>
 
+    @if($entreprise->prendRdvSurDemande())
+        <x-rdv-sur-demande :entreprise="$entreprise" />
+    @else
+
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {{-- Calendrier --}}
         <div class="xl:col-span-2">
@@ -76,8 +80,10 @@
             ])
         </div>
     </div>
+    @endif
 </div>
 
+@unless($entreprise->prendRdvSurDemande())
 {{-- Script calendrier --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -241,3 +247,4 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCalendar();
 });
 </script>
+@endunless

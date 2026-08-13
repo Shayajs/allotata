@@ -43,11 +43,12 @@
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Description</label>
                                 <textarea 
-                                    name="description" 
+                                    name="service_description" 
                                     id="service_description"
+                                    form="service-form"
                                     rows="3"
                                     class="w-full px-4 py-2.5 sm:py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors resize-none"
-                                ></textarea>
+                                >{{ old('service_description', old('description')) }}</textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div id="duree-field-wrapper">
@@ -302,39 +303,30 @@
     let newImagesPreview = [];
     
     function editServiceFromButton(button) {
-        const serviceId = parseInt(button.getAttribute('data-service-id'));
-        const nom = button.getAttribute('data-service-nom') || '';
-        const description = button.getAttribute('data-service-description') || '';
-        const duree = parseInt(button.getAttribute('data-service-duree')) || 30;
-        const prix = parseFloat(button.getAttribute('data-service-prix')) || 0;
-        const estActif = button.getAttribute('data-service-actif') === 'true';
-        const typeStructure = button.getAttribute('data-service-type-structure') || 'ponctuel';
-        const imagesBase64 = button.getAttribute('data-service-images') || '';
-        const optionsBase64 = button.getAttribute('data-service-options') || '';
-        
-        let images = [];
-        try {
-            if (imagesBase64) {
-                const imagesJson = atob(imagesBase64);
-                images = JSON.parse(imagesJson);
+        let service = {};
+        const payload = button.getAttribute('data-service');
+        if (payload) {
+            try {
+                service = JSON.parse(payload);
+            } catch (e) {
+                console.error('Erreur parsing service:', e);
+                service = {};
             }
-        } catch (e) {
-            console.error('Erreur parsing images:', e);
-            images = [];
         }
 
-        let options = [];
-        try {
-            if (optionsBase64) {
-                const optionsJson = atob(optionsBase64);
-                options = JSON.parse(optionsJson);
-            }
-        } catch (e) {
-            console.error('Erreur parsing options:', e);
-            options = [];
-        }
-        
-        editService(serviceId, nom, description, duree, prix, estActif, images, typeStructure, options);
+        const serviceId = parseInt(service.id || button.getAttribute('data-service-id'), 10);
+        const nom = service.nom || button.getAttribute('data-service-nom') || '';
+        const description = service.description || button.getAttribute('data-service-description') || '';
+        const duree = parseInt(service.duree || button.getAttribute('data-service-duree'), 10) || 30;
+        const prix = parseFloat(service.prix || button.getAttribute('data-service-prix')) || 0;
+        const estActif = service.est_actif !== undefined
+            ? !!service.est_actif
+            : (button.getAttribute('data-service-actif') === 'true');
+        const typeStructure = service.type_structure || button.getAttribute('data-service-type-structure') || 'ponctuel';
+        const images = Array.isArray(service.images) ? service.images : [];
+        const options = Array.isArray(service.options) ? service.options : [];
+
+        editService(serviceId, nom, description, duree, prix, estActif, images, typeStructure, options, service);
     }
     
     function openServiceModal() {
@@ -486,7 +478,7 @@
         if (surDevisInfo) surDevisInfo.classList.toggle('hidden', typeStructure !== 'sur_devis');
     }
 
-    function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel', options = []) {
+    function editService(id, nom, description, duree, prix, estActif, images, typeStructure = 'ponctuel', options = [], extra = {}) {
         currentServiceId = id;
         currentServiceImages = images || [];
         currentServiceOptions = options || [];
@@ -506,6 +498,18 @@
         document.getElementById('service_actif').checked = estActif;
         document.getElementById('service_images').value = '';
         document.getElementById('modal-title').textContent = 'Modifier le service';
+
+        const freq = document.getElementById('service_frequence_recurrence');
+        if (freq) freq.value = extra.frequence_recurrence || 'hebdomadaire';
+        const intervalle = document.getElementById('service_intervalle_jours');
+        if (intervalle) intervalle.value = extra.intervalle_jours || 7;
+        const capacite = document.getElementById('service_capacite_max');
+        if (capacite) capacite.value = extra.capacite_max || 10;
+        const seuil = document.getElementById('service_seuil_minimum');
+        if (seuil) seuil.value = extra.seuil_minimum ?? 0;
+        const prixParPersonne = document.getElementById('service_est_prix_par_personne');
+        if (prixParPersonne) prixParPersonne.checked = extra.est_prix_par_personne !== false;
+        toggleIntervalleJours();
         
         // Afficher la zone d'upload direct
         document.getElementById('upload-zone').classList.remove('hidden');
@@ -930,6 +934,12 @@
     const serviceForm = document.getElementById('service-form');
     if (serviceForm) {
         serviceForm.addEventListener('submit', function() {
+            const descriptionField = document.getElementById('service_description');
+            if (descriptionField) {
+                descriptionField.disabled = false;
+                descriptionField.setAttribute('name', 'service_description');
+                descriptionField.setAttribute('form', 'service-form');
+            }
             const submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;

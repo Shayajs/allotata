@@ -156,16 +156,24 @@
                         </div>
                         <div class="flex gap-2">
                             <button 
+                                type="button"
                                 onclick="editServiceFromButton(this)"
-                                data-service-id="{{ $service->id }}"
-                                data-service-nom="{{ addslashes($service->nom) }}"
-                                data-service-description="{{ addslashes($service->description ?? '') }}"
-                                data-service-duree="{{ $service->duree_minutes }}"
-                                data-service-prix="{{ $service->prix }}"
-                                data-service-type-structure="{{ $service->type_structure ?? 'ponctuel' }}"
-                                data-service-actif="{{ $service->est_actif ? 'true' : 'false' }}"
-                                data-service-images="{{ base64_encode(json_encode($service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values())) }}"
-                                data-service-options="{{ base64_encode(json_encode($service->options->map(fn($opt) => ['id' => $opt->id, 'nom' => $opt->nom, 'type' => $opt->type, 'obligatoire' => $opt->obligatoire, 'choices' => $opt->choices])->values())) }}"
+                                data-service="{{ json_encode([
+                                    'id' => $service->id,
+                                    'nom' => $service->nom,
+                                    'description' => $service->description ?? '',
+                                    'duree' => $service->duree_minutes,
+                                    'prix' => (float) $service->prix,
+                                    'est_actif' => (bool) $service->est_actif,
+                                    'type_structure' => $service->type_structure ?? 'ponctuel',
+                                    'frequence_recurrence' => $service->frequence_recurrence,
+                                    'intervalle_jours' => $service->intervalle_jours,
+                                    'capacite_max' => $service->capacite_max,
+                                    'seuil_minimum' => $service->seuil_minimum,
+                                    'est_prix_par_personne' => (bool) ($service->est_prix_par_personne ?? true),
+                                    'images' => $service->images->map(fn($img) => ['id' => $img->id, 'path' => asset('media/' . $img->image_path), 'est_couverture' => $img->est_couverture])->values(),
+                                    'options' => $service->options->map(fn($opt) => ['id' => $opt->id, 'nom' => $opt->nom, 'type' => $opt->type, 'obligatoire' => $opt->obligatoire, 'choices' => $opt->choices])->values(),
+                                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) }}"
                                 class="flex-1 px-3 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition"
                             >
                                 Modifier

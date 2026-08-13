@@ -64,6 +64,7 @@ class Entreprise extends Model
         'image_fond',
         'prix_negociables',
         'rdv_uniquement_messagerie',
+        'rdv_sur_demande_message',
         'accepter_reservations_auto',
         'intervalle_creneaux_minutes',
         'notif_message_prise',
@@ -158,6 +159,15 @@ class Entreprise extends Model
         }
 
         return $v;
+    }
+
+    /**
+     * Prise de rendez-vous sans agenda public : le client voit une page d'information
+     * et contacte l'entreprise pour convenir d'un créneau.
+     */
+    public function prendRdvSurDemande(): bool
+    {
+        return (bool) $this->rdv_uniquement_messagerie;
     }
 
     /**

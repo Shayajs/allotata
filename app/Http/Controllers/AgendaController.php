@@ -205,8 +205,7 @@ class AgendaController extends Controller
             }
         }
 
-        return redirect()->route('agenda.index', $slug)
-            ->with('success', 'Les horaires ont été mis à jour avec succès.');
+        return $this->redirectToAgendaParametres($slug, 'success', 'Les horaires ont été mis à jour avec succès.');
     }
 
     /**
@@ -259,8 +258,7 @@ class AgendaController extends Controller
             DB::commit();
             
             $message = $this->getSuccessMessage($typeException);
-            return redirect()->route('agenda.index', $slug)
-                ->with('success', $message);
+            return $this->redirectToAgendaParametres($slug, 'success', $message);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -269,8 +267,7 @@ class AgendaController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             
-            return redirect()->route('agenda.index', $slug)
-                ->with('error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage());
+            return $this->redirectToAgendaParametres($slug, 'error', 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage());
         }
     }
 
@@ -499,8 +496,7 @@ class AgendaController extends Controller
             
             DB::commit();
             
-            return redirect()->route('agenda.index', $slug)
-                ->with('success', $message);
+            return $this->redirectToAgendaParametres($slug, 'success', $message);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -508,8 +504,7 @@ class AgendaController extends Controller
                 'error' => $e->getMessage(),
             ]);
             
-            return redirect()->route('agenda.index', $slug)
-                ->with('error', 'Une erreur est survenue lors de la suppression.');
+            return $this->redirectToAgendaParametres($slug, 'error', 'Une erreur est survenue lors de la suppression.');
         }
     }
 
@@ -530,9 +525,10 @@ class AgendaController extends Controller
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'service_description' => 'nullable|string',
             'duree_minutes' => 'required|integer|min:1',
             'prix' => 'required|numeric|min:0',
-            'type_structure' => 'required|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire,recurrent,evenement,sur_devis',
+            'type_structure' => 'nullable|in:ponctuel,multi_jours,multi_rendez_vous,date_butoire,recurrent,evenement,sur_devis',
             'est_actif' => 'nullable|boolean',
             // Champs récurrent
             'frequence_recurrence' => 'nullable|required_if:type_structure,recurrent|in:hebdomadaire,bimensuel,mensuel,personnalise',
@@ -551,6 +547,8 @@ class AgendaController extends Controller
             'options.*.choices.*.prix' => 'nullable|numeric|min:0',
             'options.*.choices.*.temps' => 'nullable|integer|min:0',
         ]);
+
+        $validated['type_structure'] = $validated['type_structure'] ?? 'ponctuel';
 
         // Gérer le champ est_actif (checkbox : si présent = true, sinon = false)
         $validated['est_actif'] = $request->has('est_actif') && $request->est_actif == '1';
@@ -571,6 +569,8 @@ class AgendaController extends Controller
             $validated['est_prix_par_personne'] = true;
         }
 
+        $serviceData = $this->typeServiceFillableFromRequest($request, $validated);
+
         try {
             $imageService = app(ImageService::class);
             
@@ -581,15 +581,11 @@ class AgendaController extends Controller
                     ->where('entreprise_id', $entreprise->id)
                     ->firstOrFail();
                 
-                // Mettre à jour les champs de base (exclure entreprise_id)
-                $dataToUpdate = $validated;
-                unset($dataToUpdate['entreprise_id']);
-                
-                $typeService->update($dataToUpdate);
+                $typeService->update($serviceData);
                 $message = 'Le type de service a été mis à jour avec succès.';
             } else {
-                $validated['entreprise_id'] = $entreprise->id;
-                $typeService = TypeService::create($validated);
+                $serviceData['entreprise_id'] = $entreprise->id;
+                $typeService = TypeService::create($serviceData);
                 $message = 'Le type de service a été créé avec succès.';
             }
 
@@ -659,6 +655,46 @@ class AgendaController extends Controller
                 ->withInput()
                 ->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement du service : ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Champs persistables du service, sans options/images.
+     * La description utilise un nom de champ dédié pour éviter d'être écrasée
+     * par les autres `name="description"` présents sur le dashboard.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function typeServiceFillableFromRequest(Request $request, array $validated): array
+    {
+        $description = $request->exists('service_description')
+            ? $request->input('service_description')
+            : $request->input('description');
+
+        if (is_array($description)) {
+            $description = collect($description)->filter(fn ($value) => is_string($value) && trim($value) !== '')->first();
+        }
+
+        if (is_string($description)) {
+            $description = trim($description);
+            $description = $description === '' ? null : $description;
+        } else {
+            $description = null;
+        }
+
+        return [
+            'nom' => $validated['nom'],
+            'description' => $description,
+            'duree_minutes' => $validated['duree_minutes'],
+            'prix' => $validated['prix'],
+            'type_structure' => $validated['type_structure'],
+            'est_actif' => $validated['est_actif'],
+            'frequence_recurrence' => $validated['frequence_recurrence'] ?? null,
+            'intervalle_jours' => $validated['intervalle_jours'] ?? null,
+            'capacite_max' => $validated['capacite_max'] ?? null,
+            'seuil_minimum' => $validated['seuil_minimum'] ?? null,
+            'est_prix_par_personne' => $validated['est_prix_par_personne'] ?? true,
+        ];
     }
 
     /**
@@ -948,5 +984,16 @@ class AgendaController extends Controller
             'success' => true,
             'message' => 'Image supprimée avec succès.',
         ]);
+    }
+
+    /**
+     * Retour au dashboard entreprise, onglet agenda / sous-onglet paramètres.
+     */
+    private function redirectToAgendaParametres(string $slug, string $status, string $message)
+    {
+        return redirect()
+            ->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'agenda'])
+            ->with($status, $message)
+            ->with('agenda_subtab', 'parametres');
     }
 }
