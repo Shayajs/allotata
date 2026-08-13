@@ -38,6 +38,7 @@ class Reservation extends Model
         'creee_manuellement',
         'hash',
         'google_event_id',
+        'rappel_j1_envoye_at',
         'recurrence_id',
     ];
 
@@ -53,6 +54,7 @@ class Reservation extends Model
             'telephone_cache' => 'boolean',
             'duree_minutes' => 'integer',
             'creee_manuellement' => 'boolean',
+            'rappel_j1_envoye_at' => 'datetime',
         ];
     }
 

@@ -227,14 +227,7 @@ class ReservationController extends Controller
 
         // Créer une notification pour le client (uniquement si inscrit)
         if ($reservation->user_id) {
-            Notification::creer(
-                $reservation->user_id,
-                'reservation',
-                'Réservation confirmée',
-                "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
-                route('dashboard'),
-                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-            );
+            app(\App\Services\ReservationClientNotificationService::class)->notifyPrise($reservation);
         }
 
         // Envoyer un email de confirmation au client (inscrit ou invité avec email)
@@ -281,14 +274,7 @@ class ReservationController extends Controller
         // Créer une notification pour le client (uniquement si inscrit)
         if ($reservation->user_id) {
             $raison = $validated['raison_refus'] ? " Raison : {$validated['raison_refus']}" : '';
-            Notification::creer(
-                $reservation->user_id,
-                'reservation',
-                'Réservation annulée',
-                "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été annulée.{$raison}",
-                route('dashboard'),
-                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-            );
+            app(\App\Services\ReservationClientNotificationService::class)->notifyAnnulation($reservation, $raison);
         }
 
         // Envoyer un email d'annulation au client (inscrit ou invité avec email)
@@ -739,14 +725,7 @@ class ReservationController extends Controller
         // (l'entreprise a déjà accepté en créant la réservation)
         // Si la cliente est inscrite et la réservation est confirmée, on peut créer une notification
         if ($reservation->user_id && $reservation->statut === 'confirmee') {
-            Notification::creer(
-                $reservation->user_id,
-                'reservation',
-                'Réservation confirmée',
-                "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
-                route('dashboard'),
-                ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-            );
+            app(\App\Services\ReservationClientNotificationService::class)->notifyPrise($reservation);
         }
 
         return redirect()->route('entreprise.dashboard', ['slug' => $slug, 'tab' => 'reservations'])

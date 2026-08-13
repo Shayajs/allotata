@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Helpers\EmailHelper;
 use App\Models\Reservation;
+use App\Services\ReservationClientNotificationService;
 use Illuminate\Console\Command;
 
 class SendReservationReminders extends Command
@@ -20,7 +21,7 @@ class SendReservationReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Envoyer des rappels par email pour les réservations à venir';
+    protected $description = 'Envoyer des rappels (email + notification J-1) pour les réservations à venir';
 
     /**
      * Execute the console command.
@@ -43,11 +44,13 @@ class SendReservationReminders extends Command
                 $query->whereHas('user')
                     ->orWhereNotNull('email_client');
             })
-            ->with(['user', 'entreprise', 'membre.user'])
+            ->with(['user', 'entreprise', 'membre.user', 'typeService', 'rendezVous'])
             ->get();
 
         $sentCount = 0;
+        $notifCount = 0;
         $errorCount = 0;
+        $clientNotifs = app(ReservationClientNotificationService::class);
 
         foreach ($reservations as $reservation) {
             try {
@@ -62,9 +65,22 @@ class SendReservationReminders extends Command
                 $this->error("Erreur lors de l'envoi du rappel pour la réservation #{$reservation->id}: ".$e->getMessage());
                 \Log::error("Erreur lors de l'envoi du rappel de réservation #{$reservation->id}: ".$e->getMessage());
             }
+
+            if ($hoursBefore === 24 && $reservation->user_id && $reservation->rappel_j1_envoye_at === null) {
+                try {
+                    $clientNotifs->notifyRappel($reservation);
+                    $reservation->update(['rappel_j1_envoye_at' => now()]);
+                    $notifCount++;
+                    $this->info("Notification J-1 envoyée pour la réservation #{$reservation->id}");
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $this->error("Erreur notification J-1 pour la réservation #{$reservation->id}: ".$e->getMessage());
+                    \Log::error("Erreur notification J-1 réservation #{$reservation->id}: ".$e->getMessage());
+                }
+            }
         }
 
-        $this->info("Rappels envoyés: {$sentCount}, Erreurs: {$errorCount}");
+        $this->info("Rappels email: {$sentCount}, notifications J-1: {$notifCount}, erreurs: {$errorCount}");
 
         return Command::SUCCESS;
     }

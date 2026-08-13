@@ -47,6 +47,8 @@ class EntrepriseProfileService
             'rdv_uniquement_messagerie' => ['nullable'],
             'accepter_reservations_auto' => ['nullable'],
             'intervalle_creneaux_minutes' => ['required', 'integer', 'min:5', 'max:180'],
+            'notif_message_prise' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'notif_message_annulation' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'livraison_disponible_par_defaut' => ['nullable'],
             'vente_sur_place_disponible_par_defaut' => ['nullable'],
             'site_web_externe' => ['nullable', 'url', 'max:255'],
@@ -86,6 +88,14 @@ class EntrepriseProfileService
         $validated['vente_sur_place_disponible_par_defaut'] = $request->has('vente_sur_place_disponible_par_defaut') && $request->input('vente_sur_place_disponible_par_defaut') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
         $validated['afficher_video'] = $request->has('afficher_video') && $request->input('afficher_video') == '1';
+
+        foreach (['notif_message_prise', 'notif_message_annulation'] as $champNotif) {
+            if (array_key_exists($champNotif, $validated)) {
+                $validated[$champNotif] = trim((string) $validated[$champNotif]) !== ''
+                    ? trim((string) $validated[$champNotif])
+                    : null;
+            }
+        }
 
         if (empty($validated['video_url'])) {
             $validated['video_url'] = null;

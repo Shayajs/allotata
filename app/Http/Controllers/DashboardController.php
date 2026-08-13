@@ -378,6 +378,8 @@ class DashboardController extends Controller
             );
         }
 
+        app(\App\Services\ReservationClientNotificationService::class)->notifyAnnulation($reservation);
+
         return back()->with('success', 'La réservation a été annulée avec succès. L\'entreprise a été notifiée.');
     }
 

@@ -842,14 +842,18 @@ class PublicController extends Controller
             }
 
             if ($userId) {
-                \App\Models\Notification::creer(
-                    $userId,
-                    'reservation',
-                    'Réservations récurrentes créées',
-                    "{$nbOccurrences} séances ont été réservées pour {$entreprise->nom}.",
-                    route('dashboard'),
-                    ['recurrence_id' => $recurrence->id]
-                );
+                if (trim((string) ($entreprise->notif_message_prise ?? '')) !== '') {
+                    app(\App\Services\ReservationClientNotificationService::class)->notifyPrise($reservation);
+                } else {
+                    \App\Models\Notification::creer(
+                        $userId,
+                        'reservation',
+                        'Réservations récurrentes créées',
+                        "{$nbOccurrences} séances ont été réservées pour {$entreprise->nom}.",
+                        route('dashboard'),
+                        ['recurrence_id' => $recurrence->id]
+                    );
+                }
             } elseif (! empty($validated['email_client'])) {
                 try {
                     $reservation->refresh();
@@ -998,16 +1002,9 @@ class PublicController extends Controller
 
         // Notification + email client (inscrit ou invité avec email)
         if ($userId) {
-            if ($statutInitial === 'confirmee') {
-                Notification::creer(
-                    $userId,
-                    'reservation',
-                    'Réservation confirmée',
-                    "Votre réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} a été confirmée !",
-                    route('dashboard'),
-                    ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-                );
+            app(\App\Services\ReservationClientNotificationService::class)->notifyPrise($reservation);
 
+            if ($statutInitial === 'confirmee') {
                 try {
                     $reservation->refresh();
                     \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
@@ -1015,15 +1012,6 @@ class PublicController extends Controller
                     \Log::error("Erreur lors de l'envoi de l'email de confirmation : ".$e->getMessage());
                 }
             } else {
-                Notification::creer(
-                    $userId,
-                    'reservation',
-                    'Réservation en attente',
-                    "Votre demande de réservation pour {$entreprise->nom} le {$reservation->date_reservation->format('d/m/Y à H:i')} est en attente de confirmation.",
-                    route('dashboard'),
-                    ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
-                );
-
                 try {
                     $reservation->refresh();
                     \App\Helpers\EmailHelper::sendReservationPendingClient($reservation);
@@ -1221,6 +1209,8 @@ class PublicController extends Controller
                 \Log::error("Erreur lors de l'envoi de l'email d'annulation au gérant : ".$e->getMessage());
             }
         }
+
+        app(\App\Services\ReservationClientNotificationService::class)->notifyAnnulation($reservation);
 
         // Envoyer un email au client (inscrit ou invité avec email)
         if ($reservation->user_id || ! empty($reservation->email_client)) {

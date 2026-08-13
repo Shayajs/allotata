@@ -76,6 +76,21 @@
     }
 }
 
+/*
+ * La règle globale ci-dessus force padding: 1rem !important sur tous les inputs.
+ * Les champs avec icône interne (loupe, œil, €) utilisent pl-* / pr-* Tailwind
+ * qui se font donc écraser → texte collé / fusionné avec l'icône.
+ * On rétablit le gutter, hors-layer pour gagner en cascade.
+ */
+input.pl-8, textarea.pl-8 { padding-left: 2rem !important; }
+input.pl-10, textarea.pl-10 { padding-left: 2.5rem !important; }
+input.pl-12, textarea.pl-12 { padding-left: 3rem !important; }
+input.pl-14, textarea.pl-14 { padding-left: 3.5rem !important; }
+input.pr-10, textarea.pr-10 { padding-right: 2.5rem !important; }
+input.pr-12, textarea.pr-12 { padding-right: 3rem !important; }
+input.pr-14, textarea.pr-14 { padding-right: 3.5rem !important; }
+input.pr-32, textarea.pr-32 { padding-right: 8rem !important; }
+
 /* Scrollbar personnalisée - Mode clair */
 ::-webkit-scrollbar {
     width: 10px;

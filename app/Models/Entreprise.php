@@ -66,6 +66,8 @@ class Entreprise extends Model
         'rdv_uniquement_messagerie',
         'accepter_reservations_auto',
         'intervalle_creneaux_minutes',
+        'notif_message_prise',
+        'notif_message_annulation',
         'prestation_libre_active',
         'tarif_horaire',
         'prestation_libre_description',

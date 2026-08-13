@@ -418,6 +418,57 @@
             </div>
         </div>
 
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Messages de notification client</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                Personnalisez les notifications envoyées au client lors d’une prise ou d’une annulation de rendez-vous. Laissez vide pour conserver le message par défaut.
+            </p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Variables disponibles :
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{nom_client}</code>
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{nom_entreprise}</code>
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{prestations}</code>
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{date}</code>
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{heure}</code>
+                <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{lieu}</code>
+            </p>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="notif_message_prise" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">
+                        Message à la prise de rendez-vous
+                    </label>
+                    <textarea
+                        id="notif_message_prise"
+                        name="notif_message_prise"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Votre réservation pour {nom_entreprise} le {date} à {heure} a été confirmée !"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    >{{ old('notif_message_prise', $entreprise->notif_message_prise) }}</textarea>
+                    @error('notif_message_prise')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="notif_message_annulation" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">
+                        Message à l’annulation de rendez-vous
+                    </label>
+                    <textarea
+                        id="notif_message_annulation"
+                        name="notif_message_annulation"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Votre réservation pour {nom_entreprise} le {date} à {heure} a été annulée."
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    >{{ old('notif_message_annulation', $entreprise->notif_message_annulation) }}</textarea>
+                    @error('notif_message_annulation')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                 Enregistrer les modifications

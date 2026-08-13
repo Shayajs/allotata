@@ -113,6 +113,27 @@
                 flex-wrap: wrap !important;
                 gap: 0.5rem 0.75rem;
             }
+
+            .table-responsive-to-cards td[data-label="Actions"] {
+                padding-left: 1rem !important;
+                padding-top: 1.75rem !important;
+                align-items: flex-start !important;
+                justify-content: flex-start !important;
+                overflow: visible !important;
+                text-align: left !important;
+            }
+            .table-responsive-to-cards td[data-label="Actions"]::before {
+                position: relative !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: auto !important;
+                margin-bottom: 0.5rem;
+            }
+            .table-responsive-to-cards td[data-label="Actions"] > div {
+                justify-content: flex-start !important;
+                flex-wrap: wrap !important;
+                width: 100% !important;
+            }
         }
 
         /* Écrans très étroits : label au-dessus de la valeur */
@@ -566,7 +587,7 @@
                                 value="{{ request('q') }}"
                                 class="w-48 lg:w-64 px-4 py-2 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
                             >
-                            <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </form>

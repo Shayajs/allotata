@@ -125,7 +125,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
                                 <div class="flex items-center justify-end gap-x-3 gap-y-1 flex-wrap">
-                                    <a href="{{ route('admin.contacts.show', $contact) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
+                                    <a href="{{ route('admin.contacts.show', $contact) }}" class="inline-flex items-center px-3 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 font-semibold">
                                         Voir
                                     </a>
                                     <form method="POST" action="{{ route('admin.contacts.toggle-read', $contact) }}" class="inline">
