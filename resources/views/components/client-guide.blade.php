@@ -79,20 +79,31 @@
 <script>
     function dismissClientGuide() {
         const guide = document.getElementById('client-guide');
-        if (guide) {
-            guide.style.opacity = '0';
-            guide.style.transform = 'translateY(-10px)';
-            guide.style.transition = 'opacity 0.3s, transform 0.3s';
-            setTimeout(() => guide.remove(), 300);
-        }
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
         fetch('{{ route("dashboard.dismiss-guide") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'X-CSRF-TOKEN': csrf,
                 'Accept': 'application/json'
+            },
+            body: JSON.stringify({ _token: csrf })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
             }
-        }).catch(err => console.debug('Guide dismiss error:', err));
+            if (guide) {
+                guide.style.opacity = '0';
+                guide.style.transform = 'translateY(-10px)';
+                guide.style.transition = 'opacity 0.3s, transform 0.3s';
+                setTimeout(() => guide.remove(), 300);
+            }
+        }).catch(err => {
+            console.debug('Guide dismiss error:', err);
+            alert('Impossible d\'enregistrer ce choix. Réessayez.');
+        });
     }
 </script>
 @endif

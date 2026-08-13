@@ -112,8 +112,10 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4" data-label="Expéditeur">
-                                <div class="text-sm font-medium text-slate-900 dark:text-white {{ !$contact->est_lu ? 'font-bold' : '' }}">{{ $contact->nom }}</div>
-                                <div class="text-sm text-slate-600 dark:text-slate-400">{{ $contact->email }}</div>
+                                <div class="min-w-0 max-w-full">
+                                    <div class="text-sm font-medium text-slate-900 dark:text-white truncate {{ !$contact->est_lu ? 'font-bold' : '' }}">{{ $contact->nom }}</div>
+                                    <div class="text-sm text-slate-600 dark:text-slate-400 break-all">{{ $contact->email }}</div>
+                                </div>
                             </td>
                             <td class="px-6 py-4" data-label="Sujet">
                                 <div class="text-sm text-slate-900 dark:text-white truncate max-w-xs {{ !$contact->est_lu ? 'font-semibold' : '' }}">{{ $contact->sujet }}</div>
@@ -122,20 +124,20 @@
                                 {{ $contact->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
-                                <div class="flex items-center justify-end gap-2">
+                                <div class="flex items-center justify-end gap-x-3 gap-y-1 flex-wrap">
                                     <a href="{{ route('admin.contacts.show', $contact) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300">
                                         Voir
                                     </a>
                                     <form method="POST" action="{{ route('admin.contacts.toggle-read', $contact) }}" class="inline">
                                         @csrf
-                                        <button type="submit" class="ui-btn-simple text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                                        <button type="submit" class="no-ui-btn-simple text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                             {{ $contact->est_lu ? 'Non lu' : 'Lu' }}
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.contacts.destroy', $contact) }}" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce message ?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="ui-btn-simple text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                        <button type="submit" class="no-ui-btn-simple text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                             Supprimer
                                         </button>
                                     </form>
