@@ -485,6 +485,106 @@
             </div>
         </div>
 
+        <!-- Facturation (mentions légales) -->
+        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">Facturation</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Ces informations sont figées sur chaque devis et facture. Sans profil complet, impossible d'émettre un document recevable (URSSAF / CGI).
+            </p>
+
+            @php $manquantsFacturation = $entreprise->champsFacturationManquants(); @endphp
+            @if(count($manquantsFacturation) > 0)
+                <div class="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+                    Profil incomplet :
+                    <ul class="list-disc ml-5 mt-1">
+                        @foreach($manquantsFacturation as $libelle)
+                            <li>{{ $libelle }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @else
+                <div class="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-300">
+                    Profil de facturation complet.
+                </div>
+            @endif
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">SIRET (14 chiffres) *</label>
+                    <input type="text" name="siret" value="{{ old('siret', $entreprise->siret) }}" maxlength="14" inputmode="numeric" placeholder="12345678900011"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Forme juridique *</label>
+                    <select name="status_juridique" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <option value="en_cours" {{ old('status_juridique', $entreprise->status_juridique) == 'en_cours' ? 'selected' : '' }}>En cours de création</option>
+                        <option value="auto_entrepreneur" {{ old('status_juridique', $entreprise->status_juridique) == 'auto_entrepreneur' ? 'selected' : '' }}>Auto-entrepreneur / EI</option>
+                        <option value="eurl" {{ old('status_juridique', $entreprise->status_juridique) == 'eurl' ? 'selected' : '' }}>EURL</option>
+                        <option value="sarl" {{ old('status_juridique', $entreprise->status_juridique) == 'sarl' ? 'selected' : '' }}>SARL</option>
+                        <option value="sas" {{ old('status_juridique', $entreprise->status_juridique) == 'sas' ? 'selected' : '' }}>SAS</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nom du responsable</label>
+                    <input type="text" name="nom_responsable" value="{{ old('nom_responsable', $entreprise->nom_responsable) }}"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">N° TVA intracommunautaire</label>
+                    <input type="text" name="tva_intracommunautaire" value="{{ old('tva_intracommunautaire', $entreprise->tva_intracommunautaire) }}" placeholder="FRXX123456789"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer">
+                        <input type="checkbox" name="assujetti_tva" value="1" {{ old('assujetti_tva', $entreprise->assujetti_tva) ? 'checked' : '' }}
+                            class="w-5 h-5 text-green-600 border-slate-300 rounded focus:ring-green-500">
+                        <span class="text-sm font-medium text-slate-900 dark:text-white">Assujetti à la TVA (sinon mention art. 293 B du CGI)</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Taux de TVA par défaut (%)</label>
+                    <input type="number" name="taux_tva_defaut" step="0.01" min="0" max="100" value="{{ old('taux_tva_defaut', $entreprise->taux_tva_defaut ?? 20) }}"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Ville du RCS (sociétés)</label>
+                    <input type="text" name="rcs_ville" value="{{ old('rcs_ville', $entreprise->rcs_ville) }}"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Capital social (€, sociétés)</label>
+                    <input type="number" name="capital_social" step="0.01" min="0" value="{{ old('capital_social', $entreprise->capital_social) }}"
+                        class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Couleur principale du PDF</label>
+                    <input type="color" name="pdf_couleur_primaire" value="{{ old('pdf_couleur_primaire', $entreprise->pdf_couleur_primaire ?: '#059669') }}"
+                        class="h-12 w-full border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Couleur secondaire du PDF</label>
+                    <input type="color" name="pdf_couleur_secondaire" value="{{ old('pdf_couleur_secondaire', $entreprise->pdf_couleur_secondaire ?: '#1f2937') }}"
+                        class="h-12 w-full border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+                </div>
+                <div class="md:col-span-2">
+                    @php
+                        $previewPrimaire = old('pdf_couleur_primaire', $entreprise->pdf_couleur_primaire ?: '#059669');
+                        $previewSecondaire = old('pdf_couleur_secondaire', $entreprise->pdf_couleur_secondaire ?: '#1f2937');
+                    @endphp
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Aperçu en-tête PDF</p>
+                    <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
+                        <div class="px-4 py-3 text-white font-semibold" style="background: {{ $previewSecondaire }}">
+                            {{ $entreprise->nom }}
+                            <span class="float-right text-sm font-bold" style="color: {{ $previewPrimaire }}">FACTURE</span>
+                        </div>
+                        <div class="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800">
+                            SIRET {{ $entreprise->siret ?: '**************' }} — couleurs appliquées aux prochains documents émis
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
                 Enregistrer les modifications

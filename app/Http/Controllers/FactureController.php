@@ -15,32 +15,14 @@ class FactureController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        // Générer automatiquement les factures pour les réservations payées sans facture
-        $reservationsPayeesSansFacture = Reservation::where('user_id', $user->id)
-            ->where('est_paye', true)
-            ->whereDoesntHave('facture')
-            ->with(['entreprise'])
-            ->get();
-        
-        foreach ($reservationsPayeesSansFacture as $reservation) {
-            try {
-                Facture::generateFromReservation($reservation);
-            } catch (\Exception $e) {
-                \Log::error("Erreur lors de la génération automatique de facture pour la réservation #{$reservation->id}: " . $e->getMessage());
-            }
-        }
-        
-        // Générer automatiquement les factures d'abonnement manuel si nécessaire
+
         if ($user->abonnement_manuel && $user->abonnement_manuel_type_renouvellement && $user->abonnement_manuel_jour_renouvellement) {
             try {
-                // Vérifier si une facture doit être générée aujourd'hui
                 $jourActuel = now()->day;
                 if ($jourActuel == $user->abonnement_manuel_jour_renouvellement) {
-                    // Vérifier si une facture n'existe pas déjà pour ce mois/année
                     $periodeDebut = now()->copy()->startOfMonth();
                     $periodeFin = now()->copy()->endOfMonth();
-                    
+
                     if ($user->abonnement_manuel_type_renouvellement === 'annuel') {
                         $periodeDebut = now()->copy()->startOfYear();
                         $periodeFin = now()->copy()->endOfYear();
@@ -51,17 +33,21 @@ class FactureController extends Controller
                         ->whereBetween('date_facture', [$periodeDebut, $periodeFin])
                         ->first();
 
-                    if (!$factureExistante) {
+                    if (! $factureExistante) {
                         Facture::generateFromManualSubscription($user);
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error("Erreur lors de la génération automatique de facture d'abonnement manuel pour l'utilisateur #{$user->id}: " . $e->getMessage());
+                \Log::error("Erreur lors de la génération automatique de facture d'abonnement manuel pour l'utilisateur #{$user->id}: ".$e->getMessage());
             }
         }
 
         $query = $user->factures()
-            ->with(['entreprise', 'reservation', 'entrepriseSubscription']);
+            ->with(['entreprise', 'reservation', 'entrepriseSubscription'])
+            ->where(function ($q) {
+                $q->where('statut', 'payee')
+                    ->orWhereIn('type_facture', ['abonnement_manuel', 'abonnement_entreprise']);
+            });
 
         // Recherche
         if ($request->filled('search')) {
@@ -105,6 +91,10 @@ class FactureController extends Controller
             ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
             ->findOrFail($id);
 
+        if (! $facture->estVisibleParClient()) {
+            abort(403, 'Cette facture n\'est pas encore disponible. Elle sera accessible une fois le paiement confirmé par l\'entreprise.');
+        }
+
         return view('factures.show', [
             'facture' => $facture,
         ]);
@@ -122,21 +112,6 @@ class FactureController extends Controller
         // Vérifier les permissions
         if (!$entreprise->peutEtreGereePar($user) && !$user->is_admin) {
             abort(403, 'Vous n\'avez pas accès à cette entreprise.');
-        }
-
-        // Générer automatiquement les factures pour les réservations payées sans facture
-        $reservationsPayeesSansFacture = Reservation::where('entreprise_id', $entreprise->id)
-            ->where('est_paye', true)
-            ->whereDoesntHave('facture')
-            ->with(['user'])
-            ->get();
-        
-        foreach ($reservationsPayeesSansFacture as $reservation) {
-            try {
-                Facture::generateFromReservation($reservation);
-            } catch (\Exception $e) {
-                \Log::error("Erreur lors de la génération automatique de facture pour la réservation #{$reservation->id}: " . $e->getMessage());
-            }
         }
 
         // Générer automatiquement les factures d'abonnement si nécessaire
@@ -256,9 +231,13 @@ class FactureController extends Controller
             ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
             ->findOrFail($id);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('factures.pdf', compact('facture'));
-        
-        return $pdf->download('facture-' . $facture->numero_facture . '.pdf');
+        if (! $facture->estVisibleParClient()) {
+            abort(403, 'Cette facture n\'est pas encore disponible. Elle sera accessible une fois le paiement confirmé par l\'entreprise.');
+        }
+
+        return app(\App\Services\Facturation\PdfDocumentRenderer::class)
+            ->facturePdf($facture)
+            ->download('facture-'.$facture->numero_facture.'.pdf');
     }
 
     /**
@@ -279,9 +258,9 @@ class FactureController extends Controller
             ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
             ->findOrFail($id);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('factures.pdf', compact('facture'));
-        
-        return $pdf->download('facture-' . $facture->numero_facture . '.pdf');
+        $pdf = app(\App\Services\Facturation\PdfDocumentRenderer::class)->facturePdf($facture);
+
+        return $pdf->download('facture-'.$facture->numero_facture.'.pdf');
     }
 
     /**
@@ -520,9 +499,12 @@ class FactureController extends Controller
             if ($facture) {
                 return redirect()->route('factures.entreprise.show', [$slug, $facture->id])
                     ->with('success', 'Facture groupée créée avec succès.');
-            } else {
-                return back()->withErrors(['error' => 'Impossible de créer la facture groupée.']);
             }
+
+            return back()->withErrors(['error' => 'Impossible de créer la facture groupée.']);
+        } catch (\App\Exceptions\BillingProfileIncompleteException $e) {
+            return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
+                ->with('error', 'Complétez le profil de facturation : '.implode(', ', $e->manquants).'.');
         } catch (\Exception $e) {
             \Log::error("Erreur lors de la création de facture groupée: " . $e->getMessage());
             return back()->withErrors(['error' => 'Une erreur est survenue lors de la création de la facture.']);

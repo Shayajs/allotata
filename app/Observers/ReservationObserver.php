@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Models\Reservation;
-use App\Models\Facture;
 
 class ReservationObserver
 {
@@ -24,6 +23,15 @@ class ReservationObserver
             $this->sendSmsNotification($reservation);
         }
 
+        if ($reservation->statut === 'terminee') {
+            try {
+                app(\App\Services\Facturation\FactureEmissionService::class)
+                    ->emettrePourReservation($reservation);
+            } catch (\Exception $e) {
+                \Log::error('Erreur lors de l\'émission de la facture à la création de la réservation #'.$reservation->id.' : '.$e->getMessage());
+            }
+        }
+
         // Synchroniser vers Google Calendar (asynchrone)
         $this->syncToGoogle($reservation, 'create');
     }
@@ -34,22 +42,28 @@ class ReservationObserver
     public function updated(Reservation $reservation): void
     {
         // Vérifier si la réservation vient d'être confirmée (passage de en_attente à confirmee)
-        if ($reservation->isDirty('statut') && $reservation->statut === 'confirmee') {
+        if ($reservation->wasChanged('statut') && $reservation->statut === 'confirmee') {
             $this->sendSmsNotification($reservation);
         }
 
-        // Vérifier si la réservation vient d'être marquée comme payée
-        if ($reservation->isDirty('est_paye') && $reservation->est_paye) {
-            // Recharger la réservation pour avoir les relations à jour
-            $reservation->refresh();
-            
-            // Générer automatiquement une facture pour toute réservation payée
-            // La facture peut être générée même sans SIREN vérifié (pour les auto-entrepreneurs, etc.)
+        if ($reservation->wasChanged('statut') && $reservation->statut === 'terminee') {
             try {
-                Facture::generateFromReservation($reservation);
+                app(\App\Services\Facturation\FactureEmissionService::class)
+                    ->emettrePourReservation($reservation);
             } catch (\Exception $e) {
-                // Logger l'erreur mais ne pas bloquer la mise à jour de la réservation
-                \Log::error('Erreur lors de la génération de la facture pour la réservation #' . $reservation->id . ': ' . $e->getMessage());
+                \Log::error('Erreur lors de l\'émission de la facture pour la réservation #'.$reservation->id.' : '.$e->getMessage());
+            }
+        }
+
+        if ($reservation->wasChanged('est_paye') && $reservation->est_paye) {
+            $reservation->load('facture');
+            if ($reservation->facture) {
+                try {
+                    app(\App\Services\Facturation\FactureEmissionService::class)
+                        ->acquitter($reservation->facture, $reservation->date_paiement);
+                } catch (\Exception $e) {
+                    \Log::error('Erreur lors de l\'acquittement de la facture pour la réservation #'.$reservation->id.' : '.$e->getMessage());
+                }
             }
 
             // Attribuer des points de fidélité si le client est inscrit
@@ -70,7 +84,7 @@ class ReservationObserver
         }
 
         // Invalider le cache des statistiques si le statut ou le paiement a changé
-        if ($reservation->isDirty(['statut', 'est_paye', 'prix'])) {
+        if ($reservation->wasChanged(['statut', 'est_paye', 'prix'])) {
             $reservation->load('entreprise');
             if ($reservation->entreprise) {
                 \App\Services\CacheService::clearEntrepriseCache($reservation->entreprise->id, $reservation->entreprise->slug);
@@ -78,7 +92,7 @@ class ReservationObserver
         }
 
         // Synchroniser les changements vers Google Calendar (date, statut, type, etc.)
-        if ($reservation->isDirty(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service', 'type_service_id', 'recurrence_id'])) {
+        if ($reservation->wasChanged(['date_reservation', 'date_fin', 'duree_minutes', 'statut', 'lieu', 'notes', 'type_service', 'type_service_id', 'recurrence_id'])) {
             if ($reservation->statut === 'annulee') {
                 $this->syncToGoogle($reservation, 'delete');
             } elseif (empty($reservation->google_event_id)) {

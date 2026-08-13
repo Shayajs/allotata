@@ -9,9 +9,10 @@
 
     @php
         $userFactures = \App\Models\Facture::where('user_id', $user->id)
-            ->with(['reservation.entreprise'])
+            ->with(['reservation.entreprise', 'entreprise'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn ($f) => $f->estVisibleParClient());
     @endphp
 
     @if($userFactures->count() > 0)
@@ -23,7 +24,7 @@
                             <div class="flex items-start justify-between mb-2">
                                 <div>
                                     <h3 class="text-lg font-semibold text-slate-900 dark:text-white">
-                                        Facture #{{ $facture->numero ?? $facture->id }}
+                                        Facture #{{ $facture->numero_facture ?? $facture->id }}
                                     </h3>
                                     <p class="text-sm text-slate-600 dark:text-slate-400">
                                         {{ $facture->reservation->entreprise->nom ?? 'Entreprise' }}
@@ -62,13 +63,17 @@
                         </div>
                         
                         <div class="flex gap-2">
-                            <a href="{{ route('factures.show', $facture->id) }}" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg transition">
-                                Voir
-                            </a>
-                            @if($facture->pdf_path)
-                                <a href="{{ route('factures.download', $facture->id) }}" class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
-                                    📄 PDF
+                            @if($facture->estVisibleParClient())
+                                <a href="{{ route('factures.show', $facture->id) }}" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg transition">
+                                    Voir
                                 </a>
+                                <a href="{{ route('factures.download', $facture->id) }}" class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg transition">
+                                    PDF
+                                </a>
+                            @else
+                                <span class="px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-lg cursor-not-allowed">
+                                    PDF (en attente de paiement)
+                                </span>
                             @endif
                         </div>
                     </div>
@@ -82,7 +87,7 @@
             </svg>
             <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Aucune facture</h3>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Vos factures apparaîtront ici après vos paiements.
+                Vos factures apparaissent ici une fois le paiement confirmé par l'entreprise.
             </p>
         </div>
     @endif

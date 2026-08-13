@@ -37,8 +37,17 @@ class Entreprise extends Model
         'slug_web',
         'type_activite',
         'siren',
+        'siret',
         'siren_verifie',
         'status_juridique',
+        'tva_intracommunautaire',
+        'assujetti_tva',
+        'taux_tva_defaut',
+        'capital_social',
+        'rcs_ville',
+        'nom_responsable',
+        'pdf_couleur_primaire',
+        'pdf_couleur_secondaire',
         'email',
         'telephone',
         'description',
@@ -110,6 +119,9 @@ class Entreprise extends Model
         return [
             'est_verifiee' => 'boolean', // Transforme le 0/1 de la BDD en true/false PHP
             'siren_verifie' => 'boolean',
+            'assujetti_tva' => 'boolean',
+            'taux_tva_defaut' => 'decimal:2',
+            'capital_social' => 'decimal:2',
             'afficher_nom_gerant' => 'boolean',
             'nom_valide' => 'boolean',
             'siren_valide' => 'boolean',
@@ -217,6 +229,27 @@ class Entreprise extends Model
     public function factures()
     {
         return $this->hasMany(Facture::class);
+    }
+
+    public function profilFacturationComplet(): bool
+    {
+        return app(\App\Services\Facturation\BillingProfileService::class)->estComplet($this);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function champsFacturationManquants(): array
+    {
+        return app(\App\Services\Facturation\BillingProfileService::class)->champsManquants($this);
+    }
+
+    /**
+     * @return array{primary: string, secondary: string, text: string, muted: string, background: string, border: string, success: string}
+     */
+    public function couleursPdf(): array
+    {
+        return app(\App\Services\Facturation\BillingProfileService::class)->couleursPdf($this);
     }
 
     /**

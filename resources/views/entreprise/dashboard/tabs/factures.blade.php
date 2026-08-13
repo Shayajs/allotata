@@ -6,7 +6,7 @@
                 <x-course-link-badge page-key="entreprise.factures" :course-links="$courseLinks ?? []" />
             </div>
             <p class="text-slate-600 dark:text-slate-400">
-                Gérez les factures générées automatiquement pour les réservations payées.
+                                                Gérez les factures émises à la fin des prestations. Le client ne peut télécharger le PDF qu'après confirmation du paiement.
             </p>
         </div>
         <div class="flex gap-3">
@@ -139,7 +139,7 @@
                                             <a href="{{ route('factures.entreprise.show', [$entreprise->slug, $facture->id]) }}" class="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3">
                                                 Voir
                                             </a>
-                                            <a href="{{ route('factures.entreprise.download', [$entreprise->slug, $facture->id]) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
+                                                <a href="{{ route('factures.entreprise.download', [$entreprise->slug, $facture->id]) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
                                                 PDF
                                             </a>
                                         </td>

@@ -326,6 +326,7 @@ Route::post("/p/{slug}/reservation", [PublicController::class, 'storeReservation
 Route::post("/p/{slug}/devis", [DevisController::class, 'store'])->name('public.devis.store');
 Route::post("/p/{slug}/devis/{id}/accepter", [DevisController::class, 'accepter'])->name('public.devis.accepter');
 Route::post("/p/{slug}/devis/{id}/refuser", [DevisController::class, 'refuser'])->name('public.devis.refuser');
+Route::get("/p/{slug}/devis/{id}/pdf", [DevisController::class, 'downloadClient'])->name('public.devis.pdf');
 Route::get("/p/{slug}/store", [PublicController::class, 'store'])->name('public.store');
 Route::get("/p/{slug}/services", [PublicController::class, 'services'])->name('public.services');
 Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('public.produits');
@@ -519,6 +520,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/m/{slug}/reservations/{id}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
     Route::post('/m/{slug}/reservations/{id}/notes', [ReservationController::class, 'addNotes'])->name('reservations.notes');
     Route::post('/m/{slug}/reservations/{id}/marquer-payee', [ReservationController::class, 'marquerPayee'])->name('reservations.marquer-payee');
+    Route::post('/m/{slug}/reservations/{id}/terminer', [ReservationController::class, 'terminer'])->name('reservations.terminer');
     
     // Récurrences (prestataire)
     Route::get('/m/{slug}/recurrences', [RecurrenceController::class, 'index'])->name('recurrences.index');
@@ -529,6 +531,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::get('/m/{slug}/devis', [DevisController::class, 'index'])->name('devis.index');
     Route::get('/m/{slug}/devis/{id}', [DevisController::class, 'show'])->name('devis.show');
     Route::post('/m/{slug}/devis/{id}/proposer', [DevisController::class, 'proposer'])->name('devis.proposer');
+    Route::get('/m/{slug}/devis/{id}/pdf', [DevisController::class, 'download'])->name('devis.pdf');
 
     // Export de rapports
     Route::get('/m/{slug}/reports/reservations', [\App\Http\Controllers\ReportController::class, 'exportReservations'])->name('reports.export-reservations');

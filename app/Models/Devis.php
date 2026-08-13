@@ -21,6 +21,10 @@ class Devis extends Model
         'date_proposee',
         'duree_proposee_minutes',
         'notes_prestataire',
+        'numero_devis',
+        'snapshot',
+        'date_validite',
+        'verrouille_at',
         'reservation_id',
         'nom_client',
         'email_client',
@@ -33,7 +37,43 @@ class Devis extends Model
             'montant_propose' => 'decimal:2',
             'date_proposee' => 'datetime',
             'duree_proposee_minutes' => 'integer',
+            'snapshot' => 'array',
+            'date_validite' => 'date',
+            'verrouille_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Devis $devis) {
+            if (! $devis->verrouille_at) {
+                return;
+            }
+
+            $interdit = [
+                'numero_devis', 'montant_propose', 'type_structure_propose',
+                'date_proposee', 'duree_proposee_minutes', 'notes_prestataire',
+                'entreprise_id', 'user_id', 'type_service_id', 'date_validite',
+            ];
+            foreach ($interdit as $champ) {
+                if ($devis->isDirty($champ)) {
+                    throw new \App\Exceptions\ImmutableDocumentException;
+                }
+            }
+
+            if ($devis->isDirty('statut')) {
+                $from = $devis->getOriginal('statut');
+                $to = $devis->statut;
+                $autorise = ($from === 'propose' && in_array($to, ['accepte', 'refuse'], true));
+                if (! $autorise) {
+                    throw new \App\Exceptions\ImmutableDocumentException;
+                }
+            }
+
+            if ($devis->isDirty('snapshot')) {
+                throw new \App\Exceptions\ImmutableDocumentException;
+            }
+        });
     }
 
     // ─── Relations ───
@@ -78,6 +118,11 @@ class Devis extends Model
     public function estRefuse(): bool
     {
         return $this->statut === 'refuse';
+    }
+
+    public function estVerrouille(): bool
+    {
+        return $this->verrouille_at !== null || filled($this->numero_devis);
     }
 
     /**

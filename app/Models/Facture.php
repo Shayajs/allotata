@@ -26,6 +26,9 @@ class Facture extends Model
         'montant_ttc',
         'statut',
         'notes',
+        'snapshot',
+        'date_paiement',
+        'verrouillee_at',
     ];
 
     protected function casts(): array
@@ -37,7 +40,63 @@ class Facture extends Model
             'taux_tva' => 'decimal:2',
             'montant_tva' => 'decimal:2',
             'montant_ttc' => 'decimal:2',
+            'snapshot' => 'array',
+            'date_paiement' => 'date',
+            'verrouillee_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Facture $facture) {
+            if (! $facture->verrouillee_at) {
+                return;
+            }
+
+            $interdit = [
+                'numero_facture', 'montant_ht', 'montant_tva', 'montant_ttc', 'taux_tva',
+                'date_facture', 'reservation_id', 'entreprise_id', 'user_id', 'notes', 'type_facture',
+            ];
+            foreach ($interdit as $champ) {
+                if ($facture->isDirty($champ)) {
+                    throw new \App\Exceptions\ImmutableDocumentException;
+                }
+            }
+
+            if ($facture->isDirty('statut')) {
+                $from = $facture->getOriginal('statut');
+                $to = $facture->statut;
+                if (! ($from === 'emise' && $to === 'payee')) {
+                    throw new \App\Exceptions\ImmutableDocumentException;
+                }
+            }
+
+            if ($facture->isDirty('snapshot')) {
+                $orig = $facture->getOriginal('snapshot') ?? [];
+                $nouveau = $facture->snapshot ?? [];
+                if (is_string($orig)) {
+                    $orig = json_decode($orig, true) ?? [];
+                }
+                unset($orig['paiement'], $nouveau['paiement']);
+                if ($orig != $nouveau) {
+                    throw new \App\Exceptions\ImmutableDocumentException;
+                }
+            }
+        });
+    }
+
+    public function estVerrouillee(): bool
+    {
+        return $this->verrouillee_at !== null;
+    }
+
+    public function estVisibleParClient(): bool
+    {
+        if (in_array($this->type_facture, ['abonnement_manuel', 'abonnement_entreprise'], true)) {
+            return true;
+        }
+
+        return $this->statut === 'payee';
     }
 
     /**
@@ -95,13 +154,15 @@ class Facture extends Model
     public static function generateNumeroFacture(): string
     {
         $year = date('Y');
-        $lastFacture = self::whereYear('created_at', $year)
-            ->orderBy('id', 'desc')
-            ->first();
-        
-        $number = $lastFacture ? (int) substr($lastFacture->numero_facture, -6) + 1 : 1;
-        
-        return 'FAC-' . $year . '-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+        $max = 0;
+
+        foreach (self::where('numero_facture', 'like', "FAC-{$year}-______")->pluck('numero_facture') as $numero) {
+            if (preg_match('/^FAC-'.$year.'-(\d{6})$/', (string) $numero, $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+
+        return 'FAC-'.$year.'-'.str_pad((string) ($max + 1), 6, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -370,59 +431,12 @@ class Facture extends Model
     }
 
     /**
-     * Génère automatiquement une facture à partir d'une réservation payée
+     * Émet une facture figée à partir d'une réservation (prestation terminée).
      */
     public static function generateFromReservation(Reservation $reservation): ?Facture
     {
-        // Recharger la réservation pour avoir les relations à jour
-        $reservation->refresh();
-        
-        // Vérifier si une facture existe déjà pour cette réservation
-        $factureExistante = self::where('reservation_id', $reservation->id)->first();
-        if ($factureExistante) {
-            return $factureExistante;
-        }
-
-        // Recharger l'entreprise pour avoir les dernières valeurs
-        $reservation->load('entreprise');
-        $entreprise = $reservation->entreprise;
-        
-        // Vérifier que la réservation a un prix valide
-        if (!$reservation->prix || $reservation->prix <= 0) {
-            \Log::warning("Impossible de générer une facture pour la réservation #{$reservation->id} : prix invalide ou nul");
-            return null;
-        }
-
-        // Calculer les montants (TVA à 0% par défaut pour les auto-entrepreneurs)
-        $montantHT = $reservation->prix;
-        
-        // Déterminer le taux de TVA selon le statut juridique
-        $tauxTVA = 0; // Par défaut 0% (auto-entrepreneur, micro-entreprise)
-        if ($entreprise->status_juridique === 'sarl' || $entreprise->status_juridique === 'eurl' || $entreprise->status_juridique === 'sas') {
-            // Pour les sociétés, on peut appliquer la TVA standard (20%)
-            // Mais on garde 0% par défaut, l'admin peut modifier si nécessaire
-            $tauxTVA = 0;
-        }
-        
-        $montantTVA = $montantHT * ($tauxTVA / 100);
-        $montantTTC = $montantHT + $montantTVA;
-
-        // Créer la facture (même sans SIREN vérifié, pour permettre la facturation aux auto-entrepreneurs)
-        $facture = self::create([
-            'reservation_id' => $reservation->id,
-            'entreprise_id' => $reservation->entreprise_id,
-            'user_id' => $reservation->user_id,
-            'numero_facture' => self::generateNumeroFacture(),
-            'date_facture' => now(),
-            'date_echeance' => now()->addDays(30), // 30 jours par défaut
-            'montant_ht' => $montantHT,
-            'taux_tva' => $tauxTVA,
-            'montant_tva' => $montantTVA,
-            'montant_ttc' => $montantTTC,
-            'statut' => 'emise',
-        ]);
-
-        return $facture;
+        return app(\App\Services\Facturation\FactureEmissionService::class)
+            ->emettrePourReservation($reservation);
     }
 
     /**
@@ -454,18 +468,26 @@ class Facture extends Model
         }
 
         $entreprise = $reservations->first()->entreprise;
+        $emission = app(\App\Services\Facturation\FactureEmissionService::class);
+        $emission->assertProfilComplet($entreprise);
 
-        // Calculer le montant total HT
-        $montantHT = $reservations->sum('prix');
-        $montantTVA = $montantHT * ($tauxTVA / 100);
-        $montantTTC = $montantHT + $montantTVA;
+        if ($tauxTVA <= 0 && $entreprise->assujetti_tva) {
+            $tauxTVA = (float) ($entreprise->taux_tva_defaut ?? 20);
+        } elseif (! $entreprise->assujetti_tva) {
+            $tauxTVA = 0;
+        }
 
-        // Créer la facture groupée
+        $montantHT = (float) $reservations->sum('prix');
+        $montantTVA = round($montantHT * ($tauxTVA / 100), 2);
+        $montantTTC = round($montantHT + $montantTVA, 2);
+        $sequences = app(\App\Services\Facturation\DocumentSequenceService::class);
+
         $facture = self::create([
-            'reservation_id' => null, // Null pour les factures groupées
+            'reservation_id' => null,
             'entreprise_id' => $entrepriseId,
             'user_id' => $userId,
-            'numero_facture' => self::generateNumeroFacture(),
+            'type_facture' => 'reservation',
+            'numero_facture' => $sequences->next($entrepriseId, \App\Services\Facturation\DocumentSequenceService::TYPE_FACTURE),
             'date_facture' => now(),
             'date_echeance' => now()->addDays(30),
             'montant_ht' => $montantHT,
@@ -473,11 +495,22 @@ class Facture extends Model
             'montant_tva' => $montantTVA,
             'montant_ttc' => $montantTTC,
             'statut' => 'emise',
+            'verrouillee_at' => now(),
         ]);
 
-        // Attacher les réservations à la facture
         $facture->reservations()->attach($reservationIds);
+        $facture->load('user');
 
-        return $facture;
+        $snapshots = app(\App\Services\Facturation\DocumentSnapshotService::class);
+        $snapshot = $snapshots->pourFacture(
+            $facture,
+            $entreprise,
+            $reservations,
+            $facture->user,
+            $reservations->first()
+        );
+        $facture->forceFill(['snapshot' => $snapshot])->saveQuietly();
+
+        return $facture->fresh();
     }
 }

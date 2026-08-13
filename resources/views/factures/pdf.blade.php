@@ -2,473 +2,247 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Facture {{ $facture->numero_facture }}</title>
+    <title>{{ ($doc['type'] ?? 'facture') === 'devis' ? 'Devis' : 'Facture' }} {{ $doc['numero'] ?? '' }}</title>
+    @php
+        $c = $doc['couleurs'] ?? [
+            'primary' => '#059669',
+            'secondary' => '#1f2937',
+            'text' => '#1a1a1a',
+            'muted' => '#6b7280',
+            'background' => '#f9fafb',
+            'border' => '#e5e7eb',
+            'success' => '#10b981',
+        ];
+        $emetteur = $doc['emetteur'] ?? [];
+        $client = $doc['client'] ?? [];
+        $totaux = $doc['totaux'] ?? [];
+        $paiement = $doc['paiement'] ?? [];
+        $mentions = $doc['mentions'] ?? [];
+        $estDevis = ($doc['type'] ?? '') === 'devis';
+    @endphp
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @page { margin: 1.8cm 1.6cm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .logo-section {
-            flex: 1;
-        }
-        .logo {
-            max-width: 150px;
-            max-height: 80px;
-            margin-bottom: 10px;
-        }
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-        .company-details {
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 10px;
-            color: #6b7280;
-            line-height: 1.5;
+            line-height: 1.45;
+            color: {{ $c['text'] }};
         }
-        .invoice-info {
-            text-align: right;
-        }
-        .invoice-title {
-            font-size: 32px;
-            font-weight: bold;
-            color: #059669;
-            margin-bottom: 10px;
-        }
-        .invoice-number {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 5px;
-        }
-        .invoice-date {
-            font-size: 12px;
-            color: #374151;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-size: 11px;
-            font-weight: bold;
-            color: #6b7280;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
-        }
-        .two-columns {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-        }
-        .column {
-            flex: 1;
-        }
-        .client-info, .company-info {
-            background: #f9fafb;
-            padding: 15px;
-            border-radius: 4px;
-        }
-        .info-line {
-            margin-bottom: 5px;
-            font-size: 11px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #374151;
-        }
-        .info-value {
-            color: #6b7280;
-        }
-        .reservation-details {
-            background: #f0fdf4;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 30px;
-            border-left: 4px solid #10b981;
-        }
-        .reservation-title {
-            font-weight: bold;
-            color: #059669;
-            margin-bottom: 10px;
-            font-size: 12px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        thead {
-            background: #f3f4f6;
-        }
-        th {
-            padding: 12px;
-            text-align: left;
-            font-weight: bold;
-            font-size: 11px;
-            color: #374151;
-            text-transform: uppercase;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 11px;
-        }
-        .text-right {
-            text-align: right;
-        }
-        .text-left {
-            text-align: left;
-        }
-        .totals {
-            margin-left: auto;
-            width: 250px;
-        }
-        .total-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 11px;
-        }
-        .total-label {
-            color: #6b7280;
-        }
-        .total-value {
-            font-weight: bold;
-            color: #374151;
-        }
-        .total-final {
-            border-top: 2px solid #e5e7eb;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-        .total-final .total-label,
-        .total-final .total-value {
-            font-size: 16px;
-            color: #059669;
-            font-weight: bold;
-        }
-        .notes {
-            background: #f9fafb;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 30px;
-            font-size: 10px;
-            color: #6b7280;
-        }
-        .status {
+        table { width: 100%; border-collapse: collapse; }
+        .header td { vertical-align: top; }
+        .logo { max-height: 56px; max-width: 160px; margin-bottom: 8px; }
+        .company-name { font-size: 16px; font-weight: bold; color: {{ $c['secondary'] }}; }
+        .muted { color: {{ $c['muted'] }}; font-size: 9px; }
+        .doc-title { font-size: 26px; font-weight: bold; color: {{ $c['primary'] }}; text-align: right; }
+        .doc-numero { font-size: 13px; font-weight: 600; color: {{ $c['secondary'] }}; text-align: right; margin-top: 4px; }
+        .meta { text-align: right; color: {{ $c['muted'] }}; margin-top: 10px; font-size: 10px; }
+        .stamp {
             display: inline-block;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 10px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            background: {{ $c['success'] }};
+            color: #fff;
             font-weight: bold;
-            margin-top: 20px;
+            font-size: 10px;
         }
-        .status-emise {
-            background: #dbeafe;
-            color: #1e40af;
+        .section { margin-top: 16px; }
+        .label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: {{ $c['muted'] }};
+            margin-bottom: 4px;
         }
-        .status-payee {
-            background: #d1fae5;
-            color: #065f46;
+        .box { background: {{ $c['background'] }}; padding: 10px; }
+        .name { font-weight: 600; font-size: 12px; color: {{ $c['secondary'] }}; }
+        thead th {
+            background: {{ $c['secondary'] }};
+            color: #fff;
+            padding: 7px 8px;
+            font-size: 8px;
+            text-transform: uppercase;
+            text-align: left;
         }
-        .status-annulee {
-            background: #fee2e2;
-            color: #991b1b;
+        thead th.right, td.right { text-align: right; }
+        tbody td {
+            padding: 8px;
+            border-bottom: 1px solid {{ $c['border'] }};
+            vertical-align: top;
+        }
+        .details { color: {{ $c['muted'] }}; font-size: 8px; margin-top: 2px; }
+        .totaux { width: 280px; margin-left: auto; margin-top: 12px; }
+        .totaux td { padding: 4px 0; border: 0; }
+        .totaux .final td {
+            font-size: 13px;
+            font-weight: bold;
+            color: {{ $c['primary'] }};
+            border-top: 2px solid {{ $c['border'] }};
+            padding-top: 8px;
+        }
+        .mention-tva { font-size: 9px; color: {{ $c['muted'] }}; margin-top: 6px; font-style: italic; }
+        .legal {
+            margin-top: 18px;
+            padding: 10px;
+            background: {{ $c['background'] }};
+            font-size: 8px;
+            color: {{ $c['muted'] }};
         }
         .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
+            margin-top: 24px;
+            padding-top: 8px;
+            border-top: 1px solid {{ $c['border'] }};
             text-align: center;
-            font-size: 9px;
-            color: #9ca3af;
+            font-size: 8px;
+            color: {{ $c['muted'] }};
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- En-tête -->
-        <div class="header">
-            <div class="logo-section">
-                @if($facture->type_facture === 'abonnement_entreprise')
-                    <div class="company-name">Allo Tata</div>
-                    <div class="company-details">
-                        Service d'abonnement<br>
-                        Facture entreprise à entreprise
-                    </div>
-                @elseif($facture->entreprise && $facture->entreprise->logo)
-                    <img src="{{ public_path('storage/' . $facture->entreprise->logo) }}" alt="Logo {{ $facture->entreprise->nom }}" class="logo">
-                    <div class="company-name">{{ $facture->entreprise->nom }}</div>
-                    <div class="company-details">
-                        {{ $facture->entreprise->type_activite }}<br>
-                        @if($facture->entreprise->siren)
-                            SIREN : {{ $facture->entreprise->siren }}<br>
-                        @endif
-                        {{ $facture->entreprise->email }}<br>
-                        @if($facture->entreprise->telephone)
-                            {{ $facture->entreprise->telephone }}<br>
-                        @endif
-                        @if($facture->entreprise->ville)
-                            {{ $facture->entreprise->ville }}
-                        @endif
-                    </div>
-                @elseif($facture->entreprise)
-                    <div class="company-name">{{ $facture->entreprise->nom }}</div>
-                    <div class="company-details">
-                        {{ $facture->entreprise->type_activite }}<br>
-                        @if($facture->entreprise->siren)
-                            SIREN : {{ $facture->entreprise->siren }}<br>
-                        @endif
-                        {{ $facture->entreprise->email }}<br>
-                        @if($facture->entreprise->telephone)
-                            {{ $facture->entreprise->telephone }}<br>
-                        @endif
-                        @if($facture->entreprise->ville)
-                            {{ $facture->entreprise->ville }}
-                        @endif
-                    </div>
-                @else
-                    <div class="company-name">Allo Tata</div>
-                    <div class="company-details">
-                        Service d'abonnement
-                    </div>
+    <table class="header">
+        <tr>
+            <td width="55%">
+                @if(!empty($doc['logo_base64']))
+                    <img src="{{ $doc['logo_base64'] }}" alt="Logo" class="logo">
                 @endif
-            </div>
-            <div class="invoice-info">
-                <div class="invoice-title">FACTURE</div>
-                <div class="invoice-number">N° {{ $facture->numero_facture }}</div>
-                <div class="invoice-date">
-                    Date d'émission : {{ $facture->date_facture->format('d/m/Y') }}<br>
-                    @if($facture->date_echeance)
-                        Échéance : {{ $facture->date_echeance->format('d/m/Y') }}
+                <div class="company-name">{{ $emetteur['nom'] ?? '' }}</div>
+                <div class="muted">{{ $emetteur['forme_juridique'] ?? '' }}</div>
+                @if(!empty($emetteur['siret']))
+                    <div class="muted">SIRET {{ $emetteur['siret'] }}</div>
+                @endif
+                @if(!empty($emetteur['tva_intracommunautaire']))
+                    <div class="muted">TVA intra. {{ $emetteur['tva_intracommunautaire'] }}</div>
+                @endif
+                @if(!empty($emetteur['rcs']))
+                    <div class="muted">{{ $emetteur['rcs'] }}</div>
+                @endif
+                @if(!empty($emetteur['adresse']))
+                    <div class="muted">{!! nl2br(e($emetteur['adresse'])) !!}</div>
+                @endif
+                <div class="muted">{{ $emetteur['email'] ?? '' }}{{ !empty($emetteur['telephone']) ? ' — '.$emetteur['telephone'] : '' }}</div>
+            </td>
+            <td width="45%">
+                <div class="doc-title">{{ $estDevis ? 'DEVIS' : 'FACTURE' }}</div>
+                <div class="doc-numero">{{ $doc['numero'] ?? '' }}</div>
+                <div class="meta">
+                    Date d'émission : {{ $doc['date_emission'] ?? '' }}<br>
+                    @if(!empty($doc['date_prestation']))
+                        Date de la prestation : {{ $doc['date_prestation'] }}<br>
+                    @endif
+                    @if(!empty($doc['date_echeance']) && ! $estDevis)
+                        Échéance : {{ $doc['date_echeance'] }}<br>
+                    @endif
+                    @if(!empty($doc['date_validite']) && $estDevis)
+                        Validité : {{ $doc['date_validite'] }}<br>
+                    @endif
+                    @if(!empty($doc['date_proposee']) && $estDevis)
+                        Date proposée : {{ $doc['date_proposee'] }}
                     @endif
                 </div>
-            </div>
-        </div>
-
-        <!-- Informations client et entreprise -->
-        <div class="two-columns section">
-            <div class="column">
-                <div class="section-title">Facturé à</div>
-                <div class="client-info">
-                    @if($facture->type_facture === 'abonnement_entreprise' && $facture->entreprise)
-                        <div class="info-line">
-                            <span class="info-label">{{ $facture->entreprise->nom }}</span>
-                        </div>
-                        <div class="info-line">
-                            <span class="info-value">{{ $facture->entreprise->email }}</span>
-                        </div>
-                        @if($facture->entreprise->siren)
-                            <div class="info-line">
-                                <span class="info-value">SIREN : {{ $facture->entreprise->siren }}</span>
-                            </div>
-                        @endif
-                    @elseif($facture->user)
-                        <div class="info-line">
-                            <span class="info-label">{{ $facture->user->name }}</span>
-                        </div>
-                        <div class="info-line">
-                            <span class="info-value">{{ $facture->user->email }}</span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <!-- Détails de la réservation (facture simple) -->
-        @if($facture->reservation && !$facture->estGroupee())
-            <div class="reservation-details">
-                <div class="reservation-title">Détails de la réservation</div>
-                <div class="info-line">
-                    <span class="info-label">Service :</span>
-                    <span class="info-value">{{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}</span>
-                </div>
-                <div class="info-line">
-                    <span class="info-label">Date :</span>
-                    <span class="info-value">{{ $facture->reservation->date_reservation->format('d/m/Y à H:i') }}</span>
-                </div>
-                @if($facture->reservation->lieu)
-                    <div class="info-line">
-                        <span class="info-label">Lieu :</span>
-                        <span class="info-value">{{ $facture->reservation->lieu }}</span>
-                    </div>
+                @if(!empty($paiement['acquittee']))
+                    <div class="stamp">ACQUITTÉE{{ !empty($paiement['date_paiement']) ? ' le '.$paiement['date_paiement'] : '' }}</div>
                 @endif
-            </div>
-        @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
-            <div class="reservation-details">
-                <div class="reservation-title">Détails de l'abonnement</div>
-                <div class="info-line">
-                    <span class="info-label">Type :</span>
-                    <span class="info-value">
-                        @if($facture->entrepriseSubscription)
-                            {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
-                        @else
-                            Abonnement
-                        @endif
-                    </span>
-                </div>
-                @if($facture->notes)
-                    <div class="info-line">
-                        <span class="info-label">Période :</span>
-                        <span class="info-value">{{ $facture->notes }}</span>
-                    </div>
-                @endif
-            </div>
-        @endif
+            </td>
+        </tr>
+    </table>
 
-        <!-- Tableau des lignes -->
+    <div class="section">
+        <div class="label">{{ $estDevis ? 'Destinataire' : 'Facturé à' }}</div>
+        <div class="box">
+            <div class="name">{{ $client['nom'] ?? 'Client' }}</div>
+            @if(!empty($client['adresse']))
+                <div class="muted">{!! nl2br(e($client['adresse'])) !!}</div>
+            @endif
+            @if(!empty($client['email']))
+                <div class="muted">{{ $client['email'] }}</div>
+            @endif
+            @if(!empty($client['telephone']))
+                <div class="muted">{{ $client['telephone'] }}</div>
+            @endif
+        </div>
+    </div>
+
+    <div class="section">
         <table>
             <thead>
                 <tr>
-                    <th class="text-left">Description</th>
-                    <th class="text-left">Date</th>
-                    <th class="text-right">Montant HT</th>
-                    <th class="text-right">TVA</th>
-                    <th class="text-right">Montant TTC</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th class="right">Qté</th>
+                    <th class="right">Prix HT</th>
+                    <th class="right">TVA</th>
+                    <th class="right">Total TTC</th>
                 </tr>
             </thead>
             <tbody>
-                @if($facture->estGroupee())
-                    @foreach($facture->reservations as $reservation)
-                        <tr>
-                            <td>
-                                {{ $reservation->typeService ? $reservation->typeService->nom : ($reservation->type_service ?? 'Service') }}
-                                @if($reservation->duree_minutes)
-                                    @if($reservation->typeService && $reservation->typeService->estDateButoire())
-                                        ({{ $reservation->typeService->duree_formatee }})
-                                    @else
-                                        ({{ $reservation->duree_minutes }} min)
-                                    @endif
-                                @endif
-                            </td>
-                            <td>{{ $reservation->date_reservation->format('d/m/Y H:i') }}</td>
-                            <td class="text-right">{{ number_format($reservation->prix, 2, ',', ' ') }} €</td>
-                            <td class="text-right">
-                                @if($facture->taux_tva > 0)
-                                    {{ $facture->taux_tva }}%<br>
-                                    <small>({{ number_format($reservation->prix * ($facture->taux_tva / 100), 2, ',', ' ') }} €)</small>
-                                @else
-                                    Exonéré
-                                @endif
-                            </td>
-                            <td class="text-right">{{ number_format($reservation->prix * (1 + $facture->taux_tva / 100), 2, ',', ' ') }} €</td>
-                        </tr>
-                    @endforeach
-                @else
+                @foreach(($doc['lignes'] ?? []) as $ligne)
                     <tr>
                         <td>
-                            @if($facture->reservation)
-                                {{ $facture->reservation->typeService ? $facture->reservation->typeService->nom : ($facture->reservation->type_service ?? 'Service') }}
-                                @if($facture->reservation->duree_minutes)
-                                    @if($facture->reservation->typeService && $facture->reservation->typeService->estDateButoire())
-                                        ({{ $facture->reservation->typeService->duree_formatee }})
-                                    @else
-                                        ({{ $facture->reservation->duree_minutes }} min)
-                                    @endif
-                                @endif
-                            @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
-                                @if($facture->entrepriseSubscription)
-                                    {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
-                                @else
-                                    Abonnement
-                                @endif
-                            @else
-                                Service
+                            {{ $ligne['description'] ?? '' }}
+                            @if(!empty($ligne['details']))
+                                <div class="details">{{ $ligne['details'] }}</div>
                             @endif
                         </td>
-                        <td>
-                            @if($facture->reservation)
-                                {{ $facture->reservation->date_reservation->format('d/m/Y H:i') }}
-                            @elseif($facture->type_facture === 'abonnement_manuel' || $facture->type_facture === 'abonnement_entreprise')
-                                {{ $facture->date_facture->format('d/m/Y') }}
+                        <td>{{ $ligne['date'] ?? '' }}</td>
+                        <td class="right">{{ $ligne['quantite'] ?? 1 }}</td>
+                        <td class="right">{{ number_format((float) ($ligne['montant_ht'] ?? 0), 2, ',', ' ') }} €</td>
+                        <td class="right">
+                            @if(!empty($totaux['assujetti_tva']))
+                                {{ number_format((float) ($ligne['taux_tva'] ?? 0), 1, ',', ' ') }} %
                             @else
-                                {{ $facture->date_facture->format('d/m/Y') }}
+                                —
                             @endif
                         </td>
-                        <td class="text-right">{{ number_format($facture->montant_ht, 2, ',', ' ') }} €</td>
-                        <td class="text-right">
-                            @if($facture->taux_tva > 0)
-                                {{ $facture->taux_tva }}%<br>
-                                <small>({{ number_format($facture->montant_tva, 2, ',', ' ') }} €)</small>
-                            @else
-                                Exonéré
-                            @endif
-                        </td>
-                        <td class="text-right">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</td>
+                        <td class="right">{{ number_format((float) ($ligne['montant_ttc'] ?? 0), 2, ',', ' ') }} €</td>
                     </tr>
-                @endif
+                @endforeach
             </tbody>
         </table>
+    </div>
 
-        <!-- Totaux -->
-        <div class="totals">
-            <div class="total-line">
-                <span class="total-label">Total HT</span>
-                <span class="total-value">{{ number_format($facture->montant_ht, 2, ',', ' ') }} €</span>
-            </div>
-            @if($facture->taux_tva > 0)
-                <div class="total-line">
-                    <span class="total-label">TVA ({{ $facture->taux_tva }}%)</span>
-                    <span class="total-value">{{ number_format($facture->montant_tva, 2, ',', ' ') }} €</span>
-                </div>
-            @endif
-            <div class="total-line total-final">
-                <span class="total-label">Total TTC</span>
-                <span class="total-value">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</span>
-            </div>
-        </div>
-
-        <!-- Notes -->
-        @if($facture->notes)
-            <div class="notes">
-                <strong>Notes :</strong><br>
-                {{ $facture->notes }}
-            </div>
+    <table class="totaux">
+        <tr>
+            <td>Total HT</td>
+            <td class="right">{{ number_format((float) ($totaux['montant_ht'] ?? 0), 2, ',', ' ') }} €</td>
+        </tr>
+        @if(!empty($totaux['assujetti_tva']))
+            <tr>
+                <td>TVA ({{ number_format((float) ($totaux['taux_tva'] ?? 0), 1, ',', ' ') }} %)</td>
+                <td class="right">{{ number_format((float) ($totaux['montant_tva'] ?? 0), 2, ',', ' ') }} €</td>
+            </tr>
         @endif
+        <tr class="final">
+            <td>Total TTC</td>
+            <td class="right">{{ number_format((float) ($totaux['montant_ttc'] ?? 0), 2, ',', ' ') }} €</td>
+        </tr>
+    </table>
+    @if(!empty($totaux['mention_tva']))
+        <div class="mention-tva">{{ $totaux['mention_tva'] }}</div>
+    @endif
 
-        <!-- Statut -->
-        <div>
-            <span class="status status-{{ $facture->statut }}">
-                @if($facture->statut === 'payee')
-                    Payée
-                @elseif($facture->statut === 'annulee')
-                    Annulée
-                @elseif($facture->statut === 'brouillon')
-                    Brouillon
-                @else
-                    Émise
-                @endif
-            </span>
+    @if(!empty($doc['notes']))
+        <div class="section">
+            <div class="label">Notes</div>
+            <div class="muted">{{ $doc['notes'] }}</div>
         </div>
+    @endif
 
-        <!-- Pied de page -->
-        <div class="footer">
-            <p>Facture générée le {{ now()->format('d/m/Y à H:i') }} via Allo Tata</p>
-            <p>Merci de votre confiance !</p>
-        </div>
+    <div class="legal">
+        @if($estDevis)
+            <p>{{ $mentions['validite'] ?? '' }}</p>
+            <p>{{ $mentions['acceptation'] ?? '' }}</p>
+            <p>{{ $mentions['escompte'] ?? 'Pas d\'escompte pour paiement anticipé.' }}</p>
+        @else
+            <p>{{ $mentions['tva'] ?? $totaux['mention_tva'] ?? '' }}</p>
+            <p>{{ $mentions['escompte'] ?? 'Pas d\'escompte pour paiement anticipé.' }}</p>
+            <p>{{ $mentions['penalites'] ?? '' }}</p>
+        @endif
+    </div>
+
+    <div class="footer">
+        {{ $emetteur['nom'] ?? '' }}
+        {{ !empty($emetteur['forme_juridique']) ? ' — '.$emetteur['forme_juridique'] : '' }}
+        {{ !empty($emetteur['siret']) ? ' — SIRET '.$emetteur['siret'] : '' }}
     </div>
 </body>
 </html>
-

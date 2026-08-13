@@ -18,16 +18,23 @@ class DevisService
      */
     public function proposer(Devis $devis, array $proposition): Devis
     {
-        $devis->update([
-            'montant_propose' => $proposition['montant_propose'],
-            'type_structure_propose' => $proposition['type_structure_propose'] ?? 'ponctuel',
-            'date_proposee' => $proposition['date_proposee'] ?? null,
-            'duree_proposee_minutes' => $proposition['duree_proposee_minutes'] ?? null,
-            'notes_prestataire' => $proposition['notes_prestataire'] ?? null,
-            'statut' => 'propose',
-        ]);
+        if (! $devis->estEnAttente()) {
+            throw new \Exception('Ce devis ne peut plus être modifié.');
+        }
 
-        return $devis->fresh();
+        return DB::transaction(function () use ($devis, $proposition) {
+            $devis->update([
+                'montant_propose' => $proposition['montant_propose'],
+                'type_structure_propose' => $proposition['type_structure_propose'] ?? 'ponctuel',
+                'date_proposee' => $proposition['date_proposee'] ?? null,
+                'duree_proposee_minutes' => $proposition['duree_proposee_minutes'] ?? null,
+                'notes_prestataire' => $proposition['notes_prestataire'] ?? null,
+                'statut' => 'propose',
+            ]);
+
+            return app(\App\Services\Facturation\DevisEmissionService::class)
+                ->figerProposition($devis->fresh(['entreprise', 'user', 'typeService']));
+        });
     }
 
     /**

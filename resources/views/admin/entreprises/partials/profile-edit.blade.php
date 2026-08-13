@@ -24,43 +24,51 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Logo</label>
-                    @if($entreprise->logo)
-                        <div class="mb-3">
+                    <div id="admin-logo-slot" class="mb-3">
+                        @if($entreprise->logo)
                             <img src="{{ asset('media/' . $entreprise->logo) }}" alt="Logo" class="w-28 h-28 object-contain rounded-lg border border-slate-200 dark:border-slate-600 bg-white p-2">
-                            <form action="{{ route('admin.entreprises.logo.delete', $entreprise) }}" method="POST" class="mt-2">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" onclick="return confirm('Supprimer le logo ?')" class="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg">Supprimer</button>
-                            </form>
-                        </div>
-                    @else
-                        <div class="mb-3 w-28 h-28 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">Aucun logo</div>
+                        @else
+                            <div class="w-28 h-28 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">Aucun logo</div>
+                        @endif
+                    </div>
+                    @if($entreprise->logo)
+                        <form action="{{ route('admin.entreprises.logo.delete', $entreprise) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" onclick="return confirm('Supprimer le logo ?')" class="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg">Supprimer</button>
+                        </form>
                     @endif
-                    <form action="{{ route('admin.entreprises.logo.upload', $entreprise) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                    <form id="admin-logo-form" action="{{ route('admin.entreprises.logo.upload', $entreprise) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="file" name="logo" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" required class="block w-full text-sm text-slate-600 dark:text-slate-300">
-                        <button type="submit" class="px-3 py-1.5 text-xs font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-lg">Uploader le logo</button>
+                        <input type="file" name="logo" id="admin-logo-input" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" required class="sr-only">
+                        <button type="button" id="admin-logo-btn" onclick="document.getElementById('admin-logo-input').click()" class="px-3 py-1.5 text-xs font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-lg disabled:opacity-60">
+                            Uploader le logo
+                        </button>
                     </form>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Image de fond</label>
-                    @if($entreprise->image_fond)
-                        <div class="mb-3">
+                    <div id="admin-fond-slot" class="mb-3">
+                        @if($entreprise->image_fond)
                             <img src="{{ asset('media/' . $entreprise->image_fond) }}" alt="Fond" class="w-full max-w-sm h-36 object-cover rounded-lg border border-slate-200 dark:border-slate-600">
-                            <form action="{{ route('admin.entreprises.image-fond.delete', $entreprise) }}" method="POST" class="mt-2">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" onclick="return confirm('Supprimer l\'image de fond ?')" class="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg">Supprimer</button>
-                            </form>
-                        </div>
-                    @else
-                        <div class="mb-3 w-full max-w-sm h-36 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">Aucune image</div>
+                        @else
+                            <div class="w-full max-w-sm h-36 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">Aucune image</div>
+                        @endif
+                    </div>
+                    @if($entreprise->image_fond)
+                        <form action="{{ route('admin.entreprises.image-fond.delete', $entreprise) }}" method="POST" class="mb-2">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" onclick="return confirm('Supprimer l\'image de fond ?')" class="px-3 py-1.5 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg">Supprimer</button>
+                        </form>
                     @endif
-                    <form action="{{ route('admin.entreprises.image-fond.upload', $entreprise) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                    <form id="admin-fond-form" action="{{ route('admin.entreprises.image-fond.upload', $entreprise) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input type="file" name="image_fond" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" required class="block w-full text-sm text-slate-600 dark:text-slate-300">
-                        <button type="submit" class="px-3 py-1.5 text-xs font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-lg">Uploader le fond</button>
+                        <input type="file" name="image_fond" id="admin-fond-input" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" required class="sr-only">
+                        <button type="button" id="admin-fond-btn" onclick="document.getElementById('admin-fond-input').click()" class="px-3 py-1.5 text-xs font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-lg disabled:opacity-60">
+                            Uploader le fond
+                        </button>
                     </form>
                 </div>
             </div>
@@ -214,3 +222,50 @@
         </p>
     </div>
 </div>
+
+<script>
+    (function () {
+        function bindAutoUpload({ inputId, formId, btnId, slotId, imgClass, waitingLabel }) {
+            const input = document.getElementById(inputId);
+            const form = document.getElementById(formId);
+            const btn = document.getElementById(btnId);
+            const slot = document.getElementById(slotId);
+            if (!input || !form || !btn || !slot) return;
+
+            input.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (!file) return;
+
+                btn.disabled = true;
+                btn.textContent = waitingLabel;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    slot.innerHTML =
+                        '<img src="' + e.target.result + '" alt="Aperçu" class="' + imgClass + '">' +
+                        '<p class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">En attente d’enregistrement…</p>';
+                    form.submit();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        bindAutoUpload({
+            inputId: 'admin-logo-input',
+            formId: 'admin-logo-form',
+            btnId: 'admin-logo-btn',
+            slotId: 'admin-logo-slot',
+            imgClass: 'w-28 h-28 object-contain rounded-lg border border-slate-200 dark:border-slate-600 bg-white p-2',
+            waitingLabel: 'Enregistrement du logo…',
+        });
+
+        bindAutoUpload({
+            inputId: 'admin-fond-input',
+            formId: 'admin-fond-form',
+            btnId: 'admin-fond-btn',
+            slotId: 'admin-fond-slot',
+            imgClass: 'w-full max-w-sm h-36 object-cover rounded-lg border border-slate-200 dark:border-slate-600',
+            waitingLabel: 'Enregistrement du fond…',
+        });
+    })();
+</script>

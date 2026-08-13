@@ -41,7 +41,30 @@ class EntrepriseProfileService
             'afficher_adresse_complete' => ['nullable'],
             'rayon_deplacement' => ['nullable', 'integer', 'min:0'],
             'siren' => ['nullable', 'string', 'max:9', 'regex:/^[0-9]{0,9}$/'],
+            'siret' => [
+                'nullable',
+                'string',
+                'max:14',
+                'regex:/^[0-9]{0,14}$/',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $digits = preg_replace('/\s+/', '', (string) $value);
+                    if ($digits === '') {
+                        return;
+                    }
+                    if (strlen($digits) === 14 && ! app(\App\Services\Facturation\BillingProfileService::class)->siretEstValide($digits)) {
+                        $fail('Le SIRET est invalide (14 chiffres, clé de Luhn).');
+                    }
+                },
+            ],
             'status_juridique' => ['nullable', 'string', 'in:en_cours,auto_entrepreneur,sarl,eurl,sas'],
+            'tva_intracommunautaire' => ['nullable', 'string', 'max:20'],
+            'assujetti_tva' => ['nullable'],
+            'taux_tva_defaut' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'capital_social' => ['nullable', 'numeric', 'min:0'],
+            'rcs_ville' => ['nullable', 'string', 'max:255'],
+            'nom_responsable' => ['nullable', 'string', 'max:255'],
+            'pdf_couleur_primaire' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'pdf_couleur_secondaire' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'afficher_nom_gerant' => ['nullable'],
             'prix_negociables' => ['nullable'],
             'rdv_uniquement_messagerie' => ['nullable'],
@@ -99,6 +122,14 @@ class EntrepriseProfileService
         $validated['vente_sur_place_disponible_par_defaut'] = $request->has('vente_sur_place_disponible_par_defaut') && $request->input('vente_sur_place_disponible_par_defaut') == '1';
         $validated['afficher_adresse_complete'] = $request->has('afficher_adresse_complete') && $request->input('afficher_adresse_complete') == '1';
         $validated['afficher_video'] = $request->has('afficher_video') && $request->input('afficher_video') == '1';
+        $validated['assujetti_tva'] = $request->has('assujetti_tva') && $request->input('assujetti_tva') == '1';
+
+        if (! empty($validated['siret'])) {
+            $validated['siret'] = preg_replace('/\s+/', '', $validated['siret']);
+            if (strlen($validated['siret']) === 14) {
+                $validated['siren'] = substr($validated['siret'], 0, 9);
+            }
+        }
 
         foreach (['notif_message_prise', 'notif_message_annulation'] as $champNotif) {
             if (array_key_exists($champNotif, $validated)) {

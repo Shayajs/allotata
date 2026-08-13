@@ -28,6 +28,7 @@
         </nav>
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            @php $doc = is_array($facture->snapshot) ? $facture->snapshot : null; @endphp
             <!-- Facture -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
                 <!-- En-tête -->
@@ -63,11 +64,21 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">Facturé par</h3>
                         <div class="space-y-1">
-                            @if($facture->entreprise)
+                            @if($doc)
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $doc['emetteur']['nom'] ?? '' }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['emetteur']['forme_juridique'] ?? '' }}</p>
+                                @if(!empty($doc['emetteur']['siret']))
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">SIRET : {{ $doc['emetteur']['siret'] }}</p>
+                                @endif
+                                @if(!empty($doc['emetteur']['adresse']))
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line">{{ $doc['emetteur']['adresse'] }}</p>
+                                @endif
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['emetteur']['email'] ?? '' }}</p>
+                            @elseif($facture->entreprise)
                                 <p class="font-semibold text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</p>
                                 <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->type_activite }}</p>
-                                @if($facture->entreprise->siren)
-                                    <p class="text-sm text-slate-600 dark:text-slate-400">SIREN : {{ $facture->entreprise->siren }}</p>
+                                @if($facture->entreprise->siret || $facture->entreprise->siren)
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->siret ? 'SIRET : '.$facture->entreprise->siret : 'SIREN : '.$facture->entreprise->siren }}</p>
                                 @endif
                                 <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->email }}</p>
                                 @if($facture->entreprise->telephone)
@@ -85,8 +96,16 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">Facturé à</h3>
                         <div class="space-y-1">
-                            <p class="font-semibold text-slate-900 dark:text-white">{{ $facture->user->name }}</p>
-                            <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->user->email }}</p>
+                            @if($doc)
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $doc['client']['nom'] ?? 'Client' }}</p>
+                                @if(!empty($doc['client']['adresse']))
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line">{{ $doc['client']['adresse'] }}</p>
+                                @endif
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['client']['email'] ?? '' }}</p>
+                            @else
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $facture->user->name ?? 'Client' }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->user->email ?? '' }}</p>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -201,7 +220,7 @@
                                             @if($facture->taux_tva > 0)
                                                 {{ $facture->taux_tva }}% ({{ number_format($reservation->prix * ($facture->taux_tva / 100), 2, ',', ' ') }} €)
                                             @else
-                                                Exonéré
+                                                Art. 293 B du CGI
                                             @endif
                                         </td>
                                         <td class="px-4 py-4 text-sm font-semibold text-right text-slate-900 dark:text-white">{{ number_format($reservation->prix * (1 + $facture->taux_tva / 100), 2, ',', ' ') }} €</td>
@@ -236,7 +255,7 @@
                                         @if($facture->taux_tva > 0)
                                             {{ $facture->taux_tva }}% ({{ number_format($facture->montant_tva, 2, ',', ' ') }} €)
                                         @else
-                                            Exonéré
+                                            Art. 293 B du CGI
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 text-sm font-semibold text-right text-slate-900 dark:text-white">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</td>
@@ -259,10 +278,16 @@
                                 <span class="font-medium text-slate-900 dark:text-white">{{ number_format($facture->montant_tva, 2, ',', ' ') }} €</span>
                             </div>
                         @endif
+                        @endif
                         <div class="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
                             <span class="text-lg font-bold text-slate-900 dark:text-white">Total TTC</span>
                             <span class="text-lg font-bold text-slate-900 dark:text-white">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</span>
                         </div>
+                        @if($doc && !empty($doc['totaux']['mention_tva']))
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ $doc['totaux']['mention_tva'] }}</p>
+                        @elseif($facture->taux_tva <= 0)
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">TVA non applicable, article 293 B du CGI</p>
+                        @endif
                     </div>
                 </div>
 
@@ -291,9 +316,19 @@
                         </span>
                     </div>
                     <div class="flex gap-3">
-                        <a href="{{ isset($isGerant) && $isGerant ? route('factures.entreprise.download', [$facture->entreprise->slug, $facture->id]) : route('factures.download', $facture->id) }}" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
-                            📄 Télécharger PDF
-                        </a>
+                        @if(isset($isGerant) && $isGerant)
+                            <a href="{{ route('factures.entreprise.download', [$facture->entreprise->slug, $facture->id]) }}" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                Télécharger PDF
+                            </a>
+                        @elseif($facture->estVisibleParClient())
+                            <a href="{{ route('factures.download', $facture->id) }}" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all">
+                                Télécharger PDF
+                            </a>
+                        @else
+                            <span class="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-500 font-semibold rounded-lg cursor-not-allowed">
+                                PDF disponible après paiement
+                            </span>
+                        @endif
                         <button onclick="window.print()" class="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-all">
                             🖨️ Imprimer
                         </button>

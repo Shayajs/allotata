@@ -20,7 +20,7 @@
         ])
     </aside>
 
-    <section class="msgchat {{ $hasConversation ? 'flex' : 'hidden md:flex' }} flex-1 min-w-0 flex-col bg-slate-50 dark:bg-slate-900/40">
+    <section class="msgchat {{ $hasConversation ? 'flex' : 'hidden md:flex' }} flex-1 min-w-0 flex-col bg-white dark:bg-slate-800">
         @if($hasConversation)
             @include('messagerie.partials.chat', [
                 'conversation' => $conversation,

@@ -1369,28 +1369,18 @@ class AdminController extends Controller
             'date_paiement' => now(),
         ]);
 
-        // Recharger la réservation pour avoir les dernières valeurs
-        $reservation->refresh();
-        
-        // La facture sera générée automatiquement par l'observer ReservationObserver
-        // Vérifier si une facture a été créée
-        $factureGeneree = $reservation->facture;
+        $reservation->refresh()->load('facture');
         $message = 'Réservation marquée comme payée.';
-        if ($factureGeneree) {
-            $message .= ' Une facture a été générée automatiquement.';
-        } else {
-            // Si l'observer n'a pas fonctionné, essayer de générer la facture manuellement
+        if ($reservation->facture) {
             try {
-                $facture = \App\Models\Facture::generateFromReservation($reservation);
-                if ($facture) {
-                    $message .= ' Une facture a été générée.';
-                } else {
-                    $message .= ' Attention : la facture n\'a pas pu être générée automatiquement.';
-                }
+                app(\App\Services\Facturation\FactureEmissionService::class)
+                    ->acquitter($reservation->facture, $reservation->date_paiement);
+                $message .= ' La facture a été acquittée.';
             } catch (\Exception $e) {
-                \Log::error('Erreur lors de la génération manuelle de la facture : ' . $e->getMessage());
-                $message .= ' Erreur lors de la génération de la facture.';
+                \Log::error('Erreur lors de l\'acquittement de la facture : '.$e->getMessage());
             }
+        } else {
+            $message .= ' La facture sera émise lorsque la prestation sera marquée comme terminée.';
         }
 
         return back()->with('success', $message);

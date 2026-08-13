@@ -185,25 +185,16 @@ class MessagerieController extends Controller
 
         $contenu = Message::sanitizeContenuForStorage($validated['contenu'] ?? null);
 
+        $conversation = $this->resolveClientConversation($request, $user, $entreprise);
+
         // Vérifier qu'il y a au moins du contenu ou une image
         if ($contenu === null && ! $request->hasFile('image')) {
             $err = (! empty($validated['contenu']) && str_contains($validated['contenu'], 'data:image'))
                 ? 'Coller une image dans le texte ne fonctionne pas. Utilisez le bouton photo à droite du champ, puis Envoyez.'
                 : 'Vous devez envoyer un message ou une image.';
 
-            return back()->withErrors(['error' => $err]);
+            return $this->redirectToDashboardConversation($conversation, false)->withErrors(['error' => $err]);
         }
-
-        // Récupérer ou créer la conversation
-        $conversation = Conversation::firstOrCreate(
-            [
-                'user_id' => $user->id,
-                'entreprise_id' => $entreprise->id,
-            ],
-            [
-                'est_archivee' => false,
-            ]
-        );
 
         $imagePath = null;
 
@@ -229,7 +220,7 @@ class MessagerieController extends Controller
 
         $this->notifierDestinataireMessage($conversation, $message, $user, $entreprise, false);
 
-        return back()->with('success', 'Message envoyé !');
+        return $this->redirectToDashboardConversation($conversation, false)->with('success', 'Message envoyé !');
     }
 
     /**
@@ -283,7 +274,7 @@ class MessagerieController extends Controller
                 ? 'Coller une image dans le texte ne fonctionne pas. Utilisez le bouton photo à droite du champ, puis Envoyez.'
                 : 'Vous devez envoyer un message ou une image.';
 
-            return back()->withErrors(['error' => $err]);
+            return $this->redirectToDashboardConversation($conversation, true)->withErrors(['error' => $err]);
         }
 
         $imagePath = null;
@@ -307,7 +298,7 @@ class MessagerieController extends Controller
 
         $this->notifierDestinataireMessage($conversation, $message, $user, $entreprise, true);
 
-        return back()->with('success', 'Message envoyé !');
+        return $this->redirectToDashboardConversation($conversation, true)->with('success', 'Message envoyé !');
     }
 
     /**
@@ -464,7 +455,7 @@ class MessagerieController extends Controller
             ['conversation_id' => $conversation->id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Votre proposition de rendez-vous a été envoyée !');
+        return $this->redirectToDashboardConversation($conversation, false)->with('success', 'Votre proposition de rendez-vous a été envoyée !');
     }
 
     /**
@@ -559,7 +550,7 @@ class MessagerieController extends Controller
             ['conversation_id' => $conversation->id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Proposition de rendez-vous envoyée !');
+        return $this->redirectToDashboardConversation($conversation, true)->with('success', 'Proposition de rendez-vous envoyée !');
     }
 
     /**
@@ -615,7 +606,7 @@ class MessagerieController extends Controller
             ['conversation_id' => $proposition->conversation_id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Votre proposition de prix a été envoyée !');
+        return $this->redirectToDashboardConversation($proposition->conversation, false)->with('success', 'Votre proposition de prix a été envoyée !');
     }
 
     /**
@@ -719,7 +710,7 @@ class MessagerieController extends Controller
             ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Votre proposition de modification a été envoyée !');
+        return $this->redirectToDashboardConversation($conversation, false)->with('success', 'Votre proposition de modification a été envoyée !');
     }
 
     /**
@@ -818,7 +809,7 @@ class MessagerieController extends Controller
             ['reservation_id' => $reservation->id, 'proposition_id' => $proposition->id]
         );
 
-        return back()->with('success', 'Votre proposition de modification a été envoyée !');
+        return $this->redirectToDashboardConversation($conversation, true)->with('success', 'Votre proposition de modification a été envoyée !');
     }
 
     /**
@@ -974,7 +965,7 @@ class MessagerieController extends Controller
             ? 'Modification acceptée ! La réservation a été mise à jour avec succès.'
             : 'Rendez-vous accepté et créé avec succès !';
 
-        return back()->with('success', $successMessage);
+        return $this->redirectToDashboardConversation($proposition->conversation, ! $isClient)->with('success', $successMessage);
     }
 
     /**
@@ -1054,7 +1045,7 @@ class MessagerieController extends Controller
                     $notes = trim(explode('[Raison du refus]', $notes)[0]);
                 }
 
-                return back()->with([
+                return $this->redirectToDashboardConversation($proposition->conversation, $estGerant)->with([
                     'success' => 'Proposition refusée.',
                     'open_contre_proposition' => true,
                     'contre_proposition_data' => [
@@ -1071,7 +1062,7 @@ class MessagerieController extends Controller
             }
         }
 
-        return back()->with('success', 'Proposition refusée.');
+        return $this->redirectToDashboardConversation($proposition->conversation, $estGerant)->with('success', 'Proposition refusée.');
     }
 
     /**
@@ -1250,5 +1241,43 @@ class MessagerieController extends Controller
             'has_conflict' => count($conflits) > 0,
             'conflits' => $conflits,
         ]);
+    }
+
+    /**
+     * Conversation client ciblée (évite d’écrire dans une convo archivée via firstOrCreate).
+     */
+    private function resolveClientConversation(Request $request, $user, Entreprise $entreprise): Conversation
+    {
+        if ($request->filled('conversation_id')) {
+            $conversation = Conversation::where('id', $request->conversation_id)
+                ->where('user_id', $user->id)
+                ->where('entreprise_id', $entreprise->id)
+                ->first();
+            if ($conversation) {
+                return $conversation;
+            }
+        }
+
+        $conversation = Conversation::where('user_id', $user->id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('est_archivee', false)
+            ->first();
+
+        if ($conversation) {
+            return $conversation;
+        }
+
+        return Conversation::create([
+            'user_id' => $user->id,
+            'entreprise_id' => $entreprise->id,
+            'est_archivee' => false,
+        ]);
+    }
+
+    private function redirectToDashboardConversation(Conversation $conversation, bool $asGerant)
+    {
+        $conversation->loadMissing('entreprise');
+
+        return redirect()->to($conversation->dashboardUrl($asGerant));
     }
 }

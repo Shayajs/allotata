@@ -11,30 +11,42 @@ class InvoiceEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $facture;
-    public $isForClient;
+    public function __construct(
+        public Facture $facture,
+        public bool $isForClient = true,
+        public ?string $pdfBinary = null,
+    ) {}
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct(Facture $facture, bool $isForClient = true)
-    {
-        $this->facture = $facture;
-        $this->isForClient = $isForClient;
-    }
-
-    /**
-     * Build the message.
-     */
     public function build()
     {
-        $subject = "Facture #{$this->facture->numero} - {$this->facture->entreprise->nom}";
+        $this->facture->loadMissing(['entreprise', 'user']);
 
-        return $this->subject($subject)
-                    ->view('emails.invoice')
-                    ->with([
-                        'facture' => $this->facture,
-                        'isForClient' => $this->isForClient,
-                    ]);
+        $numero = $this->facture->numero_facture;
+        $nomEntreprise = $this->facture->entreprise?->nom ?? 'Allotata';
+
+        $mail = $this->subject("Facture {$numero} - {$nomEntreprise}")
+            ->view('emails.invoice')
+            ->with([
+                'facture' => $this->facture,
+                'isForClient' => $this->isForClient,
+                'clientName' => $this->facture->user?->name
+                    ?? ($this->facture->snapshot['client']['nom'] ?? 'Client'),
+                'invoiceNumber' => $numero,
+                'entreprise' => $nomEntreprise,
+                'invoiceDate' => optional($this->facture->date_facture)->format('d/m/Y'),
+                'dueDate' => optional($this->facture->date_echeance)->format('d/m/Y'),
+                'amount' => $this->facture->montant_ttc,
+                'invoiceUrl' => $this->isForClient
+                    ? route('factures.show', $this->facture->id)
+                    : route('factures.entreprise.show', [$this->facture->entreprise->slug, $this->facture->id]),
+            ]);
+
+        if ($this->pdfBinary) {
+            $mail->attachData($this->pdfBinary, 'facture-'.$numero.'.pdf', [
+                'mime' => 'application/pdf',
+            ]);
+        }
+
+        return $mail;
     }
 }

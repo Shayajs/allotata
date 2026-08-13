@@ -2,99 +2,63 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Reservation;
 use App\Models\Facture;
+use App\Models\Reservation;
 use Illuminate\Console\Command;
 
 class GenerateMissingInvoices extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'factures:generate-missing';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Génère les factures manquantes pour les réservations payées qui n\'ont pas encore de facture';
+    protected $description = 'Émet les factures manquantes pour les prestations terminées';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $this->info('Recherche des réservations payées sans facture...');
+        $this->info('Recherche des réservations terminées sans facture...');
 
         try {
-            // Trouver toutes les réservations payées
-            $reservationsPayees = Reservation::where('est_paye', true)
+            $reservations = Reservation::where('statut', 'terminee')
+                ->whereDoesntHave('facture')
                 ->with(['entreprise', 'user'])
-                ->get();
-
-            if ($reservationsPayees->isEmpty()) {
-                $this->info('Aucune réservation payée trouvée.');
-                return 0;
-            }
-
-            // Filtrer celles qui n'ont pas de facture
-            $reservations = $reservationsPayees->filter(function($reservation) {
-                // Vérifier directement si une facture existe pour cette réservation
-                return !Facture::where('reservation_id', $reservation->id)->exists();
-            });
+                ->get()
+                ->filter(fn (Reservation $reservation) => ! $reservation->aDejaFacture());
 
             if ($reservations->isEmpty()) {
-                $this->info('Toutes les réservations payées ont déjà une facture.');
+                $this->info('Toutes les prestations terminées ont déjà une facture.');
+
                 return 0;
             }
 
-            $this->info("Trouvé {$reservations->count()} réservation(s) payée(s) sans facture.");
-
-            $bar = $this->output->createProgressBar($reservations->count());
-            $bar->start();
+            $this->info("Trouvé {$reservations->count()} réservation(s) terminée(s) sans facture.");
 
             $generated = 0;
             $errors = 0;
 
             foreach ($reservations as $reservation) {
                 try {
-                    // Vérifier à nouveau avant de générer (au cas où une facture aurait été créée entre temps)
-                    $factureExistante = Facture::where('reservation_id', $reservation->id)->first();
-                    if ($factureExistante) {
-                        $bar->advance();
-                        continue;
-                    }
-
                     $facture = Facture::generateFromReservation($reservation);
                     if ($facture) {
                         $generated++;
-                        $this->line("\n✓ Facture générée pour la réservation #{$reservation->id} : {$facture->numero_facture}");
+                        $this->line("✓ Facture {$facture->numero_facture} pour la réservation #{$reservation->id}");
                     } else {
                         $errors++;
-                        $this->line("\n✗ Impossible de générer la facture pour la réservation #{$reservation->id}");
+                        $this->line("✗ Impossible d'émettre la facture pour la réservation #{$reservation->id}");
                     }
                 } catch (\Exception $e) {
                     $errors++;
-                    $this->error("\n✗ Erreur pour la réservation #{$reservation->id} : " . $e->getMessage());
+                    $this->error("✗ Réservation #{$reservation->id} : ".$e->getMessage());
                 }
-                $bar->advance();
             }
 
-            $bar->finish();
-            $this->newLine(2);
-
-            $this->info("✓ {$generated} facture(s) générée(s) avec succès.");
+            $this->info("{$generated} facture(s) émise(s).");
             if ($errors > 0) {
-                $this->warn("⚠ {$errors} erreur(s) rencontrée(s).");
+                $this->warn("{$errors} erreur(s).");
             }
 
             return 0;
         } catch (\Exception $e) {
-            $this->error("Erreur de connexion à la base de données : " . $e->getMessage());
-            $this->warn("Vérifiez votre configuration de base de données dans le fichier .env");
+            $this->error('Erreur : '.$e->getMessage());
+
             return 1;
         }
     }

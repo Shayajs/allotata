@@ -177,7 +177,7 @@
                                                 Non payé
                                             @endif
                                         </p>
-                                        @if($reservation->est_paye && $reservation->facture)
+                                        @if($reservation->est_paye && $reservation->facture && $reservation->facture->estVisibleParClient())
                                             <a href="{{ route('factures.show', $reservation->facture->id) }}" class="mt-1 inline-block text-xs text-green-600 dark:text-green-400 hover:underline">
                                                 Voir la facture →
                                             </a>

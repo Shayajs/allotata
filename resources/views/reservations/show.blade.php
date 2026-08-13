@@ -357,6 +357,45 @@
                             </div>
                         @endif
 
+                        @if(in_array($reservation->statut, ['confirmee', 'en_attente']))
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Prestation terminée</h3>
+                                <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                    La facture est émise et figée à cet instant. Aucune modification n'est ensuite possible.
+                                </p>
+                                @if($profilFacturationComplet ?? false)
+                                    <form action="{{ route('reservations.terminer', [$entreprise->slug, $reservation->id]) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" onclick="return confirm('Émettre la facture maintenant ? Elle ne pourra plus être modifiée.');"
+                                            class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all">
+                                            Marquer la prestation comme terminée
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                        <p class="text-sm text-amber-800 dark:text-amber-300 mb-2">
+                                            Complétez le profil de facturation (SIRET, adresse, forme juridique) avant d'émettre la facture.
+                                        </p>
+                                        <ul class="list-disc ml-5 text-sm text-amber-700 dark:text-amber-400 mb-3">
+                                            @foreach(($champsFacturationManquants ?? []) as $libelle)
+                                                <li>{{ $libelle }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <a href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres']) }}" class="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg">
+                                            Compléter le profil
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+                        @elseif($reservation->statut === 'terminee' && $reservation->facture)
+                            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <p class="text-sm text-blue-800 dark:text-blue-300 mb-2">Facture {{ $reservation->facture->numero_facture }} émise (document figé).</p>
+                                <a href="{{ route('factures.entreprise.download', [$entreprise->slug, $reservation->facture->id]) }}" class="text-sm font-semibold text-blue-700 dark:text-blue-400 hover:underline">
+                                    Télécharger le PDF
+                                </a>
+                            </div>
+                        @endif
+
                         <!-- Ajouter des notes pour les réservations confirmées -->
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Ajouter une note</h3>

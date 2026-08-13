@@ -15,8 +15,8 @@
         </button>
     </div>
 
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            @if(session('success') && ($activeTab ?? '') !== 'messagerie')
+                <div data-flash-autohide class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
                 </div>
             @endif

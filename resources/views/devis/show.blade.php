@@ -28,7 +28,7 @@
     {{-- Informations du devis --}}
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 mb-6">
         <div class="flex items-start justify-between mb-4">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Devis #{{ $devisItem->id }}</h1>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $devisItem->numero_devis ? 'Devis '.$devisItem->numero_devis : 'Devis #'.$devisItem->id }}</h1>
             @php
                 $statutColors = [
                     'en_attente' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -37,9 +37,17 @@
                     'refuse' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                 ];
             @endphp
+            <div class="flex items-center gap-2">
             <span class="px-3 py-1 text-sm font-medium rounded-full {{ $statutColors[$devisItem->statut] ?? 'bg-slate-100 text-slate-700' }}">
                 {{ $devisItem->statut_libelle }}
             </span>
+            @if($devisItem->snapshot || $devisItem->numero_devis)
+                <a href="{{ route('devis.pdf', [$entreprise->slug, $devisItem->id]) }}"
+                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg">
+                    PDF
+                </a>
+            @endif
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4 text-sm mb-6">
@@ -155,9 +163,14 @@
                         <textarea name="notes_prestataire" rows="3" placeholder="Détails de votre proposition..."
                                   class="w-full px-4 py-2.5 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none">{{ old('notes_prestataire') }}</textarea>
                     </div>
-                    <button type="submit" class="w-full px-6 py-3 text-white font-bold rounded-xl bg-green-600 hover:bg-green-700 transition shadow-lg">
+                    <button type="submit" class="w-full px-6 py-3 text-white font-bold rounded-xl bg-green-600 hover:bg-green-700 transition shadow-lg {{ $entreprise->profilFacturationComplet() ? '' : 'opacity-60' }}">
                         Envoyer la proposition au client
                     </button>
+                    @unless($entreprise->profilFacturationComplet())
+                        <p class="text-xs text-amber-700 dark:text-amber-400">
+                            Complétez le <a class="underline" href="{{ route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres']) }}">profil de facturation</a> (SIRET, adresse) avant d'envoyer.
+                        </p>
+                    @endunless
                 </div>
             </form>
         </div>

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Entreprise;
 use App\Models\EntrepriseMembre;
 use App\Models\Reservation;
-use App\Models\Facture;
 use App\Models\Conversation;
 use App\Models\HorairesOuverture;
 use App\Models\CourseModule;
@@ -719,21 +718,6 @@ class EntrepriseDashboardController extends Controller
      */
     private function getFactures(Request $request, Entreprise $entreprise)
     {
-        // Générer automatiquement les factures pour les réservations payées sans facture
-        $reservationsPayeesSansFacture = Reservation::where('entreprise_id', $entreprise->id)
-            ->where('est_paye', true)
-            ->whereDoesntHave('facture')
-            ->with(['user'])
-            ->get();
-        
-        foreach ($reservationsPayeesSansFacture as $reservation) {
-            try {
-                Facture::generateFromReservation($reservation);
-            } catch (\Exception $e) {
-                \Log::error("Erreur lors de la génération automatique de facture pour la réservation #{$reservation->id}: " . $e->getMessage());
-            }
-        }
-
         $query = $entreprise->factures()->with(['user', 'reservation']);
 
         // Recherche

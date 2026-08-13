@@ -97,8 +97,8 @@
 
         <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
             <!-- Messages de succès -->
-            @if(session('success'))
-                <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            @if(session('success') && $activeTab !== 'messagerie')
+                <div data-flash-autohide class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <p class="text-green-800 dark:text-green-400">{{ session('success') }}</p>
                 </div>
             @endif
@@ -277,6 +277,7 @@
                 }
             }
         </script>
+        @include('partials.flash-autohide')
 
         <!-- Modale de modification de réservation -->
         <div id="modify-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

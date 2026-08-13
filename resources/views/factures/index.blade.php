@@ -169,11 +169,15 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex items-center justify-end gap-3">
                                                 <a href="{{ route('factures.show', $facture->id) }}" class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg transition text-sm font-medium">
-                                                    👁️ Voir
+                                                    Voir
                                                 </a>
+                                                @if($facture->estVisibleParClient())
                                                 <a href="{{ route('factures.download', $facture->id) }}" class="px-3 py-1 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 rounded-lg transition text-sm font-medium">
-                                                    📄 PDF
-                                            </a>
+                                                    PDF
+                                                </a>
+                                                @else
+                                                <span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-lg text-sm">PDF fermé</span>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

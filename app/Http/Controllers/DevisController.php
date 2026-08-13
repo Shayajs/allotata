@@ -136,13 +136,18 @@ class DevisController extends Controller
         $dateProposee = $validated['date_proposee'] . ' ' . $validated['heure_proposee'];
 
         $service = app(DevisService::class);
-        $service->proposer($devisItem, [
-            'montant_propose' => $validated['montant_propose'],
-            'type_structure_propose' => $validated['type_structure_propose'],
-            'date_proposee' => $dateProposee,
-            'duree_proposee_minutes' => $validated['duree_proposee_minutes'],
-            'notes_prestataire' => $validated['notes_prestataire'] ?? null,
-        ]);
+        try {
+            $service->proposer($devisItem, [
+                'montant_propose' => $validated['montant_propose'],
+                'type_structure_propose' => $validated['type_structure_propose'],
+                'date_proposee' => $dateProposee,
+                'duree_proposee_minutes' => $validated['duree_proposee_minutes'],
+                'notes_prestataire' => $validated['notes_prestataire'] ?? null,
+            ]);
+        } catch (\App\Exceptions\BillingProfileIncompleteException $e) {
+            return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
+                ->with('error', 'Complétez le profil de facturation avant d\'envoyer un devis : '.implode(', ', $e->manquants).'.');
+        }
 
         // Notification au client
         if ($devisItem->user_id) {
@@ -236,5 +241,61 @@ class DevisController extends Controller
 
         return redirect()->route('public.entreprise', $slug)
             ->with('info', 'Vous avez refusé le devis.');
+    }
+
+    /**
+     * Télécharger le PDF du devis (prestataire).
+     */
+    public function download($slug, $id)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
+            abort(403);
+        }
+
+        $devisItem = Devis::where('id', $id)
+            ->where('entreprise_id', $entreprise->id)
+            ->with(['typeService', 'user', 'entreprise'])
+            ->firstOrFail();
+
+        if (! $devisItem->snapshot && ! $devisItem->numero_devis) {
+            abort(404, 'Le devis n\'a pas encore été envoyé.');
+        }
+
+        $numero = $devisItem->numero_devis ?: 'devis-'.$devisItem->id;
+
+        return app(\App\Services\Facturation\PdfDocumentRenderer::class)
+            ->devisPdf($devisItem)
+            ->download($numero.'.pdf');
+    }
+
+    /**
+     * Télécharger le PDF du devis (client).
+     */
+    public function downloadClient($slug, $id)
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            return redirect()->route('login');
+        }
+
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+        $devisItem = Devis::where('id', $id)
+            ->where('entreprise_id', $entreprise->id)
+            ->where('user_id', $userId)
+            ->with(['typeService', 'user', 'entreprise'])
+            ->firstOrFail();
+
+        if (! in_array($devisItem->statut, ['propose', 'accepte'], true) || ! $devisItem->snapshot) {
+            abort(403, 'Ce devis n\'est pas encore disponible en PDF.');
+        }
+
+        $numero = $devisItem->numero_devis ?: 'devis-'.$devisItem->id;
+
+        return app(\App\Services\Facturation\PdfDocumentRenderer::class)
+            ->devisPdf($devisItem)
+            ->download($numero.'.pdf');
     }
 }

@@ -61,10 +61,18 @@
                                 @endif
                             </div>
                         </div>
+                        <div class="flex items-center gap-2">
                         <a href="{{ route('devis.show', [$entreprise->slug, $d->id]) }}" 
                            class="px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition">
                             {{ $d->estEnAttente() ? 'Proposer' : 'Détails' }}
                         </a>
+                        @if($d->numero_devis || $d->snapshot)
+                            <a href="{{ route('devis.pdf', [$entreprise->slug, $d->id]) }}"
+                               class="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                PDF
+                            </a>
+                        @endif
+                        </div>
                     </div>
                 </div>
             @endforeach

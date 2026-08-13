@@ -6,6 +6,8 @@ use App\Models\Entreprise;
 use App\Models\Notification;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Services\Facturation\BillingProfileService;
+use App\Services\Facturation\FactureEmissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -98,7 +100,7 @@ class ReservationController extends Controller
 
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
-            ->with(['user', 'typeService', 'membre.user'])
+            ->with(['user', 'typeService', 'membre.user', 'facture'])
             ->firstOrFail();
 
         // Charger les membres si multi-personnes
@@ -123,6 +125,8 @@ class ReservationController extends Controller
             'membres' => $membres,
             'aGestionMultiPersonnes' => $entreprise->aGestionMultiPersonnes(),
             'conversation' => $conversation,
+            'profilFacturationComplet' => $entreprise->profilFacturationComplet(),
+            'champsFacturationManquants' => $entreprise->champsFacturationManquants(),
         ]);
     }
 
@@ -423,33 +427,25 @@ class ReservationController extends Controller
             'notes' => $reservation->notes.($validated['notes_paiement'] ? "\n\n[Paiement] ".$validated['notes_paiement'] : ''),
         ]);
 
-        // Recharger la réservation pour avoir les dernières valeurs
-        $reservation->refresh();
+        $reservation->refresh()->load('facture');
 
-        // Envoyer un email au client pour confirmer le paiement
+        $message = 'Le paiement a été marqué comme effectué. Le client a été notifié.';
+        if ($reservation->facture) {
+            try {
+                app(FactureEmissionService::class)->acquitter($reservation->facture, $datePaiement);
+                $message .= ' La facture est désormais accessible au client.';
+            } catch (\Exception $e) {
+                \Log::error('Erreur lors de l\'acquittement de la facture : '.$e->getMessage());
+            }
+        } else {
+            $message .= ' La facture sera émise lorsque la prestation sera marquée comme terminée.';
+        }
+
         if ($reservation->user_id) {
             try {
                 \App\Helpers\EmailHelper::sendPaymentReceived($reservation);
             } catch (\Exception $e) {
                 \Log::error("Erreur lors de l'envoi de l'email de paiement : ".$e->getMessage());
-            }
-        }
-
-        // La facture sera générée automatiquement par l'observer ReservationObserver
-        // Vérifier si une facture a été créée
-        $factureGeneree = $reservation->facture;
-        $message = 'Le paiement a été marqué comme effectué. Le client a été notifié.';
-        if ($factureGeneree) {
-            $message .= ' Une facture a été générée automatiquement.';
-        } else {
-            // Si l'observer n'a pas fonctionné, essayer de générer la facture manuellement
-            try {
-                $facture = \App\Models\Facture::generateFromReservation($reservation);
-                if ($facture) {
-                    $message .= ' Une facture a été générée.';
-                }
-            } catch (\Exception $e) {
-                \Log::error('Erreur lors de la génération manuelle de la facture : '.$e->getMessage());
             }
         }
 
@@ -463,6 +459,61 @@ class ReservationController extends Controller
                 route('dashboard'),
                 ['reservation_id' => $reservation->id, 'entreprise_id' => $entreprise->id]
             );
+        }
+
+        return redirect()->route('reservations.show', [$slug, $id])
+            ->with('success', $message);
+    }
+
+    /**
+     * Marquer la prestation comme terminée : émet la facture figée.
+     */
+    public function terminer(Request $request, $slug, $id)
+    {
+        $user = Auth::user();
+        $entreprise = Entreprise::where('slug', $slug)->firstOrFail();
+
+        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
+            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
+        }
+
+        $reservation = Reservation::where('id', $id)
+            ->where('entreprise_id', $entreprise->id)
+            ->firstOrFail();
+
+        if (! in_array($reservation->statut, ['confirmee', 'en_attente'], true)) {
+            return back()->with('error', 'Cette réservation ne peut pas être marquée comme terminée.');
+        }
+
+        $manquants = app(BillingProfileService::class)->champsManquants($entreprise);
+        if ($manquants !== []) {
+            return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
+                ->with('error', 'Complétez le profil de facturation avant d\'émettre une facture : '.implode(', ', $manquants).'.');
+        }
+
+        $reservation->update(['statut' => 'terminee']);
+        $reservation->refresh()->load('facture');
+
+        $message = 'La prestation a été marquée comme terminée.';
+        if (! $reservation->facture) {
+            try {
+                $facture = app(FactureEmissionService::class)->emettrePourReservation($reservation);
+                if ($facture) {
+                    $message .= ' Facture '.$facture->numero_facture.' émise.';
+                }
+            } catch (\App\Exceptions\BillingProfileIncompleteException $e) {
+                return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
+                    ->with('error', 'Profil de facturation incomplet : '.implode(', ', $e->manquants).'.');
+            } catch (\Exception $e) {
+                \Log::error('Erreur émission facture : '.$e->getMessage());
+                $message .= ' La facture n\'a pas pu être émise automatiquement.';
+            }
+        } else {
+            $message .= ' Facture '.$reservation->facture->numero_facture.' émise.';
+        }
+
+        if ($reservation->facture && ! $reservation->est_paye) {
+            $message .= ' Le client pourra la télécharger une fois le paiement confirmé.';
         }
 
         return redirect()->route('reservations.show', [$slug, $id])
@@ -606,6 +657,14 @@ class ReservationController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        if (($validated['statut'] ?? null) === 'terminee') {
+            $manquants = app(BillingProfileService::class)->champsManquants($entreprise);
+            if ($manquants !== []) {
+                return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
+                    ->with('error', 'Complétez le profil de facturation avant d\'émettre une facture : '.implode(', ', $manquants).'.');
+            }
+        }
 
         // Si user_id est fourni, vérifier que c'est bien un client
         if ($validated['user_id'] ?? null) {

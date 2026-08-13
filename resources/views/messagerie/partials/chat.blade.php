@@ -4,83 +4,26 @@
         ? route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'messagerie'])
         : route('dashboard', ['tab' => 'messagerie']));
 @endphp
+@php
+    $hasReservation = isset($conversation->reservation) && $conversation->reservation;
+    $hasProduit = $conversation->produit_id && $conversation->produit;
+    $hasService = $conversation->type_service_id && $conversation->typeService;
+    $hasContexte = $hasReservation || $hasProduit || $hasService;
+@endphp
 <div class="h-full min-h-0 flex flex-col overflow-hidden">
-    <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 sm:p-4">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="flex-1 min-h-0 flex flex-col p-3 sm:p-4">
+            <div class="grid grid-cols-1 {{ $hasReservation ? 'xl:grid-cols-3 xl:items-stretch' : '' }} gap-4 flex-1 min-h-0">
                 <!-- Colonne principale : Messages -->
-                <div class="lg:col-span-2 space-y-6">
-            <!-- En-tête de conversation amélioré -->
-            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-4 sm:p-6 mb-6">
-                <div class="flex items-center gap-3 sm:gap-4">
-                    <a href="{{ $listUrl }}" class="md:hidden flex-shrink-0 p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Retour aux conversations">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                    </a>
-                    @if(isset($isGerant) && $isGerant)
-                        <div class="relative" data-user-id="{{ $conversation->user->id }}">
-                            <x-avatar :user="$conversation->user" size="2xl" class="shadow-lg" />
-                            <div class="absolute bottom-0 right-0">
-                                <x-presence-badge :user="$conversation->user" size="md" />
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-                                    {{ $conversation->user->name }}
-                                </h1>
-                            </div>
-                            <p class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
-                                {{ $conversation->user->email }}
-                            </p>
-                            <p class="text-sm text-slate-500 dark:text-slate-500 mt-1 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                </svg>
-                                {{ $entreprise->nom }}
-                            </p>
-                        </div>
-                    @else
-                        <div class="relative">
-                            @if($entreprise->logo)
-                                <img 
-                                    src="{{ asset('media/' . $entreprise->logo) }}" 
-                                    alt="{{ $entreprise->nom }}"
-                                    class="w-20 h-20 rounded-2xl object-cover border-3 border-slate-200 dark:border-slate-700 shadow-lg"
-                                >
-                            @else
-                                <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500 to-orange-500 flex items-center justify-center text-white font-bold text-2xl border-3 border-slate-200 dark:border-slate-700 shadow-lg">
-                                    {{ strtoupper(substr($entreprise->nom, 0, 1)) }}
-                                </div>
-                            @endif
-                            <div class="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-3 border-white dark:border-slate-800"></div>
-                        </div>
-                        <div class="flex-1">
-                            <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                                {{ $entreprise->nom }}
-                            </h1>
-                            <p class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
-                                {{ $entreprise->type_activite }}
-                            </p>
-                            @if($entreprise->afficher_nom_gerant && $entreprise->user)
-                                <p class="text-sm text-slate-500 dark:text-slate-500 mt-1 flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                    Gérée par {{ $entreprise->user->name }}
-                                </p>
-                            @endif
-                        </div>
-                    @endif
-                    
-                    @if(isset($conversation->reservation) && $conversation->reservation)
-                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div class="{{ $hasReservation ? 'xl:col-span-2' : '' }} flex flex-col gap-3 min-w-0 min-h-0 h-full">
+            <div class="flex items-start gap-2 {{ $hasContexte ? '' : 'md:hidden' }}">
+                <a href="{{ $listUrl }}" class="md:hidden flex-shrink-0 p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Retour aux conversations">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </a>
+                <div class="flex-1 min-w-0 space-y-2">
+                    @if($hasReservation)
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
                             <div class="flex items-center gap-2 mb-1">
                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -88,40 +31,34 @@
                                 <span class="text-sm font-semibold text-blue-900 dark:text-blue-300">Réservation #{{ $conversation->reservation->id }}</span>
                             </div>
                             <p class="text-xs text-blue-700 dark:text-blue-400">
-                                Cette conversation concerne la réservation du {{ $conversation->reservation->date_reservation->format('d/m/Y à H:i') }}
+                                {{ $conversation->reservation->date_reservation->format('d/m/Y à H:i') }}
                             </p>
                             @if(isset($isGerant) && $isGerant)
-                                <a href="{{ route('reservations.show', [$entreprise->slug, $conversation->reservation->id]) }}" class="mt-2 inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                <a href="{{ route('reservations.show', [$entreprise->slug, $conversation->reservation->id]) }}" class="mt-1 inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline">
                                     Voir la réservation →
                                 </a>
                             @endif
                         </div>
                     @endif
 
-                    @if($conversation->produit_id && $conversation->produit)
+                    @if($hasProduit)
                         @php
                             $produit = $conversation->produit;
                             $promotion = $produit->promotionActive()->first();
                             $prixActuel = $promotion ? $promotion->prix_promotion : $produit->prix;
                         @endphp
-                        <div class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                </svg>
-                                <span class="text-sm font-semibold text-green-900 dark:text-green-300">Commande de produit</span>
-                            </div>
-                            <div class="flex items-start gap-3">
+                        <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                            <div class="flex items-center gap-3">
                                 @if($produit->imageCouverture || $produit->images->first())
-                                    <img src="{{ asset('media/' . ($produit->imageCouverture ? $produit->imageCouverture->image_path : $produit->images->first()->image_path)) }}" alt="{{ $produit->nom }}" class="w-16 h-16 rounded-lg object-cover">
+                                    <img src="{{ asset('media/' . ($produit->imageCouverture ? $produit->imageCouverture->image_path : $produit->images->first()->image_path)) }}" alt="{{ $produit->nom }}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
                                 @endif
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-slate-900 dark:text-white">{{ $produit->nom }}</h4>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-green-800 dark:text-green-300">Commande de produit</p>
+                                    <h4 class="font-bold text-slate-900 dark:text-white truncate">{{ $produit->nom }}</h4>
                                     @if($promotion)
-                                        <p class="text-sm text-slate-600 dark:text-slate-400">
+                                        <p class="text-sm">
                                             <span class="line-through text-slate-400">{{ number_format($produit->prix, 2, ',', ' ') }} €</span>
                                             <span class="font-bold text-red-600 dark:text-red-400 ml-1">{{ number_format($prixActuel, 2, ',', ' ') }} €</span>
-                                            <span class="ml-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded">PROMO</span>
                                         </p>
                                     @else
                                         <p class="text-sm font-bold text-green-600 dark:text-green-400">{{ number_format($prixActuel, 2, ',', ' ') }} €</p>
@@ -131,23 +68,18 @@
                         </div>
                     @endif
 
-                    @if($conversation->type_service_id && $conversation->typeService)
+                    @if($hasService)
                         @php
                             $service = $conversation->typeService;
                         @endphp
-                        <div class="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-                            <div class="flex items-center gap-2 mb-2">
-                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                </svg>
-                                <span class="text-sm font-semibold text-purple-900 dark:text-purple-300">Demande de service</span>
-                            </div>
-                            <div class="flex items-start gap-3">
+                        <div class="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+                            <div class="flex items-center gap-3">
                                 @if($service->imageCouverture || $service->images->first())
-                                    <img src="{{ asset('media/' . ($service->imageCouverture ? $service->imageCouverture->image_path : $service->images->first()->image_path)) }}" alt="{{ $service->nom }}" class="w-16 h-16 rounded-lg object-cover">
+                                    <img src="{{ asset('media/' . ($service->imageCouverture ? $service->imageCouverture->image_path : $service->images->first()->image_path)) }}" alt="{{ $service->nom }}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
                                 @endif
-                                <div class="flex-1">
-                                    <h4 class="font-bold text-slate-900 dark:text-white">{{ $service->nom }}</h4>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-purple-800 dark:text-purple-300">Demande de service</p>
+                                    <h4 class="font-bold text-slate-900 dark:text-white truncate">{{ $service->nom }}</h4>
                                     <p class="text-sm text-slate-600 dark:text-slate-400">
                                         {{ number_format($service->prix, 2, ',', ' ') }} € • {{ $service->duree_formatee }}
                                     </p>
@@ -159,7 +91,7 @@
             </div>
 
             @if(session('success'))
-                <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800 rounded-xl shadow-sm">
+                <div data-flash-autohide class="mb-3 p-3 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800 rounded-xl shadow-sm">
                     <p class="text-green-800 dark:text-green-400 font-medium flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -385,7 +317,7 @@
             @endif
 
             <!-- Zone de messages améliorée style chat moderne -->
-            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden flex flex-col" style="height: min(520px, 55vh); min-height: 280px;">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 overflow-hidden flex flex-col flex-1 min-h-[18rem]">
                 <!-- En-tête de la zone de messages -->
                 <div class="bg-gradient-to-r from-green-500/10 to-orange-500/10 dark:from-green-500/20 dark:to-orange-500/20 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
                     <div class="flex items-center justify-between">
@@ -567,6 +499,7 @@
                 <div class="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 p-4">
                     <form action="{{ isset($isGerant) && $isGerant ? route('messagerie.send-gerant', [$entreprise->slug, $conversation->id]) : route('messagerie.send', $entreprise->slug) }}" method="POST" enctype="multipart/form-data" id="message-form">
                         @csrf
+                        <input type="hidden" name="conversation_id" value="{{ $conversation->id }}">
                         <div class="flex items-end gap-3">
                             <div class="flex-1 relative">
                                 <textarea 
@@ -603,16 +536,45 @@
                                     </div>
                                 </div>
                             </div>
-                            <button 
-                                type="submit" 
-                                id="send-button"
-                                class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                </svg>
-                                <span class="hidden sm:inline">Envoyer</span>
-                            </button>
+                            <div class="flex flex-col gap-2 flex-shrink-0">
+                                <button 
+                                    type="submit" 
+                                    id="send-button"
+                                    class="w-full px-4 sm:px-5 py-2.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">Envoyer</span>
+                                </button>
+                                @if((!isset($propositionActive) || !$propositionActive))
+                                    @if(isset($isGerant) && $isGerant)
+                                        <button 
+                                            type="button"
+                                            onclick="document.getElementById('modal-proposer-rdv').classList.remove('hidden')"
+                                            title="Proposer un rendez-vous"
+                                            class="w-full px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                                        >
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <span class="hidden sm:inline">Proposer un RDV</span>
+                                        </button>
+                                    @else
+                                        <button 
+                                            type="button"
+                                            onclick="document.getElementById('modal-proposer-rdv-client').classList.remove('hidden')"
+                                            title="Proposer un rendez-vous"
+                                            class="w-full px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                                        >
+                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <span class="hidden sm:inline">Proposer un RDV</span>
+                                        </button>
+                                    @endif
+                                @endif
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -732,41 +694,12 @@
                     </div>
                 @endif
 
-                <!-- Formulaire pour proposer un RDV (gérant uniquement) -->
-                @if(isset($isGerant) && $isGerant && (!isset($propositionActive) || !$propositionActive))
-                    <div class="border-t border-slate-200 dark:border-slate-700 bg-gradient-to-r from-orange-500/10 to-green-500/10 dark:from-orange-500/20 dark:to-green-500/20 p-4">
-                        <button 
-                            onclick="document.getElementById('modal-proposer-rdv').classList.remove('hidden')"
-                            class="w-full px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            Proposer un rendez-vous
-                        </button>
-                    </div>
-                @endif
-
-                <!-- Bouton pour proposer un RDV (client uniquement) -->
-                @if((!isset($isGerant) || !$isGerant) && (!isset($propositionActive) || !$propositionActive))
-                    <div class="border-t border-slate-200 dark:border-slate-700 bg-gradient-to-r from-green-500/10 to-blue-500/10 dark:from-green-500/20 dark:to-blue-500/20 p-4">
-                        <button 
-                            onclick="document.getElementById('modal-proposer-rdv-client').classList.remove('hidden')"
-                            class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            Proposer un rendez-vous
-                        </button>
-                    </div>
-                @endif
             </div>
                 </div>
 
                 <!-- Colonne latérale : Détails de la réservation et modifications -->
                 @if(isset($conversation->reservation) && $conversation->reservation)
-                    <div class="lg:col-span-1">
+                    <div class="xl:col-span-1">
                         @include('messagerie.partials.reservation-details', [
                             'reservation' => $conversation->reservation,
                             'entreprise' => $entreprise,
@@ -783,9 +716,8 @@
             // Scroll vers le bas des messages
             function scrollToBottom() {
                 const messagesContainer = document.getElementById('messages-container');
-                const messagesEnd = document.getElementById('messages-end');
-                if (messagesContainer && messagesEnd) {
-                    messagesEnd.scrollIntoView({ behavior: 'smooth' });
+                if (messagesContainer) {
+                    messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
                 }
             }
 
