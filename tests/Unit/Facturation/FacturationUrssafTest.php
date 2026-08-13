@@ -77,7 +77,11 @@ class FacturationUrssafTest extends TestCase
         ]);
         $facture = app(FactureEmissionService::class)->emettrePourReservation($reservation);
 
-        $html = view('factures.pdf', ['doc' => $facture->snapshot])->render();
+        $html = html_entity_decode(
+            view('factures.pdf', ['doc' => $facture->snapshot])->render(),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        );
 
         $this->assertStringContainsString('FACTURE', $html);
         $this->assertStringContainsString($facture->numero_facture, $html);

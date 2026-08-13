@@ -14,12 +14,12 @@ return new class extends Migration
             $table->timestamp('verrouillee_at')->nullable()->after('snapshot');
         });
 
-        try {
-            Schema::table('factures', function (Blueprint $table) {
-                $table->dropUnique(['numero_facture']);
-            });
-        } catch (\Throwable $e) {
-            // Index déjà retiré ou nommé autrement
+        foreach (Schema::getIndexes('factures') as $index) {
+            if (($index['unique'] ?? false) && ($index['columns'] ?? []) === ['numero_facture']) {
+                Schema::table('factures', function (Blueprint $table) use ($index) {
+                    $table->dropUnique($index['name']);
+                });
+            }
         }
 
         Schema::table('factures', function (Blueprint $table) {
