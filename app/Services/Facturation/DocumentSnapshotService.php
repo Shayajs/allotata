@@ -58,6 +58,7 @@ class DocumentSnapshotService
 
         return [
             'type' => 'facture',
+            'emetteur_kind' => 'prestataire',
             'numero' => $facture->numero_facture,
             'date_emission' => optional($facture->date_facture)->format('d/m/Y'),
             'date_prestation' => $datePrestation ? Carbon::parse($datePrestation)->format('d/m/Y') : null,
@@ -103,6 +104,7 @@ class DocumentSnapshotService
 
         return [
             'type' => 'devis',
+            'emetteur_kind' => 'prestataire',
             'numero' => $devis->numero_devis,
             'date_emission' => now()->format('d/m/Y'),
             'date_validite' => optional($devis->date_validite)->format('d/m/Y'),
@@ -140,6 +142,75 @@ class DocumentSnapshotService
     }
 
     /**
+     * Snapshot Allotata → abonné (émetteur Lucas Espinar EI, jamais le prestataire).
+     *
+     * @return array<string, mixed>
+     */
+    public function pourAbonnementPlateforme(Facture $facture): array
+    {
+        $p = config('facturation.plateforme');
+        $siret = preg_replace('/\s+/', '', (string) $p['siret']);
+        $ht = (float) $facture->montant_ht;
+        $mention = (string) $p['mention_tva'];
+
+        $facture->loadMissing(['entreprise', 'user', 'entrepriseSubscription']);
+
+        return [
+            'type' => 'facture',
+            'emetteur_kind' => 'plateforme',
+            'bandeau' => $p['bandeau'],
+            'numero' => $facture->numero_facture,
+            'date_emission' => optional($facture->date_facture)->format('d/m/Y'),
+            'date_prestation' => optional($facture->date_facture)->format('d/m/Y'),
+            'date_echeance' => optional($facture->date_echeance)->format('d/m/Y'),
+            'emetteur' => [
+                'nom' => $p['nom'],
+                'marque' => $p['marque'],
+                'forme_juridique' => $p['forme_juridique'],
+                'nom_commercial' => $p['nom_commercial'],
+                'siret' => $siret,
+                'siret_formate' => $this->formaterSiret($siret),
+                'siren' => $p['siren'],
+                'tva_intracommunautaire' => null,
+                'adresse' => $p['adresse'],
+                'email' => $p['email'],
+                'telephone' => $p['telephone'],
+                'responsable' => $p['nom'],
+                'rcs' => $p['rcs'],
+                'ape' => $p['ape'],
+            ],
+            'client' => $this->clientAbonne($facture),
+            'lignes' => [[
+                'description' => $this->descriptionAbonnement($facture),
+                'details' => $facture->notes,
+                'date' => optional($facture->date_facture)->format('d/m/Y'),
+                'quantite' => 1,
+                'prix_unitaire_ht' => $ht,
+                'montant_ht' => $ht,
+                'taux_tva' => 0,
+                'montant_tva' => 0,
+                'montant_ttc' => (float) $facture->montant_ttc,
+            ]],
+            'totaux' => [
+                'montant_ht' => $ht,
+                'taux_tva' => 0,
+                'montant_tva' => 0,
+                'montant_ttc' => (float) $facture->montant_ttc,
+                'assujetti_tva' => false,
+                'mention_tva' => $mention,
+            ],
+            'mentions' => $this->mentionsFacture(false),
+            'couleurs' => $p['couleurs'],
+            'logo' => $p['logo'] ?? 'allotata',
+            'paiement' => [
+                'acquittee' => $facture->statut === 'payee',
+                'date_paiement' => $facture->date_paiement?->format('d/m/Y'),
+            ],
+            'notes' => $facture->notes,
+        ];
+    }
+
+    /**
      * Reconstruit un snapshot pour une facture existante (backfill lazy).
      *
      * @return array<string, mixed>
@@ -150,18 +221,23 @@ class DocumentSnapshotService
             return $this->fusionnerPaiement($facture, $facture->snapshot);
         }
 
-        $facture->loadMissing(['entreprise', 'user', 'reservation', 'reservations']);
-        $reservations = $facture->estGroupee()
-            ? $facture->reservations
-            : collect($facture->reservation ? [$facture->reservation] : []);
+        $facture->loadMissing(['entreprise', 'user', 'reservation', 'reservations', 'entrepriseSubscription']);
 
-        $snapshot = $this->pourFacture(
-            $facture,
-            $facture->entreprise,
-            $reservations,
-            $facture->user,
-            $facture->reservation,
-        );
+        if ($facture->estAbonnementPlateforme()) {
+            $snapshot = $this->pourAbonnementPlateforme($facture);
+        } else {
+            $reservations = $facture->estGroupee()
+                ? $facture->reservations
+                : collect($facture->reservation ? [$facture->reservation] : []);
+
+            $snapshot = $this->pourFacture(
+                $facture,
+                $facture->entreprise,
+                $reservations,
+                $facture->user,
+                $facture->reservation,
+            );
+        }
 
         $facture->forceFill([
             'snapshot' => $snapshot,
@@ -270,6 +346,53 @@ class DocumentSnapshotService
             'telephone' => $telephone,
             'adresse' => $adresse !== '' ? $adresse : null,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function clientAbonne(Facture $facture): array
+    {
+        if ($facture->type_facture === 'abonnement_entreprise' && $facture->entreprise) {
+            $entreprise = $facture->entreprise;
+            $adresse = trim(implode("\n", array_filter([
+                $entreprise->adresse_rue,
+                trim(($entreprise->code_postal ?? '').' '.($entreprise->ville ?? '')),
+            ])));
+
+            return [
+                'nom' => $entreprise->nom,
+                'email' => $entreprise->email ?: $facture->user?->email,
+                'telephone' => $entreprise->telephone ?: $facture->user?->telephone,
+                'adresse' => $adresse !== '' ? $adresse : null,
+            ];
+        }
+
+        return $this->client($facture->user);
+    }
+
+    private function descriptionAbonnement(Facture $facture): string
+    {
+        if ($facture->entrepriseSubscription) {
+            $offre = $facture->entrepriseSubscription->type === 'site_web'
+                ? 'Site Web Vitrine'
+                : 'Gestion Multi-Personnes';
+
+            return 'Abonnement Allotata — '.$offre;
+        }
+
+        return 'Abonnement Allotata';
+    }
+
+    private function formaterSiret(string $siret): string
+    {
+        $siret = (string) preg_replace('/\s+/', '', $siret);
+
+        if (strlen($siret) !== 14) {
+            return $siret;
+        }
+
+        return substr($siret, 0, 3).' '.substr($siret, 3, 3).' '.substr($siret, 6, 3).' '.substr($siret, 9);
     }
 
     /**

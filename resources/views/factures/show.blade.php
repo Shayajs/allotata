@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Facture {{ $facture->numero_facture }} - Allo Tata</title>
-        @include('partials.favicon', ['entreprise' => $facture->entreprise ?? null])
+        @include('partials.favicon', ['entreprise' => $facture->estAbonnementPlateforme() ? null : ($facture->entreprise ?? null)])
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -28,24 +28,33 @@
         </nav>
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            @php $doc = is_array($facture->snapshot) ? $facture->snapshot : null; @endphp
+            @php
+                $doc = is_array($facture->snapshot) ? $facture->snapshot : null;
+                $estPlateforme = $facture->estAbonnementPlateforme();
+                $logoUrl = $estPlateforme
+                    ? \App\Helpers\SiteHelper::getAllotataLogoUrl()
+                    : ($facture->entreprise && $facture->entreprise->logo ? asset('media/'.$facture->entreprise->logo) : null);
+            @endphp
             <!-- Facture -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
                 <!-- En-tête -->
                 <div class="flex items-start justify-between mb-8 pb-8 border-b border-slate-200 dark:border-slate-700">
                     <div class="flex items-start gap-4">
-                        @if($facture->entreprise && $facture->entreprise->logo)
+                        @if($logoUrl)
                             <img 
-                                src="{{ asset('media/' . $facture->entreprise->logo) }}" 
-                                alt="Logo {{ $facture->entreprise->nom }}"
-                                class="w-20 h-20 rounded-lg object-cover border-2 border-slate-200 dark:border-slate-700"
+                                src="{{ $logoUrl }}" 
+                                alt="{{ $estPlateforme ? 'Allotata' : 'Logo '.($facture->entreprise->nom ?? '') }}"
+                                class="w-20 h-20 rounded-lg object-contain border-2 border-slate-200 dark:border-slate-700 bg-white"
                             >
                         @endif
                         <div>
                             <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">FACTURE</h1>
                             <p class="text-sm text-slate-600 dark:text-slate-400">Numéro : <span class="font-semibold">{{ $facture->numero_facture }}</span></p>
-                            @if($facture->type_facture === 'abonnement_manuel')
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">💳 Facture d'abonnement</p>
+                            @if($estPlateforme)
+                                <p class="mt-2 inline-block text-xs font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Abonnement Allotata</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Facture Allotata — abonnement plateforme</p>
+                            @else
+                                <p class="mt-2 inline-block text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Prestation</p>
                             @endif
                         </div>
                     </div>
@@ -64,7 +73,17 @@
                     <div>
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase">Facturé par</h3>
                         <div class="space-y-1">
-                            @if($doc)
+                            @if($estPlateforme && $doc)
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $doc['emetteur']['nom'] ?? 'Lucas Espinar' }}, EI — {{ $doc['emetteur']['marque'] ?? 'Allotata' }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['emetteur']['forme_juridique'] ?? 'Entrepreneur individuel' }}</p>
+                                @if(!empty($doc['emetteur']['siret_formate']) || !empty($doc['emetteur']['siret']))
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">SIRET : {{ $doc['emetteur']['siret_formate'] ?? $doc['emetteur']['siret'] }}</p>
+                                @endif
+                                @if(!empty($doc['emetteur']['adresse']))
+                                    <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line">{{ $doc['emetteur']['adresse'] }}</p>
+                                @endif
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['emetteur']['email'] ?? '' }}</p>
+                            @elseif($doc)
                                 <p class="font-semibold text-slate-900 dark:text-white">{{ $doc['emetteur']['nom'] ?? '' }}</p>
                                 <p class="text-sm text-slate-600 dark:text-slate-400">{{ $doc['emetteur']['forme_juridique'] ?? '' }}</p>
                                 @if(!empty($doc['emetteur']['siret']))
@@ -88,8 +107,8 @@
                                     <p class="text-sm text-slate-600 dark:text-slate-400">{{ $facture->entreprise->ville }}</p>
                                 @endif
                             @else
-                                <p class="font-semibold text-slate-900 dark:text-white">Allo Tata</p>
-                                <p class="text-sm text-slate-600 dark:text-slate-400">Service d'abonnement</p>
+                                <p class="font-semibold text-slate-900 dark:text-white">Lucas Espinar, EI — Allotata</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Abonnement plateforme</p>
                             @endif
                         </div>
                     </div>
@@ -111,7 +130,7 @@
                 </div>
 
                 <!-- Détails de l'abonnement ou de la réservation -->
-                @if($facture->type_facture === 'abonnement_manuel')
+                @if($facture->estAbonnementPlateforme())
                     <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Détails de l'abonnement</h3>
                         <div class="grid grid-cols-2 gap-4 text-sm">
@@ -149,28 +168,6 @@
                                 <div>
                                     <p class="text-slate-600 dark:text-slate-400">Lieu</p>
                                     <p class="font-medium text-slate-900 dark:text-white">{{ $facture->reservation->lieu }}</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @elseif($facture->type_facture === 'abonnement_entreprise')
-                    <div class="mb-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Détails de l'abonnement</h3>
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p class="text-slate-600 dark:text-slate-400">Type</p>
-                                <p class="font-medium text-slate-900 dark:text-white">
-                                    @if($facture->entrepriseSubscription)
-                                        {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Gestion Multi-Personnes' }}
-                                    @else
-                                        Abonnement Allotata
-                                    @endif
-                                </p>
-                            </div>
-                            @if($facture->notes)
-                                <div class="col-span-2">
-                                    <p class="text-slate-600 dark:text-slate-400">Période</p>
-                                    <p class="font-medium text-slate-900 dark:text-white">{{ $facture->notes }}</p>
                                 </div>
                             @endif
                         </div>
@@ -277,7 +274,6 @@
                                 <span class="text-slate-600 dark:text-slate-400">TVA ({{ $facture->taux_tva }}%)</span>
                                 <span class="font-medium text-slate-900 dark:text-white">{{ number_format($facture->montant_tva, 2, ',', ' ') }} €</span>
                             </div>
-                        @endif
                         @endif
                         <div class="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
                             <span class="text-lg font-bold text-slate-900 dark:text-white">Total TTC</span>

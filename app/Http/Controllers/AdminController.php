@@ -2819,6 +2819,8 @@ class AdminController extends Controller
     public function showFacture(Facture $facture)
     {
         $facture->load(['entreprise', 'user', 'entrepriseSubscription', 'reservation', 'reservations']);
+        app(\App\Services\Facturation\DocumentSnapshotService::class)->ensureFacture($facture);
+        $facture->refresh();
 
         return view('admin.factures.show', [
             'facture' => $facture,

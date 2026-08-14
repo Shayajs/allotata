@@ -383,6 +383,26 @@
                             </li>
                         </ul>
 
+                        {{-- Bouton essai gratuit --}}
+                        @if(Auth::user()->peutDemarrerEssai('premium') && !Auth::user()->aAbonnementActif())
+                        <form action="{{ route('essai-gratuit.utilisateur') }}" method="POST" class="mb-4">
+                            @csrf
+                            <input type="hidden" name="source" value="upsell_creation">
+                            <button type="submit" class="ui-btn-simple w-full min-h-[52px] px-6 py-4 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.01] touch-manipulation">
+                                Essayer gratuitement pendant 7 jours
+                            </button>
+                        </form>
+                        <p class="text-center text-xs text-slate-500 dark:text-slate-400 mb-4">Sans engagement • Sans carte bancaire</p>
+                        <div class="relative flex items-center justify-center py-2 mb-4">
+                            <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
+                            <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou</span>
+                        </div>
+                        @elseif(!Auth::user()->aAbonnementActif())
+                        <p class="text-center text-sm text-slate-600 dark:text-slate-400 mb-4">
+                            Vous avez déjà utilisé votre essai gratuit. Un nouvel essai n'est plus possible.
+                        </p>
+                        @endif
+
                         {{-- Bouton souscrire --}}
                         <form action="{{ route('subscription.checkout') }}" method="POST" class="mb-4">
                             @csrf

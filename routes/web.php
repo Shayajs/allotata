@@ -319,6 +319,9 @@ Route::post('/two-factor/verify', [\App\Http\Controllers\TwoFactorController::cl
 Route::get('/p/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('public.favicon');
 Route::get('/w/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('site-web.favicon');
 Route::get('/m/{slug}/favicon.png', [\App\Http\Controllers\EntrepriseFaviconController::class, 'show'])->name('entreprise.favicon');
+Route::get('/m/{slug}/icon/{size}.png', [\App\Http\Controllers\ManifestController::class, 'icon'])
+    ->where('size', '192|512')
+    ->name('manifest.icon.manage');
 Route::get("/p/{slug}", [PublicController::class, 'show'])->name('public.entreprise');
 Route::get("/p/{slug}/agenda", [PublicController::class, 'agenda'])->name('public.agenda');
 Route::get("/p/{slug}/agenda/reservations", [PublicController::class, 'getReservations'])->name('public.agenda.reservations');
@@ -333,6 +336,7 @@ Route::get("/p/{slug}/produits", [PublicController::class, 'produits'])->name('p
 Route::post("/p/{slug}/commande-produit", [PublicController::class, 'storeCommandeProduit'])->name('public.commande-produit.store');
 
 // MANIFEST DYNAMIQUE PWA
+Route::get('/manifest.json', [\App\Http\Controllers\ManifestController::class, 'forCurrentHost'])->name('manifest.host');
 Route::get('/entreprise/{slug}/manifest.json', [\App\Http\Controllers\ManifestController::class, 'show'])->name('manifest.show');
 Route::get('/entreprise/{slug}/icon/{size}.png', [\App\Http\Controllers\ManifestController::class, 'icon'])->name('manifest.icon');
 Route::get('/brightshell/manifest.json', [\App\Http\Controllers\ManifestController::class, 'brightshell'])->name('manifest.brightshell');
@@ -556,6 +560,13 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     Route::post('/settings/confidentialite', [SettingsController::class, 'updateConfidentialite'])->name('settings.confidentialite.update');
     Route::post('/settings/interblocage', [SettingsController::class, 'updateInterblocage'])->name('settings.interblocage.update');
     Route::post('/settings/notifications', [SettingsController::class, 'updateNotificationPreferences'])->name('settings.notifications.update');
+
+    // Jetons d'API personnels
+    Route::get('/settings/api', [\App\Http\Controllers\ApiTokenController::class, 'index'])->name('settings.api.index');
+    Route::post('/settings/api', [\App\Http\Controllers\ApiTokenController::class, 'store'])->name('settings.api.store');
+    Route::delete('/settings/api/{jeton}', [\App\Http\Controllers\ApiTokenController::class, 'destroy'])
+        ->whereNumber('jeton')
+        ->name('settings.api.destroy');
 
     // CRUD Enfants
     Route::post('/settings/enfants', [SettingsController::class, 'storeEnfant'])->name('settings.enfants.store');

@@ -430,6 +430,11 @@ class NavigationService
             $items[] = ['key' => 'subscription', 'label' => 'Abonnement', 'icon' => 'credit-card', 'tab' => 'subscription', 'group' => 'primary', 'pwa_bottom' => false, 'visible' => true, 'badge' => null];
         }
 
+        if ($user->est_gerant) {
+            // Page a part et non onglet : l'ecran vit hors du formulaire de reglages.
+            $items[] = ['key' => 'api', 'label' => 'API & jetons', 'icon' => 'globe', 'is_link' => true, 'url' => route('settings.api.index'), 'group' => 'secondary', 'pwa_bottom' => false, 'visible' => true, 'badge' => null];
+        }
+
         $items[] = ['separator' => true];
         $items[] = ['key' => 'preferences',     'label' => 'Préférences',     'icon' => 'cog',  'tab' => 'preferences',     'group' => 'secondary', 'pwa_bottom' => false, 'visible' => true, 'badge' => null, 'icon_extra' => 'cog-inner'];
         $items[] = ['key' => 'confidentialite', 'label' => 'Confidentialité', 'icon' => 'eye',  'tab' => 'confidentialite', 'group' => 'secondary', 'pwa_bottom' => false, 'visible' => true, 'badge' => null];

@@ -41,7 +41,12 @@ class PublicAgendaReturnUrl
         }
 
         $host = isset($parts['host']) ? strtolower($parts['host']) : $expectedHost;
-        if ($host !== $expectedHost) {
+        $host = preg_replace('/:\d+$/', '', $host) ?: $host;
+        $expectedHostBare = preg_replace('/:\d+$/', '', $expectedHost) ?: $expectedHost;
+
+        $tenantSlug = self::tenantSlugForHost($host, $expectedHostBare);
+
+        if ($host !== $expectedHostBare && $host !== 'www.'.$expectedHostBare && $tenantSlug === null) {
             return null;
         }
 
@@ -54,13 +59,39 @@ class PublicAgendaReturnUrl
             $path = '/'.$path;
         }
 
-        // Un seul segment dynamique : slug ; termine par /agenda (sans sous-chemin supplémentaire)
-        if (! preg_match('#^/p/[^/]+/agenda$#', $path)) {
+        $isClassicAgenda = (bool) preg_match('#^/p/[^/]+/agenda$#', $path);
+        $isTenantAgenda = $tenantSlug !== null && preg_match('#^/public/agenda$#', $path);
+
+        if (! $isClassicAgenda && ! $isTenantAgenda) {
             return null;
         }
 
         $query = isset($parts['query']) && $parts['query'] !== '' ? '?'.$parts['query'] : '';
 
+        if ($tenantSlug !== null) {
+            return $expectedScheme.'://'.$host.$path.$query;
+        }
+
         return $appUrl.$path.$query;
+    }
+
+    private static function tenantSlugForHost(string $host, string $expectedHost): ?string
+    {
+        $base = SubdomainHost::baseDomain();
+        if ($base === '' || $host === $expectedHost || $host === 'www.'.$expectedHost) {
+            return null;
+        }
+
+        $suffix = '.'.$base;
+        if (! str_ends_with($host, $suffix)) {
+            return null;
+        }
+
+        $sub = substr($host, 0, -strlen($suffix));
+        if ($sub === '' || str_contains($sub, '.') || SubdomainHost::isReservedSlug($sub)) {
+            return null;
+        }
+
+        return $sub;
     }
 }

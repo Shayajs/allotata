@@ -57,6 +57,10 @@ class EntrepriseSubscription extends Model
      */
     public function estActif(): bool
     {
+        if ($this->trial_ends_at && $this->trial_ends_at->isFuture()) {
+            return true;
+        }
+
         // Si c'est un abonnement manuel (admin ou autre)
         if ($this->est_manuel) {
             if ($this->actif_jusqu) {
@@ -95,6 +99,32 @@ class EntrepriseSubscription extends Model
             return $this->trial_ends_at->isFuture();
         }
         return false;
+    }
+
+    /**
+     * Accès ouvert par un essai gratuit (pas un abonnement Stripe / manuel payant).
+     */
+    public function estIssuEssaiGratuit(): bool
+    {
+        if ($this->stripe_id) {
+            return false;
+        }
+
+        $name = (string) $this->name;
+        $notes = (string) ($this->notes_manuel ?? '');
+
+        return str_starts_with($name, 'essai_')
+            || str_contains($notes, 'Essai gratuit')
+            || $this->trial_ends_at !== null;
+    }
+
+    public function estAbonnementPayant(): bool
+    {
+        if ($this->estIssuEssaiGratuit()) {
+            return false;
+        }
+
+        return $this->estActif();
     }
 
     /**

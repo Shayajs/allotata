@@ -11,13 +11,33 @@
     let timeInterval = null;
     let clicsEnregistres = new Set();
 
+    const CONSENT_KEY = 'allo_tata_cookie_preferences';
+
+    /**
+     * Préférences de cookies, lues dans le cookie partagé par les sous-domaines
+     * (avec repli sur le localStorage des visiteurs d'avant ce partage).
+     */
+    function getCookiePreferences() {
+        const prefix = CONSENT_KEY + '=';
+        const found = document.cookie.split('; ').find(part => part.startsWith(prefix));
+        let raw = found ? decodeURIComponent(found.slice(prefix.length)) : null;
+
+        if (!raw) {
+            try { raw = localStorage.getItem(CONSENT_KEY); } catch (e) { raw = null; }
+        }
+
+        try {
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+
     /**
      * Vérifier si le tracking est autorisé
      */
     function isTrackingAllowed() {
-        // Vérifier le consentement cookies (localStorage)
-        const cookieConsent = localStorage.getItem('allo_tata_cookie_consent');
-        if (cookieConsent === 'refused') {
+        const prefs = getCookiePreferences();
+
+        if (prefs && (prefs.consent === 'refused' || prefs.analytics === false)) {
             return false;
         }
 
@@ -27,26 +47,39 @@
     }
 
     /**
+     * Slug de l'entreprise visitée : /p/{slug} sur le domaine principal,
+     * {slug}.domaine/public sur le sous-domaine de l'entreprise.
+     */
+    function resolveSlug() {
+        const path = window.location.pathname;
+
+        const apexMatch = path.match(/^\/p\/([^\/]+)/);
+        if (apexMatch) {
+            return apexMatch[1];
+        }
+
+        if (path === '/public' || path.startsWith('/public/')) {
+            const labels = window.location.hostname.split('.');
+
+            return labels.length > 2 ? labels[0] : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Initialiser le tracking
      */
     function initTracking() {
-        // Ne tracker que sur les pages /p/{slug}*
-        if (!window.location.pathname.match(/^\/p\/[^\/]+/)) {
-            return;
-        }
-
         // Vérifier le consentement
         if (!isTrackingAllowed()) {
             return;
         }
 
-        // Extraire le slug de l'entreprise depuis l'URL
-        const slugMatch = window.location.pathname.match(/^\/p\/([^\/]+)/);
-        if (!slugMatch) {
+        const slug = resolveSlug();
+        if (!slug) {
             return;
         }
-
-        const slug = slugMatch[1];
 
         // Enregistrer la durée toutes les 5 secondes
         timeInterval = setInterval(() => {

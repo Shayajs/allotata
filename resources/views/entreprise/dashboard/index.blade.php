@@ -17,7 +17,7 @@
         @include('partials.favicon')
         
         <!-- PWA / Manifest Dynamique -->
-        <link rel="manifest" href="{{ route('manifest.show', $entreprise->slug) }}">
+        <link rel="manifest" href="{{ ($subdomainHost['mode'] ?? '') === 'tenant' ? url('/manifest.json') : route('manifest.show', $entreprise->slug) }}">
         <meta name="theme-color" content="#0f172a">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -616,6 +616,10 @@
                                     <span class="absolute inset-x-0 h-px bg-slate-200 dark:bg-slate-700"></span>
                                     <span class="relative px-4 bg-white dark:bg-slate-800 text-xs text-slate-400 dark:text-slate-500">ou</span>
                                 </div>
+                            @else
+                                <p class="text-xs text-center text-slate-500 dark:text-slate-400">
+                                    Essai déjà utilisé. Un nouvel essai n'est plus possible.
+                                </p>
                             @endif
 
                             <!-- Bouton souscrire -->

@@ -88,12 +88,15 @@ class FactureController extends Controller
     {
         $user = Auth::user();
         $facture = Facture::where('user_id', $user->id)
-            ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
+            ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user', 'entrepriseSubscription'])
             ->findOrFail($id);
 
         if (! $facture->estVisibleParClient()) {
             abort(403, 'Cette facture n\'est pas encore disponible. Elle sera accessible une fois le paiement confirmé par l\'entreprise.');
         }
+
+        app(\App\Services\Facturation\DocumentSnapshotService::class)->ensureFacture($facture);
+        $facture->refresh();
 
         return view('factures.show', [
             'facture' => $facture,
@@ -212,8 +215,11 @@ class FactureController extends Controller
         }
 
         $facture = Facture::where('entreprise_id', $entreprise->id)
-            ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user'])
+            ->with(['entreprise', 'reservation', 'reservations.user', 'reservations.typeService', 'user', 'entrepriseSubscription'])
             ->findOrFail($id);
+
+        app(\App\Services\Facturation\DocumentSnapshotService::class)->ensureFacture($facture);
+        $facture->refresh();
 
         return view('factures.show', [
             'facture' => $facture,

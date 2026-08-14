@@ -107,11 +107,24 @@ class SiteHelper
     public static function resolveEntrepriseFromRequest(?\Illuminate\Http\Request $request = null): ?Entreprise
     {
         $request ??= request();
-        if (! $request || ! preg_match('#^(p|w|m|messagerie)/([^/]+)#', $request->path(), $matches)) {
+        if (! $request) {
             return null;
         }
 
-        return self::findEntrepriseByPublicSlug($matches[2]);
+        if (preg_match('#^(p|w|m|messagerie)/([^/]+)#', $request->path(), $matches)) {
+            return self::findEntrepriseByPublicSlug($matches[2]);
+        }
+
+        if (\App\Support\SubdomainHost::enabled()) {
+            $parsed = \App\Support\SubdomainHost::parse($request->getHost());
+            if ($parsed['mode'] === \App\Support\SubdomainHost::MODE_TENANT) {
+                return Entreprise::query()
+                    ->where('slug', $parsed['subdomain'])
+                    ->first(['id', 'logo', 'slug', 'slug_web']);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -122,7 +135,10 @@ class SiteHelper
         $request ??= request();
         $path = $request?->path() ?? '';
 
-        if (! preg_match('#^(p|w|m|messagerie)/([^/]+)#', $path)) {
+        $onTenantHost = \App\Support\SubdomainHost::enabled()
+            && \App\Support\SubdomainHost::parse($request?->getHost())['mode'] === \App\Support\SubdomainHost::MODE_TENANT;
+
+        if (! preg_match('#^(p|w|m|messagerie)/([^/]+)#', $path) && ! $onTenantHost) {
             return null;
         }
 
@@ -134,11 +150,11 @@ class SiteHelper
             return null;
         }
 
-        if (str_starts_with($path, 'w/')) {
+        if (str_starts_with($path, 'w/') || ($onTenantHost && ($path === '/' || $path === ''))) {
             return route('site-web.favicon', $entreprise->slug_web ?: $entreprise->slug);
         }
 
-        if (str_starts_with($path, 'm/')) {
+        if (str_starts_with($path, 'm/') || ($onTenantHost && str_starts_with($path, 'manage'))) {
             return route('entreprise.favicon', $entreprise->slug);
         }
 
@@ -207,5 +223,20 @@ class SiteHelper
     public static function getSiteName(): string
     {
         return Setting::get('site_name', 'Allo Tata');
+    }
+
+    /**
+     * URL du logo Allotata (jamais le logo d'un prestataire).
+     */
+    public static function getAllotataLogoUrl(): string
+    {
+        foreach (['light', 'transparent', 'dark', 'pwa'] as $type) {
+            $url = self::getLogo($type);
+            if ($url) {
+                return $url;
+            }
+        }
+
+        return asset('favicon.ico');
     }
 }

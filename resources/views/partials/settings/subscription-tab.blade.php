@@ -49,6 +49,9 @@
 
 @php
     $hasActiveSubscription = $user->aAbonnementActif();
+    $essaiPremium = $user->essaiActif('premium');
+    $peutEssayerPremium = $user->peutDemarrerEssai('premium');
+    $hasTrialSubscription = $essaiPremium && $essaiPremium->estEnCours();
 @endphp
 
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
@@ -79,12 +82,34 @@
                 <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <h3 class="text-xl font-bold text-green-800 dark:text-green-400">
-                    Abonnement actif
+                <h3 class="text-xl font-bold {{ $hasTrialSubscription ? 'text-orange-600 dark:text-orange-400' : 'text-green-800 dark:text-green-400' }}">
+                    @if($hasTrialSubscription)
+                        Essai gratuit actif
+                    @else
+                        Abonnement actif
+                    @endif
                 </h3>
             </div>
             
-            @if($subscription && $subscription->valid())
+            @if($hasTrialSubscription)
+                <div class="mb-4 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p class="text-sm text-orange-800 dark:text-orange-400 mb-3">
+                        <strong>Votre essai expire le {{ $essaiPremium->date_fin->format('d/m/Y à H:i') }}</strong>
+                        ({{ $essaiPremium->joursRestants() }} jour(s) restant(s)).<br>
+                        Abonnez-vous maintenant pour continuer à profiter de toutes les fonctionnalités.
+                    </p>
+                    <form action="{{ route('subscription.checkout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
+                            @if($currentPriceAmount > 0)
+                                S'abonner maintenant ({{ $defaultPrice['formatted'] }}/mois)
+                            @else
+                                S'abonner maintenant
+                            @endif
+                        </button>
+                    </form>
+                </div>
+            @elseif($subscription && $subscription->valid())
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -216,16 +241,36 @@
                     Sans abonnement actif, vos entreprises ne seront pas visibles en ligne. Souscrivez maintenant pour accéder à toutes les fonctionnalités.
                 </p>
             </div>
-            <form action="{{ route('subscription.checkout') }}" method="POST">
-                @csrf
-                <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
-                    @if($currentPriceAmount > 0)
-                        Souscrire à l'abonnement ({{ $defaultPrice['formatted'] }}/mois)
-                    @else
-                        Souscrire à l'abonnement
-                    @endif
-                </button>
-            </form>
+            <div class="space-y-4">
+                @if($peutEssayerPremium)
+                    <form action="{{ route('essai-gratuit.utilisateur') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="source" value="page_paiement">
+                        <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
+                            Essayer gratuitement pendant 7 jours
+                        </button>
+                    </form>
+                    <p class="text-center text-xs text-slate-500 dark:text-slate-400">Sans engagement • Sans carte bancaire</p>
+                    <div class="relative flex items-center justify-center py-1">
+                        <span class="absolute inset-x-0 h-px bg-yellow-200 dark:bg-yellow-800"></span>
+                        <span class="relative px-4 bg-yellow-50 dark:bg-yellow-900/20 text-xs text-slate-500 dark:text-slate-400">ou</span>
+                    </div>
+                @else
+                    <p class="text-center text-sm text-slate-600 dark:text-slate-400">
+                        Vous avez déjà utilisé votre essai gratuit. Un nouvel essai n'est plus possible.
+                    </p>
+                @endif
+                <form action="{{ route('subscription.checkout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
+                        @if($currentPriceAmount > 0)
+                            Souscrire à l'abonnement ({{ $defaultPrice['formatted'] }}/mois)
+                        @else
+                            Souscrire à l'abonnement
+                        @endif
+                    </button>
+                </form>
+            </div>
         </div>
     @endif
 </div>

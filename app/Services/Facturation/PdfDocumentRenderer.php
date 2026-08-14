@@ -2,6 +2,7 @@
 
 namespace App\Services\Facturation;
 
+use App\Helpers\SiteHelper;
 use App\Models\Devis;
 use App\Models\Facture;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -42,6 +43,12 @@ class PdfDocumentRenderer
      */
     private function enrichirLogo(array $doc): array
     {
+        if (($doc['emetteur_kind'] ?? '') === 'plateforme' || ($doc['logo'] ?? '') === 'allotata') {
+            $doc['logo_base64'] = $this->encoderCheminAbsolu(SiteHelper::getDefaultFaviconAbsolutePath());
+
+            return $doc;
+        }
+
         $doc['logo_base64'] = $this->encoderLogo($doc['logo'] ?? null);
 
         return $doc;
@@ -71,6 +78,11 @@ class PdfDocumentRenderer
             $full = Storage::disk('public')->path($path);
         }
 
+        return $this->encoderCheminAbsolu($full);
+    }
+
+    private function encoderCheminAbsolu(?string $full): ?string
+    {
         if (! $full || ! is_file($full)) {
             return null;
         }
@@ -80,6 +92,7 @@ class PdfDocumentRenderer
             'jpg', 'jpeg' => 'image/jpeg',
             'gif' => 'image/gif',
             'webp' => 'image/webp',
+            'ico' => 'image/x-icon',
             default => 'image/png',
         };
 

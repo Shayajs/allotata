@@ -106,17 +106,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap" data-label="Type">
                                 <span class="text-xs px-2 py-1 rounded-full
-                                    @if($facture->type_facture === 'reservation') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
-                                    @elseif($facture->type_facture === 'abonnement_manuel') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400
-                                    @else bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400
+                                    @if($facture->estAbonnementPlateforme()) bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400
+                                    @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
                                     @endif">
-                                    @if($facture->type_facture === 'reservation')
-                                        Réservation
-                                    @elseif($facture->type_facture === 'abonnement_manuel')
-                                        Abonnement manuel
-                                    @else
-                                        Abonnement entreprise
-                                    @endif
+                                    {{ $facture->libelleOrigine() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap" data-label="Entreprise">

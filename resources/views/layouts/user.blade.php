@@ -15,14 +15,21 @@
             window.currentUserId = {{ auth()->id() ?? 'null' }};
             @auth
             @php
-                $offlinePrecacheUrls = ['/dashboard', '/settings'];
-                $offlinePrecacheUrls = array_merge(
-                    $offlinePrecacheUrls,
-                    auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug)->toArray(),
-                    auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug . '/reservations')->toArray()
-                );
+                $subMode = $subdomainHost['mode'] ?? 'apex';
+                if ($subMode === 'tenant') {
+                    $offlinePrecacheUrls = ['/manage', '/manage?tab=reservations'];
+                } elseif ($subMode === 'dash') {
+                    $offlinePrecacheUrls = ['/', '/settings'];
+                } else {
+                    $offlinePrecacheUrls = ['/dashboard', '/settings'];
+                    $offlinePrecacheUrls = array_merge(
+                        $offlinePrecacheUrls,
+                        auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug)->toArray(),
+                        auth()->user()->entreprises->map(fn ($e) => '/m/' . $e->slug . '/reservations')->toArray()
+                    );
+                }
                 if (auth()->user()->est_client) {
-                    $offlinePrecacheUrls[] = '/dashboard';
+                    $offlinePrecacheUrls[] = $subMode === 'dash' ? '/' : '/dashboard';
                 }
                 $offlinePrecacheUrls = array_values(array_unique(array_filter($offlinePrecacheUrls)));
             @endphp

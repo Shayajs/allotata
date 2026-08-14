@@ -110,7 +110,7 @@ scheduleWithLogging('subscriptions:reconcile-echeances', 'Réconciliation Stripe
 // ESSAIS GRATUITS
 // =============================================
 
-// Vérifie les essais expirants : rappel J-2, expiration J0, relance J+3
+// Vérifie les essais expirants : rappel J-2, arrêt + notif (plus de nouvel essai), relance J+3
 scheduleWithLogging('essais:check-expiration', 'Vérification essais gratuits')
     ->dailyAt('09:00')->withoutOverlapping();
 

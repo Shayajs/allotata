@@ -84,15 +84,10 @@ class EntrepriseProfileService
         $validated = $request->validate($this->updateRules());
 
         if ($validated['nom'] !== $entreprise->nom) {
-            $baseSlug = Str::slug($validated['nom']);
-            $newSlug = $baseSlug;
-            $counter = 1;
-
-            while (Entreprise::where('slug', $newSlug)->where('id', '!=', $entreprise->id)->exists()) {
-                $newSlug = $baseSlug.'-'.$counter;
-                $counter++;
-            }
-            $validated['slug'] = $newSlug;
+            $validated['slug'] = \App\Support\SubdomainHost::nextAvailableSlug(
+                Str::slug($validated['nom']),
+                $entreprise->id
+            );
         }
 
         if (! empty($validated['mots_cles'])) {

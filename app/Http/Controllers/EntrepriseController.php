@@ -45,15 +45,7 @@ class EntrepriseController extends Controller
             'status_juridique' => ['nullable', 'string', 'in:en_cours,auto_entrepreneur,sarl,eurl,sas'],
         ]);
 
-        // Générer un slug unique à partir du nom
-        $baseSlug = Str::slug($validated['nom']);
-        $slug = $baseSlug;
-        $counter = 1;
-        
-        while (Entreprise::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
+        $slug = \App\Support\SubdomainHost::nextAvailableSlug(Str::slug($validated['nom']));
 
         // Gérer l'upload du logo
         $logoPath = null;

@@ -27,8 +27,15 @@
                                         Facture #{{ $facture->numero_facture ?? $facture->id }}
                                     </h3>
                                     <p class="text-sm text-slate-600 dark:text-slate-400">
-                                        {{ $facture->reservation->entreprise->nom ?? 'Entreprise' }}
+                                        @if($facture->estAbonnementPlateforme())
+                                            Abonnement Allotata
+                                        @else
+                                            {{ $facture->reservation->entreprise->nom ?? $facture->entreprise->nom ?? 'Entreprise' }}
+                                        @endif
                                     </p>
+                                    <span class="mt-1 inline-block text-xs px-2 py-0.5 rounded-full {{ $facture->estAbonnementPlateforme() ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                                        {{ $facture->libelleOrigine() }}
+                                    </span>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-medium rounded-full
                                     @if($facture->statut === 'payee') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400

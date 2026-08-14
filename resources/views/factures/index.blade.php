@@ -124,19 +124,20 @@
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $facture->numero_facture }}</div>
+                                            <span class="mt-1 inline-block text-xs px-2 py-0.5 rounded-full {{ $facture->estAbonnementPlateforme() ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                                                {{ $facture->libelleOrigine() }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4">
-                                            @if($facture->type_facture === 'abonnement_manuel')
+                                            @if($facture->estAbonnementPlateforme())
                                                 <div class="text-sm font-medium text-slate-900 dark:text-white">
-                                                    💳 Abonnement
+                                                    Abonnement Allotata
                                                     @if($facture->entrepriseSubscription)
-                                                        - {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Multi-Personnes' }}
-                                                    @else
-                                                        Premium
+                                                        — {{ $facture->entrepriseSubscription->type === 'site_web' ? 'Site Web Vitrine' : 'Multi-Personnes' }}
                                                     @endif
                                                 </div>
                                                 <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                                    {{ $facture->notes ?? 'Facture d\'abonnement' }}
+                                                    {{ $facture->notes ?? 'Facture d\'abonnement plateforme' }}
                                                 </div>
                                             @else
                                                 @if($facture->entreprise)

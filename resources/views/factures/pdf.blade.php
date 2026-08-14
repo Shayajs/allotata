@@ -19,6 +19,14 @@
         $paiement = $doc['paiement'] ?? [];
         $mentions = $doc['mentions'] ?? [];
         $estDevis = ($doc['type'] ?? '') === 'devis';
+        $estPlateforme = ($doc['emetteur_kind'] ?? '') === 'plateforme';
+        $siretAffiche = $emetteur['siret_formate'] ?? ($emetteur['siret'] ?? '');
+        $nomEmetteur = $estPlateforme
+            ? ($emetteur['marque'] ?? 'Allotata')
+            : ($emetteur['nom'] ?? '');
+        $sousTitreEmetteur = $estPlateforme
+            ? trim(($emetteur['nom'] ?? '').', EI')
+            : ($emetteur['forme_juridique'] ?? '');
     @endphp
     <style>
         @page { margin: 1.8cm 1.6cm; }
@@ -96,6 +104,15 @@
             font-size: 8px;
             color: {{ $c['muted'] }};
         }
+        .bandeau {
+            margin: 12px 0 0;
+            padding: 6px 10px;
+            background: {{ $c['primary'] }};
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -103,18 +120,21 @@
         <tr>
             <td width="55%">
                 @if(!empty($doc['logo_base64']))
-                    <img src="{{ $doc['logo_base64'] }}" alt="Logo" class="logo">
+                    <img src="{{ $doc['logo_base64'] }}" alt="{{ $estPlateforme ? 'Allotata' : 'Logo' }}" class="logo">
                 @endif
-                <div class="company-name">{{ $emetteur['nom'] ?? '' }}</div>
-                <div class="muted">{{ $emetteur['forme_juridique'] ?? '' }}</div>
-                @if(!empty($emetteur['siret']))
-                    <div class="muted">SIRET {{ $emetteur['siret'] }}</div>
+                <div class="company-name">{{ $nomEmetteur }}</div>
+                <div class="muted">{{ $sousTitreEmetteur }}</div>
+                @if($estPlateforme && !empty($emetteur['forme_juridique']))
+                    <div class="muted">{{ $emetteur['forme_juridique'] }}</div>
+                @endif
+                @if(!empty($siretAffiche))
+                    <div class="muted">SIRET {{ $siretAffiche }}</div>
                 @endif
                 @if(!empty($emetteur['tva_intracommunautaire']))
                     <div class="muted">TVA intra. {{ $emetteur['tva_intracommunautaire'] }}</div>
                 @endif
                 @if(!empty($emetteur['rcs']))
-                    <div class="muted">{{ $emetteur['rcs'] }}</div>
+                    <div class="muted">{{ $emetteur['rcs'] }}{{ !empty($emetteur['ape']) ? ' — APE '.$emetteur['ape'] : '' }}</div>
                 @endif
                 @if(!empty($emetteur['adresse']))
                     <div class="muted">{!! nl2br(e($emetteur['adresse'])) !!}</div>
@@ -124,6 +144,9 @@
             <td width="45%">
                 <div class="doc-title">{{ $estDevis ? 'DEVIS' : 'FACTURE' }}</div>
                 <div class="doc-numero">{{ $doc['numero'] ?? '' }}</div>
+                @if($estPlateforme && !empty($doc['bandeau']))
+                    <div class="bandeau">{{ $doc['bandeau'] }}</div>
+                @endif
                 <div class="meta">
                     Date d'émission : {{ $doc['date_emission'] ?? '' }}<br>
                     @if(!empty($doc['date_prestation']))
@@ -240,9 +263,14 @@
     </div>
 
     <div class="footer">
-        {{ $emetteur['nom'] ?? '' }}
-        {{ !empty($emetteur['forme_juridique']) ? ' — '.$emetteur['forme_juridique'] : '' }}
-        {{ !empty($emetteur['siret']) ? ' — SIRET '.$emetteur['siret'] : '' }}
+        @if($estPlateforme)
+            Lucas Espinar, EI — Allotata
+            {{ !empty($siretAffiche) ? ' — SIRET '.$siretAffiche : '' }}
+        @else
+            {{ $emetteur['nom'] ?? '' }}
+            {{ !empty($emetteur['forme_juridique']) ? ' — '.$emetteur['forme_juridique'] : '' }}
+            {{ !empty($emetteur['siret']) ? ' — SIRET '.$emetteur['siret'] : '' }}
+        @endif
     </div>
 </body>
 </html>

@@ -80,6 +80,42 @@ class PdfTemplateTest extends TestCase
         $this->assertStringContainsString('12/09/2026', $html);
     }
 
+    public function test_pdf_abonnement_plateforme_identite_ei(): void
+    {
+        $doc = $this->doc(assujetti: false);
+        $doc['emetteur_kind'] = 'plateforme';
+        $doc['bandeau'] = 'Facture Allotata — abonnement plateforme';
+        $doc['logo'] = 'allotata';
+        $doc['logo_base64'] = 'data:image/png;base64,AAAA';
+        $doc['numero'] = 'ALO-2026-0001';
+        $doc['emetteur'] = [
+            'nom' => 'Lucas Espinar',
+            'marque' => 'Allotata',
+            'forme_juridique' => 'Entrepreneur individuel',
+            'siret' => '99453590400019',
+            'siret_formate' => '994 535 904 00019',
+            'rcs' => 'RCS Saintes',
+            'ape' => '6201Z',
+            'adresse' => "5 Chemin des Chênes\n17210 Bussac-Forêt",
+            'email' => 'lucas.espinar@brightshell.fr',
+            'telephone' => '06 44 07 30 37',
+        ];
+
+        $html = html_entity_decode(
+            view('factures.pdf', ['doc' => $doc])->render(),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        );
+
+        $this->assertStringContainsString('Lucas Espinar', $html);
+        $this->assertStringContainsString('Allotata', $html);
+        $this->assertStringContainsString('alt="Allotata"', $html);
+        $this->assertStringContainsString('293 B', $html);
+        $this->assertStringContainsString('SIRET 994 535 904 00019', $html);
+        $this->assertStringContainsString('ALO-2026-0001', $html);
+        $this->assertStringNotContainsString('Salon Test', $html);
+    }
+
     /**
      * @return array<string, mixed>
      */

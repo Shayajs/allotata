@@ -37,7 +37,7 @@
                 </h2>
                 <p class="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
                     Ou
-                    <a href="{{ !empty($public_agenda_return) ? route('login', ['return' => $public_agenda_return]) : route('login') }}" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400">
+                    <a href="{{ !empty($return_url) ? route('login', ['return' => $return_url]) : route('login') }}" class="font-medium text-green-600 hover:text-green-500 dark:text-green-400">
                         connectez-vous à votre compte existant
                     </a>
                 </p>
@@ -88,8 +88,8 @@
                 @if(isset($invitation) && $invitation)
                     <input type="hidden" name="invitation_token" value="{{ $invitation->token }}">
                 @endif
-                @if(!empty($public_agenda_return))
-                    <input type="hidden" name="return" value="{{ $public_agenda_return }}">
+                @if(!empty($return_url))
+                    <input type="hidden" name="return" value="{{ $return_url }}">
                 @endif
 
                 <!-- ═══════════════════════════════════════════════════ -->

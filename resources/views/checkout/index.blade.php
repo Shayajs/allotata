@@ -186,10 +186,27 @@
                                                         <p class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Total &agrave; r&eacute;gler</p>
                                                         <p class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{ number_format($pMontant, 2, ',', ' ') }} &euro;</p>
                                                     </div>
+                                                    <div class="flex flex-col gap-2 w-full sm:w-auto">
                                                     <button type="button" class="checkout-regler-btn inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation" data-pending-key="{{ $pendingKey }}" @if($codePromo) data-code-promo="{{ $codePromo }}" @endif>
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                                                         <span class="checkout-regler-label">R&eacute;gler cette &eacute;ch&eacute;ance</span>
                                                     </button>
+                                                    @php
+                                                        $pEntreprise = \App\Models\Entreprise::find($pItem['entreprise_id'] ?? 0);
+                                                    @endphp
+                                                    @if($pEntreprise && in_array($pType, ['site_web', 'multi_personnes'], true) && $user->aAbonnementActif() && $pEntreprise->peutDemarrerEssai($pType))
+                                                        <form action="{{ route('essai-gratuit.entreprise', $pEntreprise->slug) }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="type" value="{{ $pType }}">
+                                                            <input type="hidden" name="source" value="page_paiement">
+                                                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-xl transition touch-manipulation">
+                                                                Essayer 7 jours gratuitement
+                                                            </button>
+                                                        </form>
+                                                    @elseif($pEntreprise && in_array($pType, ['site_web', 'multi_personnes'], true) && $user->aAbonnementActif())
+                                                        <p class="text-xs text-center text-slate-500 dark:text-slate-400">Essai déjà utilisé — un nouvel essai n'est plus possible.</p>
+                                                    @endif
+                                                    </div>
                                                 </div>
                                             </div>
                                         </article>

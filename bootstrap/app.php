@@ -17,6 +17,29 @@ return Application::configure(basePath: dirname(__DIR__))
         // Faire confiance à tous les proxies pour le HTTPS
         $middleware->trustProxies(at: '*');
 
+        $middleware->trustHosts(at: function () {
+            $base = \App\Support\SubdomainHost::baseDomain();
+            if ($base === '') {
+                return [];
+            }
+
+            return [
+                $base,
+                'www.'.$base,
+                '^(.+\.)?'.preg_quote($base, '/').'$',
+            ];
+        });
+
+        $middleware->prepend(\App\Http\Middleware\RewriteSubdomainRequest::class);
+
+        $middleware->replaceInGroup(
+            'web',
+            \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\StartSession::class
+        );
+
+        $middleware->redirectGuestsTo(fn ($request) => \App\Support\SubdomainHost::guestLoginUrl($request));
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
@@ -27,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'lesson.accessible' => \App\Http\Middleware\EnsureLessonAccessible::class,
             'no.admin.exists' => \App\Http\Middleware\NoAdminExists::class,
             'google.rwg.auth' => \App\Http\Middleware\GoogleRwgAuth::class,
+            'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,
         ]);
 
         // Middleware global pour tracker l'activité utilisateur
@@ -43,6 +67,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trafic site (visiteurs uniques / jour, bots, invités)
         $middleware->appendToGroup('web', \App\Http\Middleware\TrackSiteTraffic::class);
         
+        // Consentement cookies : ecrit en JS sur le domaine parent pour etre partage
+        // par tous les sous-domaines, donc jamais chiffre par Laravel.
+        $middleware->encryptCookies(except: [
+            'allo_tata_cookie_preferences',
+        ]);
+
         // Exception CSRF pour les webhooks Stripe, Google Calendar et l'authentification broadcasting
         $middleware->validateCsrfTokens(except: [
             'stripe/*',

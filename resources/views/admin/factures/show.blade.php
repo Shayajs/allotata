@@ -25,17 +25,10 @@
             <div>
                 <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Type</h3>
                 <span class="text-sm px-2 py-1 rounded-full
-                    @if($facture->type_facture === 'reservation') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
-                    @elseif($facture->type_facture === 'abonnement_manuel') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400
-                    @else bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400
+                    @if($facture->estAbonnementPlateforme()) bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400
+                    @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
                     @endif">
-                    @if($facture->type_facture === 'reservation')
-                        Réservation
-                    @elseif($facture->type_facture === 'abonnement_manuel')
-                        Abonnement manuel
-                    @else
-                        Abonnement entreprise
-                    @endif
+                    {{ $facture->libelleOrigine() }}
                 </span>
             </div>
             <div>
@@ -53,16 +46,19 @@
 
         <!-- Entreprise et Client -->
         <div class="grid grid-cols-2 gap-6">
-            @if($facture->entreprise)
-                <div>
-                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Entreprise</h3>
+            <div>
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Facturé par</h3>
+                @if($facture->estAbonnementPlateforme())
+                    <p class="text-sm text-slate-900 dark:text-white">Lucas Espinar, EI — Allotata</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-400">SIRET 994 535 904 00019</p>
+                @elseif($facture->entreprise)
                     <p class="text-sm text-slate-900 dark:text-white">{{ $facture->entreprise->nom }}</p>
                     <p class="text-xs text-slate-600 dark:text-slate-400">{{ $facture->entreprise->email }}</p>
-                </div>
-            @endif
+                @endif
+            </div>
             @if($facture->user)
                 <div>
-                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Client/Membre</h3>
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase">Facturé à</h3>
                     <p class="text-sm text-slate-900 dark:text-white">{{ $facture->user->name }}</p>
                     <p class="text-xs text-slate-600 dark:text-slate-400">{{ $facture->user->email }}</p>
                 </div>

@@ -122,29 +122,63 @@
         const panelContent = document.getElementById('cookie-panel-content');
         if (!banner) return;
 
-        // Lire les préférences existantes
+        // Le consentement est stocke dans un cookie pose sur le domaine parent :
+        // localStorage est cloisonne par origine, la banniere reapparaitrait sur
+        // chaque sous-domaine.
+        const STORAGE_KEY = 'allo_tata_cookie_preferences';
+        const COOKIE_DOMAIN = @json(config('session.domain'));
+        const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+        function readConsentCookie() {
+            const prefix = STORAGE_KEY + '=';
+            const found = document.cookie.split('; ').find(part => part.startsWith(prefix));
+
+            return found ? decodeURIComponent(found.slice(prefix.length)) : null;
+        }
+
         function getCookiePreferences() {
+            // Le localStorage sert de repli pour les visiteurs qui avaient deja
+            // repondu avant le passage au cookie partage.
+            let raw = readConsentCookie();
+            if (!raw) {
+                try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { raw = null; }
+            }
+
             try {
-                const raw = localStorage.getItem('allo_tata_cookie_preferences');
                 return raw ? JSON.parse(raw) : null;
             } catch (e) { return null; }
         }
 
         function saveCookiePreferences(prefs) {
-            localStorage.setItem('allo_tata_cookie_preferences', JSON.stringify(prefs));
-            localStorage.setItem('allo_tata_cookie_consent', prefs.consent);
+            const parts = [
+                STORAGE_KEY + '=' + encodeURIComponent(JSON.stringify(prefs)),
+                'path=/',
+                'max-age=' + COOKIE_MAX_AGE,
+                'SameSite=Lax',
+            ];
+
+            if (COOKIE_DOMAIN) parts.push('domain=' + COOKIE_DOMAIN);
+            if (location.protocol === 'https:') parts.push('Secure');
+
+            document.cookie = parts.join('; ');
+
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch (e) {}
         }
 
-        // Vérifier si le consentement a déjà été donné
-        const consent = localStorage.getItem('allo_tata_cookie_consent');
+        const existing = getCookiePreferences();
 
-        if (!consent) {
+        // Choix deja fait sur un autre sous-domaine : on le rejoue ici pour que le
+        // cookie partage prenne le relais du localStorage.
+        if (existing && existing.consent && !readConsentCookie()) {
+            saveCookiePreferences(existing);
+        }
+
+        if (!existing || !existing.consent) {
             banner.classList.remove('hidden');
             setTimeout(() => { banner.classList.remove('translate-y-full'); }, 100);
         }
 
         // Charger les préférences existantes dans le panneau
-        const existing = getCookiePreferences();
         if (existing) {
             document.getElementById('cookie-analytics').checked = existing.analytics !== false;
             document.getElementById('cookie-marketing').checked = existing.marketing === true;

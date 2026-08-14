@@ -177,6 +177,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Relation : Un utilisateur peut avoir plusieurs jetons d'accès à l'API
+     */
+    public function apiTokens()
+    {
+        return $this->hasMany(ApiToken::class);
+    }
+
+    /**
      * Relation : Un utilisateur peut avoir plusieurs prix personnalisés
      */
     public function customPrices()

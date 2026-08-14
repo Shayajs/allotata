@@ -20,8 +20,59 @@
                 <p class="text-slate-300 mb-6 max-w-xl">
                     Installez l'application officielle {{ $entreprise->nom }} sur votre appareil pour un accès direct à votre espace client, vos réservations et vos documents.
                 </p>
-                
-                <button 
+
+                @php
+                    $onTenantHost = ($subdomainHost['mode'] ?? '') === 'tenant';
+                    $subdomainsOn = \App\Support\SubdomainHost::enabled();
+                    $tenantManageUrl = \App\Support\SubdomainHost::tenantUrl($entreprise->slug, '/manage');
+                @endphp
+
+                @if($onTenantHost)
+                <button
+                    id="pwa-install-btn-entreprise"
+                    onclick="window.installPwa && window.installPwa()"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-orange-500 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg relative overflow-hidden group"
+                >
+                    <svg id="pwa-install-icon-entreprise" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span id="pwa-install-text-entreprise">Installer maintenant</span>
+                </button>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        window.deferredPrompt = window.deferredPrompt || null;
+                        window.addEventListener('beforeinstallprompt', (e) => {
+                            e.preventDefault();
+                            window.deferredPrompt = e;
+                        });
+                        window.installPwa = window.installPwa || async function () {
+                            if (window.deferredPrompt) {
+                                window.deferredPrompt.prompt();
+                                await window.deferredPrompt.userChoice;
+                                window.deferredPrompt = null;
+                                return;
+                            }
+                            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                                alert("Pour installer l'application sur iOS :\n1. Appuyez sur Partager\n2. Choisissez « Sur l'écran d'accueil »");
+                                return;
+                            }
+                            alert("Ouvrez le menu du navigateur et choisissez « Installer l'application ».");
+                        };
+                        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                        if (isStandalone) {
+                            const btn = document.getElementById('pwa-install-btn-entreprise');
+                            const text = document.getElementById('pwa-install-text-entreprise');
+                            if (btn && text) {
+                                text.textContent = 'Déjà installé';
+                                btn.classList.remove('from-green-500', 'to-orange-500', 'hover:scale-105');
+                                btn.classList.add('bg-slate-700', 'cursor-default', 'opacity-90');
+                                btn.onclick = null;
+                            }
+                        }
+                    });
+                </script>
+                @else
+                <button
                     id="pwa-install-btn-entreprise"
                     disabled
                     class="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-400 font-semibold rounded-xl cursor-not-allowed opacity-75 shadow-lg relative overflow-hidden"
@@ -31,9 +82,16 @@
                     </svg>
                     <span>Bientôt disponible</span>
                 </button>
-                
+                @endif
 
-                
+                @if($subdomainsOn)
+                <p class="mt-4 text-sm">
+                    <a href="{{ $tenantManageUrl }}" class="text-green-400 hover:text-green-300 underline">
+                        Tester l'app : {{ $entreprise->slug }}.{{ \App\Support\SubdomainHost::baseDomain() }}/manage
+                    </a>
+                </p>
+                @endif
+
                 <p class="mt-4 text-xs text-slate-400">
                     <span class="block sm:inline">📱 Compatible iOS & Android</span>
                     <span class="hidden sm:inline mx-2">•</span>

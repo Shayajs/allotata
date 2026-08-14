@@ -7,7 +7,9 @@ use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
 use App\Models\User;
 use App\Services\SecurityService;
+use App\Support\HostReturnUrl;
 use App\Support\PublicAgendaReturnUrl;
+use App\Support\SubdomainHost;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +36,7 @@ class AuthController extends Controller
 
         return view('auth.signup', [
             'invitation' => $invitation,
-            'public_agenda_return' => PublicAgendaReturnUrl::normalize($request->query('return')),
+            'return_url' => $this->rememberReturnUrl($request),
         ]);
     }
 
@@ -189,18 +191,11 @@ class AuthController extends Controller
      */
     public function showSignin(Request $request)
     {
-        if ($request->filled('return')) {
-            $normalized = PublicAgendaReturnUrl::normalize($request->query('return'));
-            if ($normalized) {
-                $request->session()->put('url.intended', $normalized);
-            }
-        }
-
         $invitationToken = $request->session()->get('invitation_token');
 
         return view('auth.signin', [
             'invitation_token' => $invitationToken,
-            'public_agenda_return' => PublicAgendaReturnUrl::normalize($request->query('return')),
+            'return_url' => $this->rememberReturnUrl($request),
         ]);
     }
 
@@ -215,12 +210,7 @@ class AuthController extends Controller
             'return' => ['nullable', 'string', 'max:2048'],
         ]);
 
-        if (! empty($validated['return'])) {
-            $normalizedReturn = PublicAgendaReturnUrl::normalize($validated['return']);
-            if ($normalizedReturn) {
-                $request->session()->put('url.intended', $normalizedReturn);
-            }
-        }
+        $this->rememberReturnUrl($request, $validated['return'] ?? null);
 
         $credentials = [
             'email' => $validated['email'],
@@ -581,7 +571,25 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect($this->logoutRedirectUrl($request));
+    }
+
+    /**
+     * Reste sur l'origine courante pour ne pas faire sortir l'utilisateur du scope du PWA.
+     */
+    protected function logoutRedirectUrl(Request $request): string
+    {
+        if (! SubdomainHost::enabled()) {
+            return '/';
+        }
+
+        $parsed = SubdomainHost::parse($request->getHost());
+
+        if (! SubdomainHost::isIsolated($parsed['mode'])) {
+            return '/';
+        }
+
+        return $request->getSchemeAndHttpHost().'/';
     }
 
     /**
@@ -786,6 +794,17 @@ class AuthController extends Controller
             'needs_verification' => true,
             'message' => 'Compte créé ! Vérifiez votre email pour vous connecter.',
         ]);
+    }
+
+    protected function rememberReturnUrl(Request $request, ?string $url = null): ?string
+    {
+        $url ??= $request->query('return') ?? $request->input('return');
+        $normalized = PublicAgendaReturnUrl::normalize($url) ?? HostReturnUrl::normalize($url);
+        if ($normalized) {
+            $request->session()->put('url.intended', $normalized);
+        }
+
+        return $normalized;
     }
 
     /**

@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use App\Services\AccountAccessService;
+use App\Support\SubdomainHost;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Mail\Events\MessageSent;
 
 class AppServiceProvider extends ServiceProvider
@@ -99,11 +101,30 @@ class AppServiceProvider extends ServiceProvider
             return $guard;
         });
 
+        $urlGenerator = URL::getFacadeRoot();
+        if (method_exists($urlGenerator, 'formatPathUsing') && method_exists($urlGenerator, 'formatHostUsing')) {
+            // formatHostUsing est toujours appele juste avant formatPathUsing dans
+            // UrlGenerator::format() : on laisse outboundUrl() reconstruire l'URL entiere
+            // pour pouvoir renvoyer un lien vers un autre sous-domaine.
+            URL::formatHostUsing(function (string $root) {
+                SubdomainHost::rememberUrlRoot($root);
+
+                return '';
+            });
+
+            URL::formatPathUsing(function (string $path, $route = null) {
+                return SubdomainHost::outboundUrl($path);
+            });
+        }
+
+        Authenticate::redirectUsing(fn ($request) => SubdomainHost::guestLoginUrl($request));
+
         View::composer('*', function ($view) {
             $accountAccess = app(AccountAccessService::class);
 
             $view->with('accountAccess', $accountAccess);
             $view->with('accountAccessQuery', $accountAccess->buildQuery());
+            $view->with('subdomainHost', SubdomainHost::current());
         });
 
         View::composer('partials.favicon', function ($view) {

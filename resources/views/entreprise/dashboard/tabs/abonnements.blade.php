@@ -158,6 +158,10 @@
                                                             <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
                                                             <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
                                                         </div>
+                                                    @else
+                                                        <p class="text-center text-sm text-slate-600 dark:text-slate-400">
+                                                            Essai déjà utilisé. Un nouvel essai n'est plus possible.
+                                                        </p>
                                                     @endif
                                                     <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                         @csrf
@@ -280,6 +284,10 @@
                                                             <span class="absolute inset-x-0 h-px bg-slate-300 dark:bg-slate-600"></span>
                                                             <span class="relative px-4 bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400">ou</span>
                                                         </div>
+                                                    @else
+                                                        <p class="text-center text-sm text-slate-600 dark:text-slate-400">
+                                                            Essai déjà utilisé. Un nouvel essai n'est plus possible.
+                                                        </p>
                                                     @endif
                                                     <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
                                                         @csrf

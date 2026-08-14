@@ -296,7 +296,8 @@
             
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Durée (jours) *</label>
-                <input type="number" name="duree_jours" value="7" min="1" max="90" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <input type="number" name="duree_jours" value="7" min="1" max="{{ \App\Models\EssaiGratuit::DUREE_ADMIN_MAX_JOURS }}" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <p class="mt-1 text-xs text-slate-500">Sans abonnement payant lié, vous pouvez accorder autant d'essais que nécessaire, pour la durée de votre choix.</p>
             </div>
             
             <div>
@@ -324,7 +325,7 @@
             @csrf
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jours supplémentaires</label>
-                <input type="number" name="jours_supplementaires" value="7" min="1" max="30" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+                <input type="number" name="jours_supplementaires" value="7" min="1" max="{{ \App\Models\EssaiGratuit::DUREE_ADMIN_MAX_JOURS }}" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
             </div>
             <div class="flex gap-3">
                 <button type="button" onclick="closeProlongerModal()" class="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg">Annuler</button>

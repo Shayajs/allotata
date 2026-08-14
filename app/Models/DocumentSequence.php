@@ -11,6 +11,7 @@ class DocumentSequence extends Model
         'entreprise_id',
         'type',
         'annee',
+        'cle',
         'dernier_numero',
     ];
 

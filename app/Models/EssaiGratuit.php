@@ -11,6 +11,8 @@ class EssaiGratuit extends Model
 {
     use HasFactory;
 
+    public const DUREE_ADMIN_MAX_JOURS = 3650;
+
     protected $table = 'essais_gratuits';
 
     protected $fillable = [
@@ -166,6 +168,7 @@ class EssaiGratuit extends Model
     public function marquerExpire(): void
     {
         $this->update(['statut' => 'expire']);
+        $this->retirerAccesProvisionne();
     }
 
     /**
@@ -196,6 +199,7 @@ class EssaiGratuit extends Model
             'date_annulation' => now(),
             'raison_annulation' => $raison,
         ]);
+        $this->retirerAccesProvisionne();
     }
 
     /**
@@ -208,6 +212,58 @@ class EssaiGratuit extends Model
             'date_annulation' => now(),
             'raison_annulation' => $raison,
         ]);
+        $this->retirerAccesProvisionne();
+    }
+
+    /**
+     * Retire l'accès ouvert pour la durée de l'essai (sans toucher à un abonnement Stripe payant).
+     */
+    public function retirerAccesProvisionne(): void
+    {
+        $cible = $this->essayable;
+        if (! $cible) {
+            return;
+        }
+
+        if (method_exists($cible, 'essaiActif')) {
+            $autre = $cible->essaiActif($this->type_abonnement);
+            if ($autre && $autre->id !== $this->id) {
+                return;
+            }
+        }
+
+        if ($this->type_abonnement === 'premium' && $cible instanceof User) {
+            if ($cible->trial_ends_at) {
+                $cible->forceFill(['trial_ends_at' => now()->subSecond()])->save();
+            }
+
+            return;
+        }
+
+        if ($cible instanceof Entreprise && in_array($this->type_abonnement, ['site_web', 'multi_personnes'], true)) {
+            $sub = $cible->abonnements()->where('type', $this->type_abonnement)->first();
+            if (! $sub) {
+                return;
+            }
+
+            $updates = ['trial_ends_at' => null];
+            if ($sub->stripe_id) {
+                $sub->update($updates);
+
+                return;
+            }
+
+            if ($sub->est_manuel && ! $sub->estIssuEssaiGratuit()) {
+                $sub->update($updates);
+
+                return;
+            }
+
+            if ($sub->estIssuEssaiGratuit() || $sub->trial_ends_at || str_starts_with((string) $sub->name, 'essai_')) {
+                $updates['actif_jusqu'] = now()->subDay()->toDateString();
+                $sub->update($updates);
+            }
+        }
     }
 
     /**
@@ -313,6 +369,11 @@ class EssaiGratuit extends Model
     // ═══════════════════════════════════════════
     // CONSTANTES & TYPES
     // ═══════════════════════════════════════════
+
+    public function typeLabel(): string
+    {
+        return self::getTypesAbonnement()[$this->type_abonnement]['label'] ?? $this->type_abonnement;
+    }
 
     /**
      * Types d'abonnements disponibles pour essai

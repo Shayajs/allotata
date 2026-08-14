@@ -127,7 +127,8 @@ class EssaiGratuitController extends Controller
     }
 
     /**
-     * Accorder un essai manuellement
+     * Accorder un essai manuellement (durée libre, autant de fois que nécessaire
+     * tant qu'il n'y a pas d'abonnement payant pour ce type).
      */
     public function accorder(Request $request)
     {
@@ -135,7 +136,7 @@ class EssaiGratuitController extends Controller
             'type_cible' => 'required|in:user,entreprise',
             'cible_id' => 'required|integer',
             'type_abonnement' => 'required|string',
-            'duree_jours' => 'required|integer|min:1|max:90',
+            'duree_jours' => 'required|integer|min:1|max:'.EssaiGratuit::DUREE_ADMIN_MAX_JOURS,
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -143,23 +144,24 @@ class EssaiGratuitController extends Controller
         $typeCible = $request->input('type_cible');
         $cibleId = $request->input('cible_id');
         $typeAbonnement = $request->input('type_abonnement');
-        $dureeJours = $request->input('duree_jours');
+        $dureeJours = (int) $request->input('duree_jours');
         $notes = $request->input('notes');
 
-        // Récupérer l'entité cible
         if ($typeCible === 'user') {
             $cible = User::findOrFail($cibleId);
         } else {
             $cible = Entreprise::findOrFail($cibleId);
         }
 
-        // Vérifier qu'il n'y a pas déjà un essai actif
-        if ($cible->aEssaiEnCours($typeAbonnement)) {
-            return back()->with('error', 'Un essai gratuit est déjà en cours pour ce type.');
+        if ($cible->aAbonnementPayantPour($typeAbonnement)) {
+            return back()->with('error', 'Cette personne a déjà un abonnement payant pour cette option. Impossible d\'accorder un essai par-dessus.');
         }
 
-        // Créer l'essai
-        $essai = $cible->demarrerEssai(
+        if ($enCours = $cible->essaiActif($typeAbonnement)) {
+            $enCours->annuler('Remplacé par un essai accordé par un administrateur');
+        }
+
+        $cible->demarrerEssai(
             type: $typeAbonnement,
             jours: $dureeJours,
             source: 'admin_manuel',
@@ -185,24 +187,33 @@ class EssaiGratuitController extends Controller
     }
 
     /**
-     * Prolonger un essai
+     * Prolonger un essai (admin, durée libre, sans abonnement payant).
      */
     public function prolonger(Request $request, EssaiGratuit $essai)
     {
         $request->validate([
-            'jours_supplementaires' => 'required|integer|min:1|max:30',
+            'jours_supplementaires' => 'required|integer|min:1|max:'.EssaiGratuit::DUREE_ADMIN_MAX_JOURS,
         ]);
 
-        $joursSupp = $request->input('jours_supplementaires');
-        $nouvelleDateFin = $essai->date_fin->addDays($joursSupp);
+        $cible = $essai->essayable;
+        if ($cible && method_exists($cible, 'aAbonnementPayantPour') && $cible->aAbonnementPayantPour($essai->type_abonnement)) {
+            return back()->with('error', 'Impossible de prolonger : un abonnement payant est déjà en place pour cette option.');
+        }
+
+        $joursSupp = (int) $request->input('jours_supplementaires');
+        $nouvelleDateFin = $essai->date_fin->copy()->addDays($joursSupp);
 
         $essai->update([
             'date_fin' => $nouvelleDateFin,
             'duree_jours' => $essai->duree_jours + $joursSupp,
-            'statut' => 'actif', // Réactive si expiré
+            'statut' => 'actif',
         ]);
 
-        return back()->with('success', "Essai prolongé de {$joursSupp} jours. Nouvelle date de fin : " . $nouvelleDateFin->format('d/m/Y H:i'));
+        if ($cible && method_exists($cible, 'provisionnerAccesEssai')) {
+            $cible->provisionnerAccesEssai($essai->type_abonnement, $nouvelleDateFin);
+        }
+
+        return back()->with('success', "Essai prolongé de {$joursSupp} jours. Nouvelle date de fin : ".$nouvelleDateFin->format('d/m/Y H:i'));
     }
 
     /**
