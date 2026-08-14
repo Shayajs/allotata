@@ -24,6 +24,10 @@ class ManifestController extends Controller
             return response()->json($this->supportManifest());
         }
 
+        if ($parsed['mode'] === SubdomainHost::MODE_LEARN) {
+            return response()->json($this->learnManifest());
+        }
+
         if (in_array($parsed['mode'], [SubdomainHost::MODE_SIGN, SubdomainHost::MODE_API], true)) {
             return response()->json($this->apexManifest());
         }
@@ -158,6 +162,22 @@ class ManifestController extends Controller
         ];
     }
 
+    private function learnManifest(): array
+    {
+        return [
+            'name' => 'Apprendre avec Allo Tata',
+            'short_name' => 'Apprendre',
+            'description' => 'Les cours Allo Tata : gérer sa micro entreprise, étape par étape.',
+            'start_url' => '/',
+            'scope' => '/',
+            'display' => 'standalone',
+            'background_color' => '#0f172a',
+            'theme_color' => '#0f172a',
+            'orientation' => 'portrait',
+            'icons' => $this->defaultIcons(),
+        ];
+    }
+
     private function adminManifest(): array
     {
         return [
@@ -260,23 +280,33 @@ class ManifestController extends Controller
 
     private function defaultIcons(): array
     {
+        $v192 = $this->iconVersion('icon-192x192.png');
+        $v512 = $this->iconVersion('icon-512x512.png');
+
         return [
             [
-                'src' => '/icons/icon-192x192.png',
+                'src' => '/icons/icon-192x192.png'.$v192,
                 'sizes' => '192x192',
                 'type' => 'image/png',
             ],
             [
-                'src' => '/icons/icon-512x512.png',
+                'src' => '/icons/icon-512x512.png'.$v512,
                 'sizes' => '512x512',
                 'type' => 'image/png',
             ],
             [
-                'src' => '/icons/icon-512x512.png',
+                'src' => '/icons/icon-512x512.png'.$v512,
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'maskable',
             ],
         ];
+    }
+
+    private function iconVersion(string $filename): string
+    {
+        $path = public_path('icons/'.$filename);
+
+        return is_file($path) ? '?v='.filemtime($path) : '';
     }
 }

@@ -42,6 +42,7 @@ return [
         'sign',
         'api',
         'support',
+        'learn',
         'www',
         'mail',
         'app',
@@ -73,7 +74,6 @@ return [
                 'abonnement',
                 'essai-gratuit',
                 'entreprise',
-                'apprendre',
                 'gdpr',
                 'stop-impersonating',
             ],
@@ -96,6 +96,12 @@ return [
         'api' => [
             'type' => 'prefix',
             'root' => '/api',
+        ],
+        // Cours : le catalogue à la racine, les modules et leçons juste derrière
+        // (/apprendre/module/x devient learn.*/module/x).
+        'learn' => [
+            'type' => 'prefix',
+            'root' => '/apprendre',
         ],
         // Aide aux utilisateurs : la FAQ à la racine, puis les canaux de demande.
         // Les tickets viennent de dash : c'est le même geste que le contact.

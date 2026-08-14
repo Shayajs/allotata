@@ -21,6 +21,8 @@ class SubdomainHost
 
     public const MODE_SUPPORT = 'support';
 
+    public const MODE_LEARN = 'learn';
+
     public const MODE_TENANT = 'tenant';
 
     public const MODE_UNKNOWN = 'unknown';
@@ -203,6 +205,7 @@ class SubdomainHost
             self::MODE_SIGN,
             self::MODE_API,
             self::MODE_SUPPORT,
+            self::MODE_LEARN,
             self::MODE_TENANT,
         ], true);
     }
@@ -337,6 +340,10 @@ class SubdomainHost
             return ['subdomain' => 'api', 'path' => $path === '/api' ? '/' : self::stripPrefix($path, '/api')];
         }
 
+        if ($path === '/apprendre' || str_starts_with($path, '/apprendre/')) {
+            return ['subdomain' => 'learn', 'path' => $path === '/apprendre' ? '/' : self::stripPrefix($path, '/apprendre')];
+        }
+
         if (self::pathMatchesSegments($path, config('subdomains.hosts.sign.segments', []))) {
             return ['subdomain' => 'sign', 'path' => $path === '/signin' ? '/' : $path];
         }
@@ -395,6 +402,12 @@ class SubdomainHost
         // Aide publique : FAQ, formulaire de contact, suggestions. Les tickets,
         // eux, sont une correspondance privee.
         if (preg_match('#^/(support|contact|feedback)(/|$)#', $path) === 1) {
+            return true;
+        }
+
+        // Catalogue de cours : les modules sont ouverts, les lecons restent gardees
+        // par leur middleware d'acces.
+        if (preg_match('#^/apprendre(/|$)#', $path) === 1) {
             return true;
         }
 
@@ -479,6 +492,15 @@ class SubdomainHost
             }
             if (str_starts_with($path, '/api/')) {
                 return self::stripPrefix($path, '/api');
+            }
+        }
+
+        if ($parsed['mode'] === self::MODE_LEARN) {
+            if ($path === '/apprendre') {
+                return '/';
+            }
+            if (str_starts_with($path, '/apprendre/')) {
+                return self::stripPrefix($path, '/apprendre');
             }
         }
 

@@ -510,7 +510,7 @@ class SubdomainRoutingTest extends TestCase
 
         // Le choix doit etre stocke sur le domaine parent : en localStorage, la
         // banniere reapparaitrait sur chaque sous-domaine.
-        foreach (['https://allotata.test/', 'https://dash.allotata.test/apprendre'] as $url) {
+        foreach (['https://allotata.test/', 'https://learn.allotata.test/'] as $url) {
             $this->get($url)->assertSee('const COOKIE_DOMAIN = ".allotata.test"', false);
         }
     }

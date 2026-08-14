@@ -13,7 +13,12 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Allo Tata">
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+        @php
+            $appleIcon = \App\Helpers\SiteHelper::getLogo('pwa') ?: \App\Helpers\SiteHelper::getAllotataLogoUrl();
+            $appleIconFile = public_path('icons/icon-192x192.png');
+            $appleIconFallback = '/icons/icon-192x192.png'.(is_file($appleIconFile) ? '?v='.filemtime($appleIconFile) : '');
+        @endphp
+        <link rel="apple-touch-icon" href="{{ $appleIcon ?: $appleIconFallback }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />

@@ -3,7 +3,12 @@
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex-1 flex items-center gap-4 text-center sm:text-left">
                 <div class="hidden sm:block">
-                    <img src="/icons/icon-192x192.png" alt="Allo Tata" class="w-12 h-12 rounded-xl shadow-sm">
+                    @php
+                        $bannerIcon = \App\Helpers\SiteHelper::getLogo('pwa') ?: \App\Helpers\SiteHelper::getAllotataLogoUrl();
+                        $bannerIconFile = public_path('icons/icon-192x192.png');
+                        $bannerIconFallback = '/icons/icon-192x192.png'.(is_file($bannerIconFile) ? '?v='.filemtime($bannerIconFile) : '');
+                    @endphp
+                    <img src="{{ $bannerIcon ?: $bannerIconFallback }}" alt="Allo Tata" class="w-12 h-12 rounded-xl shadow-sm object-cover bg-slate-900">
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-900 dark:text-white text-lg">Installez l'application Allo Tata</h3>

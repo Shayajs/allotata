@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>@yield('title', 'Dashboard') - Allo Tata</title>
+        @include('partials.canonical')
         <script>
             // Configuration Reverb pour la présence en temps réel
             window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';

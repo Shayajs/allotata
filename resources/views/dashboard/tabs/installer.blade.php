@@ -9,7 +9,13 @@
         
         <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
             <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                <img src="/icons/icon-192x192.png" alt="App Icon" class="w-24 h-24 rounded-xl shadow-2xl">
+                @php
+                    $pwaIcon = \App\Helpers\SiteHelper::getLogo('pwa')
+                        ?: \App\Helpers\SiteHelper::getAllotataLogoUrl();
+                    $iconFile = public_path('icons/icon-192x192.png');
+                    $pwaIconFallback = '/icons/icon-192x192.png'.(is_file($iconFile) ? '?v='.filemtime($iconFile) : '');
+                @endphp
+                <img src="{{ $pwaIcon ?: $pwaIconFallback }}" alt="Allo Tata" class="w-24 h-24 rounded-xl shadow-2xl object-cover bg-slate-900">
             </div>
             
             <div class="flex-1 text-center md:text-left">
