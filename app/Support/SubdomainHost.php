@@ -357,6 +357,47 @@ class SubdomainHost
         return null;
     }
 
+    /**
+     * Le chemin interne sert-il une page publique d'entreprise ?
+     *
+     * Vitrine (/w/) et profil public (/p/) sont ouverts a tous et donc indexables.
+     * L'espace de gestion (/m/) n'en fait pas partie.
+     */
+    public static function isEntreprisePublicPath(string $path): bool
+    {
+        $path = self::normalizePath($path);
+
+        return preg_match('#^/(p|w)(/|$)#', $path) === 1;
+    }
+
+    /**
+     * URL unique a faire indexer pour la requete courante.
+     *
+     * La meme page repond depuis l'apex et depuis le sous-domaine de l'entreprise :
+     * la canonique designe le sous-domaine, pour ne pas faire indexer deux fois le
+     * meme contenu. La chaine de requete en est exclue, elle ne change pas la page.
+     */
+    public static function canonicalUrl(?Request $request = null): ?string
+    {
+        try {
+            $request ??= request();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! $request) {
+            return null;
+        }
+
+        $interne = (string) $request->attributes->get('subdomain.rewritten', $request->getPathInfo());
+
+        if (! self::enabled()) {
+            return rtrim((string) config('app.url'), '/').self::normalizePath($interne);
+        }
+
+        return self::ownerUrl($interne);
+    }
+
     public static function ownerUrl(string $path, ?string $query = null): string
     {
         $path = self::normalizePath($path);

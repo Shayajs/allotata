@@ -9,7 +9,7 @@
         
         <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
             <div class="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                <img src="{{ route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]) }}" alt="App Icon" class="w-24 h-24 rounded-xl shadow-2xl">
+                <img src="{{ ($subdomainHost['mode'] ?? '') === 'tenant' ? url('/manage/icon/192.png') : route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]) }}" alt="App Icon" class="w-24 h-24 rounded-xl shadow-2xl">
             </div>
             
             <div class="flex-1 text-center md:text-left">
@@ -30,7 +30,7 @@
                 @if($onTenantHost)
                 <button
                     id="pwa-install-btn-entreprise"
-                    onclick="window.installPwa && window.installPwa()"
+                    onclick="window.installPwa()"
                     class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-orange-500 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg relative overflow-hidden group"
                 >
                     <svg id="pwa-install-icon-entreprise" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,24 +40,6 @@
                 </button>
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
-                        window.deferredPrompt = window.deferredPrompt || null;
-                        window.addEventListener('beforeinstallprompt', (e) => {
-                            e.preventDefault();
-                            window.deferredPrompt = e;
-                        });
-                        window.installPwa = window.installPwa || async function () {
-                            if (window.deferredPrompt) {
-                                window.deferredPrompt.prompt();
-                                await window.deferredPrompt.userChoice;
-                                window.deferredPrompt = null;
-                                return;
-                            }
-                            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                                alert("Pour installer l'application sur iOS :\n1. Appuyez sur Partager\n2. Choisissez « Sur l'écran d'accueil »");
-                                return;
-                            }
-                            alert("Ouvrez le menu du navigateur et choisissez « Installer l'application ».");
-                        };
                         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
                         if (isStandalone) {
                             const btn = document.getElementById('pwa-install-btn-entreprise');

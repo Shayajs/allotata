@@ -448,6 +448,38 @@
                 }
             }
 
+            function showSearchMinCharsHint() {
+                const resultsList = document.getElementById('autocomplete-list-home');
+                resultsList.innerHTML = `
+                    <div class="px-4 py-5 text-center">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Saisissez au moins 2 caractères pour démarrer la recherche</p>
+                    </div>
+                `;
+            }
+
+            function updateSearchDropdownForShortQuery(query) {
+                const resultsContainer = document.getElementById('autocomplete-results-home');
+                const resultsList = document.getElementById('autocomplete-list-home');
+                const historyContainer = document.getElementById('search-history-home');
+
+                if (query.length === 0) {
+                    displaySearchHistory();
+                    if (getSearchHistory().length === 0) {
+                        showSearchMinCharsHint();
+                    } else {
+                        resultsList.innerHTML = '';
+                    }
+                } else {
+                    historyContainer.classList.add('hidden');
+                    showSearchMinCharsHint();
+                }
+
+                resultsContainer.classList.remove('hidden');
+            }
+
             function displaySearchHistory() {
                 const history = getSearchHistory();
                 const historyContainer = document.getElementById('search-history-home');
@@ -485,6 +517,7 @@
                 try {
                     localStorage.removeItem(SEARCH_HISTORY_KEY);
                     displaySearchHistory();
+                    showSearchMinCharsHint();
                 } catch (e) {
                     console.error('Erreur lors de la suppression de l\'historique:', e);
                 }
@@ -506,11 +539,11 @@
 
                 if (!searchInput) return;
 
-                // Afficher l'historique quand l'input est focus et vide
+                // Afficher l'historique ou l'indication minimale au focus
                 searchInput.addEventListener('focus', function() {
-                    if (this.value.trim().length === 0) {
-                        displaySearchHistory();
-                        resultsContainer.classList.remove('hidden');
+                    const query = this.value.trim();
+                    if (query.length < 2) {
+                        updateSearchDropdownForShortQuery(query);
                     }
                 });
 
@@ -522,14 +555,8 @@
                         currentRequest.abort();
                     }
 
-                    // Masquer les résultats si la requête est trop courte
                     if (query.length < 2) {
-                        if (query.length === 0) {
-                            displaySearchHistory();
-                            resultsContainer.classList.remove('hidden');
-                        } else {
-                            resultsContainer.classList.add('hidden');
-                        }
+                        updateSearchDropdownForShortQuery(query);
                         return;
                     }
 

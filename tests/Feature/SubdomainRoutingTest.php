@@ -239,7 +239,31 @@ class SubdomainRoutingTest extends TestCase
             ->assertOk()
             ->assertJsonPath('start_url', '/manage')
             ->assertJsonPath('scope', '/manage')
-            ->assertJsonPath('name', 'Acme Coiffure');
+            ->assertJsonPath('name', 'Acme Coiffure')
+            ->assertJsonPath('icons.0.src', '/manage/icon/192.png')
+            ->assertJsonPath('icons.1.src', '/manage/icon/512.png')
+            ->assertJsonPath('icons.0.purpose', 'any')
+            ->assertJsonPath('icons.2.purpose', 'maskable');
+    }
+
+    public function test_icone_pwa_tenant_reste_sur_la_meme_origine(): void
+    {
+        $user = User::factory()->create(['est_gerant' => true]);
+        Entreprise::factory()->create([
+            'user_id' => $user->id,
+            'slug' => 'acme',
+            'nom' => 'Acme Coiffure',
+        ]);
+
+        $icon = $this->get('https://acme.allotata.test/manage/icon/192.png')->assertOk();
+        $this->assertStringContainsString('image/png', (string) $icon->headers->get('content-type'));
+
+        $this->actingAs($user)
+            ->get('https://acme.allotata.test/manage?tab=installer')
+            ->assertOk()
+            ->assertSee('/manage/icon/192.png', false)
+            ->assertSee('window.installPwa()', false)
+            ->assertDontSee('dash.allotata.test/entreprise/acme/icon', false);
     }
 
     public function test_route_generee_reste_classique_sur_apex(): void

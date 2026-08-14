@@ -74,10 +74,12 @@ class RewriteSubdomainRequest
             return $response;
         }
 
-        // La vitrine d'un tenant et la page de garde de l'API sont faites pour etre
-        // trouvees ; tout le reste des sous-domaines reste hors des moteurs.
+        // Les pages publiques d'une entreprise sont faites pour etre trouvees : elles
+        // l'etaient depuis l'apex, elles le restent depuis son sous-domaine. Seuls les
+        // sous-domaines de service (dash, admin, sign) et l'espace de gestion d'une
+        // entreprise restent hors des moteurs, la page de garde de l'API exceptee.
         $served = (string) $request->attributes->get('subdomain.rewritten', $request->getPathInfo());
-        if (str_starts_with($served, '/w/') || $served === '/api') {
+        if (SubdomainHost::isEntreprisePublicPath($served) || $served === '/api') {
             return $response;
         }
 

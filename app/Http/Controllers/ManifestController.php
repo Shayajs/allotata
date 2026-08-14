@@ -170,20 +170,72 @@ class ManifestController extends Controller
 
     private function entrepriseIcons(Entreprise $entreprise): array
     {
+        $type = $this->iconMimeType($entreprise);
+
         return [
             [
-                'src' => route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]),
+                'src' => $this->iconSrc($entreprise, 192),
                 'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable',
+                'type' => $type,
+                'purpose' => 'any',
             ],
             [
-                'src' => route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 512]),
+                'src' => $this->iconSrc($entreprise, 512),
                 'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable',
+                'type' => $type,
+                'purpose' => 'any',
+            ],
+            [
+                'src' => $this->iconSrc($entreprise, 512),
+                'sizes' => '512x512',
+                'type' => $type,
+                'purpose' => 'maskable',
             ],
         ];
+    }
+
+    private function iconSrc(Entreprise $entreprise, int $size): string
+    {
+        $parsed = SubdomainHost::current();
+        if ($parsed['mode'] === SubdomainHost::MODE_TENANT && $parsed['subdomain'] === $entreprise->slug) {
+            return '/manage/icon/'.$size.'.png';
+        }
+
+        return route('manifest.icon', ['slug' => $entreprise->slug, 'size' => $size]);
+    }
+
+    private function iconMimeType(Entreprise $entreprise): string
+    {
+        if ($entreprise->logo) {
+            $logoPath = \App\Helpers\SiteHelper::publicStorageAbsolutePath($entreprise->logo);
+            if ($logoPath && $this->isPwaIconFile($logoPath)) {
+                return \App\Helpers\SiteHelper::faviconMimeType($entreprise->logo);
+            }
+        }
+
+        return 'image/png';
+    }
+
+    private function isPwaIconFile(string $path): bool
+    {
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['png', 'jpg', 'jpeg', 'webp'], true);
+    }
+
+    private function fallbackPngIcon(int $size)
+    {
+        $sized = public_path('icons/icon-'.$size.'x'.$size.'.png');
+        if (is_file($sized)) {
+            return response()->file($sized, ['Content-Type' => 'image/png']);
+        }
+
+        $default = public_path('icons/icon-192x192.png');
+        if (is_file($default)) {
+            return response()->file($default, ['Content-Type' => 'image/png']);
+        }
+
+        abort(404);
     }
 
     private function defaultIcons(): array

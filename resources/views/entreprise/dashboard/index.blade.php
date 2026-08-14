@@ -22,7 +22,8 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="{{ $entreprise->nom }}">
-        <link rel="apple-touch-icon" href="{{ route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]) }}">
+        <link rel="apple-touch-icon" href="{{ ($subdomainHost['mode'] ?? '') === 'tenant' ? url('/manage/icon/192.png') : route('manifest.icon', ['slug' => $entreprise->slug, 'size' => 192]) }}">
+        @include('partials.pwa-install')
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />

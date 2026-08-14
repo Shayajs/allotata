@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $entreprise->nom }} - Allo Tata</title>
+    @include('partials.canonical')
     @include('partials.favicon')
     <meta name="description" content="{{ $entreprise->phrase_accroche ?? $entreprise->description }}">
     
