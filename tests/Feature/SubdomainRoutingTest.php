@@ -80,9 +80,70 @@ class SubdomainRoutingTest extends TestCase
             ->assertRedirect('https://acme.allotata.test/manage');
     }
 
-    public function test_vitrine_reste_indexable_contrairement_au_reste(): void
+    public function test_les_pages_publiques_d_une_entreprise_restent_indexables(): void
     {
-        $user = User::factory()->create(['est_gerant' => true]);
+        [$user] = $this->entreprisePubliee();
+
+        // Ouvertes aux visiteurs depuis l'apex hier, depuis le sous-domaine
+        // aujourd'hui : dans les deux cas les moteurs y ont leur place.
+        foreach (['/', '/public', '/public/agenda'] as $chemin) {
+            $this->get('https://acme.allotata.test'.$chemin)
+                ->assertOk()
+                ->assertHeaderMissing('X-Robots-Tag');
+        }
+
+        // L'espace de gestion de la meme entreprise n'est pas public.
+        $this->actingAs($user)
+            ->get('https://acme.allotata.test/manage')
+            ->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+    }
+
+    public function test_les_sous_domaines_de_service_restent_hors_des_moteurs(): void
+    {
+        foreach ([
+            'https://dash.allotata.test/',
+            'https://admin.allotata.test/',
+            'https://sign.allotata.test/',
+        ] as $url) {
+            $this->get($url)->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        }
+    }
+
+    public function test_les_pages_publiques_designent_une_seule_url_canonique(): void
+    {
+        $this->entreprisePubliee();
+
+        // Depuis le sous-domaine de l'entreprise.
+        $this->get('https://acme.allotata.test/public')
+            ->assertSee('<link rel="canonical" href="https://acme.allotata.test/public">', false);
+
+        $this->get('https://acme.allotata.test/')
+            ->assertSee('<link rel="canonical" href="https://acme.allotata.test/">', false);
+
+        // Et depuis l'ancien lien de l'apex, meme quand il le sert au lieu de rediriger :
+        // c'est toujours le sous-domaine qui est designe.
+        config(['subdomains.legacy_redirect' => false]);
+
+        $this->get('https://allotata.test/p/acme')
+            ->assertOk()
+            ->assertSee('<link rel="canonical" href="https://acme.allotata.test/public">', false);
+    }
+
+    /**
+     * Une entreprise reellement visible des visiteurs : l'abonnement du gerant ouvre
+     * le profil public, celui de l'entreprise ouvre la vitrine.
+     *
+     * @return array{0: User, 1: Entreprise}
+     */
+    private function entreprisePubliee(): array
+    {
+        $user = User::factory()->create([
+            'est_gerant' => true,
+            'abonnement_manuel' => true,
+            'abonnement_manuel_actif_jusqu' => now()->addMonth(),
+        ]);
+
         $entreprise = Entreprise::factory()->create([
             'user_id' => $user->id,
             'slug' => 'acme',
@@ -98,14 +159,7 @@ class SubdomainRoutingTest extends TestCase
             'actif_jusqu' => now()->addMonth(),
         ]);
 
-        $this->get('https://acme.allotata.test/')
-            ->assertOk()
-            ->assertHeaderMissing('X-Robots-Tag');
-
-        $this->actingAs($user)
-            ->get('https://acme.allotata.test/manage')
-            ->assertOk()
-            ->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        return [$user, $entreprise];
     }
 
     public function test_tenant_racine_avec_site_web_sert_la_vitrine(): void
