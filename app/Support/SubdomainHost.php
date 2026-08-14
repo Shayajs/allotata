@@ -19,6 +19,8 @@ class SubdomainHost
 
     public const MODE_API = 'api';
 
+    public const MODE_SUPPORT = 'support';
+
     public const MODE_TENANT = 'tenant';
 
     public const MODE_UNKNOWN = 'unknown';
@@ -200,6 +202,7 @@ class SubdomainHost
             self::MODE_DASH,
             self::MODE_SIGN,
             self::MODE_API,
+            self::MODE_SUPPORT,
             self::MODE_TENANT,
         ], true);
     }
@@ -342,6 +345,10 @@ class SubdomainHost
             return ['subdomain' => 'dash', 'path' => $path === '/dashboard' ? '/' : $path];
         }
 
+        if (self::pathMatchesSegments($path, config('subdomains.hosts.support.segments', []))) {
+            return ['subdomain' => 'support', 'path' => $path === '/support/faq' ? '/' : $path];
+        }
+
         if (preg_match('#^/m/([^/]+)(/.*)?$#', $path, $matches)) {
             return ['subdomain' => $matches[1], 'path' => '/manage'.($matches[2] ?? '')];
         }
@@ -368,6 +375,31 @@ class SubdomainHost
         $path = self::normalizePath($path);
 
         return preg_match('#^/(p|w)(/|$)#', $path) === 1;
+    }
+
+    /**
+     * Le chemin interne merite-t-il d'etre trouve par un moteur ?
+     *
+     * Par defaut un sous-domaine est en noindex : c'est un espace de travail. Les
+     * exceptions sont les pages ouvertes a tous, qui l'etaient deja depuis l'apex.
+     */
+    public static function isIndexablePath(string $path): bool
+    {
+        $path = self::normalizePath($path);
+
+        // Pages publiques d'une entreprise : vitrine et profil.
+        if (self::isEntreprisePublicPath($path)) {
+            return true;
+        }
+
+        // Aide publique : FAQ, formulaire de contact, suggestions. Les tickets,
+        // eux, sont une correspondance privee.
+        if (preg_match('#^/(support|contact|feedback)(/|$)#', $path) === 1) {
+            return true;
+        }
+
+        // La page de garde de l'API, mais pas ses endpoints.
+        return $path === '/api';
     }
 
     /**
@@ -455,6 +487,10 @@ class SubdomainHost
         }
 
         if ($parsed['mode'] === self::MODE_SIGN && $path === '/signin') {
+            return '/';
+        }
+
+        if ($parsed['mode'] === self::MODE_SUPPORT && $path === '/support/faq') {
             return '/';
         }
 

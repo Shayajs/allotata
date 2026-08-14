@@ -20,6 +20,10 @@ class ManifestController extends Controller
             return response()->json($this->dashManifest());
         }
 
+        if ($parsed['mode'] === SubdomainHost::MODE_SUPPORT) {
+            return response()->json($this->supportManifest());
+        }
+
         if (in_array($parsed['mode'], [SubdomainHost::MODE_SIGN, SubdomainHost::MODE_API], true)) {
             return response()->json($this->apexManifest());
         }
@@ -128,6 +132,22 @@ class ManifestController extends Controller
             'name' => 'Allo Tata',
             'short_name' => 'AlloTata',
             'description' => 'Votre service pour gérer votre micro entreprise l\'esprit tranquille.',
+            'start_url' => '/',
+            'scope' => '/',
+            'display' => 'standalone',
+            'background_color' => '#0f172a',
+            'theme_color' => '#0f172a',
+            'orientation' => 'portrait',
+            'icons' => $this->defaultIcons(),
+        ];
+    }
+
+    private function supportManifest(): array
+    {
+        return [
+            'name' => 'Aide Allo Tata',
+            'short_name' => 'Aide',
+            'description' => 'FAQ, contact et suivi de vos demandes de support Allo Tata.',
             'start_url' => '/',
             'scope' => '/',
             'display' => 'standalone',

@@ -42,7 +42,10 @@ class ContactController extends Controller
             \Log::warning('Notification admin contact: '.$e->getMessage());
         }
 
-        return redirect()->route('home')
+        // La confirmation se lit sur la page de contact : le formulaire du pied de
+        // page peut etre soumis depuis n'importe quel host, l'accueil n'affiche pas
+        // toujours le message.
+        return redirect()->route('contact.create')
             ->with('success', 'Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.');
     }
 

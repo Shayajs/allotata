@@ -41,6 +41,7 @@ return [
         'dash',
         'sign',
         'api',
+        'support',
         'www',
         'mail',
         'app',
@@ -66,7 +67,6 @@ return [
                 'settings',
                 'notifications',
                 'messagerie',
-                'tickets',
                 'factures',
                 'checkout',
                 'payment',
@@ -96,6 +96,18 @@ return [
         'api' => [
             'type' => 'prefix',
             'root' => '/api',
+        ],
+        // Aide aux utilisateurs : la FAQ à la racine, puis les canaux de demande.
+        // Les tickets viennent de dash : c'est le même geste que le contact.
+        'support' => [
+            'type' => 'space',
+            'root' => '/support/faq',
+            'segments' => [
+                'support',
+                'contact',
+                'tickets',
+                'feedback',
+            ],
         ],
     ],
 

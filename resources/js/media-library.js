@@ -1,4 +1,6 @@
 // Media Library Manager
+import { compressImageFile } from './image-compress';
+
 class MediaLibrary {
     constructor() {
         // Lire les paramètres GET de l'URL pour restaurer l'état
@@ -545,7 +547,15 @@ class MediaLibrary {
         const uploadFolder = this.currentFolder;
         
         for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+            let file = files[i];
+            if (file.type && file.type.startsWith('image/')) {
+                if (statusEl) statusEl.textContent = `Compression de ${file.name}… (${i + 1}/${files.length})`;
+                try {
+                    file = await compressImageFile(file);
+                } catch (e) {
+                    console.warn('Compression image ignorée', e);
+                }
+            }
             const formData = new FormData();
             formData.append('file', file);
             formData.append('folder', uploadFolder);

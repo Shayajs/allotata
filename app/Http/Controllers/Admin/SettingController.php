@@ -125,16 +125,12 @@ class SettingController extends Controller
             // 2. Générer les icônes (192, 512, 1024) dans public/icons/
             $sourcePath = Storage::disk('public')->path($logoPath);
             $iconsDir = public_path('icons');
-            
+
             if (!file_exists($iconsDir)) {
                 mkdir($iconsDir, 0755, true);
             }
-            
-            $sizes = [192, 512, 1024];
-            
-            foreach ($sizes as $size) {
-                $this->generateIcon($sourcePath, $iconsDir . "/icon-{$size}x{$size}.png", $size);
-            }
+
+            $this->generatePwaIcons($sourcePath, $iconsDir, [192, 512, 1024]);
             
             ActivityLog::log('update', "Mise à jour du Logo PWA et génération des icônes");
             
@@ -149,41 +145,70 @@ class SettingController extends Controller
     }
 
     /**
-     * Génère une icône carrée redimensionnée
+     * Génère les icônes PWA à partir d'une seule lecture GD.
      */
-    private function generateIcon($sourcePath, $destPath, $size)
+    private function generatePwaIcons(string $sourcePath, string $iconsDir, array $sizes): void
     {
+        @ini_set('memory_limit', '512M');
+
         $imageInfo = getimagesize($sourcePath);
-        if (!$imageInfo) return;
-        
-        $mime = $imageInfo['mime'];
-        $width = $imageInfo[0];
-        $height = $imageInfo[1];
-        
-        switch ($mime) {
-            case 'image/jpeg': $source = imagecreatefromjpeg($sourcePath); break;
-            case 'image/png': $source = imagecreatefrompng($sourcePath); break;
-            case 'image/gif': $source = imagecreatefromgif($sourcePath); break;
-            case 'image/webp': $source = imagecreatefromwebp($sourcePath); break;
-            default: return;
+        if (!$imageInfo) {
+            throw new \RuntimeException('Impossible de lire le logo PWA.');
         }
-        
-        $dest = imagecreatetruecolor($size, $size);
-        
-        // Gérer la transparence
-        imagealphablending($dest, false);
-        imagesavealpha($dest, true);
-        $transparent = imagecolorallocatealpha($dest, 255, 255, 255, 127);
-        imagefilledrectangle($dest, 0, 0, $size, $size, $transparent);
-        
-        // Redimensionner
-        imagecopyresampled($dest, $source, 0, 0, 0, 0, $size, $size, $width, $height);
-        
-        // Sauvegarder en PNG
-        imagepng($dest, $destPath, 9);
-        
+
+        $mime = $imageInfo['mime'];
+        $width = (int) $imageInfo[0];
+        $height = (int) $imageInfo[1];
+
+        if ($width < 1 || $height < 1) {
+            throw new \RuntimeException('Logo PWA invalide.');
+        }
+
+        if (($width * $height) > 16000000) {
+            throw new \RuntimeException('Logo PWA trop grand (max ~4000×4000 px). Compresse-le avant envoi.');
+        }
+
+        $source = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($sourcePath),
+            'image/png' => imagecreatefrompng($sourcePath),
+            'image/gif' => imagecreatefromgif($sourcePath),
+            'image/webp' => imagecreatefromwebp($sourcePath),
+            default => null,
+        };
+
+        if (!$source) {
+            throw new \RuntimeException('Format de logo PWA non supporté.');
+        }
+
+        $maxEdge = max($sizes);
+        if ($width > $maxEdge || $height > $maxEdge) {
+            $ratio = $maxEdge / max($width, $height);
+            $newWidth = max(1, (int) round($width * $ratio));
+            $newHeight = max(1, (int) round($height * $ratio));
+            $scaled = imagecreatetruecolor($newWidth, $newHeight);
+            imagealphablending($scaled, false);
+            imagesavealpha($scaled, true);
+            $transparent = imagecolorallocatealpha($scaled, 255, 255, 255, 127);
+            imagefilledrectangle($scaled, 0, 0, $newWidth, $newHeight, $transparent);
+            imagecopyresampled($scaled, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($source);
+            $source = $scaled;
+            $width = $newWidth;
+            $height = $newHeight;
+        }
+
+        foreach ($sizes as $size) {
+            $dest = imagecreatetruecolor($size, $size);
+            imagealphablending($dest, false);
+            imagesavealpha($dest, true);
+            $transparent = imagecolorallocatealpha($dest, 255, 255, 255, 127);
+            imagefilledrectangle($dest, 0, 0, $size, $size, $transparent);
+            imagecopyresampled($dest, $source, 0, 0, 0, 0, $size, $size, $width, $height);
+            imagepng($dest, $iconsDir."/icon-{$size}x{$size}.png", 6);
+            imagedestroy($dest);
+        }
+
         imagedestroy($source);
-        imagedestroy($dest);
     }
 
     /**

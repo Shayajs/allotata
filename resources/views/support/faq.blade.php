@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FAQ - Questions fréquentes - Allo Tata</title>
+    <meta name="description" content="Réponses aux questions fréquentes sur Allo Tata : réservations, paiements, boutique, abonnement et support.">
+    @include('partials.canonical')
     @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -114,8 +116,9 @@
                         Comment contacter le support ?
                     </h2>
                     <p class="text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Vous pouvez contacter notre équipe de support de plusieurs façons : via l'onglet "Support" dans votre dashboard 
-                        pour créer un ticket de support, ou par email à support@allotata.com. 
+                        Trois façons : <a href="{{ route('contact.create') }}" class="text-green-600 dark:text-green-400 hover:underline">le formulaire de contact</a>
+                        pour une question ponctuelle, <a href="{{ route('tickets.create') }}" class="text-green-600 dark:text-green-400 hover:underline">un ticket</a>
+                        pour suivre un échange dans le temps, ou un email à support@allotata.com.
                         Nous nous efforçons de répondre à toutes les demandes dans les plus brefs délais.
                     </p>
                 </div>
@@ -125,15 +128,19 @@
                 <p class="text-slate-600 dark:text-slate-400 mb-4">
                     Vous ne trouvez pas la réponse à votre question ?
                 </p>
-                @auth
-                    <a href="{{ route('dashboard') }}?tab=support" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition">
-                        Créer un ticket de support
+                <div class="flex flex-wrap justify-center gap-3">
+                    <a href="{{ route('contact.create') }}" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition">
+                        Écrire au support
                     </a>
-                @else
-                    <a href="{{ route('login') }}" class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition">
-                        Se connecter pour contacter le support
+                    <a href="{{ route('tickets.create') }}" class="inline-block px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:border-green-500 transition">
+                        Créer un ticket
                     </a>
-                @endauth
+                    @auth
+                        <a href="{{ route('tickets.index') }}" class="inline-block px-6 py-3 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:text-green-600 dark:hover:text-green-400 transition">
+                            Mes tickets
+                        </a>
+                    @endauth
+                </div>
             </div>
         </div>
     </div>

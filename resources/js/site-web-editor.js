@@ -4,6 +4,7 @@
  */
 
 import Sortable from 'sortablejs';
+import { compressImageFile } from './image-compress';
 
 class SiteWebEditor {
     constructor(options = {}) {
@@ -1623,8 +1624,10 @@ class SiteWebEditor {
             const file = e.target.files[0];
             if (!file) return;
 
+            const compressed = await compressImageFile(file);
+
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('image', compressed);
             formData.append('block_id', blockId);
             formData.append('field', field);
 

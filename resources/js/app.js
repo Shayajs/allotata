@@ -1,7 +1,10 @@
 import './bootstrap';
 import './address-autocomplete';
 import './presence';
+import { installImageCompressHook } from './image-compress';
 import { isPushSupported, isPushSubscribed, subscribeToPush, sendSubscriptionToServer } from './push-notifications';
+
+installImageCompressHook();
 
 // ========================================
 // Flatpickr — Dates en français

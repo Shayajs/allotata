@@ -382,7 +382,8 @@ Route::middleware('auth')->prefix('/w/{slug}')->name('site-web.')->group(functio
     Route::post('/pages/reorder', [SiteWebController::class, 'reorderPages'])->name('pages.reorder');
 });
 
-// Contact (public - depuis le footer)
+// Contact (public - depuis le footer et depuis support.*)
+Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Forum (public)

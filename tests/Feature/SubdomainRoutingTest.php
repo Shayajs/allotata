@@ -395,7 +395,7 @@ class SubdomainRoutingTest extends TestCase
     public function test_hors_perimetre_la_navigation_part_mais_pas_l_ecriture(): void
     {
         $this->get('https://admin.allotata.test/contact')
-            ->assertRedirect('https://allotata.test/contact');
+            ->assertRedirect('https://support.allotata.test/contact');
 
         $this->assertSame(
             'serve',
@@ -408,6 +408,7 @@ class SubdomainRoutingTest extends TestCase
         $this->assertSame('admin-1', SubdomainHost::nextAvailableSlug('admin'));
         $this->assertSame('dash-1', SubdomainHost::nextAvailableSlug('dash'));
         $this->assertSame('sign-1', SubdomainHost::nextAvailableSlug('sign'));
+        $this->assertSame('support-1', SubdomainHost::nextAvailableSlug('support'));
     }
 
     public function test_apex_redirige_les_anciens_liens_vers_le_proprietaire(): void

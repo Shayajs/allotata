@@ -74,12 +74,11 @@ class RewriteSubdomainRequest
             return $response;
         }
 
-        // Les pages publiques d'une entreprise sont faites pour etre trouvees : elles
-        // l'etaient depuis l'apex, elles le restent depuis son sous-domaine. Seuls les
-        // sous-domaines de service (dash, admin, sign) et l'espace de gestion d'une
-        // entreprise restent hors des moteurs, la page de garde de l'API exceptee.
+        // Ce qui etait public sur l'apex le reste sur son sous-domaine : pages
+        // d'entreprise, aide, documentation. Le reste (dash, admin, sign, gestion,
+        // tickets) est un espace de travail et n'a rien a faire dans un index.
         $served = (string) $request->attributes->get('subdomain.rewritten', $request->getPathInfo());
-        if (SubdomainHost::isEntreprisePublicPath($served) || $served === '/api') {
+        if (SubdomainHost::isIndexablePath($served)) {
             return $response;
         }
 
