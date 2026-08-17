@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FcmToken;
 use App\Models\PushSubscription;
 use App\Models\User;
 use Minishlink\WebPush\Subscription;
@@ -64,7 +65,7 @@ class PushNotificationService
 
         $subscriptions = $user->pushSubscriptions;
 
-        if ($subscriptions->isEmpty()) {
+        if ($subscriptions->isEmpty() && $user->fcmTokens()->doesntExist()) {
             return;
         }
 
@@ -76,6 +77,8 @@ class PushNotificationService
             'badge' => '/icons/icon-192x192.png',
             'category' => $category,
         ]);
+
+        $this->sendFcm($user, $title, $body, $url);
 
         foreach ($subscriptions as $pushSubscription) {
             $subscription = Subscription::create([
@@ -166,6 +169,42 @@ class PushNotificationService
             }
         } catch (\Exception $e) {
             \Log::error("Erreur lors de l'envoi des push notifications : " . $e->getMessage());
+        }
+    }
+
+    private function sendFcm(User $user, string $title, string $body, ?string $url): void
+    {
+        $serverKey = config('services.fcm.server_key');
+        if (! $serverKey) {
+            return;
+        }
+
+        $tokens = $user->fcmTokens()->pluck('token');
+        if ($tokens->isEmpty()) {
+            return;
+        }
+
+        foreach ($tokens as $token) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::withToken($serverKey)
+                    ->acceptJson()
+                    ->post('https://fcm.googleapis.com/fcm/send', [
+                        'to' => $token,
+                        'notification' => [
+                            'title' => $title,
+                            'body' => $body,
+                        ],
+                        'data' => [
+                            'url' => $url ?? config('app.url'),
+                        ],
+                    ]);
+
+                if (in_array($response->status(), [404, 410], true)) {
+                    FcmToken::where('token', $token)->delete();
+                }
+            } catch (\Throwable $e) {
+                \Log::info('FCM ignoré : '.$e->getMessage());
+            }
         }
     }
 

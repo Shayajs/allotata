@@ -10,10 +10,13 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @include('partials.theme-script')
     </head>
-    <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8{{ !empty($isCapacitor) ? ' android-auth-page' : '' }}">
+        @if(!empty($isCapacitor))
+            @include('partials.android-auth-brand')
+        @endif
         <div class="max-w-md w-full space-y-6 sm:space-y-8">
             <div>
-                <a href="{{ route('home') }}" class="flex justify-center">
+                <a href="{{ $brandUrl ?? route('home') }}" class="android-auth-web-brand flex justify-center">
                     <h1 class="text-3xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                         Allo Tata
                     </h1>

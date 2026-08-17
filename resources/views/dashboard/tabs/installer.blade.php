@@ -106,23 +106,7 @@
             </div>
         </div>
 
-        <!-- Android -->
-        <div class="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-60 grayscale relative overflow-hidden">
-             <div class="absolute inset-0 bg-slate-100/50 dark:bg-slate-900/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
-                <span class="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-full border border-slate-300 dark:border-slate-600">
-                    BIENTÔT DISPONIBLE
-                </span>
-            </div>
-            <div class="flex flex-col items-center text-center">
-                <div class="w-12 h-12 mb-4 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400">
-                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993s-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993s-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.459-1.0493-.6094-1.9213 3.3283c-1.5428-.6803-3.2386-1.0594-5.0069-1.0594-1.7683 0-3.4641.3791-5.0076 1.0594l-1.922-3.3283-1.0486.6094 1.998 3.459c-2.4497 1.3286-4.0954 3.7504-4.4173 6.5546h20.8016c-.3211-2.8042-1.9676-5.226-4.4239-6.5546"/>
-                    </svg>
-                </div>
-                <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Android</h3>
-                <p class="text-xs text-slate-500">Application native .apk</p>
-            </div>
-        </div>
+        @include('partials.android-store-card')
 
         <!-- Linux -->
         <div class="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-60 grayscale relative overflow-hidden">

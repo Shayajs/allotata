@@ -15,6 +15,7 @@
         </script>
         <title>{{ $entreprise->nom }} - Dashboard - Allo Tata</title>
         @include('partials.favicon')
+        @include('partials.play-config')
         
         <!-- PWA / Manifest Dynamique -->
         <link rel="manifest" href="{{ ($subdomainHost['mode'] ?? '') === 'tenant' ? url('/manifest.json') : route('manifest.show', $entreprise->slug) }}">
@@ -143,6 +144,7 @@
                 </div>
             </div>
         </nav>
+        @include('partials.android-top-bar', ['title' => $entreprise->nom, 'showBack' => true, 'backUrl' => route('dashboard')])
 
         <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 main-content flex-1 w-full">
             <!-- Messages de succès -->
@@ -221,8 +223,6 @@
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">
-                    {{-- Barre onglets mobile (composant centralisé) --}}
-                    <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
                     <div id="dashboard-main-card" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 {{ $activeTab === 'messagerie' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6' }}">
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
@@ -336,7 +336,7 @@
                     content.classList.add('hidden');
                 });
 
-                // --- Sidebar & mobile tabs ---
+                // --- Sidebar ---
                 document.querySelectorAll('.sidebar-tab').forEach(btn => {
                     btn.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
                     btn.classList.add('text-slate-600', 'dark:text-slate-400');
@@ -442,7 +442,7 @@
                     }
                 }
 
-                // Activer sidebar & mobile tabs
+                // Activer sidebar
                 document.querySelectorAll(`.sidebar-tab[data-tab="${tabName}"]`).forEach(btn => {
                     btn.classList.remove('text-slate-600', 'dark:text-slate-400');
                     btn.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
@@ -673,6 +673,7 @@
 
         {{-- Bottom Bar PWA (visible uniquement en PWA mobile) --}}
         <x-nav.pwa-bottom-bar :items="$navItems" :active-tab="$activeTab" context="entreprise" />
+        @include('partials.android-bottom-nav', ['items' => $navItems, 'activeTab' => $activeTab, 'context' => 'entreprise'])
         @include('partials.footer')
         @include('partials.cookie-banner')
     </body>

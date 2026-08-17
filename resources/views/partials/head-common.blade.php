@@ -6,3 +6,4 @@
 --}}
 @includeUnless(!empty($skipSiteFavicon), 'partials.favicon')
 @include('partials.theme-script')
+@include('partials.api-base')

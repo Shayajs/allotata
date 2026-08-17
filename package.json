@@ -6,7 +6,10 @@
         "build": "vite build",
         "dev": "vite",
         "sync:vite": "bash scripts/sync-vite-config.sh",
-        "prebuild": "npm run sync:vite"
+        "prebuild": "npm run sync:vite",
+        "mobile:apk": "npm --prefix mobile run build:apk",
+        "mobile:aab": "npm --prefix mobile run build:aab",
+        "mobile:release": "npm --prefix mobile run build:release"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

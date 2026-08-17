@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Dashboard - Allo Tata</title>
         @include('partials.favicon')
@@ -46,7 +46,7 @@
                         <!-- Menu Burger pour mobile web -->
                         @include('components.mobile-nav', ['navType' => 'dashboard'])
                         
-                        <a href="{{ route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
+                        <a href="{{ $brandUrl ?? route('home') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
                         </a>
                         <span class="hidden md:inline-flex items-center pl-4 ml-1 border-l border-orange-400 dark:border-orange-500/70">
@@ -95,6 +95,7 @@
                 </div>
             </div>
         </nav>
+        @include('partials.android-top-bar', ['title' => 'Dashboard'])
 
         @php
             $activeTab = request('tab', 'accueil');
@@ -137,8 +138,6 @@
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">
-                    {{-- Barre onglets mobile (composant centralisé) --}}
-                    <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
                     <div id="dashboard-main-card" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 {{ $activeTab === 'messagerie' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6' }}">
                         <!-- Onglet Accueil -->
                         <div id="tab-accueil" class="tab-content {{ $activeTab !== 'accueil' ? 'hidden' : '' }}">
@@ -222,7 +221,7 @@
                     tabContent.classList.remove('hidden');
                 }
 
-                // --- Sidebar & mobile tabs ---
+                // --- Sidebar ---
                 document.querySelectorAll('.sidebar-tab').forEach(btn => {
                     btn.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
                     btn.classList.add('text-slate-600', 'dark:text-slate-400');
@@ -425,6 +424,7 @@
     @stack('scripts')
     {{-- Bottom Bar PWA (visible uniquement en PWA mobile) --}}
     <x-nav.pwa-bottom-bar :items="$navItems" :active-tab="$activeTab" context="dashboard" />
+    @include('partials.android-bottom-nav', ['items' => $navItems, 'activeTab' => $activeTab, 'context' => 'dashboard'])
     @include('partials.footer')
     @include('partials.pwa-install-banner')
     @include('partials.cookie-banner')

@@ -416,6 +416,24 @@ class SubdomainHost
     }
 
     /**
+     * Base publique de l'API (ex. https://api.allotata.fr/v1).
+     *
+     * A injecter dans les apps front : les chemins /api historiques restent
+     * valides, mais autant pointer vers le sous-domaine dedie.
+     */
+    public static function apiBaseUrl(string $version = 'v1'): string
+    {
+        $version = trim($version, '/');
+        $interne = $version === '' ? '/api' : '/api/'.$version;
+
+        if (self::enabled()) {
+            return rtrim(self::ownerUrl($interne), '/');
+        }
+
+        return rtrim(url($interne), '/');
+    }
+
+    /**
      * URL unique a faire indexer pour la requete courante.
      *
      * La meme page repond depuis l'apex et depuis le sous-domaine de l'entreprise :

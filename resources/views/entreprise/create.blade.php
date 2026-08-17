@@ -404,7 +404,7 @@
                         @endif
 
                         {{-- Bouton souscrire --}}
-                        <form action="{{ route('subscription.checkout') }}" method="POST" class="mb-4">
+                        <form action="{{ route('subscription.checkout') }}" method="POST" class="mb-4 js-play-billing-form" data-play-product="{{ config('play.products.premium.id') }}">
                             @csrf
                             <button type="submit" class="ui-btn-simple w-full min-h-[52px] px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-lg font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.01] touch-manipulation">
                                 @if($defaultPrice['amount'] > 0)

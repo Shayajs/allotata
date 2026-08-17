@@ -7,6 +7,7 @@
         <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
         <title>Inscription - Allo Tata</title>
         @include('partials.favicon')
+        @include('partials.api-base')
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -15,11 +16,14 @@
             #address-search { padding-left: 2.5rem !important; }
         </style>
     </head>
-    <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200 min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8{{ !empty($isCapacitor) ? ' android-auth-page' : '' }}">
+        @if(!empty($isCapacitor))
+            @include('partials.android-auth-brand')
+        @endif
         <div class="max-w-lg w-full space-y-6 sm:space-y-8">
             <!-- Logo + Titre -->
             <div>
-                <a href="{{ route('home') }}" class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a href="{{ $brandUrl ?? route('home') }}" class="android-auth-web-brand flex flex-col sm:flex-row items-center justify-center gap-3">
                     @php
                         use App\Helpers\SiteHelper;
                         $logoUrl = SiteHelper::getLogo('transparent');

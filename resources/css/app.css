@@ -4,6 +4,7 @@
 @import './dev-docs.css';
 @import './flatpickr.css';
 @import './emploi-du-temps.css';
+@import './android-app.css';
 
 /* Configuration du mode sombre avec le sélecteur de classe (au lieu de media query) */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -297,10 +298,9 @@ input.flatpickr-input {
     backface-visibility: hidden;
 }
 
-/* PWA mobile : bottom bar + header contextuel, cacher sidebar/burger/tabs */
+/* PWA mobile : bottom bar + header contextuel, cacher sidebar/burger */
 @media (display-mode: standalone) and (max-width: 768px) {
     .nav-sidebar,
-    .nav-mobile-tabs,
     .mobile-nav-burger,
     .burger-drawer,
     .burger-overlay { display: none !important; }
@@ -326,7 +326,6 @@ input.flatpickr-input {
 /* Fallback JS : classe is-pwa ajoutée par app.js */
 @media (max-width: 768px) {
     .is-pwa .nav-sidebar,
-    .is-pwa .nav-mobile-tabs,
     .is-pwa .mobile-nav-burger,
     .is-pwa .burger-drawer,
     .is-pwa .burger-overlay { display: none !important; }

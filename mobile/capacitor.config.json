@@ -1,0 +1,23 @@
+{
+    "appId": "fr.allotata.app",
+    "appName": "Allo Tata",
+    "webDir": "www",
+    "android": {
+        "allowMixedContent": false,
+        "appendUserAgent": "AlloTataApp/1.0",
+        "webContentsDebuggingEnabled": false
+    },
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 0,
+            "launchAutoHide": false,
+            "backgroundColor": "#0f172a",
+            "androidSplashResourceName": "splash_brand",
+            "showSpinner": false
+        },
+        "StatusBar": {
+            "style": "DARK",
+            "backgroundColor": "#0f172a"
+        }
+    }
+}

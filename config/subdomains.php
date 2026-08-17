@@ -72,6 +72,7 @@ return [
                 'checkout',
                 'payment',
                 'abonnement',
+                'play-billing',
                 'essai-gratuit',
                 'entreprise',
                 'gdpr',
@@ -136,19 +137,38 @@ return [
         'robots.txt',
         'favicon.ico',
         'favicon.png',
+        'downloads',
+        '.well-known',
     ],
 
     /*
     | Routes Laravel accessibles depuis n'importe quel host.
+    |
+    | /api n'est plus partage en bloc : la v1 publique et la page de garde
+    | appartiennent a api.*. Seuls les endpoints lies a la session (cours,
+    | presence, tracking, messagerie...) restent same-origin, sinon les
+    | fetch authentifies casseraient en cross-origin.
+    | /api/v3 reste partage : Google RWG est souvent enregistre sur l'apex.
     */
 
     'shared' => [
         'manifest.json',
+        '.well-known',
+        'downloads',
+        'webhooks',
+        'play-billing',
+        'native',
         'up',
         'broadcasting',
         'push-subscription',
-        'api',
         'logout',
+        'api/v3',
+        'api/courses',
+        'api/presence',
+        'api/tracking',
+        'api/messagerie',
+        'api/feedback',
+        'api/check-parrainage',
     ],
 
 ];

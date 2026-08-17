@@ -1,0 +1,29 @@
+{
+    "name": "allotata-android",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Shell Capacitor Android pour Allo Tata",
+    "scripts": {
+        "sync": "npx cap sync android",
+        "open": "npx cap open android",
+        "pocket:build": "vite build --config pocket/vite.config.js",
+        "build:apk": "bash scripts/build-release.sh apk",
+        "build:aab": "bash scripts/build-release.sh aab",
+        "build:release": "bash scripts/build-release.sh all"
+    },
+    "dependencies": {
+        "@capacitor/android": "^7.6.8",
+        "@capacitor/app": "^7.1.2",
+        "@capacitor/browser": "^7.0.5",
+        "@capacitor/cli": "^7.6.8",
+        "@capacitor/core": "^7.6.8",
+        "@capacitor/preferences": "^7.0.4",
+        "@capacitor/push-notifications": "^7.0.5",
+        "@capacitor/splash-screen": "^7.0.5",
+        "@capacitor/status-bar": "^7.0.6",
+        "typescript": "^7.0.2"
+    },
+    "devDependencies": {
+        "vite": "^7.0.7"
+    }
+}

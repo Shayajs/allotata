@@ -87,7 +87,7 @@
                                     <strong>Votre essai expire le {{ $essaiSiteWeb->date_fin->format('d/m/Y à H:i') }}</strong><br>
                                     Abonnez-vous maintenant pour ne pas perdre l'accès à votre site vitrine !
                                 </p>
-                                <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="mt-2">
+                                <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="js-play-billing-form" data-entreprise-id="{{ $entreprise->id }}" class="mt-2">
                                     @csrf
                                     <input type="hidden" name="type" value="site_web">
                                     <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
@@ -163,7 +163,7 @@
                                                             Essai déjà utilisé. Un nouvel essai n'est plus possible.
                                                         </p>
                                                     @endif
-                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
+                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="js-play-billing-form" data-entreprise-id="{{ $entreprise->id }}">
                                                         @csrf
                                                         <input type="hidden" name="type" value="site_web">
                                                         <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
@@ -219,7 +219,7 @@
                                     <strong>Votre essai expire le {{ $essaiMultiPersonnes->date_fin->format('d/m/Y à H:i') }}</strong><br>
                                     Abonnez-vous maintenant pour continuer à gérer votre équipe !
                                 </p>
-                                <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="mt-2">
+                                <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="js-play-billing-form" data-entreprise-id="{{ $entreprise->id }}" class="mt-2">
                                     @csrf
                                     <input type="hidden" name="type" value="multi_personnes">
                                     <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition text-sm {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">
@@ -289,7 +289,7 @@
                                                             Essai déjà utilisé. Un nouvel essai n'est plus possible.
                                                         </p>
                                                     @endif
-                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST">
+                                                    <form action="{{ route('entreprise.subscriptions.checkout', $entreprise->slug) }}" method="POST" class="js-play-billing-form" data-entreprise-id="{{ $entreprise->id }}">
                                                         @csrf
                                                         <input type="hidden" name="type" value="multi_personnes">
                                                         <button type="submit" {{ !$userHasPremium ? 'disabled' : '' }} class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-lg transition-all {{ !$userHasPremium ? 'opacity-50 cursor-not-allowed' : '' }}">

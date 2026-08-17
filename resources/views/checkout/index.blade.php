@@ -153,7 +153,9 @@
                                             $pMontant = $pCalc['montant_final'] ?? $pItem['montant_final'] ?? 0;
                                             $pType = $pItem['subscription_type'] ?? '';
                                             $pNom = $pItem['entreprise_nom'] ?? '?';
-                                            $pLabel = ($pType === 'site_web' ? 'Site Web' : ($pType === 'multi_personnes' ? 'Multi-Personnes' : $pType)) . ' – ' . $pNom;
+                                            $pLabel = $pType === 'default'
+                                                ? 'Abonnement Premium'
+                                                : (($pType === 'site_web' ? 'Site Web' : ($pType === 'multi_personnes' ? 'Multi-Personnes' : $pType)) . ' – ' . $pNom);
                                             $pDebut = \Carbon\Carbon::parse($pItem['periode_debut'])->format('d/m/Y');
                                             $pFin = \Carbon\Carbon::parse($pItem['periode_fin'])->format('d/m/Y');
                                         @endphp

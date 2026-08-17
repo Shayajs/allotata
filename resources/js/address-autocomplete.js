@@ -8,9 +8,27 @@ class AddressAutocomplete {
         this.minLength = options.minLength || 3;
         this.debounceMs = options.debounceMs || 300;
         this.onSelect = options.onSelect || (() => { });
-        this.apiUrl = '/api/address/search';
-        this.citiesApiUrl = '/api/address/cities';
+        // Preferer api.* /v1 ; repli same-origin pour les pages sans injection.
+        const root = AddressAutocomplete.apiRoot();
+        this.apiUrl = `${root}/address/search`;
+        this.citiesApiUrl = `${root}/address/cities`;
         this.debounceTimer = null;
+    }
+
+    static apiRoot() {
+        if (typeof window !== 'undefined' && window.ALLOTATA_API) {
+            return String(window.ALLOTATA_API).replace(/\/$/, '');
+        }
+
+        const meta = typeof document !== 'undefined'
+            ? document.querySelector('meta[name="allotata-api"]')
+            : null;
+
+        if (meta?.content) {
+            return String(meta.content).replace(/\/$/, '');
+        }
+
+        return '/api/v1';
     }
 
     /**

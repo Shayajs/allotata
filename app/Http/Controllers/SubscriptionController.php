@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Echeance;
 use App\Models\Entreprise;
+use App\Services\CalculMontantDuService;
+use App\Services\PremiumAccessService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -32,67 +35,88 @@ class SubscriptionController extends Controller
     public function checkout(Request $request)
     {
         $user = Auth::user();
+
+        if (\App\Support\CapacitorClient::detect($request)) {
+            $productId = config('play.products.premium.id');
+
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'provider' => 'play',
+                    'product_id' => $productId,
+                ]);
+            }
+
+            return back()->with('play_billing_product', $productId);
+        }
         
         if (!$user->est_gerant) {
             return back()->withErrors(['error' => 'Vous devez être gérant pour souscrire un abonnement.']);
         }
 
-        // Vérifier si l'utilisateur a déjà un abonnement actif (manuel ou Stripe)
-        if ($user->aAbonnementActif()) {
-            if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && $user->abonnement_manuel_actif_jusqu->isFuture()) {
-                return back()->withErrors([
-                    'error' => "Vous avez déjà un abonnement manuel actif jusqu'au {$user->abonnement_manuel_actif_jusqu->format('d/m/Y')}. Vous ne pouvez pas souscrire à un abonnement Stripe tant que l'abonnement manuel est actif."
-                ]);
-            }
-            
-            $subscription = $user->subscription('default');
-            if ($subscription && $subscription->valid()) {
-                return back()->withErrors([
-                    'error' => 'Vous avez déjà un abonnement Stripe actif.'
-                ]);
-            }
-        }
-
-        // Vérifier s'il y a un prix personnalisé avec un stripe_price_id explicite
-        $customPrice = \App\Models\CustomPrice::getForUser($user, 'default');
-        
-        // Utiliser le stripe_price_id du prix personnalisé s'il est renseigné, sinon le prix par défaut du .env
-        $priceId = ($customPrice && $customPrice->stripe_price_id)
-            ? $customPrice->stripe_price_id
-            : config('services.stripe.price_id');
-        
-        // Vérifier que le price_id est bien configuré
-        if (empty($priceId)) {
+        if ($user->hasActiveManualPremium()) {
             return back()->withErrors([
-                'error' => 'Le prix Stripe pour l\'abonnement utilisateur n\'est pas encore configuré. Veuillez contacter l\'administrateur pour créer ce prix depuis la page de gestion des prix Stripe.'
+                'error' => "Vous avez déjà un abonnement manuel actif jusqu'au {$user->abonnement_manuel_actif_jusqu->format('d/m/Y')}. Vous ne pouvez pas souscrire à un abonnement Stripe tant que l'abonnement manuel est actif.",
             ]);
         }
-        
-        try {
-            return $user->newSubscription('default', $priceId)
-                ->checkout([
-                    'success_url' => route('subscription.success'),
-                    'cancel_url' => route('settings.index', ['tab' => 'subscription']),
-                ]);
-        } catch (\Stripe\Exception\InvalidRequestException $e) {
-            // Si le client n'existe pas chez Stripe (ex: changement d'environnement), on le reset
-            if (str_contains($e->getMessage(), 'No such customer')) {
-                Log::warning("Client Stripe introuvable pour le user {$user->id}. Reset du stripe_id et tentative de création d'un nouveau client.");
-                
-                // On efface le stripe_id invalide
-                $user->stripe_id = null;
-                $user->save();
-                
-                // On laisse Cashier recréer le customer lors du prochain appel à newSubscription()
-                // On relance la même commande
-                return $user->newSubscription('default', $priceId)
-                    ->checkout([
-                        'success_url' => route('subscription.success'),
-                        'cancel_url' => route('settings.index', ['tab' => 'subscription']),
-                    ]);
-            }
-            throw $e;
+
+        if ($user->hasActivePlayPremium()) {
+            return back()->withErrors([
+                'error' => 'Vous avez déjà un abonnement Premium actif via Google Play.',
+            ]);
         }
+
+        if (PremiumAccessService::hasPremiumUntil($user)) {
+            return back()->withErrors([
+                'error' => 'Vous avez déjà un abonnement Premium actif.',
+            ]);
+        }
+
+        $subscription = $user->subscription('default');
+        if ($subscription && $subscription->valid()) {
+            return back()->withErrors([
+                'error' => 'Vous avez déjà un abonnement Stripe actif.',
+            ]);
+        }
+
+        $debut = Carbon::now()->startOfDay();
+        $fin = Carbon::now()->addMonth()->subDay()->startOfDay();
+        $jour = (int) $debut->day;
+
+        $tmp = new Echeance([
+            'user_id' => $user->id,
+            'entreprise_id' => null,
+            'subscription_type' => Echeance::TYPE_DEFAULT,
+            'periode_debut' => $debut,
+            'periode_fin' => $fin,
+            'jour_facturation' => $jour,
+            'reduction_manuel' => 0,
+        ]);
+        $tmp->setRelation('user', $user);
+        $calc = CalculMontantDuService::calculerPourEcheance($tmp, null, true);
+        if ($calc['montant_du'] <= 0) {
+            return back()->withErrors(['error' => 'Aucun montant à régler pour le Premium.']);
+        }
+
+        $pending = session('checkout_pending', []);
+        $pending['default'] = [
+            'entreprise_id' => null,
+            'entreprise_nom' => 'Premium',
+            'subscription_type' => Echeance::TYPE_DEFAULT,
+            'user_id' => $user->id,
+            'periode_debut' => $debut->toDateString(),
+            'periode_fin' => $fin->toDateString(),
+            'jour_facturation' => $jour,
+            'montant_du' => $calc['montant_du'],
+            'montant_final' => $calc['montant_final'],
+            'reduction_promo' => $calc['reduction_promo'],
+            'promo_code_id' => $calc['promo_code_id'],
+            'lignes' => $calc['lignes'],
+            'created_at' => now()->toIso8601String(),
+        ];
+        session(['checkout_pending' => $pending]);
+
+        return redirect()->route('checkout.index')
+            ->with('info', 'Réglez l\'échéance ci-dessous pour activer Premium.');
     }
 
     /**
@@ -167,6 +191,17 @@ class SubscriptionController extends Controller
         ]);
 
         $user->refresh();
+        if (PremiumAccessService::hasPremiumUntil($user)) {
+            $user->update([
+                'abonnement_manuel' => false,
+                'abonnement_manuel_actif_jusqu' => null,
+                'abonnement_manuel_notes' => null,
+            ]);
+
+            return redirect()->route('settings.index', ['tab' => 'subscription'])
+                ->with('success', 'Votre abonnement a été activé avec succès !');
+        }
+
         $subscription = $user->subscription('default');
         
         if ($subscription && $subscription->valid()) {

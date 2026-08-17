@@ -236,6 +236,7 @@ async function initSaveCard() {
         });
         const paymentElement = elements.create('payment', {
             fields: { billingDetails: { address: 'if_required' } },
+            wallets: { googlePay: 'auto', applePay: 'auto' },
         });
         container.innerHTML = '';
         paymentElement.mount(container);

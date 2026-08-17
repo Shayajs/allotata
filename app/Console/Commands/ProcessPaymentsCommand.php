@@ -6,6 +6,7 @@ use App\Models\Echeance;
 use App\Models\EntrepriseSubscription;
 use App\Models\PaymentAuditLog;
 use App\Services\Payments\ProviderResolver;
+use App\Services\PremiumAccessService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -29,7 +30,8 @@ class ProcessPaymentsCommand extends Command
     }
 
     protected $signature = 'subscriptions:process-payments
-                            {--dry-run : Simule sans débiter}';
+                            {--dry-run : Simule sans débiter}
+                            {--user-id= : Limiter à un ou plusieurs user_id (virgules)}';
 
     protected $description = 'Auto-charge les échéances a_payer et retente les paiements échoués (3 tentatives, annulation après 7j)';
 
@@ -52,6 +54,7 @@ class ProcessPaymentsCommand extends Command
             ->autoChargeEligible()
             ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
             ->with(['user', 'entreprise'])
+            ->when($this->scopedUserIds() !== [], fn ($q) => $q->whereIn('user_id', $this->scopedUserIds()))
             ->get();
 
         $this->info("Échéances à prélever : {$aPayer->count()}");
@@ -75,6 +78,7 @@ class ProcessPaymentsCommand extends Command
                 continue;
             }
 
+            PremiumAccessService::applyGrace($echeance);
             $result = $this->attemptCharge($echeance, $user, 0);
             if ($result === 'ok') {
                 $charged++;
@@ -92,6 +96,7 @@ class ProcessPaymentsCommand extends Command
             ->autoChargeEligible()
             ->where('payment_origin', '!=', Echeance::ORIGIN_MANUAL)
             ->with(['user', 'entreprise'])
+            ->when($this->scopedUserIds() !== [], fn ($q) => $q->whereIn('user_id', $this->scopedUserIds()))
             ->get();
 
         $this->info("Échéances en échec à traiter : {$echecs->count()}");
@@ -296,24 +301,29 @@ class ProcessPaymentsCommand extends Command
             return;
         }
 
-        // ── Abonnement Premium (Cashier) ──
-        if ($echeance->subscription_type === Echeance::TYPE_DEFAULT) {
+        if (PremiumAccessService::isPremiumEcheance($echeance)) {
             $user = $echeance->user;
-            if ($user && $user->subscribed('default')) {
-                try {
-                    $user->subscription('default')->cancel();
-                    Log::info('ProcessPayments: premium subscription cancelled', [
-                        'user_id' => $user->id,
-                        'echeance_id' => $echeance->id,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('ProcessPayments: premium cancel failed', [
-                        'user_id' => $user->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+            if ($user) {
+                PremiumAccessService::revoke($user);
+                Log::info('ProcessPayments: premium access revoked', [
+                    'user_id' => $user->id,
+                    'echeance_id' => $echeance->id,
+                ]);
             }
         }
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function scopedUserIds(): array
+    {
+        $raw = (string) $this->option('user-id');
+        if ($raw === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('intval', explode(',', $raw))));
     }
 
     protected function isManualManagedEcheance(Echeance $echeance): bool

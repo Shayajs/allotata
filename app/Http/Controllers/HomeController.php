@@ -13,6 +13,12 @@ class HomeController extends Controller
      */
     public function index()
     {
+        if (\App\Support\CapacitorClient::detect()) {
+            return Auth::check()
+                ? redirect()->route('dashboard')
+                : redirect()->route('login');
+        }
+
         $user = Auth::user();
         $miniStats = null;
 

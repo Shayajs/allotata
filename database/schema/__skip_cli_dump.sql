@@ -1,0 +1,3 @@
+-- Intentionnellement vide : les tests forcent ce chemin pour contourner
+-- mysql-schema.sql (le binaire mysql CLI n'est pas fiable dans le conteneur app).
+-- migrate:fresh enchaine ensuite sur les migrations Eloquent.

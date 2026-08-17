@@ -2,10 +2,11 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Paramètres - Allo Tata</title>
         @include('partials.favicon')
+        @include('partials.play-config')
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -18,7 +19,7 @@
                 <div class="flex justify-between h-16">
                     <div class="flex items-center gap-4">
                         <!-- Menu Burger pour mobile web -->
-                        @include('components.mobile-nav', ['navType' => 'dashboard'])
+                        @include('components.mobile-nav', ['navType' => 'settings', 'navItems' => $navItems ?? null, 'activeTab' => $activeTab ?? request('tab', 'account')])
                         
                         <a href="{{ route('dashboard') }}" class="text-2xl font-bold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
                             Allo Tata
@@ -45,9 +46,10 @@
                 </div>
             </div>
         </nav>
+        @include('partials.android-top-bar', ['title' => 'Paramètres', 'showBack' => true, 'backUrl' => route('dashboard')])
 
         <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="mb-8">
+            <div class="mb-8 android-page-intro">
                 <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                     Paramètres
                 </h1>
@@ -74,8 +76,6 @@
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">
-                    {{-- Barre onglets mobile (composant centralisé) --}}
-                    <x-nav.mobile-tabs :items="$navItems" :active-tab="$activeTab" />
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
                     <!-- Onglet Compte -->
                     <div id="tab-account" class="tab-content">
@@ -1966,7 +1966,7 @@
                     tabContent.classList.remove('hidden');
                 }
 
-                // --- Sidebar & mobile tabs ---
+                // --- Sidebar ---
                 document.querySelectorAll('.sidebar-tab').forEach(btn => {
                     btn.classList.remove('bg-green-100', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400');
                     btn.classList.add('text-slate-600', 'dark:text-slate-400');
@@ -2332,6 +2332,7 @@
                 }
             });
         </script>
+        @include('partials.android-bottom-nav', ['items' => $navItems, 'activeTab' => $activeTab, 'context' => 'settings'])
     </body>
 </html>
 

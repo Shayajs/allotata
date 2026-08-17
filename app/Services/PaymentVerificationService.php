@@ -173,6 +173,7 @@ class PaymentVerificationService
         if ($echeance->estPayee()) {
             self::ensureStripeTransaction($session, $userId);
             self::ensureEntrepriseSubscriptionForEcheance($echeance);
+            self::ensurePremiumAccessForEcheance($echeance);
             return [
                 'ok' => true,
                 'echeance_id' => $echeanceId,
@@ -213,6 +214,7 @@ class PaymentVerificationService
 
         self::ensureStripeTransaction($session, $userId);
         self::ensureEntrepriseSubscriptionForEcheance($echeance);
+        self::ensurePremiumAccessForEcheance($echeance);
 
         return [
             'ok' => true,
@@ -360,6 +362,7 @@ class PaymentVerificationService
         if ($echeance->estPayee()) {
             self::ensureStripeTransactionFromPaymentIntent($pi, $userId);
             self::ensureEntrepriseSubscriptionForEcheance($echeance);
+            self::ensurePremiumAccessForEcheance($echeance);
             return ['ok' => true, 'echeance_id' => $echeanceId, 'already' => true, 'message' => 'Déjà enregistré.'];
         }
 
@@ -392,6 +395,7 @@ class PaymentVerificationService
 
         self::ensureStripeTransactionFromPaymentIntent($pi, $userId);
         self::ensureEntrepriseSubscriptionForEcheance($echeance);
+        self::ensurePremiumAccessForEcheance($echeance);
 
         return ['ok' => true, 'echeance_id' => $echeanceId, 'already' => false, 'message' => 'Paiement enregistré.'];
     }
@@ -434,6 +438,14 @@ class PaymentVerificationService
             $metadata = (array) $metadata;
         }
         return !empty($metadata['echeance_id']) && !empty($metadata['user_id']);
+    }
+
+    /**
+     * Active le Premium local (premium_actif_jusqu + jour_facturation figé) après un paiement réussi.
+     */
+    public static function ensurePremiumAccessForEcheance(Echeance $echeance): void
+    {
+        PremiumAccessService::ensureFromEcheance($echeance);
     }
 
     /**

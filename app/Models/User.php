@@ -34,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'abonnement_manuel_type_renouvellement',
         'abonnement_manuel_jour_renouvellement',
         'jour_facturation',
+        'premium_actif_jusqu',
         'abonnement_manuel_date_debut',
         'abonnement_manuel_montant',
         'notifications_erreurs_actives',
@@ -128,6 +129,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'trial_ends_at' => 'datetime',
             'abonnement_manuel' => 'boolean',
             'abonnement_manuel_actif_jusqu' => 'date',
+            'premium_actif_jusqu' => 'date',
             'abonnement_manuel_date_debut' => 'date',
             'abonnement_manuel_montant' => 'decimal:2',
             'notifications_erreurs_actives' => 'boolean',
@@ -179,9 +181,31 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Relation : Un utilisateur peut avoir plusieurs jetons d'accès à l'API
      */
+    public function playPurchases()
+    {
+        return $this->hasMany(PlayPurchase::class);
+    }
+
+    public function hasActivePlayPremium(): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('play_purchases')) {
+            return false;
+        }
+
+        return $this->playPurchases()
+            ->active()
+            ->where('grants', 'premium')
+            ->exists();
+    }
+
     public function apiTokens()
     {
         return $this->hasMany(ApiToken::class);
+    }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
     }
 
     /**

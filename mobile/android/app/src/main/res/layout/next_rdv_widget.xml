@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Prochain RDV"
+        android:textColor="#94A3B8"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Aucun rendez-vous"
+        android:textColor="#F8FAFC"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_when"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#22C55E"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/widget_place"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#94A3B8"
+        android:textSize="12sp" />
+</LinearLayout>

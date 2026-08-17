@@ -449,6 +449,13 @@
                     <span class="font-medium">Tests Stripe</span>
                 </a>
 
+                <a href="{{ route('admin.billing-lab.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.billing-lab.*') ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}" style="border: 1px dashed rgba(245, 158, 11, 0.3);">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-medium">Labo facturation</span>
+                </a>
+
                 {{-- ========== OUTILS ========== --}}
                 <div class="pt-4 pb-2">
                     <p class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">Outils</p>

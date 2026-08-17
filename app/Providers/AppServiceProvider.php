@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Services\Payments\ProviderResolver;
 use App\Services\Payments\Providers\StripeProvider;
+use App\Services\PlayBilling\PlayBillingVerifier;
+use App\Services\PlayBilling\PlayBillingVerifierContract;
 use App\Models\Reservation;
 use App\Models\RendezVous;
 use App\Models\User;
@@ -39,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
                 new StripeProvider(),
             ]);
         });
+
+        $this->app->singleton(PlayBillingVerifierContract::class, PlayBillingVerifier::class);
     }
 
     /**

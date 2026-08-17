@@ -68,14 +68,18 @@ class ApiHostTest extends TestCase
 
     public function test_les_chemins_historiques_restent_valides(): void
     {
-        // /api est partage : l'application continue de l'appeler depuis tous les hosts.
-        foreach ([
-            'https://allotata.test/api/search/autocomplete?q=a',
-            'https://dash.allotata.test/api/search/autocomplete?q=a',
-            'https://api.allotata.test/search/autocomplete?q=a',
-        ] as $url) {
-            $this->getJson($url)->assertOk();
-        }
+        // Apex : toujours servi (legacy off en test), pour Google et les vieux clients.
+        $this->getJson('https://allotata.test/api/search/autocomplete?q=a')->assertOk();
+
+        // Sur un autre host, la v1 publique appartient a api.* : on y redirige.
+        $this->get('https://dash.allotata.test/api/v1/search/autocomplete?q=a')
+            ->assertRedirect('https://api.allotata.test/v1/search/autocomplete?q=a');
+
+        // Sur api.*, les deux formes (courte et legacy /api/...) repondent.
+        $this->getJson('https://api.allotata.test/search/autocomplete?q=a')->assertOk();
+        $this->getJson('https://api.allotata.test/v1/search/autocomplete?q=a')
+            ->assertOk()
+            ->assertExactJson([]);
     }
 
     public function test_la_v1_reste_cantonnee_au_host_api(): void
@@ -84,12 +88,20 @@ class ApiHostTest extends TestCase
         $this->get('https://dash.allotata.test/v1')->assertNotFound();
         $this->get('https://admin.allotata.test/v1/search/autocomplete')->assertNotFound();
 
-        // /api reste un chemin partage : l'apex le sert sans rediriger, pour que les
-        // appels internes de l'application restent same-origin. Seule l'URL annoncee
-        // est canonique.
+        // Avec les redirections implicites, l'apex renvoie vers le proprietaire.
         config(['subdomains.legacy_redirect' => true]);
-        $this->getJson('https://allotata.test/api/v1')
+        $this->get('https://allotata.test/api/v1')
+            ->assertRedirect('https://api.allotata.test/v1');
+    }
+
+    public function test_les_apps_pointent_vers_la_base_api_propre(): void
+    {
+        // Catalogue public : pas de garde d'auth, le partial api-base y est injecte.
+        $this->get('https://learn.allotata.test/')
             ->assertOk()
-            ->assertJsonPath('base_url', 'https://api.allotata.test/v1');
+            ->assertSee('window.ALLOTATA_API = '.json_encode('https://api.allotata.test/v1'), false);
+
+        $this->assertSame('https://api.allotata.test/v1', \App\Support\SubdomainHost::apiBaseUrl());
+        $this->assertSame('https://api.allotata.test/v1', url('/api/v1'));
     }
 }

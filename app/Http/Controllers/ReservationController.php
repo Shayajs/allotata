@@ -208,11 +208,6 @@ class ReservationController extends Controller
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
 
-        // Vérifier les permissions
-        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
-            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
-        }
-
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
@@ -221,27 +216,14 @@ class ReservationController extends Controller
             'notes_gerant' => 'nullable|string|max:1000',
         ]);
 
-        $reservation->update([
-            'statut' => 'confirmee',
-            'notes' => $reservation->notes.($validated['notes_gerant'] ? "\n\n[Note de la tata] ".$validated['notes_gerant'] : ''),
-        ]);
-
-        // Invalider le cache des statistiques
-        \App\Services\CacheService::clearEntrepriseCache($entreprise->id, $entreprise->slug);
-
-        // Créer une notification pour le client (uniquement si inscrit)
-        if ($reservation->user_id) {
-            app(\App\Services\ReservationClientNotificationService::class)->notifyPrise($reservation);
-        }
-
-        // Envoyer un email de confirmation au client (inscrit ou invité avec email)
-        if ($reservation->user_id || ! empty($reservation->email_client)) {
-            try {
-                $reservation->refresh();
-                \App\Helpers\EmailHelper::sendReservationConfirmationClient($reservation);
-            } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email de confirmation : ".$e->getMessage());
-            }
+        try {
+            app(\App\Services\ReservationStatusService::class)
+                ->accepter($reservation, $user, $validated['notes_gerant'] ?? null);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            abort(403, $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('reservations.show', [$slug, $id])
+                ->with('error', $e->getMessage());
         }
 
         return redirect()->route('reservations.show', [$slug, $id])
@@ -257,11 +239,6 @@ class ReservationController extends Controller
         $entreprise = Entreprise::where('slug', $slug)
             ->firstOrFail();
 
-        // Vérifier les permissions
-        if (! $entreprise->peutEtreGereePar($user) && ! $user->is_admin) {
-            abort(403, 'Vous n\'avez pas accès à cette entreprise.');
-        }
-
         $reservation = Reservation::where('id', $id)
             ->where('entreprise_id', $entreprise->id)
             ->firstOrFail();
@@ -270,25 +247,14 @@ class ReservationController extends Controller
             'raison_refus' => 'nullable|string|max:500',
         ]);
 
-        $reservation->update([
-            'statut' => 'annulee',
-            'notes' => $reservation->notes.($validated['raison_refus'] ? "\n\n[Raison du refus] ".$validated['raison_refus'] : ''),
-        ]);
-
-        // Créer une notification pour le client (uniquement si inscrit)
-        if ($reservation->user_id) {
-            $raison = $validated['raison_refus'] ? " Raison : {$validated['raison_refus']}" : '';
-            app(\App\Services\ReservationClientNotificationService::class)->notifyAnnulation($reservation, $raison);
-        }
-
-        // Envoyer un email d'annulation au client (inscrit ou invité avec email)
-        if ($reservation->user_id || ! empty($reservation->email_client)) {
-            try {
-                $reservation->refresh();
-                \App\Helpers\EmailHelper::sendReservationCancelledClient($reservation, 'gerant');
-            } catch (\Exception $e) {
-                \Log::error("Erreur lors de l'envoi de l'email d'annulation : ".$e->getMessage());
-            }
+        try {
+            app(\App\Services\ReservationStatusService::class)
+                ->refuser($reservation, $user, $validated['raison_refus'] ?? null);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            abort(403, $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('reservations.index', $slug)
+                ->with('error', $e->getMessage());
         }
 
         return redirect()->route('reservations.index', $slug)

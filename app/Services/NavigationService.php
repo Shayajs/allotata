@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Support\CapacitorClient;
+
 /**
  * Source unique de vérité pour tous les items de navigation.
- * Centralise labels, icônes SVG, onglets et badges pour sidebar, mobile tabs, PWA bottom bar et burger drawer.
+ * Centralise labels, icônes SVG, onglets et badges pour sidebar, PWA bottom bar et burger drawer.
  */
 class NavigationService
 {
@@ -199,7 +201,7 @@ class NavigationService
             'tab'        => 'installer',
             'group'      => 'system',
             'pwa_bottom' => false,
-            'visible'    => true,
+            'visible'    => ! CapacitorClient::detect(),
             'badge'      => null,
         ];
 
@@ -402,7 +404,7 @@ class NavigationService
             'tab'        => 'installer',
             'group'      => 'secondary',
             'pwa_bottom' => false,
-            'visible'    => true,
+            'visible'    => ! CapacitorClient::detect(),
             'badge'      => null,
         ];
 

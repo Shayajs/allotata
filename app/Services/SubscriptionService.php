@@ -44,21 +44,20 @@ class SubscriptionService
 
     private static function userHasAccess(User $user): bool
     {
-        if ($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu) {
-            if ($user->abonnement_manuel_actif_jusqu->isFuture() || $user->abonnement_manuel_actif_jusqu->isToday()) {
-                return true;
-            }
+        if ($user->hasActiveManualPremium()) {
+            return true;
         }
 
-        try {
-            if ($user->subscribed('default')) {
-                return true;
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Cashier subscribed() a échoué, poursuite via essai', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
+        if (method_exists($user, 'hasActivePlayPremium') && $user->hasActivePlayPremium()) {
+            return true;
+        }
+
+        if (PremiumAccessService::hasPremiumUntil($user)) {
+            return true;
+        }
+
+        if (PremiumAccessService::hasLegacyCashierBilling($user)) {
+            return true;
         }
 
         if (method_exists($user, 'onGenericTrial') && $user->onGenericTrial()) {

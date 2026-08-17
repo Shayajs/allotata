@@ -2,8 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\Conversation;
 use App\Models\Entreprise;
 use App\Models\EntrepriseFinance;
+use App\Models\Facture;
+use App\Models\Message;
 use App\Models\Produit;
 use App\Models\Reservation;
 use App\Models\TypeService;
@@ -79,6 +82,9 @@ final class ApiV1Presenter
     {
         return [
             'id' => $reservation->id,
+            'entreprise_id' => $reservation->entreprise_id,
+            'entreprise_slug' => $reservation->entreprise?->slug,
+            'entreprise_nom' => $reservation->entreprise?->nom,
             'reference' => $reservation->hash_alias,
             'statut' => $reservation->statut,
             'date_debut' => $reservation->date_reservation?->toIso8601String(),
@@ -158,6 +164,61 @@ final class ApiV1Presenter
             'montant' => (float) $ecriture->amount,
             'description' => $ecriture->description,
             'date' => $ecriture->date_record?->toDateString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function facture(Facture $facture): array
+    {
+        return [
+            'id' => $facture->id,
+            'numero' => $facture->numero_facture,
+            'type' => $facture->type_facture,
+            'statut' => $facture->statut,
+            'montant_ttc' => $facture->montant_ttc !== null ? (float) $facture->montant_ttc : null,
+            'date_facture' => $facture->date_facture?->toDateString(),
+            'entreprise_id' => $facture->entreprise_id,
+            'entreprise_nom' => $facture->entreprise?->nom,
+            'visible_client' => $facture->estVisibleParClient(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function conversation(Conversation $conversation, int $viewerId): array
+    {
+        $dernier = $conversation->dernierMessage;
+
+        return [
+            'id' => $conversation->id,
+            'entreprise_id' => $conversation->entreprise_id,
+            'entreprise_nom' => $conversation->entreprise?->nom,
+            'client_nom' => $conversation->user?->name,
+            'updated_at' => ($conversation->dernier_message_at ?? $conversation->updated_at)?->toIso8601String(),
+            'dernier_message' => $dernier?->contenu,
+            'non_lus' => $conversation->messages
+                ? $conversation->messages->where('user_id', '!=', $viewerId)->where('est_lu', false)->count()
+                : 0,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function message(Message $message): array
+    {
+        return [
+            'id' => $message->id,
+            'conversation_id' => $message->conversation_id,
+            'user_id' => $message->user_id,
+            'auteur' => $message->user?->name,
+            'contenu' => $message->contenu,
+            'image' => $message->image,
+            'est_lu' => (bool) $message->est_lu,
+            'cree_le' => $message->created_at?->toIso8601String(),
         ];
     }
 }

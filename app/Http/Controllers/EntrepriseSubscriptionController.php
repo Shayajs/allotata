@@ -172,6 +172,19 @@ class EntrepriseSubscriptionController extends Controller
             return back()->withErrors(['error' => 'Type d\'abonnement invalide.']);
         }
 
+        if (\App\Support\CapacitorClient::detect($request)) {
+            $productId = config('play.products.'.$type.'.id');
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'provider' => 'play',
+                    'product_id' => $productId,
+                    'entreprise_id' => $entreprise->id,
+                ]);
+            }
+
+            return back()->with('play_billing_product', $productId);
+        }
+
         $abonnementExistant = $entreprise->abonnements()->where('type', $type)->first();
         if ($abonnementExistant && $abonnementExistant->estActif()) {
             return back()->withErrors(['error' => 'Cette entreprise a déjà un abonnement actif de ce type.']);

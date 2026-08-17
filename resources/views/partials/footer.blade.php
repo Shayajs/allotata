@@ -7,7 +7,7 @@
                     $logoUrl = SiteHelper::getLogo('transparent');
                     $siteName = SiteHelper::getSiteName();
                 @endphp
-                <a href="{{ route('home') }}" class="flex items-center gap-3 mb-4">
+                <a href="{{ $brandUrl ?? route('home') }}" class="flex items-center gap-3 mb-4 hide-on-capacitor">
                     @if($logoUrl)
                         <img src="{{ $logoUrl }}" alt="{{ $siteName }}" class="h-10 w-auto hidden sm:block" style="max-height: 40px;">
                     @endif

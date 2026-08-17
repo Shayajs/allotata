@@ -1244,6 +1244,7 @@ class CheckoutController extends Controller
         if ($status === 'succeeded') {
             $echeance = $this->createEcheanceFromPending($item, $calc, $montantFinal, $pi->id, Echeance::STATUT_PAYE);
             PaymentVerificationService::ensureEntrepriseSubscriptionForEcheance($echeance);
+            PaymentVerificationService::ensurePremiumAccessForEcheance($echeance);
             PaymentVerificationService::ensureStripeTransactionFromPaymentIntent($pi, $user->id);
             $this->removePendingFromSession($pendingKey);
 

@@ -51,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'no.admin.exists' => \App\Http\Middleware\NoAdminExists::class,
             'google.rwg.auth' => \App\Http\Middleware\GoogleRwgAuth::class,
             'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,
+            'capacitor' => \App\Http\Middleware\DetectCapacitor::class,
         ]);
 
         // Middleware global pour tracker l'activité utilisateur
@@ -62,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\LogAccountAccessActions::class);
 
         // Favicon site sur toutes les pages HTML (sauf contre-règles, ex. BrightShell)
+        $middleware->appendToGroup('web', \App\Http\Middleware\DetectCapacitor::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\InjectSiteFavicon::class);
 
         // Trafic site (visiteurs uniques / jour, bots, invités)
@@ -78,6 +80,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'stripe/*',
             'webhooks/*',
             'broadcasting/auth',
+            'native/device-token',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

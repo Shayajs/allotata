@@ -6,11 +6,15 @@ use App\Models\Echeance;
 use App\Models\EntrepriseSubscription;
 use App\Models\User;
 use App\Services\CalculMontantDuService;
+use App\Services\PremiumAccessService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class CheckEcheancesCommand extends Command
 {
-    protected $signature = 'subscriptions:check-echeances {--force : Créer même si une échéance existe déjà}';
+    protected $signature = 'subscriptions:check-echeances
+                            {--force : Créer même si une échéance existe déjà}
+                            {--user-id= : Limiter à un ou plusieurs user_id (virgules)}';
 
     protected $description = 'Crée les échéances Stripe (Premium + options entreprise). Les abonnements manuels passent par subscriptions:generate-invoices.';
 
@@ -21,8 +25,6 @@ class CheckEcheancesCommand extends Command
         $jour = (int) now()->day;
         $dernierJourDuMois = (int) now()->daysInMonth;
         $estDernierJour = ($jour === $dernierJourDuMois);
-        $debut = now()->copy()->startOfMonth();
-        $fin = now()->copy()->endOfMonth();
 
         $created = 0;
         $skipped = 0;
@@ -31,9 +33,24 @@ class CheckEcheancesCommand extends Command
             $this->info("Dernier jour du mois ({$dernierJourDuMois}) : les jour_facturation > {$dernierJourDuMois} seront aussi traités.");
         }
 
-        // --- Échéances Premium auto (carte / provider) ---
+        $missingJour = User::query()
+            ->where('payment_provider', Echeance::PROVIDER_STRIPE)
+            ->whereNotNull('premium_actif_jusqu')
+            ->whereNull('jour_facturation')
+            ->when($this->scopedUserIds() !== [], fn ($q) => $q->whereIn('id', $this->scopedUserIds()))
+            ->pluck('id');
+
+        if ($missingJour->isNotEmpty()) {
+            $this->warn('jour_facturation manquant, aucune échéance Premium : '.$missingJour->implode(', '));
+            Log::warning('check-echeances: jour_facturation manquant', [
+                'user_ids' => $missingJour->all(),
+            ]);
+        }
+
         $usersAuto = User::query()
+            ->where('payment_provider', Echeance::PROVIDER_STRIPE)
             ->whereNotNull('jour_facturation')
+            ->whereNotNull('premium_actif_jusqu')
             ->where(function ($q) use ($jour, $dernierJourDuMois, $estDernierJour) {
                 $q->where('jour_facturation', $jour);
                 if ($estDernierJour) {
@@ -43,14 +60,16 @@ class CheckEcheancesCommand extends Command
             ->where(function ($q) {
                 $q->where('abonnement_manuel', false)->orWhereNull('abonnement_manuel');
             })
+            ->when($this->scopedUserIds() !== [], fn ($q) => $q->whereIn('id', $this->scopedUserIds()))
             ->get();
 
         foreach ($usersAuto as $user) {
-            // Uniquement abonnement Stripe actif (ou période de grâce Cashier) — pas de relance sur ancien paiement isolé.
-            if (! $user->subscribed('default')) {
+            if (! PremiumAccessService::isEligibleForStripeCron($user)) {
                 $skipped++;
                 continue;
             }
+
+            [$debut, $fin] = PremiumAccessService::nextAnniversaryPeriod($user);
 
             $exists = Echeance::where('user_id', $user->id)
                 ->whereNull('entreprise_id')
@@ -60,7 +79,7 @@ class CheckEcheancesCommand extends Command
                 ->whereDate('periode_fin', $fin)
                 ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
                 ->exists();
-            if ($exists && !$force) {
+            if ($exists && ! $force) {
                 $skipped++;
                 continue;
             }
@@ -80,7 +99,7 @@ class CheckEcheancesCommand extends Command
                 continue;
             }
 
-            Echeance::updateOrCreate(
+            $echeance = Echeance::updateOrCreate(
                 [
                     'user_id' => $user->id,
                     'entreprise_id' => null,
@@ -92,7 +111,7 @@ class CheckEcheancesCommand extends Command
                 [
                     'payment_provider' => Echeance::PROVIDER_STRIPE,
                     'auto_charge_eligible' => true,
-                    'jour_facturation' => $user->jour_facturation ?? 1,
+                    'jour_facturation' => $user->jour_facturation,
                     'montant_du' => $calc['montant_du'],
                     'montant_final' => $calc['montant_final'],
                     'reduction_promo' => $calc['reduction_promo'],
@@ -101,12 +120,17 @@ class CheckEcheancesCommand extends Command
                     'metadata' => ['lignes' => $calc['lignes'], 'created_by_scheduler' => true],
                 ]
             );
+            $echeance->setRelation('user', $user);
+            PremiumAccessService::applyGrace($echeance);
             $created++;
         }
 
-        // --- Échéances options entreprise (Stripe uniquement ; manuel → subscriptions:generate-invoices) ---
         $subs = EntrepriseSubscription::query()
             ->where('est_manuel', false)
+            ->where(function ($q) {
+                $q->whereNull('payment_provider')
+                    ->orWhere('payment_provider', '!=', 'play');
+            })
             ->whereNotNull('jour_renouvellement')
             ->where(function ($q) use ($jour, $dernierJourDuMois, $estDernierJour) {
                 $q->where('jour_renouvellement', $jour);
@@ -115,6 +139,9 @@ class CheckEcheancesCommand extends Command
                 }
             })
             ->with('entreprise.user')
+            ->when($this->scopedUserIds() !== [], function ($q) {
+                $q->whereHas('entreprise', fn ($eq) => $eq->whereIn('user_id', $this->scopedUserIds()));
+            })
             ->get();
 
         foreach ($subs as $sub) {
@@ -125,10 +152,13 @@ class CheckEcheancesCommand extends Command
 
             $entreprise = $sub->entreprise;
             $user = $entreprise?->user;
-            if (!$user) {
+            if (! $user) {
                 $skipped++;
                 continue;
             }
+
+            $debut = now()->copy()->startOfMonth();
+            $fin = now()->copy()->endOfMonth();
 
             $origin = Echeance::ORIGIN_AUTO_CARD;
             $exists = Echeance::where('user_id', $user->id)
@@ -139,7 +169,7 @@ class CheckEcheancesCommand extends Command
                 ->whereDate('periode_fin', $fin)
                 ->whereNotIn('statut', [Echeance::STATUT_ANNULE, Echeance::STATUT_ARRETE])
                 ->exists();
-            if ($exists && !$force) {
+            if ($exists && ! $force) {
                 $skipped++;
                 continue;
             }
@@ -171,7 +201,7 @@ class CheckEcheancesCommand extends Command
                 [
                     'payment_provider' => Echeance::PROVIDER_STRIPE,
                     'auto_charge_eligible' => true,
-                    'jour_facturation' => $sub->jour_renouvellement ?? 1,
+                    'jour_facturation' => $sub->jour_renouvellement,
                     'montant_du' => $calc['montant_du'],
                     'montant_final' => $calc['montant_final'],
                     'reduction_promo' => $calc['reduction_promo'],
@@ -187,15 +217,20 @@ class CheckEcheancesCommand extends Command
         }
 
         $this->info("Terminé. Créées : {$created}, ignorés : {$skipped}.");
+
         return 0;
     }
 
-    private function shouldRunForDay(int $billingDay, int $today, int $daysInMonth, bool $isMonthEnd): bool
+    /**
+     * @return list<int>
+     */
+    private function scopedUserIds(): array
     {
-        if ($billingDay === $today) {
-            return true;
+        $raw = (string) $this->option('user-id');
+        if ($raw === '') {
+            return [];
         }
 
-        return $isMonthEnd && $billingDay > $daysInMonth;
+        return array_values(array_filter(array_map('intval', explode(',', $raw))));
     }
 }

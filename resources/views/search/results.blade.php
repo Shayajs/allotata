@@ -494,7 +494,7 @@
 
                     villeTimeout = setTimeout(async () => {
                         try {
-                            const response = await fetch(`/api/address/cities?q=${encodeURIComponent(query)}&limit=5`);
+                            const response = await fetch(`${(window.ALLOTATA_API || '/api/v1').replace(/\/$/, '')}/address/cities?q=${encodeURIComponent(query)}&limit=5`);
                             const data = await response.json();
 
                             if (data.success && data.results.length > 0) {

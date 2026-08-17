@@ -98,6 +98,9 @@ scheduleWithLogging('subscriptions:generate-invoices', 'Factures abonnements man
 scheduleWithLogging('subscriptions:process-payments', 'Auto-charge & retry paiements')
     ->dailyAt('06:15')->withoutOverlapping();
 
+scheduleWithLogging('play:sync-purchases', 'Sync achats Google Play')
+    ->dailyAt('06:20')->withoutOverlapping();
+
 // Réconciliation matin : rattrapage webhooks Stripe ratés (vérifie les en_attente)
 scheduleWithLogging('subscriptions:reconcile-echeances', 'Réconciliation Stripe (matin)')
     ->dailyAt('06:30')->withoutOverlapping();

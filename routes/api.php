@@ -26,6 +26,12 @@ Route::get('/', [ApiHomeController::class, 'show'])->name('api.home');
 // la specification Google.
 //
 
+Route::prefix('v1')->name('api.v1.')->middleware('throttle:12,1')->group(function () {
+    Route::post('/auth/login', [V1\NativeAuthController::class, 'login'])->name('auth.login');
+    Route::post('/auth/2fa', [V1\NativeAuthController::class, 'twoFactor'])->name('auth.2fa');
+    Route::post('/auth/2fa/renvoyer', [V1\NativeAuthController::class, 'resendTwoFactor'])->name('auth.2fa.renvoyer');
+});
+
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:60,1')->group(function () {
 
     // Index machine des endpoints (meme catalogue que la page de garde)
@@ -49,11 +55,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:60,1')->group(functio
 // compte et de ses entreprises. Les jetons se creent dans les reglages
 // (dash.allotata.fr/settings/api) et voyagent dans Authorization: Bearer.
 //
-// Lecture seule, volontairement : dans cette application, creer ou changer une
-// reservation declenche des notifications, des e-mails, des factures et une
-// synchronisation Google, logique qui vit aujourd'hui dans les controleurs web.
-// Une ecriture ajoutee ici en dupliquerait la moitie et divergerait en silence.
-// Les ecritures viendront quand ces regles seront extraites dans un service.
+// Lecture + accept/refus Pocket : les transitions passent par
+// ReservationStatusService (memes e-mails / notifs que le web).
 //
 
 Route::prefix('v1')
@@ -63,6 +66,17 @@ Route::prefix('v1')
 
         // Le compte derriere le jeton, et les entreprises qu'il ouvre
         Route::get('/moi', [V1\CompteController::class, 'show'])->name('moi');
+        Route::get('/sync', [V1\SyncController::class, 'show'])->name('sync');
+        Route::get('/mes-reservations', [V1\MesReservationsController::class, 'index'])->name('mes-reservations');
+        Route::get('/messagerie/conversations', [V1\MessagerieController::class, 'conversations'])->name('messagerie.conversations');
+        Route::get('/messagerie/conversations/{conversation}/messages', [V1\MessagerieController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('messagerie.messages');
+        Route::get('/factures', [V1\FactureApiController::class, 'index'])->name('factures.index');
+        Route::get('/factures/{facture}/pdf', [V1\FactureApiController::class, 'pdf'])
+            ->whereNumber('facture')
+            ->name('factures.pdf');
+        Route::post('/device/fcm', [V1\DeviceFcmController::class, 'store'])->name('device.fcm');
 
         Route::get('/entreprises', [V1\EntrepriseController::class, 'index'])->name('entreprises.index');
 
@@ -79,6 +93,12 @@ Route::prefix('v1')
             Route::get('/reservations/{reservation}', [V1\ReservationController::class, 'show'])
                 ->whereNumber('reservation')
                 ->name('reservations.show');
+            Route::post('/reservations/{reservation}/accepter', [V1\ReservationWriteController::class, 'accepter'])
+                ->whereNumber('reservation')
+                ->name('reservations.accepter');
+            Route::post('/reservations/{reservation}/refuser', [V1\ReservationWriteController::class, 'refuser'])
+                ->whereNumber('reservation')
+                ->name('reservations.refuser');
             Route::get('/disponibilites', [V1\ReservationController::class, 'disponibilites'])->name('disponibilites');
             Route::get('/clients', [V1\ClientController::class, 'index'])->name('clients');
             Route::get('/finances', [V1\FinanceController::class, 'index'])->name('finances');

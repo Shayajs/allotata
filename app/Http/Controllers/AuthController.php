@@ -472,7 +472,8 @@ class AuthController extends Controller
                 return redirect()->route('invitations.show', $token);
             }
 
-            return redirect()->intended(route('dashboard'));
+            return \App\Support\CapacitorClient::afterLoginRedirect($request)
+                ?? redirect()->intended(route('dashboard'));
         }
 
         // Connexion échouée - Vérifier si c'est un ancien mot de passe

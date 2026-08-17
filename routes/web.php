@@ -17,8 +17,22 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\BrightShellController;
+use App\Http\Controllers\NativeAppDownloadController;
+use App\Http\Controllers\PlayBillingController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/.well-known/assetlinks.json', [NativeAppDownloadController::class, 'assetlinks'])
+    ->name('assetlinks');
+Route::get('/downloads/allotata.apk', [NativeAppDownloadController::class, 'apk'])
+    ->name('downloads.apk');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/native/device-token', [\App\Http\Controllers\NativeDeviceController::class, 'store'])
+        ->name('native.device-token');
+    Route::get('/native/handoff', [\App\Http\Controllers\NativeDeviceController::class, 'handoff'])
+        ->name('native.handoff');
+});
 
 // ==========================================
 // BRIGHTSHELL ERP (Admin uniquement)
@@ -249,6 +263,9 @@ Route::post(
 // Webhook Google Calendar (sans CSRF, sans auth — appelé par Google)
 Route::post('/webhooks/google-calendar', [GoogleCalendarController::class, 'webhook'])
     ->name('google-calendar.webhook');
+
+Route::post('/webhooks/play-billing', [PlayBillingController::class, 'webhook'])
+    ->name('play-billing.webhook');
 
 // Bootstrap : création du premier admin (inaccessible dès qu'un admin existe)
 Route::prefix('temp-admin')->name('temp-admin.')->middleware('no.admin.exists')->group(function () {
@@ -683,6 +700,9 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
     // Abonnements
         Route::get('/abonnement', [SubscriptionController::class, 'index'])->name('subscription.index');
         Route::post('/abonnement/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+        Route::get('/play-billing/products', [PlayBillingController::class, 'products'])->name('play-billing.products');
+        Route::post('/play-billing/verify', [PlayBillingController::class, 'verify'])->name('play-billing.verify');
+        Route::post('/play-billing/restore', [PlayBillingController::class, 'restore'])->name('play-billing.restore');
         Route::get('/abonnement/success', [SubscriptionController::class, 'success'])->name('subscription.success');
         Route::post('/abonnement/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
         Route::post('/abonnement/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
@@ -1017,6 +1037,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/stripe-tests', [\App\Http\Controllers\AdminStripeTestController::class, 'index'])->name('stripe-tests.index');
     Route::post('/stripe-tests/run', [\App\Http\Controllers\AdminStripeTestController::class, 'run'])->name('stripe-tests.run');
     Route::post('/stripe-tests/cleanup', [\App\Http\Controllers\AdminStripeTestController::class, 'cleanup'])->name('stripe-tests.cleanup');
+
+    Route::get('/billing-lab', [\App\Http\Controllers\Admin\BillingLabController::class, 'index'])->name('billing-lab.index');
+    Route::post('/billing-lab/run', [\App\Http\Controllers\Admin\BillingLabController::class, 'run'])->name('billing-lab.run');
+    Route::post('/billing-lab/run-all', [\App\Http\Controllers\Admin\BillingLabController::class, 'runAll'])->name('billing-lab.run-all');
+    Route::post('/billing-lab/cleanup', [\App\Http\Controllers\Admin\BillingLabController::class, 'cleanup'])->name('billing-lab.cleanup');
+    Route::get('/billing-lab/report', [\App\Http\Controllers\Admin\BillingLabController::class, 'report'])->name('billing-lab.report');
     
     // Gestion des abonnements
     Route::get('/subscriptions', [\App\Http\Controllers\AdminSubscriptionController::class, 'index'])->name('subscriptions.index');

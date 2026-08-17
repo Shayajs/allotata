@@ -6,6 +6,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>@yield('title', 'Dashboard') - Allo Tata</title>
         @include('partials.canonical')
+        @include('partials.api-base')
+        @include('partials.play-config')
         <script>
             // Configuration Reverb pour la présence en temps réel
             window.REVERB_APP_ID = '{{ env("REVERB_APP_ID", "reverb-app") }}';
@@ -48,14 +50,14 @@
         @include('partials.offline-banner')
         @include('partials.super-user-banner')
         <!-- Navigation Desktop -->
-        <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 ">
+        <nav class="pwa-desktop-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 ">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-4">
                         <!-- Menu Burger pour mobile web -->
                         @include('components.mobile-nav', ['navType' => 'dashboard'])
                         
-                        <a href="{{ route('home') }}" class="flex items-center gap-3 text-xl font-bold">
+                        <a href="{{ $brandUrl ?? route('home') }}" class="flex items-center gap-3 text-xl font-bold">
                             @php
                                 use App\Helpers\SiteHelper;
                                 $logoUrl = SiteHelper::getLogo('transparent');
@@ -119,6 +121,11 @@
                 </div>
             </div>
         </nav>
+        @include('partials.android-top-bar', [
+            'title' => trim($__env->yieldContent('title')) ?: 'Allo Tata',
+            'showBack' => true,
+            'backUrl' => route('dashboard'),
+        ])
 
         <!-- Contenu Principal -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8">
@@ -146,6 +153,7 @@
             @yield('content')
         </main>
 
+        @include('partials.android-bottom-nav')
         @include('partials.battery-optimization-notice')
         @include('partials.footer')
         @include('partials.cookie-banner')

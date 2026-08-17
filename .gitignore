@@ -39,3 +39,13 @@ env.txt
 /storage/logs/*.log
 .env
 docker/*
+/mobile/node_modules
+/mobile/dist
+/mobile/android/app/build
+/mobile/android/build
+/mobile/android/.gradle
+/mobile/android/local.properties
+/mobile/keystore/*.jks
+/mobile/keystore/*.keystore
+/mobile/keystore/keystore.properties
+/public/downloads/*.apk

@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "fr.allotata.app",
+            "sha256_cert_fingerprints": [
+                "DC:1E:5F:4A:B3:13:C9:7A:05:3D:6A:88:B6:36:27:4F:8F:70:11:BE:3E:4F:AF:41:24:2E:43:8B:43:08:6F:D9"
+            ]
+        }
+    }
+]

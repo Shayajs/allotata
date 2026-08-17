@@ -90,6 +90,9 @@
                     @endif
                 </h3>
             </div>
+            @if($user->hasActivePlayPremium())
+                <p class="mb-4 text-sm text-slate-600 dark:text-slate-300">Géré via Google Play Billing.</p>
+            @endif
             
             @if($hasTrialSubscription)
                 <div class="mb-4 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
@@ -98,7 +101,7 @@
                         ({{ $essaiPremium->joursRestants() }} jour(s) restant(s)).<br>
                         Abonnez-vous maintenant pour continuer à profiter de toutes les fonctionnalités.
                     </p>
-                    <form action="{{ route('subscription.checkout') }}" method="POST">
+                    <form action="{{ route('subscription.checkout') }}" method="POST" class="js-play-billing-form" data-play-product="{{ config('play.products.premium.id') }}">
                         @csrf
                         <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
                             @if($currentPriceAmount > 0)
@@ -260,7 +263,7 @@
                         Vous avez déjà utilisé votre essai gratuit. Un nouvel essai n'est plus possible.
                     </p>
                 @endif
-                <form action="{{ route('subscription.checkout') }}" method="POST">
+                <form action="{{ route('subscription.checkout') }}" method="POST" class="js-play-billing-form" data-play-product="{{ config('play.products.premium.id') }}">
                     @csrf
                     <button type="submit" class="w-full min-h-[44px] px-6 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold rounded-xl transition-all touch-manipulation">
                         @if($currentPriceAmount > 0)

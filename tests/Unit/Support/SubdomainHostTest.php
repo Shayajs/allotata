@@ -27,6 +27,8 @@ class SubdomainHostTest extends TestCase
         $this->assertSame('dash', SubdomainHost::parse('dash.allotata.test')['mode']);
         $this->assertSame('sign', SubdomainHost::parse('sign.allotata.test')['mode']);
         $this->assertSame('api', SubdomainHost::parse('api.allotata.test')['mode']);
+        $this->assertSame('support', SubdomainHost::parse('support.allotata.test')['mode']);
+        $this->assertSame('learn', SubdomainHost::parse('learn.allotata.test')['mode']);
         $this->assertSame('tenant', SubdomainHost::parse('acme.allotata.test')['mode']);
         $this->assertSame('acme', SubdomainHost::parse('acme.allotata.test')['subdomain']);
         $this->assertSame('unknown', SubdomainHost::parse('mail.allotata.test')['mode']);

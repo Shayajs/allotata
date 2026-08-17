@@ -347,3 +347,12 @@
 .safe-area-right {
   padding-right: env(safe-area-inset-right);
 }
+
+html.is-capacitor .hide-on-capacitor {
+  display: none !important;
+}
+
+html.is-capacitor #cookie-banner,
+html.is-capacitor #pwa-install-banner {
+  display: none !important;
+}

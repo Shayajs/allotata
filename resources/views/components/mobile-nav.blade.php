@@ -38,7 +38,7 @@
                     use App\Helpers\SiteHelper;
                     $logoUrl = SiteHelper::getLogo('transparent');
                 @endphp
-                <a href="{{ route('home') }}" class="flex items-center">
+                <a href="{{ $brandUrl ?? route('home') }}" class="flex items-center">
                     @if($logoUrl)
                         <img src="{{ $logoUrl }}" alt="Allo Tata" class="h-6 w-auto">
                     @else
@@ -117,12 +117,67 @@
                 </svg>
                 Paramètres
             </a>
-            <a href="{{ route('dashboard', ['tab' => 'installer']) }}" class="{{ request('tab') === 'installer' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+            @unless(!empty($isCapacitor))
+            <a href="{{ route('dashboard', ['tab' => 'installer']) }}" data-tab="installer" class="{{ request('tab') === 'installer' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
                 <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
                 Installer
             </a>
+            @endunless
+            <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="w-full text-left px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Déconnexion
+                    </button>
+                </form>
+            </div>
+        @elseif($navType === 'settings' && $user)
+            @php
+                $burgerNavItems = $navItems ?? \App\Services\NavigationService::getSettingsItems($user, [
+                    'entreprises_count' => $user->entreprises->count(),
+                ]);
+                $burgerActiveTab = $activeTab ?? request('tab', 'account');
+            @endphp
+            <a href="{{ route('dashboard') }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <div class="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                <p class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Paramètres</p>
+            </div>
+            @foreach($burgerNavItems as $bItem)
+                @if(isset($bItem['separator']))
+                    <div class="pt-1 mt-1 border-t border-slate-200 dark:border-slate-700"></div>
+                    @continue
+                @endif
+                @php
+                    $bIconPath = \App\Services\NavigationService::getIconPath($bItem['icon'] ?? '');
+                    $bIconExtra = isset($bItem['icon_extra']) ? \App\Services\NavigationService::getIconPath($bItem['icon_extra']) : null;
+                    $bIsActive = $burgerActiveTab === ($bItem['tab'] ?? $bItem['key']);
+                    $bIsLink = $bItem['is_link'] ?? false;
+                @endphp
+                @if($bIsLink && ($bItem['url'] ?? null))
+                    <a href="{{ $bItem['url'] }}" class="{{ $currentRoute === 'settings.api.index' ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $bIconPath }}"></path></svg>
+                        {{ $bItem['label'] }}
+                    </a>
+                @else
+                    <a href="{{ route('settings.index', ['tab' => $bItem['tab'] ?? $bItem['key']]) }}" class="{{ $bIsActive ? 'active' : '' }}" onclick="closeBurgerMenu('{{ $uniqueId }}')">
+                        <svg class="w-5 h-5 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $bIconPath }}"></path>
+                            @if($bIconExtra)<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $bIconExtra }}"></path>@endif
+                        </svg>
+                        {{ $bItem['label'] }}
+                    </a>
+                @endif
+            @endforeach
             <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf

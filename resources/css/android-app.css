@@ -1,0 +1,140 @@
+/* Chrome APK Capacitor — distinct de la PWA et du site */
+
+.android-top-bar,
+.android-bottom-nav,
+.android-more-overlay,
+.android-more-sheet,
+.android-auth-brand {
+    display: none;
+}
+
+html.is-capacitor,
+html.is-capacitor body {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+html.is-capacitor .pwa-desktop-header,
+html.is-capacitor .nav-sidebar,
+html.is-capacitor .mobile-nav-burger,
+html.is-capacitor .burger-drawer,
+html.is-capacitor .burger-overlay,
+html.is-capacitor .pwa-bottom-bar,
+html.is-capacitor .pwa-header,
+html.is-capacitor .pwa-more-overlay,
+html.is-capacitor .pwa-more-sheet,
+html.is-capacitor footer,
+html.is-capacitor #cookie-banner,
+html.is-capacitor #pwa-install-banner,
+html.is-capacitor #dashboard-welcome,
+html.is-capacitor .android-page-intro,
+html.is-capacitor #tab-installer,
+html.is-capacitor [data-tab="installer"],
+html.is-capacitor .android-store-card {
+    display: none !important;
+}
+
+@media (display-mode: standalone) {
+    html.is-capacitor .pwa-bottom-bar,
+    html.is-capacitor .pwa-header,
+    html.is-capacitor .pwa-desktop-header {
+        display: none !important;
+    }
+
+    html.is-capacitor .android-top-bar {
+        display: flex !important;
+    }
+
+    html.is-capacitor .android-bottom-nav {
+        display: flex !important;
+    }
+}
+
+html.is-capacitor .android-top-bar {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 3.5rem;
+    padding: calc(0.5rem + env(safe-area-inset-top, 0px)) 1rem 0.5rem;
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+html.is-capacitor .android-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    background: #0f172a;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.28);
+}
+
+html.is-capacitor .android-more-overlay:not(.hidden) {
+    display: block;
+}
+
+html.is-capacitor .android-more-sheet {
+    display: block;
+}
+
+html.is-capacitor .pwa-flex-layout {
+    gap: 0 !important;
+}
+
+html.is-capacitor body:not(.android-auth-page) {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+html.is-capacitor body.android-auth-page {
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    min-height: 100dvh;
+    background: #0f172a;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+}
+
+html.is-capacitor body.android-auth-page .android-auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    padding: calc(2.5rem + env(safe-area-inset-top, 0px)) 1.5rem 1.5rem;
+    color: #e2e8f0;
+}
+
+html.is-capacitor body.android-auth-page > div.max-w-md,
+html.is-capacitor body.android-auth-page > div.max-w-lg {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    background: #fff;
+    color: #0f172a;
+    border-radius: 1.5rem 1.5rem 0 0;
+    padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
+}
+
+html.is-capacitor.dark body.android-auth-page > div.max-w-md,
+html.is-capacitor.dark body.android-auth-page > div.max-w-lg,
+html.is-capacitor body.android-auth-page.dark > div.max-w-md {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+html.is-capacitor body.android-auth-page .android-auth-web-brand,
+html.is-capacitor body.android-auth-page .android-top-bar,
+html.is-capacitor body.android-auth-page .android-bottom-nav {
+    display: none !important;
+}

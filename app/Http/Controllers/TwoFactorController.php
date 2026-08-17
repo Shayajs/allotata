@@ -383,7 +383,8 @@ class TwoFactorController extends Controller
                 ->with('status', 'Vérification réussie !');
         }
 
-        return redirect()->intended(route('dashboard'))
-            ->with('status', 'Connexion réussie ! Bienvenue.');
+        return \App\Support\CapacitorClient::afterLoginRedirect($request)
+            ?? redirect()->intended(route('dashboard'))
+                ->with('status', 'Connexion réussie ! Bienvenue.');
     }
 }

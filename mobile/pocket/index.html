@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="color-scheme" content="dark">
+    <title>Allo Tata</title>
+    <style>
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        #boot {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+            background: #0f172a;
+            transition: opacity .35s ease;
+        }
+        #boot.out { opacity: 0; pointer-events: none; }
+        #boot-date {
+            margin: 0 0 .85rem;
+            color: #22c55e;
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: capitalize;
+        }
+        #boot h1 {
+            margin: 0 0 1.1rem;
+            font-size: 1.85rem;
+            line-height: 1.15;
+            letter-spacing: -.02em;
+        }
+        #boot p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: .95rem;
+        }
+        #boot .dot {
+            width: .55rem;
+            height: .55rem;
+            border-radius: 999px;
+            background: #22c55e;
+            display: inline-block;
+            margin-right: .4rem;
+            animation: boot-pulse 1.2s infinite;
+        }
+        @keyframes boot-pulse { 50% { opacity: .35; } }
+    </style>
+    <link rel="stylesheet" href="./css/pocket.css">
+</head>
+<body>
+    <div id="boot">
+        <p id="boot-date"></p>
+        <h1>Votre journée,<br>même sans réseau.</h1>
+        <p><span class="dot"></span><span id="boot-status">Ouverture du carnet…</span></p>
+    </div>
+    <div id="app"></div>
+    <script>
+        document.getElementById('boot-date').textContent = new Date().toLocaleDateString('fr-FR', {
+            weekday: 'long', day: 'numeric', month: 'long'
+        });
+    </script>
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

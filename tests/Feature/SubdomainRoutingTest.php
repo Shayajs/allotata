@@ -497,8 +497,11 @@ class SubdomainRoutingTest extends TestCase
         // Vite emet des <script type="module"> : un asset servi depuis un autre
         // sous-domaine est refuse par le navigateur faute d'en-tetes CORS, ce qui
         // tuerait tout le JavaScript compile. ASSET_URL doit rester vide.
-        $this->get('https://dash.allotata.test/apprendre');
+        $this->get('https://dash.allotata.test/');
         $this->assertSame('https://dash.allotata.test/build/app.js', asset('build/app.js'));
+
+        $this->get('https://learn.allotata.test/');
+        $this->assertSame('https://learn.allotata.test/build/app.js', asset('build/app.js'));
 
         $this->get('https://acme.allotata.test/');
         $this->assertSame('https://acme.allotata.test/build/app.js', asset('build/app.js'));

@@ -47,7 +47,9 @@ class AuthenticateApiToken
         return response()->json([
             'message' => $message,
             'code' => $code,
-            'documentation' => rtrim(config('app.url'), '/').'/api',
+            'documentation' => \App\Support\SubdomainHost::enabled()
+                ? \App\Support\SubdomainHost::ownerUrl('/api')
+                : rtrim(config('app.url'), '/').'/api',
         ], 401, ['WWW-Authenticate' => 'Bearer']);
     }
 }
