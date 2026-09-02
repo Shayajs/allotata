@@ -89,7 +89,7 @@ class EntrepriseProfileService
 
         $queue = $this->modifications->shouldQueue($entreprise, $applyImmediately);
 
-        if (! $queue && $validated['nom'] !== $entreprise->nom) {
+        if ($validated['nom'] !== $entreprise->nom) {
             $validated['slug'] = \App\Support\SubdomainHost::nextAvailableSlug(
                 Str::slug($validated['nom']),
                 $entreprise->id
@@ -158,10 +158,6 @@ class EntrepriseProfileService
             $moderated = [];
             $immediate = [];
             foreach ($validated as $key => $value) {
-                if ($key === 'afficher_video' && empty($entreprise->video_url) && empty($validated['video_url'])) {
-                    $immediate[$key] = $value;
-                    continue;
-                }
                 if (in_array($key, EntrepriseModificationService::MODERATED_FIELDS, true)) {
                     if ($this->modifications->valuesDiffer($entreprise->{$key} ?? null, $value)) {
                         $moderated[$key] = $value;
@@ -171,8 +167,13 @@ class EntrepriseProfileService
                 }
             }
 
+            $oldSlug = $entreprise->slug;
             if ($immediate !== []) {
                 $entreprise->update($immediate);
+                CacheService::clearEntrepriseCache($entreprise->id, $oldSlug);
+                if (($immediate['slug'] ?? null) && $immediate['slug'] !== $oldSlug) {
+                    CacheService::clearEntrepriseCache($entreprise->id, $immediate['slug']);
+                }
             }
             if ($moderated !== []) {
                 $this->modifications->queueFields($entreprise, $moderated);

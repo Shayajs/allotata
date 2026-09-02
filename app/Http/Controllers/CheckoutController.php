@@ -106,20 +106,22 @@ class CheckoutController extends Controller
         $showCardForm = !$hasPaymentMethod || $request->boolean('change_card');
         $hasAnything = $echeances->isNotEmpty() || $pendingItems->isNotEmpty();
 
-        return view('checkout.index', [
-            'echeances'           => $echeances,
-            'echeancesEchec'      => $echeancesEchec,
-            'echeancesAPayer'     => $echeancesAPayer,
-            'echeancesEnAttente'  => $echeancesEnAttente,
-            'pendingItems'        => $pendingItems,
-            'pendingCalculs'      => $pendingCalculs,
-            'calculs'             => $calculs,
-            'codePromo'           => $codePromo,
-            'hasPaymentMethod'    => $hasPaymentMethod,
-            'showCardForm'        => $showCardForm,
-            'hasAnything'         => $hasAnything,
-            'user'                => $user,
-        ]);
+        return response()
+            ->view('checkout.index', [
+                'echeances'           => $echeances,
+                'echeancesEchec'      => $echeancesEchec,
+                'echeancesAPayer'     => $echeancesAPayer,
+                'echeancesEnAttente'  => $echeancesEnAttente,
+                'pendingItems'        => $pendingItems,
+                'pendingCalculs'      => $pendingCalculs,
+                'calculs'             => $calculs,
+                'codePromo'           => $codePromo,
+                'hasPaymentMethod'    => $hasPaymentMethod,
+                'showCardForm'        => $showCardForm,
+                'hasAnything'         => $hasAnything,
+                'user'                => $user,
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     }
 
     public function appliquerPromo(Request $request)

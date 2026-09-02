@@ -88,31 +88,68 @@ class EntrepriseVisibilityAndModerationTest extends TestCase
         $this->assertTrue($visible->fresh()->estVisiblePubliquement());
     }
 
-    public function test_edition_d_une_entreprise_validee_ne_change_pas_le_live(): void
+    public function test_nom_adresse_et_description_s_appliquent_tout_de_suite(): void
     {
         $gerant = $this->gerantPremium();
         $entreprise = Entreprise::factory()->verified()->create([
             'user_id' => $gerant->id,
             'nom' => 'Ancien Nom',
             'description' => 'Desc live',
+            'ville' => 'Paris',
+            'adresse_rue' => '1 rue de la Paix',
+            'code_postal' => '75001',
         ]);
 
         $this->actingAs($gerant)
             ->post(route('settings.entreprise.update', $entreprise->slug), $this->profilePayload($entreprise, [
                 'nom' => 'Nouveau Nom Public',
-                'description' => 'Desc pending',
+                'description' => 'Desc mise a jour',
+                'ville' => 'Lyon',
+                'adresse_rue' => '12 rue des Fleurs',
+                'code_postal' => '69001',
             ]))
             ->assertRedirect();
 
         $entreprise->refresh();
-        $this->assertSame('Ancien Nom', $entreprise->nom);
-        $this->assertSame('Desc live', $entreprise->description);
+        $this->assertSame('Nouveau Nom Public', $entreprise->nom);
+        $this->assertSame('Desc mise a jour', $entreprise->description);
+        $this->assertSame('Lyon', $entreprise->ville);
+        $this->assertSame('12 rue des Fleurs', $entreprise->adresse_rue);
+        $this->assertSame('69001', $entreprise->code_postal);
+        $this->assertTrue($entreprise->est_verifiee);
+        $this->assertNull($entreprise->modificationEnAttente);
+    }
+
+    public function test_siren_et_video_restent_en_file_d_attente(): void
+    {
+        $gerant = $this->gerantPremium();
+        $entreprise = Entreprise::factory()->verified()->create([
+            'user_id' => $gerant->id,
+            'nom' => 'Ancien Nom',
+            'siren' => '732829320',
+            'video_url' => null,
+        ]);
+
+        $this->actingAs($gerant)
+            ->post(route('settings.entreprise.update', $entreprise->slug), $this->profilePayload($entreprise, [
+                'nom' => 'Nouveau Nom Public',
+                'siren' => '123456789',
+                'siret' => '',
+                'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            ]))
+            ->assertRedirect();
+
+        $entreprise->refresh();
+        $this->assertSame('Nouveau Nom Public', $entreprise->nom);
+        $this->assertSame('732829320', $entreprise->siren);
+        $this->assertNull($entreprise->video_url);
         $this->assertTrue($entreprise->est_verifiee);
 
         $pending = $entreprise->modificationEnAttente;
         $this->assertNotNull($pending);
-        $this->assertSame('Nouveau Nom Public', $pending->fields()['nom']);
-        $this->assertSame('Desc pending', $pending->fields()['description']);
+        $this->assertSame('123456789', $pending->fields()['siren']);
+        $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $pending->fields()['video_url']);
+        $this->assertArrayNotHasKey('nom', $pending->fields());
     }
 
     public function test_champs_exploitation_s_appliquent_tout_de_suite(): void
@@ -142,12 +179,13 @@ class EntrepriseVisibilityAndModerationTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
         $entreprise = Entreprise::factory()->verified()->create([
             'user_id' => $gerant->id,
-            'nom' => 'Ancien Nom',
+            'siren' => '732829320',
         ]);
 
         $this->actingAs($gerant)
             ->post(route('settings.entreprise.update', $entreprise->slug), $this->profilePayload($entreprise, [
-                'nom' => 'Nom Approuve',
+                'siren' => '123456789',
+                'siret' => '',
             ]));
 
         $modification = EntrepriseModification::pending()->first();
@@ -158,9 +196,9 @@ class EntrepriseVisibilityAndModerationTest extends TestCase
             ->assertRedirect();
 
         $entreprise->refresh();
-        $this->assertSame('Nom Approuve', $entreprise->nom);
+        $this->assertSame('123456789', $entreprise->siren);
         $this->assertTrue($entreprise->est_verifiee);
-        $this->assertTrue($entreprise->nom_valide);
+        $this->assertTrue($entreprise->siren_valide);
         $this->assertSame(EntrepriseModification::STATUT_APPROVED, $modification->fresh()->statut);
     }
 
@@ -170,24 +208,25 @@ class EntrepriseVisibilityAndModerationTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
         $entreprise = Entreprise::factory()->verified()->create([
             'user_id' => $gerant->id,
-            'nom' => 'Nom Live',
+            'siren' => '732829320',
         ]);
 
         $this->actingAs($gerant)
             ->post(route('settings.entreprise.update', $entreprise->slug), $this->profilePayload($entreprise, [
-                'nom' => 'Nom Refuse',
+                'siren' => '111111111',
+                'siret' => '',
             ]));
 
         $modification = EntrepriseModification::pending()->first();
 
         $this->actingAs($admin)
             ->post(route('admin.entreprises.modifications.reject', $modification), [
-                'motif_refus' => 'Nom trompeur',
+                'motif_refus' => 'SIREN incorrect',
             ])
             ->assertRedirect();
 
         $entreprise->refresh();
-        $this->assertSame('Nom Live', $entreprise->nom);
+        $this->assertSame('732829320', $entreprise->siren);
         $this->assertTrue($entreprise->est_verifiee);
         $this->assertSame(EntrepriseModification::STATUT_REJECTED, $modification->fresh()->statut);
     }
@@ -252,6 +291,10 @@ class EntrepriseVisibilityAndModerationTest extends TestCase
         $this->assertTrue($service->shouldQueue($live));
         $this->assertFalse($service->shouldQueue($live, true));
         $this->assertFalse($service->shouldQueue($draft));
+        $this->assertNotContains('nom', EntrepriseModificationService::MODERATED_FIELDS);
+        $this->assertNotContains('adresse_rue', EntrepriseModificationService::MODERATED_FIELDS);
+        $this->assertContains('siren', EntrepriseModificationService::MODERATED_FIELDS);
+        $this->assertContains('video_url', EntrepriseModificationService::MODERATED_FIELDS);
     }
 
     private function gerantPremium(): User

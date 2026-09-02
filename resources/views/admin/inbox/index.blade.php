@@ -38,7 +38,7 @@
                                 {{ $modification->user?->name }} · {{ $modification->created_at->diffForHumans() }}
                             </p>
                             <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                                La fiche publique actuelle reste en ligne jusqu'à confirmation.
+                                Changement sensible (SIREN, média, vidéo ou site web) — le reste de la fiche est déjà à jour.
                             </p>
                         </div>
                         <a href="{{ route('admin.entreprises.show', $modification->entreprise) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg">

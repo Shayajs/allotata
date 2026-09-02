@@ -5,9 +5,43 @@
 import { loadStripe } from '@stripe/stripe-js';
 
 const stripePk = document.querySelector('meta[name="stripe-publishable-key"]')?.getAttribute('content');
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 const form = document.getElementById('checkout-save-card-form');
 const container = document.getElementById('checkout-payment-element');
+
+function readCookie(name) {
+    const encoded = encodeURIComponent(name) + '=';
+    const parts = document.cookie ? document.cookie.split('; ') : [];
+    for (const part of parts) {
+        if (part.startsWith(encoded)) {
+            return decodeURIComponent(part.slice(encoded.length));
+        }
+    }
+    return '';
+}
+
+function csrfHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const xsrf = readCookie('XSRF-TOKEN');
+    const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+    };
+    // Preferer le cookie : il suit la session meme si le HTML (meta) est en cache.
+    // Laravel ignore X-XSRF-TOKEN si X-CSRF-TOKEN est deja present.
+    if (xsrf) {
+        headers['X-XSRF-TOKEN'] = xsrf;
+    } else if (meta) {
+        headers['X-CSRF-TOKEN'] = meta;
+    }
+    return headers;
+}
+
+function hasCsrf() {
+    return Boolean(
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || readCookie('XSRF-TOKEN')
+    );
+}
 
 function getQuery(name) {
     return new URLSearchParams(window.location.search).get(name);
@@ -130,14 +164,30 @@ async function finishAfterRedirect() {
     if (!pmId) return true;
     await fetch(window.location.origin + '/checkout/save-payment-method', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: csrfHeaders(),
         body: JSON.stringify({ payment_method: pmId }),
     });
     window.location.replace(window.location.origin + '/checkout');
     return true;
 }
 
-const headers = () => ({ 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' });
+const headers = () => csrfHeaders();
+
+async function checkoutPost(path, body) {
+    const url = window.location.origin + path;
+    const options = {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: headers(),
+        body: JSON.stringify(body ?? {}),
+    };
+    let res = await fetch(url, options);
+    if (res.status === 419) {
+        res = await fetch(url, { ...options, headers: headers() });
+    }
+    return res;
+}
 
 function loadingHtml() {
     return '<div class="flex items-center justify-center gap-2 py-12 text-slate-500 dark:text-slate-400" role="status"><svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Chargement du formulaire…</div>';
@@ -174,9 +224,7 @@ async function initSaveCard() {
             }
             const pmId = setupIntent?.payment_method;
             if (!pmId) { window.location.replace(window.location.origin + '/checkout'); return; }
-            const saveRes = await fetch(window.location.origin + '/checkout/save-payment-method', {
-                method: 'POST', headers: headers(), body: JSON.stringify({ payment_method: pmId }),
-            });
+            const saveRes = await checkoutPost('/checkout/save-payment-method', { payment_method: pmId });
             const saveData = await saveRes.json();
             if (!saveData.success) {
                 if (errEl) errEl.textContent = saveData.error || 'Erreur lors de l\'enregistrement.';
@@ -207,9 +255,13 @@ async function initSaveCard() {
         showLoading();
         let data = {};
         try {
-            const r = await fetch(window.location.origin + '/checkout/setup-intent', { method: 'POST', headers: headers(), body: '{}' });
+            const r = await checkoutPost('/checkout/setup-intent', {});
             data = await r.json().catch(() => ({}));
             if (!r.ok) {
+                if (r.status === 419) {
+                    showError('Votre session a expiré. Rechargez la page puis réessayez.', true);
+                    return;
+                }
                 const err = data.error || data.message || `Erreur ${r.status}`;
                 showError('Impossible de préparer le formulaire. ' + err, true);
                 return;
@@ -267,11 +319,7 @@ async function initRegler() {
                     body.echeance_id = parseInt(echeanceId, 10);
                 }
                 if (codePromo) body.code_promo = codePromo;
-                const res = await fetch(window.location.origin + '/checkout/charge', {
-                    method: 'POST',
-                    headers: headers(),
-                    body: JSON.stringify(body),
-                });
+                const res = await checkoutPost('/checkout/charge', body);
                 const json = await res.json();
 
                 if (res.status === 409) {
@@ -314,10 +362,8 @@ async function initRegler() {
                         if (label) label.textContent = 'Régler cette échéance';
                         return;
                     }
-                    const confirmRes = await fetch(window.location.origin + '/checkout/confirm-status', {
-                        method: 'POST',
-                        headers: headers(),
-                        body: JSON.stringify({ payment_intent_id: json.payment_intent_id }),
+                    const confirmRes = await checkoutPost('/checkout/confirm-status', {
+                        payment_intent_id: json.payment_intent_id,
                     });
                     const confirmData = await confirmRes.json();
                     if (!confirmData.success) {
@@ -349,7 +395,7 @@ async function initRegler() {
     });
 }
 
-if (stripePk && csrfToken) {
+if (stripePk && hasCsrf()) {
     (async () => {
         if (getQuery('setup_intent_client_secret') && getQuery('redirect_status') === 'succeeded') {
             if (await finishAfterRedirect()) return;

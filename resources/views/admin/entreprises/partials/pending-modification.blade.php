@@ -13,7 +13,7 @@
             @if($pending->user)
                 par {{ $pending->user->name }}
             @endif
-            . La fiche publique actuelle reste en ligne jusqu'à confirmation.
+            . Un administrateur doit confirmer uniquement les changements sensibles (SIREN, médias, vidéo, site web).
         </p>
 
         @if($fields !== [])

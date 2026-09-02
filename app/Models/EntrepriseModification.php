@@ -14,25 +14,10 @@ class EntrepriseModification extends Model
     public const STATUT_REJECTED = 'rejected';
 
     public const FIELD_LABELS = [
-        'nom' => 'Nom',
-        'slug' => 'Slug',
-        'type_activite' => 'Type d\'activité',
-        'description' => 'Description',
-        'mots_cles' => 'Mots-clés',
-        'ville' => 'Ville',
-        'adresse_rue' => 'Adresse',
-        'code_postal' => 'Code postal',
-        'latitude' => 'Latitude',
-        'longitude' => 'Longitude',
-        'afficher_adresse_complete' => 'Afficher l\'adresse complète',
-        'type_localisation' => 'Type de localisation',
-        'rayon_deplacement' => 'Rayon de déplacement',
         'siren' => 'SIREN',
         'siret' => 'SIRET',
         'video_url' => 'Vidéo',
-        'afficher_video' => 'Afficher la vidéo',
         'site_web_externe' => 'Site web externe',
-        'phrase_accroche' => 'Phrase d\'accroche',
         'logo' => 'Logo',
         'image_fond' => 'Image de fond',
     ];

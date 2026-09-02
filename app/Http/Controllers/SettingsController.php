@@ -267,7 +267,7 @@ class SettingsController extends Controller
         $entreprise = $service->update($entreprise, $request);
 
         $message = $service->lastUpdateQueued
-            ? 'Demande enregistrée. La fiche publique actuelle reste en ligne jusqu\'à la confirmation d\'un administrateur.'
+            ? 'Les informations secondaires sont en ligne. SIREN, vidéo, site web ou médias restent en attente de validation.'
             : 'Les informations de l\'entreprise ont été mises à jour.';
 
         return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])

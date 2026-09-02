@@ -13,26 +13,15 @@ use Illuminate\Support\Str;
 
 class EntrepriseModificationService
 {
+    /**
+     * Champs à impact fort sur la fiche publique (identité légale, lien externe, médias).
+     * Nom, adresse, description, etc. s'appliquent tout de suite.
+     */
     public const MODERATED_FIELDS = [
-        'nom',
-        'slug',
-        'type_activite',
-        'description',
-        'mots_cles',
-        'ville',
-        'adresse_rue',
-        'code_postal',
-        'latitude',
-        'longitude',
-        'afficher_adresse_complete',
-        'type_localisation',
-        'rayon_deplacement',
         'siren',
         'siret',
         'video_url',
-        'afficher_video',
         'site_web_externe',
-        'phrase_accroche',
         'logo',
         'image_fond',
     ];

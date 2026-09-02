@@ -312,7 +312,7 @@ class AdminNotificationService
         $this->notifyAllAdmins(
             'admin_entreprise_modifiee',
             'Modification d\'entreprise à valider',
-            "« {$entreprise->nom} » a soumis des changements. La fiche publique actuelle reste en ligne jusqu'à votre confirmation.",
+            "« {$entreprise->nom} » a soumis un changement sensible (SIREN, média, vidéo ou site). Le reste de la fiche est déjà à jour.",
             route('admin.entreprises.show', $entreprise),
             [
                 'entreprise_id' => $entreprise->id,
