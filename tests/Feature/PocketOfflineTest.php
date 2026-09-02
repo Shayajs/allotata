@@ -8,12 +8,14 @@ use App\Models\Facture;
 use App\Models\FcmToken;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Notifications\EmailVerificationNotification;
 use App\Services\Facturation\PdfDocumentRenderer;
 use App\Services\ReservationStatusService;
 use App\Support\CapacitorClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PocketOfflineTest extends TestCase
@@ -289,5 +291,91 @@ class PocketOfflineTest extends TestCase
             ])
             ->assertUnauthorized()
             ->assertJsonPath('code', 'identifiants');
+    }
+
+    public function test_auth_register_refuse_hors_apk(): void
+    {
+        $this->postJson('https://api.allotata.test/v1/auth/register', $this->payloadInscription())
+            ->assertForbidden()
+            ->assertJsonPath('code', 'hors_application');
+    }
+
+    public function test_auth_register_cree_un_membre_sans_jeton(): void
+    {
+        Notification::fake();
+
+        $payload = $this->payloadInscription();
+
+        $this->withHeaders(['X-Capacitor' => '1'])
+            ->postJson('https://api.allotata.test/v1/auth/register', $payload)
+            ->assertCreated()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('email', $payload['email'])
+            ->assertJsonMissing(['jeton']);
+
+        $user = User::where('email', $payload['email'])->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->est_client);
+        $this->assertFalse($user->est_gerant);
+        $this->assertNull($user->email_verified_at);
+        $this->assertDatabaseCount('api_tokens', 0);
+
+        Notification::assertSentTo($user, EmailVerificationNotification::class);
+
+        $this->withHeaders(['X-Capacitor' => '1'])
+            ->postJson('https://api.allotata.test/v1/auth/login', [
+                'email' => $payload['email'],
+                'password' => $payload['password'],
+            ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'email_non_verifie');
+    }
+
+    public function test_auth_register_valide_comme_le_wizard(): void
+    {
+        $this->withHeaders(['X-Capacitor' => '1'])
+            ->postJson('https://api.allotata.test/v1/auth/register', [
+                'email' => 'incomplet@example.test',
+            ])
+            ->assertUnprocessable();
+
+        User::factory()->create(['email' => 'pris@example.test']);
+
+        $this->withHeaders(['X-Capacitor' => '1'])
+            ->postJson('https://api.allotata.test/v1/auth/register', $this->payloadInscription([
+                'email' => 'pris@example.test',
+            ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
+
+        $this->withHeaders(['X-Capacitor' => '1'])
+            ->postJson('https://api.allotata.test/v1/auth/register', $this->payloadInscription([
+                'cgu_accepted' => false,
+            ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['cgu_accepted']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $remplace
+     * @return array<string, mixed>
+     */
+    private function payloadInscription(array $remplace = []): array
+    {
+        return array_merge([
+            'name' => 'Marie',
+            'surname' => 'Dupont',
+            'email' => 'marie.dupont@example.test',
+            'password' => 'password1',
+            'password_confirmation' => 'password1',
+            'date_naissance' => '1990-05-12',
+            'telephone' => '0612345678',
+            'adresse' => '10 rue de la Paix',
+            'ville' => 'Paris',
+            'code_postal' => '75002',
+            'cgu_accepted' => true,
+            'cgv_accepted' => true,
+            'confidentialite_accepted' => true,
+        ], $remplace);
     }
 }

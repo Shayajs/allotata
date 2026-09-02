@@ -17,10 +17,9 @@
         <item name="android:navigationBarColor">@color/splash_background</item>
     </style>
 
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
-        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    <!-- Pas d'icône 512px ici : windowSplashScreenAnimatedIcon + PNG trop grande = crash Android 12+. -->
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_brand</item>
+        <item name="android:background">@drawable/splash_brand</item>
     </style>
 </resources>

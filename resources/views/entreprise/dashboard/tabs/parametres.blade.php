@@ -4,6 +4,15 @@
         <x-course-link-badge page-key="entreprise.parametres" :course-links="$courseLinks ?? []" />
     </div>
 
+    @if($entreprise->modificationEnAttente)
+        <div class="mb-6 p-4 rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+            <p class="font-semibold text-orange-900 dark:text-orange-200">Modification en attente de validation</p>
+            <p class="text-sm text-orange-800 dark:text-orange-300 mt-1">
+                Votre fiche publique actuelle reste visible. Un administrateur confirmera les changements — ils ne sont pas encore en ligne.
+            </p>
+        </div>
+    @endif
+
     <!-- Logo et Image de fond (en dehors du formulaire principal) -->
     <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-6 mb-6">
         <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">

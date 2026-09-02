@@ -1,93 +1,94 @@
 import { clearToken, getToken, setToken, tokenFromHandoff } from './auth.js';
 import { api } from './api.js';
-import { get, getAll, meta } from './db.js';
-import { replayOutbox } from './outbox.js';
-import { call, hideSplash, maps, openWeb, registerFcm, sms } from './native.js';
+import { hideSplash, maps, openWeb, call, sms } from './native.js';
+import { getHosts } from './config.js';
+import { renderPitch } from '../screens/pitch.js';
 import { renderLogin } from '../screens/login.js';
-import { pullSync } from './sync.js';
-import { startOfDay } from './ui.js';
-import { renderAgenda } from '../screens/agenda.js';
-import { renderRdv } from '../screens/rdv.js';
-import { renderClient, renderClients } from '../screens/client.js';
-import { renderOutbox } from '../screens/outbox.js';
+import { renderRegister } from '../screens/register.js';
+import { renderVerify } from '../screens/verify.js';
+import { renderHome } from '../screens/home.js';
+import { renderReservations } from '../screens/reservations.js';
+import { renderPlus } from '../screens/plus.js';
 import { renderFactures } from '../screens/factures.js';
 import { renderMessages } from '../screens/messages.js';
-import { renderPlus } from '../screens/plus.js';
 
 const app = document.getElementById('app');
-let day = startOfDay(new Date());
-let weekMode = false;
-let welcomeDone = false;
+const GUEST = new Set(['', 'pitch', 'login', 'register', 'verify']);
+const MEMBER = new Set(['home', 'reservations', 'plus', 'messages', 'factures']);
+let previousRoute = '';
 
 function route() {
     const hash = (location.hash || '#/').replace(/^#/, '');
     const parts = hash.split('/').filter(Boolean);
-    return { name: parts[0] || 'today', id: parts[1] || null };
+    return { name: parts[0] || '', id: parts[1] || null };
 }
 
 function go(path) {
     location.hash = path;
 }
 
+function setGuest(on) {
+    document.body.classList.toggle('guest', on);
+}
+
+async function onAuthError() {
+    await clearToken();
+    go('#/');
+    await render();
+}
+
 async function render() {
+    const token = await getToken();
     const { name, id } = route();
-    const ctx = { go, tryReplay, trySync, render, day, weekMode };
-    if (name === 'rdv') {
-        return renderRdv(app, id, ctx);
+    const from = previousRoute;
+    previousRoute = name || (token ? 'home' : 'pitch');
+    const ctx = { go, onAuthError };
+
+    if (!token) {
+        setGuest(true);
+        if (name === 'login') {
+            return renderLogin(app, {
+                go,
+                onReady: async () => {
+                    go('#/home');
+                    await render();
+                },
+            });
+        }
+        if (name === 'register') {
+            return renderRegister(app, { go, reset: from !== 'register' });
+        }
+        if (name === 'verify') {
+            return renderVerify(app);
+        }
+        if (name && !GUEST.has(name)) {
+            go('#/');
+        }
+        return renderPitch(app);
     }
-    if (name === 'clients') {
-        return renderClients(app);
+
+    setGuest(false);
+    if (!name || GUEST.has(name)) {
+        go('#/home');
+        return renderHome(app, ctx);
     }
-    if (name === 'client') {
-        return renderClient(app, id, ctx);
-    }
-    if (name === 'actions') {
-        return renderOutbox(app);
-    }
-    if (name === 'factures') {
-        return renderFactures(app);
-    }
-    if (name === 'messages') {
-        return renderMessages(app, id);
+    if (name === 'reservations') {
+        return renderReservations(app, ctx);
     }
     if (name === 'plus') {
         return renderPlus(app, ctx);
     }
-    if (name === 'login') {
-        return renderLogin(app, {
-            onReady: async () => {
-                await trySync();
-                await registerFcm();
-                go('#/today');
-                await render();
-            },
-        });
+    if (name === 'messages') {
+        return renderMessages(app, id, ctx);
     }
-    return renderAgenda(app, { day, weekMode });
-}
-
-async function trySync() {
-    if (!navigator.onLine) {
-        return;
+    if (name === 'factures') {
+        return renderFactures(app, ctx);
     }
-    try {
-        await pullSync();
-        await replayOutbox();
-    } catch (error) {
-        if (error.message === 'jeton_invalide') {
-            await clearToken();
-            go('#/login');
-            await render();
-        }
+    if (name === 'home' || MEMBER.has(name)) {
+        return renderHome(app, ctx);
     }
-}
-
-async function tryReplay() {
-    try {
-        await replayOutbox();
-    } catch {
-        // reste en file
-    }
+    go('#/home');
+    return renderHome(app, ctx);
 }
 
 function bind() {
@@ -95,37 +96,6 @@ function bind() {
         const goBtn = event.target.closest('[data-go]');
         if (goBtn) {
             go(goBtn.dataset.go);
-            return;
-        }
-        const dayBtn = event.target.closest('[data-day]');
-        if (dayBtn) {
-            day = startOfDay(new Date(day.getTime() + Number(dayBtn.dataset.day) * 86400000));
-            render();
-            return;
-        }
-        const jumpBtn = event.target.closest('[data-jump]');
-        if (jumpBtn) {
-            day = startOfDay(new Date(Number(jumpBtn.dataset.jump)));
-            weekMode = false;
-            render();
-            return;
-        }
-        const modeBtn = event.target.closest('[data-mode]');
-        if (modeBtn) {
-            weekMode = modeBtn.dataset.mode === 'semaine';
-            render();
-            return;
-        }
-        const fab = event.target.closest('[data-fab]');
-        if (fab) {
-            const today = startOfDay(new Date());
-            if (day.getTime() !== today.getTime() || weekMode) {
-                day = today;
-                weekMode = false;
-                render();
-                return;
-            }
-            app.querySelector('.slot.now')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
         const callBtn = event.target.closest('[data-call]');
@@ -145,6 +115,8 @@ function bind() {
         }
         const webBtn = event.target.closest('[data-web]');
         if (webBtn) {
+            event.preventDefault();
+            event.stopPropagation();
             openWeb(webBtn.dataset.web);
             return;
         }
@@ -156,12 +128,6 @@ function bind() {
 }
 
 async function openPdf(id) {
-    const cached = await get('pdfs', Number(id));
-    if (cached?.blob) {
-        const url = URL.createObjectURL(cached.blob);
-        window.open(url, '_blank');
-        return;
-    }
     if (!navigator.onLine) {
         return;
     }
@@ -169,8 +135,10 @@ async function openPdf(id) {
         const blob = await api(`/factures/${id}/pdf`);
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
-    } catch {
-        // ignore
+    } catch (error) {
+        if (error.message === 'jeton_invalide') {
+            await onAuthError();
+        }
     }
 }
 
@@ -189,18 +157,17 @@ async function hideBoot() {
 
 async function boot() {
     bind();
+    await getHosts();
     await hideSplash();
     window.addEventListener('hashchange', render);
-    window.addEventListener('online', () => trySync().then(render));
 
     const App = window.Capacitor?.Plugins?.App;
     App?.addListener?.('appUrlOpen', async ({ url }) => {
         const token = tokenFromHandoff(url);
         if (token) {
             await setToken(token);
-            setBootStatus('On prépare votre carnet…');
-            await trySync();
-            go('#/today');
+            setBootStatus('C’est bon.');
+            go('#/home');
             await render();
             await hideBoot();
         }
@@ -216,41 +183,30 @@ async function boot() {
 
     const token = await getToken();
     if (!token) {
-        go('#/login');
+        if (!GUEST.has(route().name)) {
+            go('#/');
+        }
         await render();
         await hideBoot();
         return;
     }
 
-    setBootStatus('Lecture du carnet…');
-    const cached = await getAll('reservations');
-    const firstOpen = !(await meta('welcomed'));
-
-    if (firstOpen && !welcomeDone) {
-        welcomeDone = true;
-        setBootStatus('On prépare votre carnet…');
-        await trySync();
-        await meta('welcomed', true);
-        await registerFcm();
-        go('#/today');
-        await render();
-        await hideBoot();
-        return;
+    setBootStatus('Ouverture de votre espace…');
+    if (!MEMBER.has(route().name)) {
+        go('#/home');
     }
-
-    if (cached.length) {
-        await render();
-        await hideBoot();
-        trySync().then(render);
-        registerFcm();
-        return;
-    }
-
-    setBootStatus(navigator.onLine ? 'On prépare votre carnet…' : 'Aucun rendez-vous en cache.');
-    await trySync();
-    await registerFcm();
     await render();
     await hideBoot();
 }
 
-boot();
+boot().catch(async (error) => {
+    console.error(error);
+    try {
+        go('#/');
+        await render();
+        await hideBoot();
+    } catch {
+        await hideSplash();
+        app.innerHTML = `<div class="auth"><h1>Allotata n’a pas pu s’ouvrir.</h1><p class="auth-lead">Relance l’app. Si ça continue, réinstalle l’APK.</p></div>`;
+    }
+});

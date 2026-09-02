@@ -81,6 +81,7 @@ class Notification extends Model
         'admin_erreur' => 'admin',
         'admin_gdpr' => 'admin',
         'admin_entreprise_validation' => 'admin',
+        'admin_entreprise_modifiee' => 'admin',
         'audit' => 'admin',
     ];
 

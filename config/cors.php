@@ -3,7 +3,12 @@
 return [
     'paths' => ['api/*', 'v1/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        '*',
+        'https://localhost',
+        'http://localhost',
+        'capacitor://localhost',
+    ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],

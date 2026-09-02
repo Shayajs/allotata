@@ -487,6 +487,40 @@ class Entreprise extends Model
     }
 
     /**
+     * Visible en recherche / page publique : Premium du gérant ET validation admin.
+     */
+    public function estVisiblePubliquement(): bool
+    {
+        return (bool) $this->est_verifiee && $this->aAbonnementActif();
+    }
+
+    /**
+     * Le visiteur (ou le propriétaire / admin) peut consulter la fiche.
+     */
+    public function peutEtreConsulteePar(?User $user): bool
+    {
+        if ($this->estVisiblePubliquement()) {
+            return true;
+        }
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->id === $this->user_id || $user->is_admin;
+    }
+
+    public function modifications()
+    {
+        return $this->hasMany(EntrepriseModification::class);
+    }
+
+    public function modificationEnAttente()
+    {
+        return $this->hasOne(EntrepriseModification::class)->where('statut', EntrepriseModification::STATUT_PENDING);
+    }
+
+    /**
      * Calcule le pourcentage de complétion de l'entreprise (pour les nouvelles entreprises)
      * Retourne un tableau avec les détails de chaque condition
      */

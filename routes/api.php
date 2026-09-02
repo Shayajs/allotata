@@ -28,6 +28,7 @@ Route::get('/', [ApiHomeController::class, 'show'])->name('api.home');
 
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:12,1')->group(function () {
     Route::post('/auth/login', [V1\NativeAuthController::class, 'login'])->name('auth.login');
+    Route::post('/auth/register', [V1\NativeAuthController::class, 'register'])->name('auth.register');
     Route::post('/auth/2fa', [V1\NativeAuthController::class, 'twoFactor'])->name('auth.2fa');
     Route::post('/auth/2fa/renvoyer', [V1\NativeAuthController::class, 'resendTwoFactor'])->name('auth.2fa.renvoyer');
 });

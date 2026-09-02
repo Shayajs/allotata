@@ -6,7 +6,9 @@
     "scripts": {
         "sync": "npx cap sync android",
         "open": "npx cap open android",
-        "pocket:build": "vite build --config pocket/vite.config.js",
+        "pocket:build": "vite build --config pocket/vite.config.js --mode development",
+        "pocket:build:local": "vite build --config pocket/vite.config.js --mode development",
+        "pocket:build:prod": "VITE_POCKET_ENV=prod vite build --config pocket/vite.config.js --mode production",
         "build:apk": "bash scripts/build-release.sh apk",
         "build:aab": "bash scripts/build-release.sh aab",
         "build:release": "bash scripts/build-release.sh all"
@@ -17,6 +19,7 @@
         "@capacitor/browser": "^7.0.5",
         "@capacitor/cli": "^7.6.8",
         "@capacitor/core": "^7.6.8",
+        "@capacitor/geolocation": "^7.1.8",
         "@capacitor/preferences": "^7.0.4",
         "@capacitor/push-notifications": "^7.0.5",
         "@capacitor/splash-screen": "^7.0.5",

@@ -1,6 +1,3 @@
-import { meta } from './db.js';
-import { pendingCount } from './outbox.js';
-
 export function startOfDay(date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -45,21 +42,45 @@ export function weekDays(anchor) {
     return Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * 86400000));
 }
 
-export function nav(active, badge = 0) {
+export function esc(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+export function prenom(compte) {
+    const nom = String(compte?.nom || '').trim();
+    return nom.split(/\s+/)[0] || 'toi';
+}
+
+export function clock() {
+    return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+export function dayLine() {
+    return new Date().toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long',
+    });
+}
+
+export function nav(active) {
     const items = [
-        ['today', 'Aujourd’hui', '📅'],
-        ['clients', 'Clients', '👤'],
-        ['actions', 'Actions', '⚡'],
+        ['home', 'Accueil', '⌂'],
+        ['reservations', 'Réserv.', '▦'],
         ['plus', 'Plus', '···'],
     ];
     return `<nav class="nav">${items.map(([key, label, ico]) => `
         <button class="${active === key ? 'on' : ''}" data-go="#/${key}">
-            <span class="ico">${ico}${key === 'actions' && badge ? `<span class="dot-badge badge">${badge}</span>` : ''}</span>
+            <span class="ico">${ico}</span>
             ${label}
         </button>`).join('')}</nav>`;
 }
 
 export async function pill() {
+    const { meta } = await import('./db.js');
+    const { pendingCount } = await import('./outbox.js');
     const pending = await pendingCount();
     const syncAt = await meta('sync_at');
     if (pending) {

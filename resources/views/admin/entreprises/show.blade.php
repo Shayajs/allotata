@@ -38,6 +38,8 @@
     </a>
 </div>
 
+@include('admin.entreprises.partials.pending-modification')
+
 <!-- Panneau de vérification -->
 <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 mb-8">
     <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">

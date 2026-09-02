@@ -1,4 +1,4 @@
-import { CHECKOUT_URL, DASH_URL, SETTINGS_URL } from './config.js';
+import { getHosts } from './config.js';
 
 export async function hideSplash() {
     try {
@@ -61,15 +61,24 @@ export async function snapshotNextRdv(reservations) {
     }
 }
 
-export const webLinks = {
-    dash: DASH_URL,
-    settings: SETTINGS_URL,
-    checkout: CHECKOUT_URL,
-};
+export async function webLinks() {
+    const host = await getHosts();
+    return {
+        dash: host.dash,
+        settings: host.settings,
+        checkout: host.checkout,
+        cgu: host.cgu,
+        cgv: host.cgv,
+        confidentialite: host.confidentialite,
+    };
+}
 
 let fcmBound = false;
 
 export async function registerFcm() {
+    if (import.meta.env.VITE_FCM !== '1') {
+        return;
+    }
     const Push = window.Capacitor?.Plugins?.PushNotifications;
     if (!Push?.register) {
         return;
@@ -77,14 +86,18 @@ export async function registerFcm() {
     try {
         if (!fcmBound) {
             fcmBound = true;
+            Push.addListener('registrationError', () => {});
             Push.addListener('registration', async ({ value }) => {
                 const { post } = await import('./api.js');
                 await post('/device/fcm', { token: value, device: 'android' });
             });
         }
-        await Push.requestPermissions();
+        const perm = await Push.requestPermissions();
+        if (perm?.receive !== 'granted') {
+            return;
+        }
         await Push.register();
     } catch {
-        // FCM optionnel sans google-services.json
+        // FCM optionnel
     }
 }

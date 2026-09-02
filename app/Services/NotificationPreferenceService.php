@@ -82,6 +82,7 @@ class NotificationPreferenceService
         'admin_erreur' => self::CATEGORY_ADMIN_OPS,
         'admin_gdpr' => self::CATEGORY_ADMIN_OPS,
         'admin_entreprise_validation' => self::CATEGORY_ADMIN_OPS,
+        'admin_entreprise_modifiee' => self::CATEGORY_ADMIN_OPS,
         'audit' => self::CATEGORY_ADMIN_OPS,
     ];
 

@@ -41,7 +41,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Zone de recherche -->
             <div class="mb-8">
-                <form action="{{ route('search') }}" method="GET" class="relative" id="search-form-results">
+                <form action="{{ route('search') }}" method="GET" class="relative" id="search-form-results" data-search-geo-form>
                     <div class="relative">
                         <input 
                             type="text" 
@@ -64,7 +64,7 @@
                     </div>
                     
                     <!-- Bouton Plus de filtres -->
-                    <div class="mt-3 flex items-center gap-4">
+                    <div class="mt-3 flex items-center gap-4 flex-wrap">
                         <button 
                             type="button" 
                             onclick="toggleAdvancedFilters()"
@@ -75,6 +75,8 @@
                             </svg>
                             <span id="filter-toggle-text">Plus de filtres</span>
                         </button>
+
+                        @include('partials.search-geo-controls')
                         
                         @if(request()->hasAny(['ville_filter', 'rayon']))
                             <a href="{{ route('search', ['q' => $query]) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
@@ -164,9 +166,14 @@
                 </form>
 
                 <!-- Affichage des filtres actifs -->
-                @if(request()->hasAny(['ville_filter', 'rayon', 'type_activite']))
+                @if(request()->hasAny(['ville_filter', 'rayon', 'type_activite']) || (($visitorLocation['source'] ?? '') === 'browser'))
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                         <span class="text-sm text-slate-600 dark:text-slate-400">Filtres actifs :</span>
+                        @if(($visitorLocation['source'] ?? '') === 'browser')
+                            <span class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1">
+                                📍 Près de vous
+                            </span>
+                        @endif
                         @if(request('ville_filter'))
                             <span class="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1">
                                 📍 {{ request('ville_filter') }}
@@ -184,6 +191,8 @@
                 @endif
             </div>
 
+                @include('partials.search-geo-banner')
+
                 @if($count > 0)
                     {{-- Toggle Vue Carte / Liste --}}
                     <div class="flex items-center justify-between mb-6">
@@ -197,7 +206,9 @@
                                 </p>
                             @elseif(!empty($sortedByProximity))
                                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
-                                    @if(!empty($visitorLocation['city']))
+                                    @if(($visitorLocation['source'] ?? '') === 'browser')
+                                        Entreprises près de vous
+                                    @elseif(!empty($visitorLocation['city']))
                                         Entreprises près de {{ $visitorLocation['city'] }}
                                     @else
                                         Toutes les entreprises
@@ -205,7 +216,9 @@
                                 </h2>
                                 <p class="text-slate-600 dark:text-slate-400">
                                     {{ $count }} entreprise(s) — du plus proche au plus loin
-                                    @if(($visitorLocation['source'] ?? '') === 'ip')
+                                    @if(($visitorLocation['source'] ?? '') === 'browser')
+                                        <span class="text-slate-500 dark:text-slate-500">(votre position)</span>
+                                    @elseif(($visitorLocation['source'] ?? '') === 'ip')
                                         <span class="text-slate-500 dark:text-slate-500">(position estimée via votre connexion)</span>
                                     @endif
                                 </p>
@@ -241,13 +254,19 @@
                     {{-- Vue Carte --}}
                     @php
                         $entreprisesWithGeo = $results->filter(fn($e) => $e->hasCoordinates());
+                        $mapCenter = [
+                            'lat' => $visitorLocation['latitude'] ?? 46.603354,
+                            'lng' => $visitorLocation['longitude'] ?? 1.888334,
+                        ];
+                        $mapZoom = in_array($visitorLocation['source'] ?? '', ['browser', 'user'], true) ? 11 : 6;
                     @endphp
                     
                     <div id="map-view" class="hidden mb-6">
                         @if($entreprisesWithGeo->count() > 0)
                             @include('components.map-standalone', [
                                 'entreprises' => $results,
-                                'zoom' => 6,
+                                'center' => $mapCenter,
+                                'zoom' => $mapZoom,
                                 'height' => '500px',
                                 'enableClustering' => true,
                             ])

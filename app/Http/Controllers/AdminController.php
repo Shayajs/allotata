@@ -758,7 +758,7 @@ class AdminController extends Controller
      */
     public function showEntreprise(Entreprise $entreprise)
     {
-        $entreprise->load(['user', 'reservations.user', 'typesServices.images', 'realisationPhotos']);
+        $entreprise->load(['user', 'reservations.user', 'typesServices.images', 'realisationPhotos', 'modificationEnAttente.user']);
         
         // Charger l'historique de sécurité
         $securityHistory = \App\Models\EntrepriseSecurityHistory::where('entreprise_id', $entreprise->id)
@@ -778,7 +778,7 @@ class AdminController extends Controller
             'nom', 'type_activite', 'telephone', 'description', 'ville', 'adresse_rue', 'code_postal',
         ]);
 
-        $entreprise = app(\App\Services\EntrepriseProfileService::class)->update($entreprise, $request);
+        $entreprise = app(\App\Services\EntrepriseProfileService::class)->update($entreprise, $request, true);
 
         SecurityLog::log(
             $entreprise->user_id,
@@ -816,7 +816,7 @@ class AdminController extends Controller
         ]);
 
         try {
-            app(\App\Services\EntrepriseProfileService::class)->uploadLogo($entreprise, $request->file('logo'));
+            app(\App\Services\EntrepriseProfileService::class)->uploadLogo($entreprise, $request->file('logo'), true);
 
             SecurityLog::log(
                 $entreprise->user_id,
@@ -838,7 +838,7 @@ class AdminController extends Controller
 
     public function deleteEntrepriseLogo(Entreprise $entreprise)
     {
-        app(\App\Services\EntrepriseProfileService::class)->deleteLogo($entreprise);
+        app(\App\Services\EntrepriseProfileService::class)->deleteLogo($entreprise, true);
 
         SecurityLog::log(
             $entreprise->user_id,
@@ -862,7 +862,7 @@ class AdminController extends Controller
         ]);
 
         try {
-            app(\App\Services\EntrepriseProfileService::class)->uploadImageFond($entreprise, $request->file('image_fond'));
+            app(\App\Services\EntrepriseProfileService::class)->uploadImageFond($entreprise, $request->file('image_fond'), true);
 
             SecurityLog::log(
                 $entreprise->user_id,
@@ -884,7 +884,7 @@ class AdminController extends Controller
 
     public function deleteEntrepriseImageFond(Entreprise $entreprise)
     {
-        app(\App\Services\EntrepriseProfileService::class)->deleteImageFond($entreprise);
+        app(\App\Services\EntrepriseProfileService::class)->deleteImageFond($entreprise, true);
 
         SecurityLog::log(
             $entreprise->user_id,
@@ -914,6 +914,7 @@ class AdminController extends Controller
             $request->file('photo'),
             $validated['titre'] ?? null,
             $validated['description'] ?? null,
+            true,
         );
 
         SecurityLog::log(
@@ -933,7 +934,7 @@ class AdminController extends Controller
 
     public function deleteEntrepriseRealisationPhoto(Entreprise $entreprise, $photo)
     {
-        app(\App\Services\EntrepriseProfileService::class)->deleteRealisationPhoto($entreprise, (int) $photo);
+        app(\App\Services\EntrepriseProfileService::class)->deleteRealisationPhoto($entreprise, (int) $photo, true);
 
         SecurityLog::log(
             $entreprise->user_id,

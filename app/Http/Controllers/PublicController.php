@@ -71,7 +71,7 @@ class PublicController extends Controller
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
 
-        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -168,7 +168,7 @@ class PublicController extends Controller
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
 
-        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -386,7 +386,7 @@ class PublicController extends Controller
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
 
-        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -439,7 +439,7 @@ class PublicController extends Controller
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
 
-        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -489,7 +489,7 @@ class PublicController extends Controller
         $user = Auth::user();
         $isOwner = $user && $user->id === $entreprise->user_id;
 
-        if (! $entreprise->aAbonnementActif() && ! $isOwner) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 
@@ -599,7 +599,7 @@ class PublicController extends Controller
             ->firstOrFail();
 
         // Vérifier si l'entreprise a un abonnement actif
-        if (! $entreprise->aAbonnementActif() && (! $user || $user->id !== $entreprise->user_id)) {
+        if (! $entreprise->peutEtreConsulteePar($user)) {
             abort(404, 'Cette entreprise n\'est pas disponible en ligne.');
         }
 

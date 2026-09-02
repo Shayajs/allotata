@@ -162,7 +162,7 @@
                     
                     <!-- Zone de recherche -->
                     <div class="max-w-3xl mx-auto mb-10">
-                        <form action="{{ route('search') }}" method="GET" class="relative" id="search-form" onsubmit="if(this.querySelector('#search-input-home').value.trim()) saveSearchHistory(this.querySelector('#search-input-home').value.trim());">
+                        <form action="{{ route('search') }}" method="GET" class="relative" id="search-form" data-search-geo-form onsubmit="if(this.querySelector('#search-input-home').value.trim()) saveSearchHistory(this.querySelector('#search-input-home').value.trim());">
                             <div class="relative">
                                 <input 
                                     type="text" 
@@ -196,9 +196,12 @@
                                 <div id="autocomplete-list-home" class="p-2"></div>
                             </div>
                         </form>
-                        <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                            Recherchez par nom d'entreprise, type de service, ville, mots-clés, services proposés...
-                        </p>
+                        <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <p class="text-sm text-slate-500 dark:text-slate-400">
+                                Recherchez par nom d'entreprise, type de service, ville, mots-clés, services proposés...
+                            </p>
+                            @include('partials.search-geo-controls')
+                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">

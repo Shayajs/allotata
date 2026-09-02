@@ -742,6 +742,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/errors/{id}/read', [\App\Http\Controllers\ErrorLogController::class, 'markAsRead'])->name('errors.mark-read');
     Route::post('/errors/mark-all-read', [\App\Http\Controllers\ErrorLogController::class, 'markAllAsRead'])->name('errors.mark-all-read');
     Route::get('/', [AdminController::class, 'index'])->name('index');
+
+    Route::get('/inbox', [\App\Http\Controllers\Admin\InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/{id}', [\App\Http\Controllers\Admin\InboxController::class, 'show'])->name('inbox.show');
+    Route::post('/inbox/{id}/lue', [\App\Http\Controllers\Admin\InboxController::class, 'marquerLue'])->name('inbox.marquer-lue');
+    Route::post('/inbox/toutes-lues', [\App\Http\Controllers\Admin\InboxController::class, 'marquerToutesLues'])->name('inbox.marquer-toutes-lues');
+    Route::post('/entreprises/modifications/{modification}/approve', [\App\Http\Controllers\Admin\EntrepriseModificationController::class, 'approve'])->name('entreprises.modifications.approve');
+    Route::post('/entreprises/modifications/{modification}/reject', [\App\Http\Controllers\Admin\EntrepriseModificationController::class, 'reject'])->name('entreprises.modifications.reject');
     
     // Kanban
     Route::get('/kanban', [\App\Http\Controllers\Admin\KanbanController::class, 'index'])->name('kanban.index');

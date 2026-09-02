@@ -16,7 +16,7 @@
     <link rel="manifest" href="{{ url('/manifest.json') }}">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Allo Tata Admin">
+    <meta name="apple-mobile-web-app-title" content="alloadmin">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -200,6 +200,19 @@
                     <span class="font-medium">Dashboard</span>
                 </a>
 
+                <a href="{{ route('admin.inbox.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.inbox.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <span class="font-medium">Notifications</span>
+                    @php
+                        $inboxUnread = auth()->user()->nombre_notifications_non_lues;
+                    @endphp
+                    @if($inboxUnread > 0)
+                        <span class="ml-auto px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">{{ $inboxUnread > 99 ? '99+' : $inboxUnread }}</span>
+                    @endif
+                </a>
+
                 <!-- Kanban -->
                 <a href="{{ route('admin.kanban.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-all {{ request()->routeIs('admin.kanban.*') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700' }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,9 +248,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     <span class="font-medium">Entreprises</span>
-                    @php $entreprisesEnAttente = \App\Models\Entreprise::where('est_verifiee', false)->count(); @endphp
-                    @if($entreprisesEnAttente > 0)
-                        <span class="ml-auto px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">{{ $entreprisesEnAttente }}</span>
+                    @php
+                        $entreprisesEnAttente = \App\Models\Entreprise::where('est_verifiee', false)->count();
+                        $modifsEnAttente = \App\Models\EntrepriseModification::pending()->count();
+                        $entreprisesBadge = $entreprisesEnAttente + $modifsEnAttente;
+                    @endphp
+                    @if($entreprisesBadge > 0)
+                        <span class="ml-auto px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">{{ $entreprisesBadge }}</span>
                     @endif
                 </a>
 
@@ -623,6 +640,17 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                         </form>
+
+                        @php $inboxUnreadHeader = auth()->user()->nombre_notifications_non_lues; @endphp
+                        <a href="{{ route('admin.inbox.index') }}" class="relative p-2 text-slate-500 hover:text-green-600 dark:text-slate-400 dark:hover:text-green-400 transition" title="Notifications">
+                            <span class="sr-only">Notifications</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            @if($inboxUnreadHeader > 0)
+                                <span class="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 text-[10px] font-bold bg-orange-500 text-white rounded-full flex items-center justify-center">{{ $inboxUnreadHeader > 9 ? '9+' : $inboxUnreadHeader }}</span>
+                            @endif
+                        </a>
 
                         {{-- Mobile : un seul menu compte (évite le débordement des icônes) --}}
                         <div

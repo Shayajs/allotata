@@ -5,6 +5,7 @@ import { installImageCompressHook } from './image-compress';
 import { isPushSupported, isPushSubscribed, subscribeToPush, sendSubscriptionToServer } from './push-notifications';
 import './play-billing';
 import './android-shell';
+import './search-geolocation';
 
 installImageCompressHook();
 

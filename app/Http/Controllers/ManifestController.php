@@ -181,8 +181,8 @@ class ManifestController extends Controller
     private function adminManifest(): array
     {
         return [
-            'name' => 'Allo Tata Admin',
-            'short_name' => 'Admin',
+            'name' => 'alloadmin',
+            'short_name' => 'alloadmin',
             'description' => 'Administration Allo Tata',
             'start_url' => '/',
             'scope' => '/',

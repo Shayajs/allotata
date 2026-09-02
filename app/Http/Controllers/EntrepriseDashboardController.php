@@ -26,7 +26,7 @@ class EntrepriseDashboardController extends Controller
         
         // Récupérer l'entreprise avec les relations nécessaires
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture'])
+            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture', 'modificationEnAttente'])
             ->firstOrFail();
         
         // Vérifier les permissions (propriétaire ou administrateur)
@@ -454,7 +454,7 @@ class EntrepriseDashboardController extends Controller
     {
         $user = Auth::user();
         $entreprise = Entreprise::where('slug', $slug)
-            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture'])
+            ->with(['realisationPhotos', 'typesServices.images', 'typesServices.imageCouverture', 'horairesOuverture', 'modificationEnAttente'])
             ->firstOrFail();
         
         // Vérifier les permissions

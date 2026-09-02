@@ -1,86 +1,77 @@
 import { publicPost } from '../js/api.js';
 import { setToken } from '../js/auth.js';
+import { paintAuth, readyAuth, setBusy, showErr } from '../js/auth-ui.js';
+import { getHosts } from '../js/config.js';
+import { esc } from '../js/ui.js';
 
-function form(title, fields, submitLabel, extra = '') {
-    return `
-        <div class="auth">
-            <p class="auth-date" id="auth-date"></p>
-            <h1>${title}</h1>
-            <form id="auth-form">
-                ${fields}
-                <p class="auth-err" id="auth-err" hidden></p>
-                <button class="btn primary" type="submit">${submitLabel}</button>
-            </form>
-            ${extra}
-        </div>`;
-}
+const VERIFY_EMAIL = 'pocket_verify_email';
 
-function showErr(message) {
-    const el = document.getElementById('auth-err');
-    if (!el) {
-        return;
-    }
-    el.hidden = !message;
-    el.textContent = message || '';
-}
+export async function renderLogin(app, { onReady, go }) {
+    await getHosts();
+    const email = sessionStorage.getItem(VERIFY_EMAIL) || '';
+    paintAuth(app, {
+        title: 'Heureux de<br>vous revoir.',
+        lead: 'Votre espace membre Allotata.',
+        fields: `<label>E-mail</label>
+            <input name="email" type="email" autocomplete="username" required value="${esc(email)}">
+            <label>Mot de passe</label>
+            <input name="password" type="password" autocomplete="current-password" required>`,
+        submit: 'Se connecter',
+        extra: `<button type="button" class="auth-link" data-go="#/register">S’enregistrer</button>
+            <button type="button" class="auth-link" data-go="#/">Retour</button>`,
+    });
+    const form = document.getElementById('auth-form');
+    form.querySelector('.auth-go').dataset.label = 'Se connecter';
+    await readyAuth(() => renderLogin(app, { onReady, go }));
 
-function stampDate() {
-    const el = document.getElementById('auth-date');
-    if (el) {
-        el.textContent = new Date().toLocaleDateString('fr-FR', {
-            weekday: 'long', day: 'numeric', month: 'long',
-        });
-    }
-}
-
-export async function renderLogin(app, { onReady }) {
-    app.innerHTML = form(
-        'Votre journée,<br>même sans réseau.',
-        `<label>E-mail</label>
-         <input name="email" type="email" autocomplete="username" required>
-         <label>Mot de passe</label>
-         <input name="password" type="password" autocomplete="current-password" required>`,
-        'Entrer dans le carnet'
-    );
-    stampDate();
-
-    document.getElementById('auth-form').addEventListener('submit', async (event) => {
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const data = new FormData(event.target);
+        const data = new FormData(form);
         showErr('');
-        event.target.querySelector('button').disabled = true;
+        setBusy(form, true, 'On ouvre le carnet…');
         try {
             const res = await publicPost('/auth/login', {
                 email: data.get('email'),
                 password: data.get('password'),
             });
             if (res.jeton) {
+                setBusy(form, true, 'C’est bon.');
+                sessionStorage.removeItem(VERIFY_EMAIL);
                 await setToken(res.jeton);
                 await onReady();
                 return;
             }
         } catch (error) {
             if (error.code === 'a2f_requis') {
-                return renderTwoFactor(app, { onReady, challenge: error.data.challenge, methode: error.data.methode });
+                return renderTwoFactor(app, { onReady, go, challenge: error.data.challenge, methode: error.data.methode });
+            }
+            if (error.code === 'email_non_verifie') {
+                sessionStorage.setItem(VERIFY_EMAIL, String(data.get('email') || ''));
+                go('#/verify');
+                return;
             }
             showErr(error.message);
         }
-        event.target.querySelector('button').disabled = false;
+        setBusy(form, false);
     });
 }
 
-async function renderTwoFactor(app, { onReady, challenge, methode }) {
+async function renderTwoFactor(app, { onReady, go, challenge, methode }) {
+    await getHosts();
     const hint = methode === 'totp'
         ? 'Code de l’application d’authentification'
         : 'Code reçu par e-mail ou SMS';
-    app.innerHTML = form(
-        'Un dernier geste.',
-        `<label>${hint}</label>
-         <input name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="20">`,
-        'Valider',
-        methode !== 'totp' ? '<button type="button" class="auth-link" id="auth-resend">Renvoyer le code</button>' : ''
-    );
-    stampDate();
+    paintAuth(app, {
+        title: 'Un dernier geste.',
+        lead: 'Juste le code, puis votre espace.',
+        fields: `<label>${hint}</label>
+            <input name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="20">`,
+        submit: 'Valider',
+        extra: methode !== 'totp' ? '<button type="button" class="auth-link" id="auth-resend">Renvoyer le code</button>' : '',
+    });
+    const form = document.getElementById('auth-form');
+    form.querySelector('.auth-go').dataset.label = 'Valider';
+    await readyAuth(() => renderTwoFactor(app, { onReady, go, challenge, methode }));
 
     document.getElementById('auth-resend')?.addEventListener('click', async () => {
         try {
@@ -91,21 +82,19 @@ async function renderTwoFactor(app, { onReady, challenge, methode }) {
         }
     });
 
-    document.getElementById('auth-form').addEventListener('submit', async (event) => {
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const data = new FormData(event.target);
+        const data = new FormData(form);
         showErr('');
-        event.target.querySelector('button').disabled = true;
+        setBusy(form, true, 'Vérification…');
         try {
-            const res = await publicPost('/auth/2fa', {
-                challenge,
-                code: data.get('code'),
-            });
+            const res = await publicPost('/auth/2fa', { challenge, code: data.get('code') });
+            setBusy(form, true, 'C’est bon.');
             await setToken(res.jeton);
             await onReady();
         } catch (error) {
             showErr(error.message);
-            event.target.querySelector('button').disabled = false;
+            setBusy(form, false);
         }
     });
 }

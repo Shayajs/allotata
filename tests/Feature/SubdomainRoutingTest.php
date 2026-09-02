@@ -287,7 +287,8 @@ class SubdomainRoutingTest extends TestCase
         $this->get('https://admin.allotata.test/manifest.json')
             ->assertOk()
             ->assertJsonPath('start_url', '/')
-            ->assertJsonPath('short_name', 'Admin');
+            ->assertJsonPath('short_name', 'alloadmin')
+            ->assertJsonPath('name', 'alloadmin');
 
         $this->get('https://acme.allotata.test/manifest.json')
             ->assertOk()

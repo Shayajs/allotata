@@ -6,6 +6,7 @@ use App\Models\AccountLockout;
 use App\Models\LoginAttempt;
 use App\Models\SecurityLog;
 use App\Models\User;
+use App\Services\MemberRegistrationService;
 use App\Services\SecurityService;
 use App\Support\HostReturnUrl;
 use App\Support\PublicAgendaReturnUrl;
@@ -43,42 +44,9 @@ class AuthController extends Controller
     /**
      * Traiter l'inscription (wizard multi-étapes)
      */
-    public function register(Request $request)
+    public function register(Request $request, MemberRegistrationService $inscription)
     {
-        $validated = $request->validate([
-            // Étape 1 : Informations personnelles
-            'name' => ['required', 'string', 'max:255'],
-            'surname' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'date_naissance' => ['required', 'date', 'before:today'],
-            'telephone' => ['required', 'string', 'max:20'],
-            'adresse' => ['required', 'string', 'max:255'],
-            'ville' => ['required', 'string', 'max:255'],
-            'code_postal' => ['required', 'string', 'max:10'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'invitation_token' => ['nullable', 'string'],
-
-            // Étape 2 : Profil
-            'genre' => ['nullable', 'in:homme,femme,non_precise'],
-            'source_inscription' => ['nullable', 'in:google,bouche_a_oreille,reseaux_sociaux,publicite,parrainage,autre'],
-            'code_parrainage' => ['nullable', 'string', 'max:10'],
-
-            // Étape 3 : Préférences de notifications
-            'notifications_reservations' => ['nullable'],
-            'notifications_paiements' => ['nullable'],
-            'notifications_messages' => ['nullable'],
-            'notifications_rappels' => ['nullable'],
-            'notifications_promotions' => ['nullable'],
-            'notifications_mises_a_jour' => ['nullable'],
-
-            // Étape 4 : CGU / CGV / Confidentialité
-            'cgu_accepted' => ['required', 'accepted'],
-            'cgv_accepted' => ['required', 'accepted'],
-            'confidentialite_accepted' => ['required', 'accepted'],
-            'return' => ['nullable', 'string', 'max:2048'],
-        ]);
+        $validated = $request->validate($inscription->regles());
 
         // Si une invitation est fournie, vérifier qu'elle correspond à l'email
         if ($request->filled('invitation_token')) {
@@ -93,52 +61,7 @@ class AuthController extends Controller
             }
         }
 
-        // Construire le nom complet pour la compatibilité (name = prénom + nom de famille)
-        $fullName = trim($validated['name']).' '.trim($validated['surname']);
-
-        // Résoudre le parrain si un code de parrainage est fourni
-        $parrainId = null;
-        if (! empty($validated['code_parrainage'])) {
-            $parrain = User::where('code_parrain', strtoupper($validated['code_parrainage']))->first();
-            if ($parrain) {
-                $parrainId = $parrain->id;
-            }
-        }
-
-        // Créer un membre (par défaut client uniquement)
-        $user = User::create([
-            'name' => $fullName,
-            'surname' => $validated['surname'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'est_client' => true,
-            'est_gerant' => false,
-            'email_verified_at' => null,
-            // Informations personnelles
-            'date_naissance' => $validated['date_naissance'],
-            'telephone' => $validated['telephone'],
-            'adresse' => $validated['adresse'],
-            'ville' => $validated['ville'],
-            'code_postal' => $validated['code_postal'],
-            'latitude' => $validated['latitude'] ?? null,
-            'longitude' => $validated['longitude'] ?? null,
-            // Profil
-            'genre' => $validated['genre'] ?? 'non_precise',
-            'source_inscription' => $validated['source_inscription'] ?? null,
-            'code_parrain' => User::generateCodeParrain(),
-            'parrain_id' => $parrainId,
-            // Acceptation CGU / CGV / Confidentialité
-            'cgu_accepted_at' => now(),
-            'cgv_accepted_at' => now(),
-            'confidentialite_accepted_at' => now(),
-            // Préférences de notifications (checkbox non cochée = absent de la requête = false)
-            'notifications_reservations' => $request->has('notifications_reservations'),
-            'notifications_paiements' => $request->has('notifications_paiements'),
-            'notifications_messages' => $request->has('notifications_messages'),
-            'notifications_rappels' => $request->has('notifications_rappels'),
-            'notifications_promotions' => $request->has('notifications_promotions'),
-            'notifications_mises_a_jour' => $request->has('notifications_mises_a_jour'),
-        ]);
+        $user = $inscription->creer($validated, $request);
 
         // Rattacher la push subscription stockée en session (si l'utilisateur a accepté les push)
         $pendingPush = $request->session()->get('pending_push_subscription');
@@ -156,28 +79,6 @@ class AuthController extends Controller
             }
             $request->session()->forget('pending_push_subscription');
         }
-
-        // Générer un hash de vérification
-        $emailVerification = \App\Models\EmailVerification::generateHashForUser($user->id);
-
-        // Envoyer l'email de vérification
-        try {
-            $user->notify(new \App\Notifications\EmailVerificationNotification($emailVerification));
-        } catch (\Exception $e) {
-            \Log::error("Erreur lors de l'envoi de l'email de vérification : ".$e->getMessage());
-        }
-
-        // Logger l'inscription
-        \App\Models\SecurityLog::log(
-            $user->id,
-            'account_created',
-            $request->ip(),
-            $request->userAgent(),
-            null,
-            [],
-            'low',
-            false
-        );
 
         // NE PAS connecter automatiquement - rediriger vers le sas de vérification
         $redirectResponse = redirect()->route('verification.required')

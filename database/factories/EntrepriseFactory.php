@@ -31,11 +31,22 @@ class EntrepriseFactory extends Factory
             'adresse_rue' => '1 rue de la Paix',
             'code_postal' => '75001',
             'ville' => 'Paris',
+            'type_localisation' => Entreprise::LOCALISATION_PHYSIQUE,
             'assujetti_tva' => false,
             'taux_tva_defaut' => 20,
             'pdf_couleur_primaire' => '#059669',
             'pdf_couleur_secondaire' => '#1F2937',
         ];
+    }
+
+    public function verified(): static
+    {
+        return $this->state(fn () => [
+            'est_verifiee' => true,
+            'nom_valide' => true,
+            'siren_valide' => true,
+            'siren_verifie' => true,
+        ]);
     }
 
     public function incomplet(): static

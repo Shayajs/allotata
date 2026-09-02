@@ -297,7 +297,23 @@ class AdminNotificationService
             'admin_entreprise_validation',
             'Entreprise à valider',
             "« {$entreprise->nom} » ({$entreprise->user?->name}) attend votre validation.",
-            route('admin.entreprises.show', $entreprise->id),
+            route('admin.entreprises.show', $entreprise),
+            [
+                'entreprise_id' => $entreprise->id,
+                'slug' => $entreprise->slug,
+            ],
+        );
+    }
+
+    public function notifyEntrepriseModified(Entreprise $entreprise): void
+    {
+        $entreprise->loadMissing('user');
+
+        $this->notifyAllAdmins(
+            'admin_entreprise_modifiee',
+            'Modification d\'entreprise à valider',
+            "« {$entreprise->nom} » a soumis des changements. La fiche publique actuelle reste en ligne jusqu'à votre confirmation.",
+            route('admin.entreprises.show', $entreprise),
             [
                 'entreprise_id' => $entreprise->id,
                 'slug' => $entreprise->slug,

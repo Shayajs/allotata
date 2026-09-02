@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Services\MemberRegistrationService;
 use App\Services\PocketAuthService;
 use App\Support\CapacitorClient;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,20 @@ class NativeAuthController extends ApiController
         $this->exigerApk($request);
 
         return $this->repondre($auth->renvoyerA2f($request));
+    }
+
+    public function register(Request $request, MemberRegistrationService $inscription): JsonResponse
+    {
+        $this->exigerApk($request);
+
+        $validated = $request->validate($inscription->regles());
+        $user = $inscription->creer($validated, $request, false);
+
+        return response()->json([
+            'ok' => true,
+            'email' => $user->email,
+            'message' => 'Votre compte a été créé. Vérifiez votre e-mail pour vous connecter.',
+        ], 201);
     }
 
     private function exigerApk(Request $request): void

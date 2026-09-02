@@ -87,7 +87,7 @@ if [[ -f "$ROOT/pocket/package.json" ]] || [[ -f "$ROOT/pocket/vite.config.js" ]
     if [[ ! -d "$ROOT/node_modules/vite" ]]; then
         npm install
     fi
-    npm run pocket:build
+    VITE_POCKET_ENV=prod npm run pocket:build:prod
 fi
 npx cap sync android
 

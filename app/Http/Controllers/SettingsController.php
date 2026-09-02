@@ -263,10 +263,15 @@ class SettingsController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        $entreprise = app(\App\Services\EntrepriseProfileService::class)->update($entreprise, $request);
+        $service = app(\App\Services\EntrepriseProfileService::class);
+        $entreprise = $service->update($entreprise, $request);
+
+        $message = $service->lastUpdateQueued
+            ? 'Demande enregistrée. La fiche publique actuelle reste en ligne jusqu\'à la confirmation d\'un administrateur.'
+            : 'Les informations de l\'entreprise ont été mises à jour.';
 
         return redirect()->route('entreprise.dashboard', ['slug' => $entreprise->slug, 'tab' => 'parametres'])
-            ->with('success', 'Les informations de l\'entreprise ont été mises à jour.');
+            ->with('success', $message);
     }
 
     /**
@@ -285,17 +290,22 @@ class SettingsController extends Controller
             ]);
 
             $result = app(\App\Services\EntrepriseProfileService::class)->uploadLogo($entreprise, $request->file('logo'));
+            $queued = $result['queued'] ?? false;
+            $message = $queued
+                ? 'Logo envoyé. La version publique actuelle reste affichée jusqu\'à validation d\'un administrateur.'
+                : 'Logo mis à jour avec succès.';
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Logo mis à jour avec succès.',
+                    'message' => $message,
                     'logo_url' => $result['logo_url'],
+                    'queued' => $queued,
                 ]);
             }
 
             return redirect(route('entreprise.dashboard', ['slug' => $entreprise->fresh()->slug]).'?tab=parametres')
-                ->with('success', 'Logo mis à jour avec succès.');
+                ->with('success', $message);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
@@ -335,8 +345,12 @@ class SettingsController extends Controller
 
         app(\App\Services\EntrepriseProfileService::class)->deleteLogo($entreprise);
 
+        $message = $entreprise->est_verifiee
+            ? 'La suppression du logo sera effective après validation d\'un administrateur.'
+            : 'Le logo a été supprimé.';
+
         return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
-            ->with('success', 'Le logo a été supprimé.');
+            ->with('success', $message);
     }
 
     /**
@@ -355,17 +369,22 @@ class SettingsController extends Controller
             ]);
 
             $result = app(\App\Services\EntrepriseProfileService::class)->uploadImageFond($entreprise, $request->file('image_fond'));
+            $queued = $result['queued'] ?? false;
+            $message = $queued
+                ? 'Image de fond envoyée. La version publique actuelle reste affichée jusqu\'à validation d\'un administrateur.'
+                : 'Image de fond mise à jour avec succès.';
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Image de fond mise à jour avec succès.',
+                    'message' => $message,
                     'image_fond_url' => $result['image_fond_url'],
+                    'queued' => $queued,
                 ]);
             }
 
             return redirect(route('entreprise.dashboard', ['slug' => $entreprise->fresh()->slug]).'?tab=parametres')
-                ->with('success', 'Image de fond mise à jour avec succès.');
+                ->with('success', $message);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
@@ -405,8 +424,12 @@ class SettingsController extends Controller
 
         app(\App\Services\EntrepriseProfileService::class)->deleteImageFond($entreprise);
 
+        $message = $entreprise->est_verifiee
+            ? 'La suppression de l\'image de fond sera effective après validation d\'un administrateur.'
+            : 'L\'image de fond a été supprimée.';
+
         return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
-            ->with('success', 'L\'image de fond a été supprimée.');
+            ->with('success', $message);
     }
 
     /**
@@ -432,8 +455,12 @@ class SettingsController extends Controller
             $validated['description'] ?? null,
         );
 
+        $message = $entreprise->est_verifiee
+            ? 'Photo envoyée. Elle apparaîtra publiquement après validation d\'un administrateur.'
+            : 'La photo a été ajoutée avec succès.';
+
         return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
-            ->with('success', 'La photo a été ajoutée avec succès.');
+            ->with('success', $message);
     }
 
     /**
@@ -448,8 +475,12 @@ class SettingsController extends Controller
 
         app(\App\Services\EntrepriseProfileService::class)->deleteRealisationPhoto($entreprise, (int) $photoId);
 
+        $message = $entreprise->est_verifiee
+            ? 'La suppression de la photo sera effective après validation d\'un administrateur.'
+            : 'La photo a été supprimée.';
+
         return redirect(route('entreprise.dashboard', ['slug' => $slug]).'?tab=parametres')
-            ->with('success', 'La photo a été supprimée.');
+            ->with('success', $message);
     }
 
     /**
