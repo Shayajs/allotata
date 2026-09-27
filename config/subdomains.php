@@ -43,6 +43,7 @@ return [
         'api',
         'support',
         'learn',
+        'payements',
         'www',
         'mail',
         'app',
@@ -69,8 +70,6 @@ return [
                 'notifications',
                 'messagerie',
                 'factures',
-                'checkout',
-                'payment',
                 'abonnement',
                 'play-billing',
                 'essai-gratuit',
@@ -97,6 +96,14 @@ return [
         'api' => [
             'type' => 'prefix',
             'root' => '/api',
+        ],
+        'payements' => [
+            'type' => 'space',
+            'root' => '/checkout',
+            'segments' => [
+                'checkout',
+                'payment',
+            ],
         ],
         // Cours : le catalogue à la racine, les modules et leçons juste derrière
         // (/apprendre/module/x devient learn.*/module/x).

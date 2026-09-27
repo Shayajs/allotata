@@ -365,21 +365,14 @@ class AdminStatistiqueController extends Controller
         return Cache::remember('admin_stats_abonnements', 300, function () {
             return [
                 'total_actifs' => User::where(function($q) {
-                    $q->where(function($q2) {
-                        $q2->where('abonnement_manuel', true)
-                           ->where('abonnement_manuel_actif_jusqu', '>=', now());
-                    })->orWhereHas('subscriptions', function($q3) {
+                    $q->withActiveManualPremium()
+                    ->orWhereHas('subscriptions', function($q3) {
                         $q3->where('stripe_status', 'active');
                     });
                 })->count(),
-                'manuels_actifs' => User::where('abonnement_manuel', true)
-                    ->where('abonnement_manuel_actif_jusqu', '>=', now())
-                    ->count(),
+                'manuels_actifs' => User::withActiveManualPremium()->count(),
                 'stripe_actifs' => DB::table('subscriptions')->where('stripe_status', 'active')->count(),
-                'expires_bientot' => User::where('abonnement_manuel', true)
-                    ->where('abonnement_manuel_actif_jusqu', '>=', now())
-                    ->where('abonnement_manuel_actif_jusqu', '<=', now()->addDays(7))
-                    ->count(),
+                'expires_bientot' => \App\Models\AbonnementManuelPeriode::query()->needingReview()->distinct()->count('user_id'),
             ];
         });
     }

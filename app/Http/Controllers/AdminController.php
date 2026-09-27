@@ -83,15 +83,12 @@ class AdminController extends Controller
             'total_reservations' => Reservation::count(),
             'reservations_payees' => Reservation::where('est_paye', true)->count(),
             'abonnements_actifs' => User::where(function($q) {
-                $q->where(function($q2) {
-                    $q2->where('abonnement_manuel', true)
-                       ->where('abonnement_manuel_actif_jusqu', '>=', now());
-                })->orWhereHas('subscriptions', function($q3) {
+                $q->withActiveManualPremium()
+                ->orWhereHas('subscriptions', function($q3) {
                     $q3->where('stripe_status', 'active');
                 });
             })->count(),
-            'abonnements_manuels' => User::where('abonnement_manuel', true)
-                ->where('abonnement_manuel_actif_jusqu', '>=', now())->count(),
+            'abonnements_manuels' => User::withActiveManualPremium()->count(),
             'abonnements_stripe' => DB::table('subscriptions')
                 ->where('stripe_status', 'active')->count(),
         ];
@@ -186,7 +183,11 @@ class AdminController extends Controller
                 ->sum('page_views');
         }
 
-        return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs', 'activityFeed'));
+        $manualSubscriptions = app(\App\Services\ManualSubscriptionService::class);
+        $manualSubscriptions->syncAllActive(true);
+        $paiementsManuelsAVerifier = $manualSubscriptions->countMembersNeedingReview();
+
+        return view('admin.dashboard', compact('stats', 'alertes', 'chartData', 'derniersUtilisateurs', 'activityFeed', 'paiementsManuelsAVerifier'));
     }
 
     /**
@@ -1441,59 +1442,36 @@ class AdminController extends Controller
 
         if ($request->has('activer')) {
             $validated = $request->validate([
-                'date_fin' => 'required|date|after_or_equal:today',
                 'notes' => 'nullable|string|max:500',
                 'type_renouvellement' => 'required|in:mensuel,annuel',
-                'jour_renouvellement' => 'required|numeric|min:1|max:31',
-                'date_debut' => 'required|date|before_or_equal:date_fin',
+                'date_debut' => 'required|date',
                 'montant' => 'required|numeric|min:0',
             ]);
 
-            // Calculer la date de fin basée sur le renouvellement si nécessaire
+            app(\App\Services\ManualSubscriptionService::class)->activate($user, $validated, $request->user());
+
             $dateDebut = \Carbon\Carbon::parse($validated['date_debut']);
-            $dateFin = \Carbon\Carbon::parse($validated['date_fin']);
-            
-            // Si la date de fin n'est pas cohérente avec le type de renouvellement, on la recalcule
-            if ($validated['type_renouvellement'] === 'mensuel') {
-                // Pour mensuel, on peut ajuster la date de fin pour qu'elle corresponde à un mois complet
-                // Mais on garde la date fournie par l'admin
-            } elseif ($validated['type_renouvellement'] === 'annuel') {
-                // Pour annuel, on peut ajuster la date de fin pour qu'elle corresponde à une année complète
-            }
-
-            $user->update([
-                'abonnement_manuel' => true,
-                'abonnement_manuel_actif_jusqu' => $validated['date_fin'],
-                'abonnement_manuel_notes' => $validated['notes'] ?? null,
-                'abonnement_manuel_type_renouvellement' => $validated['type_renouvellement'],
-                'abonnement_manuel_jour_renouvellement' => $validated['jour_renouvellement'],
-                'abonnement_manuel_date_debut' => $validated['date_debut'],
-                'abonnement_manuel_montant' => $validated['montant'],
-            ]);
-
-            // Générer la première facture si la date de début est aujourd'hui ou dans le passé
             if ($dateDebut->isToday() || $dateDebut->isPast()) {
                 try {
-                    \App\Models\Facture::generateFromManualSubscription($user);
+                    \App\Models\Facture::generateFromManualSubscription($user->fresh());
                 } catch (\Exception $e) {
                     \Log::error('Erreur lors de la génération de la première facture d\'abonnement manuel: ' . $e->getMessage());
                 }
             }
 
-            return back()->with('success', 'Abonnement manuel activé. Type: ' . ($validated['type_renouvellement'] === 'mensuel' ? 'Mensuel' : 'Annuel') . ', renouvellement le ' . $validated['jour_renouvellement'] . ' de chaque ' . ($validated['type_renouvellement'] === 'mensuel' ? 'mois' : 'année') . '.');
-        } else {
-            $user->update([
-                'abonnement_manuel' => false,
-                'abonnement_manuel_actif_jusqu' => null,
-                'abonnement_manuel_notes' => null,
-                'abonnement_manuel_type_renouvellement' => null,
-                'abonnement_manuel_jour_renouvellement' => null,
-                'abonnement_manuel_date_debut' => null,
-                'abonnement_manuel_montant' => null,
-            ]);
+            $jour = $dateDebut->day;
 
-            return back()->with('success', 'Abonnement manuel désactivé.');
+            return back()->with('success', 'Abonnement manuel activé, sans date de fin. Échéance le '.$jour.' de chaque '.($validated['type_renouvellement'] === 'mensuel' ? 'mois' : 'année').'. Le dépassement de la date ne suspend pas le membre.');
         }
+
+        $revoked = app(\App\Services\ManualSubscriptionService::class)->revokeByAdmin($user, $request->user());
+
+        return back()->with(
+            $revoked ? 'success' : 'error',
+            $revoked
+                ? 'Abonnement manuel arrêté. L\'historique est conservé.'
+                : 'Aucun abonnement manuel actif à arrêter.'
+        );
     }
 
     /**
@@ -2280,10 +2258,9 @@ class AdminController extends Controller
             ->get();
 
         // Récupérer les abonnements manuels utilisateurs
-        $manualUserSubscriptions = User::where('abonnement_manuel', true)
-            ->whereNotNull('abonnement_manuel_actif_jusqu')
-            ->where('abonnement_manuel_actif_jusqu', '>=', now())
-            ->orderBy('abonnement_manuel_actif_jusqu', 'desc')
+        $manualUserSubscriptions = User::query()
+            ->withActiveManualPremium()
+            ->orderByDesc('abonnement_manuel_date_debut')
             ->get();
 
         // Récupérer les abonnements manuels entreprises

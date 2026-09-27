@@ -162,29 +162,28 @@ async function finishAfterRedirect() {
     const { setupIntent } = await stripe.retrieveSetupIntent(secret);
     const pmId = setupIntent?.payment_method;
     if (!pmId) return true;
-    await fetch(window.location.origin + '/checkout/save-payment-method', {
+    await fetch('/checkout/save-payment-method', {
         method: 'POST',
         credentials: 'same-origin',
         headers: csrfHeaders(),
         body: JSON.stringify({ payment_method: pmId }),
     });
-    window.location.replace(window.location.origin + '/checkout');
+    window.location.replace('/checkout');
     return true;
 }
 
 const headers = () => csrfHeaders();
 
 async function checkoutPost(path, body) {
-    const url = window.location.origin + path;
     const options = {
         method: 'POST',
         credentials: 'same-origin',
         headers: headers(),
         body: JSON.stringify(body ?? {}),
     };
-    let res = await fetch(url, options);
+    let res = await fetch(path, options);
     if (res.status === 419) {
-        res = await fetch(url, { ...options, headers: headers() });
+        res = await fetch(path, { ...options, headers: headers() });
     }
     return res;
 }
@@ -223,7 +222,7 @@ async function initSaveCard() {
                 return;
             }
             const pmId = setupIntent?.payment_method;
-            if (!pmId) { window.location.replace(window.location.origin + '/checkout'); return; }
+            if (!pmId) { window.location.replace('/checkout'); return; }
             const saveRes = await checkoutPost('/checkout/save-payment-method', { payment_method: pmId });
             const saveData = await saveRes.json();
             if (!saveData.success) {
@@ -231,7 +230,7 @@ async function initSaveCard() {
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }
                 return;
             }
-            window.location.replace(window.location.origin + '/checkout');
+            window.location.replace('/checkout');
         } catch (err) {
             if (errEl) errEl.textContent = err.message || 'Erreur inconnue.';
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }

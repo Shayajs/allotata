@@ -90,6 +90,10 @@ if (!function_exists('scheduleWithLogging')) {
 scheduleWithLogging('subscriptions:check-echeances', 'Échéances abonnements Stripe')
     ->dailyAt('06:00')->withoutOverlapping();
 
+// Échéances des abonnements manuels : rappel uniquement, jamais d'annulation automatique
+scheduleWithLogging('subscriptions:sync-manual-periods', 'Échéances abonnements manuels')
+    ->dailyAt('06:02')->withoutOverlapping();
+
 // Factures compta pour abonnements manuels (Premium + options entreprise)
 scheduleWithLogging('subscriptions:generate-invoices', 'Factures abonnements manuels')
     ->dailyAt('06:05')->withoutOverlapping();

@@ -381,7 +381,7 @@
                 <thead class="bg-slate-50 dark:bg-slate-700">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Utilisateur</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actif jusqu'au</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Statut</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Notes</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -393,25 +393,24 @@
                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $user->name }}</div>
                             <div class="text-xs text-slate-500 dark:text-slate-400">{{ $user->email }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap" data-label="Actif jusqu'au">
-                            @php
-                                $expireSoon = $user->abonnement_manuel_actif_jusqu && $user->abonnement_manuel_actif_jusqu->diffInDays(now()) <= 7;
-                                $expired = $user->abonnement_manuel_actif_jusqu && $user->abonnement_manuel_actif_jusqu->isPast();
-                            @endphp
-                            <span class="text-sm font-medium {{ $expired ? 'text-red-600 dark:text-red-400' : ($expireSoon ? 'text-yellow-600 dark:text-yellow-400' : 'text-slate-900 dark:text-white') }}">
-                                {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}
-                            </span>
-                            @if($expired)
-                                <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">EXPIRÉ</span>
-                            @elseif($expireSoon)
-                                <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">BIENTÔT</span>
+                        <td class="px-6 py-4 whitespace-nowrap" data-label="Statut">
+                            @if($user->hasActiveManualPremium())
+                                <span class="text-sm font-medium text-green-700 dark:text-green-400">Actif, sans date de fin</span>
+                            @elseif($user->abonnement_manuel_statut === \App\Models\User::MANUAL_STATUS_CANCELLED)
+                                <span class="text-sm font-medium text-red-600 dark:text-red-400">Annulé — paiement non réalisé</span>
+                            @else
+                                <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Terminé</span>
+                            @endif
+                            @if($user->abonnement_manuel_date_debut)
+                                <div class="text-xs text-slate-500 dark:text-slate-400">Depuis le {{ $user->abonnement_manuel_date_debut->format('d/m/Y') }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate" data-label="Notes">
                             {{ $user->abonnement_manuel_notes ?? '—' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right" data-label="Actions">
-                            <form action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Arrêter l\'abonnement manuel ?');">
+                            @if($user->hasActiveManualPremium())
+                            <form action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Arrêter l\'abonnement manuel ? L\'historique est conservé.');">
                                 @csrf
                                 <button type="submit" class="ui-btn-simple inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,6 +419,7 @@
                                     Arrêter
                                 </button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                     @endforeach

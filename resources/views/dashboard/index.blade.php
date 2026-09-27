@@ -118,6 +118,8 @@
                 </div>
             @endif
 
+            @include('partials.manual-subscription-banner')
+
             <!-- En-tête -->
             <div id="dashboard-welcome" class="mb-8 {{ $activeTab === 'messagerie' ? 'hidden' : '' }}">
                 <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">

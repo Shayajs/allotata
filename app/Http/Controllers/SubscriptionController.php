@@ -55,7 +55,7 @@ class SubscriptionController extends Controller
 
         if ($user->hasActiveManualPremium()) {
             return back()->withErrors([
-                'error' => "Vous avez déjà un abonnement manuel actif jusqu'au {$user->abonnement_manuel_actif_jusqu->format('d/m/Y')}. Vous ne pouvez pas souscrire à un abonnement Stripe tant que l'abonnement manuel est actif.",
+                'error' => 'Vous avez déjà un abonnement manuel actif. Vous ne pouvez pas souscrire à un abonnement Stripe tant que l\'abonnement manuel est actif.',
             ]);
         }
 

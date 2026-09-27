@@ -224,52 +224,6 @@
                                        title="Contrôler le compte de {{ $user->name }} (édition)">
                                         Contrôler
                                     </a>
-                                    <div class="flex flex-col gap-1 w-full max-w-[240px] mt-1">
-                                        <div class="flex items-center gap-1">
-                                            <input type="text" readonly value="{{ $viewAccessUrl }}"
-                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                                   id="view-url-{{ $user->id }}">
-                                            <button type="button"
-                                                    onclick="navigator.clipboard.writeText(document.getElementById('view-url-{{ $user->id }}').value)"
-                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
-                                                    title="Copier lien VIEW">
-                                                VIEW
-                                            </button>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <input type="text" readonly value="{{ $supportAccessUrl }}"
-                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                                   id="support-url-{{ $user->id }}">
-                                            <button type="button"
-                                                    onclick="navigator.clipboard.writeText(document.getElementById('support-url-{{ $user->id }}').value)"
-                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
-                                                    title="Copier lien SUPPORT">
-                                                SUP
-                                            </button>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <input type="text" readonly value="{{ $billingAccessUrl }}"
-                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                                   id="billing-url-{{ $user->id }}">
-                                            <button type="button"
-                                                    onclick="navigator.clipboard.writeText(document.getElementById('billing-url-{{ $user->id }}').value)"
-                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
-                                                    title="Copier lien BILLING">
-                                                BILL
-                                            </button>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <input type="text" readonly value="{{ $editAccessUrl }}"
-                                                   class="text-[10px] flex-1 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                                   id="edit-url-{{ $user->id }}">
-                                            <button type="button"
-                                                    onclick="navigator.clipboard.writeText(document.getElementById('edit-url-{{ $user->id }}').value)"
-                                                    class="text-[10px] px-1.5 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
-                                                    title="Copier lien EDIT">
-                                                EDIT
-                                            </button>
-                                        </div>
-                                    </div>
                                 @endif
                                 <a href="{{ route('admin.users.show', $user) }}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-semibold">
                                     Voir

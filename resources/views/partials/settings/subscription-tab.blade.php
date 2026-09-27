@@ -207,7 +207,7 @@
                         @endif
                     </div>
                 </div>
-            @elseif($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu)
+            @elseif($user->abonnement_manuel)
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
@@ -215,9 +215,23 @@
                             <p class="font-semibold text-slate-900 dark:text-white">Abonnement manuel (géré par l'administrateur)</p>
                         </div>
                         <div>
-                            <p class="text-slate-600 dark:text-slate-400 mb-1">Actif jusqu'au</p>
-                            <p class="font-semibold text-slate-900 dark:text-white">{{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}</p>
+                            <p class="text-slate-600 dark:text-slate-400 mb-1">Statut</p>
+                            <p class="font-semibold text-slate-900 dark:text-white">
+                                @if($user->hasActiveManualPremium())
+                                    Actif, sans date de fin
+                                @elseif($user->abonnement_manuel_statut === \App\Models\User::MANUAL_STATUS_CANCELLED)
+                                    Annulé — paiement non confirmé
+                                @else
+                                    Terminé
+                                @endif
+                            </p>
                         </div>
+                        @if($user->abonnement_manuel_date_debut)
+                            <div>
+                                <p class="text-slate-600 dark:text-slate-400 mb-1">Début</p>
+                                <p class="font-semibold text-slate-900 dark:text-white">{{ $user->abonnement_manuel_date_debut->format('d/m/Y') }}</p>
+                            </div>
+                        @endif
                         @if($user->abonnement_manuel_notes)
                             <div class="md:col-span-2">
                                 <p class="text-slate-600 dark:text-slate-400 mb-1">Note</p>
@@ -225,11 +239,23 @@
                             </div>
                         @endif
                     </div>
-                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <p class="text-sm text-blue-800 dark:text-blue-400">
-                            ℹ️ Vous avez un abonnement manuel actif. Vous ne pouvez pas souscrire à un abonnement Stripe tant que l'abonnement manuel est actif.
-                        </p>
-                    </div>
+                    @if($user->hasActiveManualPremium())
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p class="text-sm text-blue-800 dark:text-blue-400">
+                                Votre abonnement manuel est actif, sans date de fin. Le dépassement d'une échéance ne suspend pas votre accès.
+                            </p>
+                        </div>
+                    @endif
+                    @if($user->abonnementManuelPeriodes->isNotEmpty())
+                        <ul class="space-y-2 text-sm">
+                            @foreach($user->abonnementManuelPeriodes->take(12) as $periode)
+                                <li class="flex justify-between gap-3 text-slate-700 dark:text-slate-300">
+                                    <span>{{ ucfirst($periode->libelleMois()) }} · {{ $periode->echeance_at->format('d/m/Y') }}</span>
+                                    <span class="font-semibold">{{ $periode->libelleStatut() }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
             @endif
         </div>

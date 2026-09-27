@@ -5,6 +5,18 @@
 @section('subheader', 'Vue d\'ensemble de la plateforme')
 
 @section('content')
+@if(($paiementsManuelsAVerifier ?? 0) > 0)
+<a href="{{ route('admin.manual-subscriptions.index') }}" class="mb-6 block p-5 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl shadow-sm hover:border-indigo-400 transition">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <p class="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Paiements manuels à vérifier</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ $paiementsManuelsAVerifier }} membre{{ $paiementsManuelsAVerifier > 1 ? 's' : '' }} {{ $paiementsManuelsAVerifier > 1 ? 'attendent' : 'attend' }} une vérification</p>
+        </div>
+        <span class="shrink-0 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Vérifier les paiements</span>
+    </div>
+</a>
+@endif
+
 <!-- Alertes prioritaires -->
 @if($alertes['entreprises_en_attente'] > 0 || $alertes['tickets_urgents'] > 0 || $alertes['contacts_non_lus'] > 0)
 <div class="mb-6 space-y-3">

@@ -26,6 +26,7 @@
                 </div>
             </div>
         </nav>
+        @include('partials.manual-subscription-banner')
 
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
@@ -83,7 +84,7 @@
                     
                     // Vérifier les sources d'abonnement séparément
                     $hasStripeSubscription = $subscription && $subscription->valid();
-                    $hasManualSubscription = $user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && ($user->abonnement_manuel_actif_jusqu->isFuture() || $user->abonnement_manuel_actif_jusqu->isToday());
+                    $hasManualSubscription = $user->hasActiveManualPremium();
                     $hasTrialSubscription = $essaiPremium && $essaiPremium->estEnCours();
                     
                     // Abonnement actif si l'une des sources est valide
@@ -192,7 +193,10 @@
                         @elseif($hasManualSubscription)
                             <div class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                                 <p><strong>Type :</strong> Abonnement manuel (géré par l'administrateur)</p>
-                                <p><strong>Actif jusqu'au :</strong> {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}</p>
+                                <p><strong>Statut :</strong> Actif, sans date de fin</p>
+                                @if($user->abonnement_manuel_date_debut)
+                                    <p><strong>Début :</strong> {{ $user->abonnement_manuel_date_debut->format('d/m/Y') }}</p>
+                                @endif
                                 @if($user->abonnement_manuel_notes)
                                     <p><strong>Note :</strong> {{ $user->abonnement_manuel_notes }}</p>
                                 @endif

@@ -88,15 +88,33 @@
                 Abonnement Manuel
             </h3>
             
-            @if($user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu)
+            @if($user->abonnement_manuel)
                 <div class="space-y-6">
                     <div class="flex items-center gap-3">
-                        <div class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider">● Actif</div>
+                        @if($user->hasActiveManualPremium())
+                            <div class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider">● Actif</div>
+                        @elseif($user->abonnement_manuel_statut === \App\Models\User::MANUAL_STATUS_CANCELLED)
+                            <div class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-[10px] font-bold uppercase tracking-wider">Annulé — paiement non réalisé</div>
+                        @else
+                            <div class="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[10px] font-bold uppercase tracking-wider">Terminé</div>
+                        @endif
                     </div>
-                    
+
                     <div>
-                        <dt class="text-[10px] font-bold text-slate-400 uppercase mb-1">Valable jusqu'au</dt>
-                        <dd class="text-base lg:text-lg font-bold text-slate-900 dark:text-white">{{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }}</dd>
+                        <dt class="text-[10px] font-bold text-slate-400 uppercase mb-1">Début</dt>
+                        <dd class="text-base lg:text-lg font-bold text-slate-900 dark:text-white">{{ $user->abonnement_manuel_date_debut?->format('d/m/Y') ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-[10px] font-bold text-slate-400 uppercase mb-1">Fin programmée</dt>
+                        <dd class="text-base lg:text-lg font-bold text-slate-900 dark:text-white">
+                            @if($user->hasActiveManualPremium())
+                                Aucune — actif jusqu'à refus explicite du paiement
+                            @elseif($user->abonnement_manuel_actif_jusqu)
+                                {{ $user->abonnement_manuel_actif_jusqu->format('d/m/Y') }} (historique)
+                            @else
+                                Aucune
+                            @endif
+                        </dd>
                     </div>
 
                     @if($user->abonnement_manuel_type_renouvellement)
@@ -194,20 +212,6 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Jour d'échéance (1-31)</label>
-                        <input 
-                            type="number" 
-                            name="jour_renouvellement" 
-                            required
-                            min="1"
-                            max="31"
-                            value="{{ old('jour_renouvellement', $user->abonnement_manuel_jour_renouvellement ?? date('j')) }}"
-                            class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white"
-                            @if($hasActiveStripeSubscription) disabled @endif
-                        >
-                    </div>
-
-                    <div class="space-y-2">
                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Date de début</label>
                         <input 
                             type="date" 
@@ -217,18 +221,7 @@
                             class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white"
                             @if($hasActiveStripeSubscription) disabled @endif
                         >
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Date d'expiration</label>
-                        <input 
-                            type="date" 
-                            name="date_fin" 
-                            required
-                            value="{{ old('date_fin', $user->abonnement_manuel_actif_jusqu ? $user->abonnement_manuel_actif_jusqu->format('Y-m-d') : '') }}"
-                            class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium text-slate-900 dark:text-white"
-                            @if($hasActiveStripeSubscription) disabled @endif
-                        >
+                        <p class="text-xs text-slate-500 dark:text-slate-400 ml-1">L'échéance mensuelle reprend le jour de cette date. Il n'y a pas de date de fin : le membre reste actif tant qu'un administrateur n'a pas indiqué que le paiement n'a pas été réalisé.</p>
                     </div>
 
                     <div class="space-y-2">
@@ -270,7 +263,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
                     
-                    @if($user->abonnement_manuel)
+                    @if($user->hasActiveManualPremium())
                         <button type="submit" form="form-disable" class="ui-btn-simple flex-1 px-8 py-4 bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 font-bold rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-all active:scale-95 flex items-center justify-center gap-2">
                             Révoquer
                         </button>
@@ -278,10 +271,24 @@
                 </div>
             </form>
 
-            @if($user->abonnement_manuel)
-                <form id="form-disable" action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" onsubmit="return confirm('Désactiver l\'accès manuel ?');">
+            @if($user->hasActiveManualPremium())
+                <form id="form-disable" action="{{ route('admin.users.subscription.toggle-manual', $user) }}" method="POST" onsubmit="return confirm('Arrêter l\'accès manuel ? L\'historique des échéances est conservé.');">
                     @csrf
                 </form>
+            @endif
+
+            @if($user->abonnementManuelPeriodes->isNotEmpty())
+                <div class="mt-8 border-t border-slate-100 dark:border-slate-700 pt-6">
+                    <h5 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Historique des échéances</h5>
+                    <ul class="space-y-2 text-sm">
+                        @foreach($user->abonnementManuelPeriodes as $periode)
+                            <li class="flex flex-wrap justify-between gap-2 text-slate-700 dark:text-slate-300">
+                                <span>{{ ucfirst($periode->libelleMois()) }} — échéance {{ $periode->echeance_at->format('d/m/Y') }}</span>
+                                <span class="font-semibold">{{ $periode->libelleStatut() }}@if($periode->confirmed_at) · {{ $periode->confirmed_at->format('d/m/Y') }}@endif</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             @endif
         </div>
     </div>

@@ -24,6 +24,7 @@ class SubdomainHostTest extends TestCase
         $this->assertSame('apex', SubdomainHost::parse('allotata.test')['mode']);
         $this->assertSame('apex', SubdomainHost::parse('www.allotata.test')['mode']);
         $this->assertSame('admin', SubdomainHost::parse('admin.allotata.test')['mode']);
+        $this->assertSame('payements', SubdomainHost::parse('payements.allotata.test')['mode']);
         $this->assertSame('dash', SubdomainHost::parse('dash.allotata.test')['mode']);
         $this->assertSame('sign', SubdomainHost::parse('sign.allotata.test')['mode']);
         $this->assertSame('api', SubdomainHost::parse('api.allotata.test')['mode']);
@@ -57,6 +58,10 @@ class SubdomainHostTest extends TestCase
 
         $this->assertNull(SubdomainHost::inboundPath(Request::create('https://dash.allotata.test/settings', 'GET')));
 
+        $payementsRoot = SubdomainHost::inboundPath(Request::create('https://payements.allotata.test/', 'GET'));
+        $this->assertSame('/checkout', $payementsRoot['path']);
+        $this->assertNull(SubdomainHost::inboundPath(Request::create('https://payements.allotata.test/checkout', 'GET')));
+
         $sign = SubdomainHost::inboundPath(Request::create('https://sign.allotata.test/', 'GET'));
         $this->assertSame('/signin', $sign['path']);
 
@@ -78,6 +83,8 @@ class SubdomainHostTest extends TestCase
     public function test_owner_url(): void
     {
         $this->assertSame('https://admin.allotata.test/users', SubdomainHost::ownerUrl('/admin/users'));
+        $this->assertSame('https://payements.allotata.test/', SubdomainHost::ownerUrl('/checkout'));
+        $this->assertSame('https://payements.allotata.test/checkout/success', SubdomainHost::ownerUrl('/checkout/success'));
         $this->assertSame('https://dash.allotata.test/', SubdomainHost::ownerUrl('/dashboard'));
         $this->assertSame('https://sign.allotata.test/', SubdomainHost::ownerUrl('/signin'));
         $this->assertSame('https://acme.allotata.test/manage', SubdomainHost::ownerUrl('/m/acme'));
@@ -92,6 +99,9 @@ class SubdomainHostTest extends TestCase
 
         $this->app->instance('request', Request::create('https://dash.allotata.test/', 'GET'));
         $this->assertSame('/', SubdomainHost::outboundPath('/dashboard'));
+
+        $this->app->instance('request', Request::create('https://payements.allotata.test/', 'GET'));
+        $this->assertSame('/', SubdomainHost::outboundPath('/checkout'));
 
         $this->app->instance('request', Request::create('https://sign.allotata.test/', 'GET'));
         $this->assertSame('/', SubdomainHost::outboundPath('/signin'));
@@ -118,6 +128,7 @@ class SubdomainHostTest extends TestCase
     public function test_slugs_reserves(): void
     {
         $this->assertTrue(SubdomainHost::isReservedSlug('admin'));
+        $this->assertTrue(SubdomainHost::isReservedSlug('payements'));
         $this->assertTrue(SubdomainHost::isReservedSlug('DASH'));
         $this->assertTrue(SubdomainHost::isReservedSlug('sign'));
         $this->assertFalse(SubdomainHost::isReservedSlug('acme'));

@@ -40,11 +40,11 @@ class GenerateManualSubscriptionInvoices extends Command
         $erreurs = 0;
 
         // Générer les factures pour les abonnements manuels utilisateurs
-        $usersAvecAbonnementManuel = User::where('abonnement_manuel', true)
+        $usersAvecAbonnementManuel = User::query()
+            ->withActiveManualPremium()
             ->whereNotNull('abonnement_manuel_type_renouvellement')
             ->whereNotNull('abonnement_manuel_jour_renouvellement')
             ->whereNotNull('abonnement_manuel_montant')
-            ->where('abonnement_manuel_actif_jusqu', '>=', now())
             ->get();
 
         $this->info("Trouvé {$usersAvecAbonnementManuel->count()} utilisateurs avec abonnement manuel");

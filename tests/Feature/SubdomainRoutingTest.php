@@ -237,6 +237,27 @@ class SubdomainRoutingTest extends TestCase
         $this->actingAs($admin)->get('https://admin.allotata.test/')->assertOk();
     }
 
+    public function test_espace_paiement_vit_sur_payements(): void
+    {
+        $user = User::factory()->create();
+
+        $this->get('https://dash.allotata.test/checkout')
+            ->assertRedirect('https://payements.allotata.test/');
+
+        $guest = $this->get('https://payements.allotata.test/');
+        $guest->assertRedirect();
+        $this->assertStringContainsString('sign.allotata.test/signin', (string) $guest->headers->get('Location'));
+
+        $this->actingAs($user)
+            ->get('https://payements.allotata.test/')
+            ->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+
+        $this->actingAs($user)
+            ->get('https://payements.allotata.test/checkout')
+            ->assertOk();
+    }
+
     public function test_dash_m_redirige_vers_le_tenant(): void
     {
         $user = User::factory()->create(['est_gerant' => true]);
@@ -351,6 +372,7 @@ class SubdomainRoutingTest extends TestCase
         $this->actingAs($user)->get('https://dash.allotata.test/')->assertOk();
 
         $this->assertSame('https://dash.allotata.test/', url('/dashboard').'/');
+        $this->assertSame('https://payements.allotata.test/', url('/checkout'));
         $this->assertSame('https://acme.allotata.test/manage', route('entreprise.dashboard', ['slug' => 'acme']));
         $this->assertSame('https://allotata.test/a-propos', url('/a-propos'));
     }
@@ -407,6 +429,7 @@ class SubdomainRoutingTest extends TestCase
     public function test_slug_reserve_decale_le_suffixe(): void
     {
         $this->assertSame('admin-1', SubdomainHost::nextAvailableSlug('admin'));
+        $this->assertSame('payements-1', SubdomainHost::nextAvailableSlug('payements'));
         $this->assertSame('dash-1', SubdomainHost::nextAvailableSlug('dash'));
         $this->assertSame('sign-1', SubdomainHost::nextAvailableSlug('sign'));
         $this->assertSame('support-1', SubdomainHost::nextAvailableSlug('support'));
@@ -426,6 +449,7 @@ class SubdomainRoutingTest extends TestCase
 
         $this->actingAs($user);
 
+        $this->get('https://allotata.test/checkout')->assertRedirect('https://payements.allotata.test/');
         $this->get('https://allotata.test/dashboard')->assertRedirect('https://dash.allotata.test/');
         $this->get('https://allotata.test/settings')->assertRedirect('https://dash.allotata.test/settings');
         $this->get('https://allotata.test/admin')->assertRedirect('https://admin.allotata.test/');

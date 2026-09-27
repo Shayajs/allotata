@@ -23,6 +23,8 @@ class SubdomainHost
 
     public const MODE_LEARN = 'learn';
 
+    public const MODE_PAYEMENTS = 'payements';
+
     public const MODE_TENANT = 'tenant';
 
     public const MODE_UNKNOWN = 'unknown';
@@ -206,6 +208,7 @@ class SubdomainHost
             self::MODE_API,
             self::MODE_SUPPORT,
             self::MODE_LEARN,
+            self::MODE_PAYEMENTS,
             self::MODE_TENANT,
         ], true);
     }
@@ -346,6 +349,10 @@ class SubdomainHost
 
         if (self::pathMatchesSegments($path, config('subdomains.hosts.sign.segments', []))) {
             return ['subdomain' => 'sign', 'path' => $path === '/signin' ? '/' : $path];
+        }
+
+        if (self::pathMatchesSegments($path, config('subdomains.hosts.payements.segments', []))) {
+            return ['subdomain' => 'payements', 'path' => $path === '/checkout' ? '/' : $path];
         }
 
         if (self::pathMatchesSegments($path, config('subdomains.hosts.dash.segments', []))) {
@@ -523,6 +530,10 @@ class SubdomainHost
         }
 
         if ($parsed['mode'] === self::MODE_DASH && $path === '/dashboard') {
+            return '/';
+        }
+
+        if ($parsed['mode'] === self::MODE_PAYEMENTS && $path === '/checkout') {
             return '/';
         }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,6 +14,12 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, Billable, HasEssaisGratuits;
+
+    public const MANUAL_STATUS_ACTIVE = 'active';
+
+    public const MANUAL_STATUS_CANCELLED = 'cancelled';
+
+    public const MANUAL_STATUS_ENDED = 'ended';
 
     /**
      * The attributes that are mass assignable.
@@ -29,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // 'is_admin' — EXCLUS : assignation explicite uniquement (sécurité mass assignment)
         'photo_profil',
         'abonnement_manuel',
+        'abonnement_manuel_statut',
         'abonnement_manuel_actif_jusqu',
         'abonnement_manuel_notes',
         'abonnement_manuel_type_renouvellement',
@@ -224,6 +232,28 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Echeance::class);
     }
 
+    public function abonnementManuelPeriodes()
+    {
+        return $this->hasMany(AbonnementManuelPeriode::class)->orderByDesc('echeance_at');
+    }
+
+    public function abonnementManuelEvenements()
+    {
+        return $this->hasMany(AbonnementManuelEvenement::class)->orderByDesc('created_at');
+    }
+
+    public function scopeWithActiveManualPremium(Builder $query): Builder
+    {
+        return $query->where('abonnement_manuel', true)->where(function (Builder $query) {
+            $query->where('abonnement_manuel_statut', self::MANUAL_STATUS_ACTIVE)
+                ->orWhere(function (Builder $legacy) {
+                    $legacy->whereNull('abonnement_manuel_statut')
+                        ->whereNotNull('abonnement_manuel_actif_jusqu')
+                        ->whereDate('abonnement_manuel_actif_jusqu', '>=', now()->toDateString());
+                });
+        });
+    }
+
     /**
      * Relation : Un utilisateur (client) peut avoir plusieurs réservations
      */
@@ -333,9 +363,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasActiveManualPremium(): bool
     {
-        return (bool) $this->abonnement_manuel
-            && $this->abonnement_manuel_actif_jusqu
-            && ! $this->abonnement_manuel_actif_jusqu->isPast();
+        if (! $this->abonnement_manuel) {
+            return false;
+        }
+
+        if ($this->abonnement_manuel_statut === self::MANUAL_STATUS_ACTIVE) {
+            return true;
+        }
+
+        if (in_array($this->abonnement_manuel_statut, [self::MANUAL_STATUS_CANCELLED, self::MANUAL_STATUS_ENDED], true)) {
+            return false;
+        }
+
+        return $this->abonnement_manuel_actif_jusqu
+            && $this->abonnement_manuel_actif_jusqu->copy()->startOfDay()->gte(now()->startOfDay());
     }
 
     /**

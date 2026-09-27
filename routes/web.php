@@ -709,6 +709,7 @@ Route::middleware(['auth', 'verified', 'check.trusted.device'])->group(function 
         Route::post('/abonnement/purge/{id}', [SubscriptionController::class, 'purge'])->name('subscription.purge');
         Route::post('/abonnement/manage', [SubscriptionController::class, 'manage'])->name('subscription.manage');
         Route::post('/abonnement/echeance/{echeance}/annuler', [SubscriptionController::class, 'annulerEcheance'])->name('subscription.echeance.annuler');
+        Route::post('/abonnement/manuel/declarer', [\App\Http\Controllers\ManualSubscriptionController::class, 'declarePaid'])->name('subscription.manual.declare');
         Route::get('/abonnement/facture/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
         Route::get('/abonnement/invoice/{invoiceId}/download', [SubscriptionController::class, 'downloadInvoice'])->name('subscription.invoice.download');
 
@@ -1086,6 +1087,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/subscriptions/entreprise/{subscription}/cancel', [\App\Http\Controllers\AdminController::class, 'cancelEntrepriseSubscription'])->name('subscriptions.entreprise.cancel');
 
     // Paiements / Échéances (listing, états, réductions, gestes commerciaux)
+    Route::get('/abonnements-manuels', [\App\Http\Controllers\Admin\ManualSubscriptionController::class, 'index'])->name('manual-subscriptions.index');
+    Route::post('/abonnements-manuels/{periode}/confirmer', [\App\Http\Controllers\Admin\ManualSubscriptionController::class, 'confirm'])->name('manual-subscriptions.confirm');
+    Route::post('/abonnements-manuels/{periode}/refuser', [\App\Http\Controllers\Admin\ManualSubscriptionController::class, 'refuse'])->name('manual-subscriptions.refuse');
+
     Route::get('/echeances', [\App\Http\Controllers\Admin\EcheanceController::class, 'index'])->name('echeances.index');
     Route::get('/payment-audit-log', [\App\Http\Controllers\Admin\PaymentAuditLogController::class, 'index'])->name('payment-audit-log.index');
     Route::post('/echeances/{echeance}/reduction', [\App\Http\Controllers\Admin\EcheanceController::class, 'updateReduction'])->name('echeances.reduction');

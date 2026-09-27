@@ -333,7 +333,7 @@ class ProcessPaymentsCommand extends Command
         }
 
         $user = $echeance->user;
-        if ($user && $user->abonnement_manuel && $user->abonnement_manuel_actif_jusqu && !$user->abonnement_manuel_actif_jusqu->isPast()) {
+        if ($user && $user->hasActiveManualPremium()) {
             return true;
         }
 

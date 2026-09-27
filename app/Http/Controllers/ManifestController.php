@@ -28,7 +28,7 @@ class ManifestController extends Controller
             return response()->json($this->learnManifest());
         }
 
-        if (in_array($parsed['mode'], [SubdomainHost::MODE_SIGN, SubdomainHost::MODE_API], true)) {
+        if (in_array($parsed['mode'], [SubdomainHost::MODE_SIGN, SubdomainHost::MODE_API, SubdomainHost::MODE_PAYEMENTS], true)) {
             return response()->json($this->apexManifest());
         }
 

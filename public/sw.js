@@ -1,4 +1,4 @@
-const CACHE_NAME = 'allotata-cache-v5';
+const CACHE_NAME = 'allotata-cache-v6';
 const ASSETS_CACHE = 'allotata-assets-v1';
 const PRECACHE = [
     '/offline.html',
@@ -184,6 +184,12 @@ self.addEventListener('fetch', (event) => {
     }
 
     const url = new URL(event.request.url);
+
+    // Vite / build : ne jamais intercepter. Un cache-first casse le modulepreload
+    // (cross-world service worker resource mismatch) et sert un JS CSRF perime.
+    if (url.pathname.startsWith('/build/') || url.pathname === '/sw.js') {
+        return;
+    }
 
     // Ignorer les requetes temps-reel et les APIs qui ne doivent pas etre cachees
     if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/broadcasting/')) {
